@@ -51,17 +51,57 @@
 「麦克风 / 共享屏幕 / 加入会议」并吞掉点击（实测点击共享按钮时命中的元素是 session-panel）。
 已改为 `bottom: 140px`，复测命中元素恢复为按钮本身。
 
+## 已配置 TURN（2026-09-10，改的是服务器不是仓库）
+
+`/etc/livekit/livekit.yaml` 增加了：
+
+```yaml
+turn:
+  enabled: true
+  udp_port: 55000
+```
+
+回滚点：`/etc/livekit/livekit.yaml.bak-20260910-195601`。改动前该实例另一个应用已 2 小时无活动
+（近 2 小时 `call-` 房间数为 0），重启后 `systemctl is-active livekit` 为 active，本项目
+7/7 + 9/9 浏览器用例复测无回归。
+
+**已证实**：
+
+- 启动日志 `service/turn.go:145 Starting TURN server {"turn.relay_range_start": 30000,
+  "turn.relay_range_end": 40000, "turn.portUDP": 55000}`。
+- 本机 `ss` 显示 `udp 0.0.0.0:55000` 由 livekit-server 持有；服务端日志出现
+  `created TURN password`，说明已按参与者下发 TURN 凭据。
+- 对 55000 发 STUN Binding Request（从服务器本机、公网 IP、以及本机三处）均返回
+  `BINDING-SUCCESS`。
+- 腾讯云安全组已放行所需 UDP 端口：用临时 UDP echo 实测 **55000 通、35000 通**，
+  而 **3479 被拦截**。即 LiveKit 的 TURN 端口与 relay 段都在已放行范围内，无需改安全组。
+
+**未证实（不要当成已完成）**：
+
+- **没有验证媒体真的走了 TURN 中继**。浏览器侧 relay-only 探针（`iceTransportPolicy: "relay"`）
+  反复失败，但服务端日志显示实际用的是 `srflx`/`prflx` 候选、**从未出现 `relay` 候选**，
+  说明该探针根本没走到 TURN，结论无效。需要换一种方式（如多网络实测或强制 relay 的
+  独立客户端）才能证明中继可用。
+- **TLS/443 回退仍未启用**。LiveKit 的 TURN over TLS 需要 CA 签发的证书；本机唯一的证书
+  是 coturn 那把**自签证书**（CN/SAN 都是裸 IP `115.159.43.237`），浏览器会直接拒绝。
+  用户现有域名 `aiwb.org.cn` / `www.aiwb.org.cn` 解析到的是 `8.138.233.99`，不是这台机器。
+  要拿到可用证书，需要新增一条指向 `115.159.43.237` 的 DNS 记录后再申请。
+
+**另外注意**：服务器上另有一套 **coturn**（`/usr/local/etc/turnserver.conf`，监听 3478/5349，
+relay 50000–60000）。它与 LiveKit 内嵌 TURN 是两套独立实现，**LiveKit 不会读取 coturn 的配置**，
+这套 coturn 目前只服务 Janus/aooserver。两者 relay 段有重叠（coturn 50000–60000 与 LiveKit
+rtc 50000–60000），存在端口争用隐患。
+
 ## 已知限制（未解决，不要声称已完成）
 
 - **服务端版本偏旧**：LiveKit 服务端 1.8.4（protocol 15），客户端 `livekit-client` 2.22.3
   （protocol 17）。客户端先探测 `/rtc/v1` 得到 404 再回退到 `/rtc`，功能可用但会打印
   版本警告，建议升级服务端。
-- **未配置 TURN**：`livekit.yaml` 只有 `port/rtc/keys/logging`，没有 `turn:` 段。UDP
-  50000–60000 被限制的网络环境会连接不稳甚至失败。已在测试中观察到 `negotiation timed out`
-  与 `PEER_CONNECTION_DISCONNECTED` 引起的重连（本机同时开着 Tailscale 与代理，会干扰 UDP）。
-  需要域名 + TLS 证书后才能启用 LiveKit 内置 TURN 的 443/TCP 回退。
-- **该 LiveKit 实例是共用的**：服务端日志里出现过 `call-<uuid>` 等与本项目无关的房间，
-  说明还有别的应用在用。升级或重启前必须确认影响面。
+- **连接稳定性**：本机环境同时开着 Tailscale 与代理（服务端日志可见 `100.122.124.x`、
+  `198.18.x.x`、`fd7a:115c:a1e0::` 等候选），会干扰 UDP，已多次观察到
+  `negotiation timed out` 与 `PEER_CONNECTION_DISCONNECTED` 引发的重连。
+- **该 LiveKit 实例是共用的**：服务端日志里出现过 `call-<uuid>` 等与本项目无关的房间
+  （历史累计 334 次），说明还有别的应用在用。升级或重启前必须确认影响面。
 - 屏幕共享走 LiveKit 视频轨道，但席位网格里的缩略图仍是 socket.io 传输的 480×270 JPEG 预览。
 - 尚未做跨网络多机验证；本机双标签页与双客户端已实测。
 
