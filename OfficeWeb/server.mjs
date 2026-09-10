@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { randomUUID } from "node:crypto";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import {
   grantRoom,
   livekit,
@@ -9,6 +9,10 @@ import {
   screenRoom,
   voiceRoom,
 } from "./livekit.mjs";
+import { serveStatic } from "./static.mjs";
+
+/** Built frontend, served by this same process when it exists. */
+const DIST = fileURLToPath(new URL("./dist/", import.meta.url));
 
 /** Must match the number of workstations in src/seats.ts; a test asserts this. */
 export const SEAT_COUNT = 8;
@@ -19,7 +23,10 @@ export const MOTION_BOUNDS = { minX: -11, maxX: 12, minZ: -9, maxZ: 7 };
 export const MOTION_INTERVAL_MS = 60;
 
 export function createOfficeServer() {
-  const http = createServer((req, res) => {
+  const http = createServer(async (req, res) => {
+    // The app is served from here in production; in development Vite serves it
+    // and this falls through to the status document below.
+    if (await serveStatic(DIST, req, res)) return;
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
@@ -268,15 +275,4 @@ export function createOfficeServer() {
     });
   });
   return { http, io };
-}
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
-  const { http } = createOfficeServer();
-  http.listen(3108, "127.0.0.1", () =>
-    console.log(
-      `OfficeWeb signaling ready on 3108 (livekit: ${livekit.ready ? livekit.url : "not configured"})`,
-    ),
-  );
 }

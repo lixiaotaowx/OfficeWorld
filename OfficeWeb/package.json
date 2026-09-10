@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5188",
-    "server": "node server.mjs",
+    "server": "node start.mjs",
     "build": "tsc --noEmit && vite build",
     "test": "node --test test/*.test.mjs",
     "test:browser": "node test/browser/livekit-browser.mjs && node test/browser/livekit-screen.mjs && node test/browser/livekit-workstation.mjs && node test/browser/livekit-remote-avatars.mjs"

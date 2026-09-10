@@ -125,7 +125,12 @@ export default function OfficeScene(props: Props) {
     actor.current = avatar;
     const remotes = new RemoteAvatars(world);
     remotesRef.current = remotes;
-    if (import.meta.env.DEV) {
+    // Diagnostic hook. Available while developing and on a deployed build only
+    // when explicitly asked for with ?debug=1, so it is not exposed by default.
+    if (
+      import.meta.env.DEV ||
+      new URLSearchParams(location.search).has("debug")
+    ) {
       // `monitors` is created further down, once the model starts loading, so
       // it has to be resolved lazily.
       (window as unknown as { __officeDebug?: unknown }).__officeDebug = {
