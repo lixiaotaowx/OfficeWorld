@@ -1,7 +1,7 @@
 // Single source of truth for workstation geometry.
 //
 // Every coordinate below is derived from the authored asset, not hand-tuned:
-// office-white.glb carries one `shared_screen` node per seat whose extras are
+// the office model carries one `shared_screen` node per seat whose extras are
 // `{role: "shared_screen", seat_id: "Island_A_Seat_1"}` (and `"Manager"`), plus
 // matching "approved chair" nodes. Reading those world transforms out of the
 // GLB is what revealed that the old marker rings sat 0.53 m away from the real

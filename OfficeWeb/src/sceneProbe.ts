@@ -30,6 +30,8 @@ export function installSceneProbe(options: SceneProbeOptions) {
     },
     remotes,
     local: () => avatar.getState(),
+    /** The whole scene, so a diagnostic can inspect what was actually built. */
+    __scene: world,
     probeMonitor: (seatIndex: number) => {
       const target = monitors()?.meshFor(seatIndex);
       const workstation = WORKSTATIONS[seatIndex];

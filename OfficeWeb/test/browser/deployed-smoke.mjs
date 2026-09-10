@@ -87,7 +87,7 @@ try {
 
   const ready = await waitFor(async () => {
     const text = await a.page.locator(".scene-status").innerText();
-    return /白模已就绪/.test(text) ? text.replace(/\s+/g, " ").trim() : null;
+    return /办公室已就绪/.test(text) ? text.replace(/\s+/g, " ").trim() : null;
   });
   check("办公室模型在部署环境加载完成", Boolean(ready), ready || "");
 

@@ -6,6 +6,7 @@ import { OfficeAvatar } from "./OfficeAvatar";
 import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
 import { MonitorScreens } from "./monitorScreens";
 import { WORKSTATIONS } from "./seats";
+import { bakedAwareMaterial } from "./bakedMaterials";
 import { installSceneProbe } from "./sceneProbe";
 import "./avatar.css";
 import type { CharacterKind } from "./characterModel";
@@ -119,11 +120,13 @@ export default function OfficeScene(props: Props) {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-    renderer.setClearColor("#e9ede8");
+    renderer.setClearColor("#c4ccc0");
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    // AgX with a small exposure lift is what the bake was verified against in
+    // Blender; the baked albedos are tone mapped here rather than in-camera.
+    renderer.toneMapping = THREE.AgXToneMapping;
+    renderer.toneMappingExposure = 1.11;
     el.appendChild(renderer.domElement);
     const world = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
@@ -172,8 +175,11 @@ export default function OfficeScene(props: Props) {
     controls.addEventListener("start", () => {
       traveling = false;
     });
-    world.add(new THREE.HemisphereLight(0xffffff, 0x9ca797, 2));
-    const sun = new THREE.DirectionalLight(0xfff2dd, 3);
+    // Baked surfaces are drawn unlit and skip tone mapping (see
+    // bakedMaterials.ts), so the lights only serve the avatars and the few
+    // props the bake did not touch. Kept moderate so those do not blow out.
+    world.add(new THREE.HemisphereLight(0xffffff, 0x9ca797, 1.1));
+    const sun = new THREE.DirectionalLight(0xfff2dd, 1.6);
     sun.position.set(-12, 22, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -188,18 +194,15 @@ export default function OfficeScene(props: Props) {
     sun.shadow.normalBias = 0.035;
     sun.shadow.radius = 4;
     world.add(sun);
+    // Context around the building, not part of it: unlit and muted so it does
+    // not compete with the baked room (the office floor is in the baked model).
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(160, 160),
-      new THREE.MeshStandardMaterial({ color: 0xe9ede8, roughness: 1 }),
+      new THREE.MeshBasicMaterial({ color: 0x9aa396 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.42;
-    ground.receiveShadow = true;
     world.add(ground);
-    const white = new THREE.MeshStandardMaterial({
-      color: 0xf5f4ef,
-      roughness: 0.82,
-    });
     const glass = new THREE.MeshStandardMaterial({
       color: 0xbfcfc7,
       transparent: true,
@@ -220,20 +223,24 @@ export default function OfficeScene(props: Props) {
     const monitors = new MonitorScreens();
     monitorsRef.current = monitors;
     new GLTFLoader().load(
-      "/assets/office-white.glb",
+      "/assets/office-baked.glb",
       (gltf) => {
         if (stopped) return;
         gltf.scene.traverse((o) => {
           if (!(o instanceof THREE.Mesh)) return;
           const name = o.name.toLowerCase();
-          o.material =
-            name.includes("glass") || name.includes("glazing")
-              ? glass
-              : o.userData.role === "shared_screen"
-                ? screenMat
-                : white;
-          o.castShadow = o.material !== glass;
-          o.receiveShadow = true;
+          if (name.includes("glass") || name.includes("glazing")) {
+            o.material = glass;
+            o.castShadow = false;
+            o.receiveShadow = false;
+            return;
+          }
+          // Baked faces already carry their own lighting, so they are drawn
+          // unlit and take no runtime shadows. Props the bake did not touch
+          // keep their own material and are still lit by the scene.
+          o.material = bakedAwareMaterial(o.material);
+          o.castShadow = false;
+          o.receiveShadow = false;
         });
         // Hand every per-seat screen its own material so a thumbnail can be
         // painted on it without touching the other monitors.
@@ -241,7 +248,7 @@ export default function OfficeScene(props: Props) {
         world.add(gltf.scene);
         // Thumbnails that arrived while the model was still loading.
         syncMonitors(monitors, latest.current);
-        setStatus("白模已就绪");
+        setStatus("办公室已就绪");
       },
       (p) => {
         if (p.total)
@@ -376,7 +383,6 @@ export default function OfficeScene(props: Props) {
           o.geometry.dispose();
         }
       });
-      white.dispose();
       glass.dispose();
       screenMat.dispose();
       renderer.dispose();
