@@ -38,9 +38,12 @@ export class MonitorScreens {
     // The visible monitor models ship separately from the flat screen plane and
     // the plane is buried inside them, so index the models first and push each
     // plane out to the monitor's front face afterwards.
+    // three.js sanitises glTF node names, turning spaces and slashes into
+    // underscores, so "Island_A_Seat_1 approved monitor" arrives here as
+    // "Island_A_Seat_1_approved_monitor". Accept either separator.
     const shells = new Map<number, THREE.Object3D>();
     scene.traverse((object) => {
-      const match = /^(.+) approved monitor$/.exec(object.name || "");
+      const match = /^(.+?)[ _]approved[ _]monitor$/.exec(object.name || "");
       if (!match) return;
       const seat = WORKSTATIONS.find((w) => w.id === match[1]);
       if (seat) shells.set(seat.index, object);
@@ -55,75 +58,98 @@ export class MonitorScreens {
       if (!seat) return;
       if (this.slots.has(seat.index)) return;
       const slot = this.createSlot(base, seat.label);
+      const quad = this.buildScreen(
+        scene,
+        object,
+        shells.get(seat.index),
+        seat,
+        slot.material,
+      );
+      if (!quad) return;
+      quad.userData.monitorSeat = seat.index;
+      slot.mesh = quad;
       this.slots.set(seat.index, slot);
-      // Take the mesh over with its own material instance.
-      object.material = slot.material;
-      object.userData.monitorSeat = seat.index;
-      slot.mesh = object;
-      this.moveInFrontOfShell(scene, object, shells.get(seat.index), seat);
+      // The authored panel is a 266 vertex shape whose UVs are not a single
+      // image mapping, which is exactly why reusing it showed one green stripe
+      // instead of the screen content. Hide it and use our own quad.
+      object.visible = false;
     });
     return this.slots.size;
   }
 
   /**
-   * Slide the flat screen plane out of the monitor body. Measured from the
-   * asset: the plane is 0.006 thick and sits inside a 0.168 deep monitor, so
-   * without this the thumbnail is painted onto a surface nobody can see.
+   * Build a clean screen quad for one desk.
+   *
+   * Size and orientation come from the authored panel (world bounding box and
+   * world quaternion, so any tilt is preserved), but the geometry is a plain
+   * PlaneGeometry whose UVs map the whole canvas, and it is pushed out to the
+   * monitor's front face because the authored panel ships buried inside the
+   * monitor body.
    */
-  private moveInFrontOfShell(
+  private buildScreen(
     scene: THREE.Object3D,
-    plane: THREE.Object3D,
+    panel: THREE.Object3D,
     shell: THREE.Object3D | undefined,
     seat: Workstation,
-  ) {
-    if (!shell) return;
+    material: THREE.Material,
+  ): THREE.Mesh | null {
     scene.updateMatrixWorld(true);
-    const planeBox = new THREE.Box3().setFromObject(plane);
+    if (!shell) return null;
+    const panelBox = new THREE.Box3().setFromObject(panel);
     const shellBox = new THREE.Box3().setFromObject(shell);
-    const planeCenter = planeBox.getCenter(new THREE.Vector3());
+    const panelCenter = panelBox.getCenter(new THREE.Vector3());
     const shellCenter = shellBox.getCenter(new THREE.Vector3());
-    const planeSize = planeBox.getSize(new THREE.Vector3());
+    const panelSize = panelBox.getSize(new THREE.Vector3());
     const shellSize = shellBox.getSize(new THREE.Vector3());
 
-    // The thinnest dimension of a flat plane is the axis it faces along.
-    const axis: "x" | "y" | "z" =
-      planeSize.x <= planeSize.y && planeSize.x <= planeSize.z
+    // The thinnest dimension of a flat panel is the axis it faces along.
+    const thin: "x" | "y" | "z" =
+      panelSize.x <= panelSize.y && panelSize.x <= panelSize.z
         ? "x"
-        : planeSize.y <= planeSize.z
+        : panelSize.y <= panelSize.z
           ? "y"
           : "z";
+    if (thin === "y") return null; // a floor panel, not a screen
 
-    // Face the person sitting down, i.e. out of the monitor's front. A monitor
-    // screen is upright, so the axis is horizontal (x or z).
-    const pick = (v: THREE.Vector3, fallback: number) =>
-      axis === "x" ? v.x : axis === "z" ? v.z : fallback;
-    const chairCoord = pick(
-      new THREE.Vector3(seat.chair.x, seat.display.y, seat.chair.z),
-      seat.display.y,
-    );
-    const planeCoord = pick(planeCenter, planeCenter.y);
-    const shellCenterCoord = pick(shellCenter, shellCenter.y);
-    const shellSizeCoord = pick(shellSize, shellSize.y);
+    // A screen is upright: the other horizontal axis is its width, y its height.
+    const other: "x" | "z" = thin === "x" ? "z" : "x";
+    const width = Math.max(panelSize[other], panelSize.y);
+    const height = Math.min(panelSize[other], panelSize.y);
 
-    const towardChair = Math.sign(chairCoord - planeCoord) || 1;
-    const front = shellCenterCoord + towardChair * (shellSizeCoord / 2 + 0.012);
-    const delta = front - planeCoord;
-    if (Math.abs(delta) < 0.004) return;
+    // Slide it out of the monitor, towards whoever sits down there.
+    const towardChair = Math.sign(seat.chair[thin] - panelCenter[thin]) || 1;
+    const worldPosition = panelCenter.clone();
+    worldPosition[thin] =
+      shellCenter[thin] + towardChair * (shellSize[thin] / 2 + 0.012);
+    const worldQuaternion = panel.getWorldQuaternion(new THREE.Quaternion());
 
-    const worldDelta = new THREE.Vector3();
-    if (axis === "x") worldDelta.x = delta;
-    else if (axis === "z") worldDelta.z = delta;
-    else worldDelta.y = delta;
-    // Convert the world offset into the plane's parent space.
-    const parent = plane.parent;
-    if (parent) {
-      const inverse = new THREE.Quaternion();
-      parent.getWorldQuaternion(inverse);
-      worldDelta.applyQuaternion(inverse.invert());
-    }
-    plane.position.add(worldDelta);
-    plane.updateMatrixWorld(true);
+    // Several desks ship their panel facing away from the desk's own chair, so
+    // turn the quad around when its normal points the wrong way: otherwise the
+    // person sitting there sees the back of the screen (and a raycast, which
+    // honours material.side, thinks the monitor is in front of it).
+    const toChair = new THREE.Vector3(
+      seat.chair.x - worldPosition.x,
+      0,
+      seat.chair.z - worldPosition.z,
+    ).normalize();
+    const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(worldQuaternion);
+    if (normal.dot(toChair) < 0)
+      worldQuaternion.multiply(
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI),
+      );
+
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
+    quad.name = `seatScreen_${seat.id}`;
+    // Express the world transform in the scene's own space.
+    const local = new THREE.Matrix4()
+      .compose(worldPosition, worldQuaternion, new THREE.Vector3(1, 1, 1))
+      .premultiply(new THREE.Matrix4().copy(scene.matrixWorld).invert());
+    local.decompose(quad.position, quad.quaternion, quad.scale);
+    scene.add(quad);
+    quad.updateMatrixWorld(true);
+    return quad;
   }
+
 
   private createSlot(
     base: THREE.MeshStandardMaterial,
@@ -277,6 +303,9 @@ export class MonitorScreens {
     for (const slot of this.slots.values()) {
       slot.texture.dispose();
       slot.material.dispose();
+      // The screen quads are ours, so they leave the scene with us.
+      slot.mesh?.geometry.dispose();
+      slot.mesh?.removeFromParent();
     }
     this.slots.clear();
   }
