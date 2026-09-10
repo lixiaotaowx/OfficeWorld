@@ -326,8 +326,16 @@ export default function App() {
           </section>
         </div>
       ))}
-      {office.sessions.length > 0 && (
+      {(office.sessions.length > 0 || me?.meeting) && (
         <div className="session-panel">
+          {me?.meeting && (
+            <div>
+              <span>
+                语音会议 · {office.people.filter((p) => p.meeting).length} 人在线
+              </span>
+              <button onClick={() => void office.meeting()}>离开</button>
+            </div>
+          )}
           {office.sessions.map((s) => (
             <div key={s.id}>
               <span>

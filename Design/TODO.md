@@ -89,3 +89,17 @@ Do not call the project complete while required items remain failed, unimplement
 - [ ] Full sit-down/stand-up transition clips, multiplayer avatar/seat synchronization and navigation updates for future layout edits.
 
 - [x] Collapsible member/chat sidebar; fixed waypoint-induced walk/idle restart stutter. Continuous speed tested at 30/60/144 FPS; browser collapse and arrival checks.
+
+## 音视频迁移到 LiveKit — 2026-09-10
+
+架构与验证细节见 Design/WebMedia.md。
+
+- [x] 确认 VPS `115.159.43.237` 上已有 livekit-server（1.8.4，systemd，端口 7880/7881）。
+- [x] 删除浏览器内裸 WebRTC mesh 与自建 offer/answer/candidate 信令，改用 LiveKit 承载媒体面。
+- [x] 服务端签发 token 并按房间授权：未获同意者拿不到 token。10/10 服务端用例通过。
+- [x] 会议改为共享房间；屏幕为「一分享者一房间 + N 观看者」；语音一对一每会话一房间。
+- [x] 两个真实浏览器客户端实机验证 7/7：房间内 2 参与者、双方发布麦克风轨道、离开后成员回落。
+- [ ] 升级 livekit-server（客户端 protocol 17 / 服务端 15，当前靠回退到 /rtc 可用）。该实例被其他应用共用，升级前需确认影响面。
+- [ ] 配置 TURN（需要域名 + TLS 证书）以给 UDP 受限网络提供 443/TCP 回退；当前已观测到 UDP 掉线重连。
+- [ ] 屏幕共享的席位缩略图仍走 socket.io JPEG 预览，尚未改为订阅 LiveKit 视频轨道。
+- [ ] 跨网络、多台机器的真实多人验证尚未进行，不得声称已可用于生产。

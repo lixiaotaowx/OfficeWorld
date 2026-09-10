@@ -2,11 +2,24 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import {
+  grantRoom,
+  livekit,
+  mintToken,
+  screenRoom,
+  voiceRoom,
+} from "./livekit.mjs";
 
 export function createOfficeServer() {
   const http = createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ service: "OfficeWeb", mode: "local prototype" }));
+    res.end(
+      JSON.stringify({
+        service: "OfficeWeb",
+        mode: "local prototype",
+        livekit: livekit.ready ? "configured" : "not configured",
+      }),
+    );
   });
   const io = new Server(http, { maxHttpBufferSize: 300000 });
   const people = new Map(),
@@ -20,6 +33,32 @@ export function createOfficeServer() {
     sessions.delete(id);
   };
   io.on("connection", (s) => {
+    // Media access: a token is minted only when this socket is already
+    // authorised for the requested room, so consent is enforced server-side.
+    s.on("livekit-token", async (requested, reply) => {
+      if (typeof reply !== "function") return;
+      const person = people.get(s.id);
+      if (!person) return reply({ error: "请先进入空间" });
+      if (!livekit.ready) return reply({ error: "服务器未配置 LiveKit" });
+      const room = grantRoom({
+        socketId: s.id,
+        requested,
+        person,
+        people,
+        sessions,
+      });
+      if (!room) return reply({ error: "未获授权，无法加入该房间" });
+      try {
+        const token = await mintToken({
+          identity: s.id,
+          name: person.name,
+          room,
+        });
+        reply({ url: livekit.url, token, room });
+      } catch (error) {
+        reply({ error: "签发失败：" + (error?.message || error) });
+      }
+    });
     s.on("join", (data) => {
       if (people.has(s.id)) return;
       const used = new Set([...people.values()].map((x) => x.seat));
@@ -120,48 +159,21 @@ export function createOfficeServer() {
         peers: [i.target, i.from],
         kind: i.kind,
         owner: i.target,
+        // Screen viewers share one room per sharer; voice is 1:1 per session.
+        room: i.kind === "screen" ? screenRoom(i.target) : voiceRoom(i.id),
       };
       sessions.set(c.id, c);
       io.to(i.target).emit("session", { ...c, peer: i.from, initiator: true });
       io.to(i.from).emit("session", { ...c, peer: i.target, initiator: false });
     });
-    s.on("signal", (d) => {
-      const c = sessions.get(d?.id);
-      if (!c || !c.peers.includes(s.id)) return;
-      io.to(c.peers.find((x) => x !== s.id)).emit("signal", {
-        id: c.id,
-        data: d.data,
-      });
-    });
     s.on("end", (id) => {
       if (sessions.get(id)?.peers.includes(s.id)) end(id);
     });
+    // Meeting audio uses one shared LiveKit room; the flag alone drives it.
     s.on("meeting", (join) => {
       const p = people.get(s.id);
       if (!p) return;
-      if (join === true && !p.meeting) {
-        p.meeting = true;
-        for (const peer of people.values()) {
-          if (peer.id === s.id || !peer.meeting) continue;
-          const c = {
-            id: randomUUID(),
-            peers: [s.id, peer.id],
-            kind: "meeting",
-            owner: s.id,
-          };
-          sessions.set(c.id, c);
-          io.to(s.id).emit("session", { ...c, peer: peer.id, initiator: true });
-          io.to(peer.id).emit("session", {
-            ...c,
-            peer: s.id,
-            initiator: false,
-          });
-        }
-      } else if (join !== true) {
-        p.meeting = false;
-        for (const [id, c] of sessions)
-          if (c.kind === "meeting" && c.peers.includes(s.id)) end(id);
-      }
+      p.meeting = join === true;
       publish();
     });
     s.on("disconnect", () => {
@@ -183,6 +195,8 @@ if (
 ) {
   const { http } = createOfficeServer();
   http.listen(3108, "127.0.0.1", () =>
-    console.log("OfficeWeb local signaling ready on 3108"),
+    console.log(
+      `OfficeWeb signaling ready on 3108 (livekit: ${livekit.ready ? livekit.url : "not configured"})`,
+    ),
   );
 }

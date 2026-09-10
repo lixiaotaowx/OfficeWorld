@@ -19,6 +19,8 @@ export interface Session {
   peer: string;
   kind: "screen" | "voice" | "meeting";
   owner: string;
+  /** LiveKit room for this session; the server mints the token for it. */
+  room: string;
   initiator: boolean;
 }
 

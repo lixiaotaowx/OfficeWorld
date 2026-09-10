@@ -14,6 +14,9 @@ Downloads/
 # ---- OfficeWeb (browser project) ----
 OfficeWeb/node_modules/
 OfficeWeb/dist/
+# Real LiveKit credentials stay local; .env.example is committed instead.
+OfficeWeb/.env
+OfficeWeb/.env.local
 # Unused 17MB textured scene export; the app loads office-white.glb instead.
 OfficeWeb/public/assets/office.glb
 

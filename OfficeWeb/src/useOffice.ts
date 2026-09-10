@@ -75,15 +75,24 @@ export function useOffice() {
       m.end(id);
       setSessions((old) => old.filter((x) => x.id !== id));
     });
-    s.on("signal", ({ id, data }) => {
-      void m.signal(id, data);
-    });
     s.connect();
     return () => {
       m.dispose();
       s.disconnect();
     };
   }, []);
+  // The meeting flag drives the shared LiveKit room, so any participant
+  // joining or leaving is reflected without extra signalling messages.
+  // Only a change in our own flag acts, otherwise every presence update
+  // would trigger another join attempt.
+  const inMeetingRoom = useRef(false);
+  useEffect(() => {
+    const me = people.find((p) => p.id === myId);
+    if (!me || me.meeting === inMeetingRoom.current) return;
+    inMeetingRoom.current = me.meeting;
+    if (me.meeting) void media.current?.joinMeeting();
+    else media.current?.leaveMeeting();
+  }, [people, myId]);
   async function share() {
     if (!connected) return setNotice("请等待连接恢复");
     if (sharing) return media.current?.stopScreen();
