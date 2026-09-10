@@ -130,11 +130,13 @@ Do not call the project complete while required items remain failed, unimplement
 
 细节与端口实测见 Design/Deployment.md。
 
-- [x] 应用部署到 `115.159.43.237`，systemd 服务 `officeweb`，监听 80，开机自启。
+- [x] 应用部署到 `115.159.43.237`，systemd 服务 `officeweb`，开机自启。
 - [x] 静态前端与信令同进程同源，`server.mjs` 通过 `static.mjs` 托管 `dist/`。
 - [x] 修掉 PM2 下入口判断失效导致「显示 online 但没监听、日志为空」的问题（新增 `start.mjs`）。
 - [x] 实测部署站点 6/6：可访问、信令已连、模型加载、两客户端互通、**能看到并跟随另一个玩家的角色**。
-- [ ] **TLS 未做：明文 HTTP 不是安全上下文，所以共享屏幕与语音在部署站点上不可用。** 443 已放行、nginx 可装，缺一张可用证书。
-- [ ] 证书方案待定：加 DNS 记录用 Let's Encrypt（最干净）／`sslip.io` 通配 DNS（待验证）／自签+手动信任（兜底）。
+- [x] **TLS 已启用**：nginx 在 443 终止 TLS，同源反代应用与 LiveKit（`/rtc`、`/twirp/`），未改动既有 livekit-server。地址 https://115.159.43.237/
+- [x] 实测部署站点（HTTPS）12/12：安全上下文成立、真的采集到屏幕视频轨与麦克风音轨、**经 nginx 的 wss 反代连上 LiveKit 并入会发布轨道**。
+- [x] 查明自签的原因：中国大陆**未备案域名被网络层拦截**，`sslip.io` 的 Let's Encrypt 校验被跳转到 DNSPod webblock；裸 IP 不被拦，故用 SAN=IP 自签证书。
+- [ ] 想要无警告证书：需加一条 DNS 记录把已备案域名的子域（如 `office.aiwb.org.cn`）指向 `115.159.43.237`，再签 Let's Encrypt。
 - [ ] 无鉴权、状态仅存内存，重启即清空；任何人知道网址就能进。
 - [ ] 尚未在真正两台不同网络的机器之间验证。
