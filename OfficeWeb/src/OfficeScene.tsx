@@ -139,6 +139,50 @@ export default function OfficeScene(props: Props) {
         },
         remotes,
         local: () => avatar.getState(),
+        /**
+         * Is a desk screen actually visible? Raycast both from the current
+         * camera (what a visitor sees) and from the desk chair (what the person
+         * sitting there sees). The textured plane used to sit inside the
+         * monitor body, which no thumbnail-level test could detect.
+         */
+        probeMonitor: (seatIndex: number) => {
+          const target = monitorsRef.current?.meshFor(seatIndex);
+          const workstation = WORKSTATIONS[seatIndex];
+          if (!target || !workstation) return null;
+          world.updateMatrixWorld(true);
+          const center = new THREE.Box3()
+            .setFromObject(target)
+            .getCenter(new THREE.Vector3());
+          const shot = (from: THREE.Vector3) => {
+            const ray = new THREE.Raycaster(
+              from,
+              center.clone().sub(from).normalize(),
+            );
+            const first = ray
+              .intersectObjects(world.children, true)
+              .find((hit) => hit.object.visible);
+            return {
+              firstHit: first?.object?.name ?? null,
+              hitsScreen: first?.object === target,
+            };
+          };
+          return {
+            center: [
+              +center.x.toFixed(3),
+              +center.y.toFixed(3),
+              +center.z.toFixed(3),
+            ],
+            fromCamera: shot(camera.position.clone()),
+            // Eye height of somebody sitting at this desk.
+            fromChair: shot(
+              new THREE.Vector3(
+                workstation.chair.x,
+                1.2,
+                workstation.chair.z,
+              ),
+            ),
+          };
+        },
       };
     }
     const controls = new OrbitControls(camera, renderer.domElement);

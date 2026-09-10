@@ -12,8 +12,8 @@ try {
 }
 
 const APP = process.env.OFFICE_APP_URL || "http://127.0.0.1:5188/";
-// The idle screen fill painted by MonitorScreens.paintIdle.
-const IDLE = [16, 26, 23];
+// Centre colour of the idle placeholder painted by MonitorScreens.paintIdle.
+const IDLE = [15, 26, 22];
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok });

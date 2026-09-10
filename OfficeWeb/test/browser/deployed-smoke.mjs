@@ -81,9 +81,37 @@ try {
   });
   check("办公室模型在部署环境加载完成", Boolean(ready), ready || "");
 
+  // The thumbnail is painted onto a flat screen plane that ships buried inside
+  // the monitor model, so a test that only inspects the texture canvas proves
+  // nothing about what a person can see. Raycast from each desk chair.
+  const screens = await waitFor(async () => {
+    const list = await a.page.evaluate(() => {
+      const debug = window.__officeDebug;
+      if (!debug?.probeMonitor) return null;
+      const seats = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
+        seat: i,
+        visible: debug.probeMonitor(i)?.fromChair?.hitsScreen === true,
+      }));
+      return seats.every((s) => s.visible) ? seats : null;
+    });
+    return list;
+  });
+  check(
+    "8 个工位屏幕都真的能被坐着的人看到（没埋在显示器里）",
+    Boolean(screens),
+    screens
+      ? `${screens.length}/8 可见`
+      : "有工位屏幕被遮挡 —— 贴图贴在了看不见的面上",
+  );
+
+  // At least two clients, not exactly two: a real person may be in the office
+  // at the same time as this run.
   const twoPeople = await waitFor(async () => {
     const text = await a.page.locator("header .connection").innerText();
-    return /2 人在线/.test(text) ? text.replace(/\s+/g, " ").trim() : null;
+    const match = /(\d+)\s*人在线/.exec(text);
+    return match && Number(match[1]) >= 2
+      ? text.replace(/\s+/g, " ").trim()
+      : null;
   });
   check("两个客户端都连到了同一台服务器", Boolean(twoPeople), twoPeople || "");
 

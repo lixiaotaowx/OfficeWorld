@@ -9,7 +9,7 @@
 //   * a texture is only re-uploaded when its preview string actually changes;
 //   * each monitor owns a cloned material, so one screen never repaints another.
 import * as THREE from "three";
-import { WORKSTATIONS } from "./seats";
+import { WORKSTATIONS, type Workstation } from "./seats";
 
 const CANVAS_WIDTH = 480;
 const CANVAS_HEIGHT = 270;
@@ -24,6 +24,10 @@ interface ScreenSlot {
   /** In-flight decode; only the newest request is kept. */
   pending: string | null;
   loading: boolean;
+  /** Desk label, drawn on the placeholder. */
+  label: string;
+  /** The screen plane itself, used by the visibility probe. */
+  mesh?: THREE.Mesh;
 }
 
 export class MonitorScreens {
@@ -31,6 +35,17 @@ export class MonitorScreens {
 
   /** Find the per-seat screen meshes in the loaded scene and take them over. */
   attach(scene: THREE.Object3D, base: THREE.MeshStandardMaterial) {
+    // The visible monitor models ship separately from the flat screen plane and
+    // the plane is buried inside them, so index the models first and push each
+    // plane out to the monitor's front face afterwards.
+    const shells = new Map<number, THREE.Object3D>();
+    scene.traverse((object) => {
+      const match = /^(.+) approved monitor$/.exec(object.name || "");
+      if (!match) return;
+      const seat = WORKSTATIONS.find((w) => w.id === match[1]);
+      if (seat) shells.set(seat.index, object);
+    });
+
     scene.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       const seatId = object.userData?.seat_id as string | undefined;
@@ -39,21 +54,86 @@ export class MonitorScreens {
       // The manager office screen has no claimable seat yet, so it is skipped.
       if (!seat) return;
       if (this.slots.has(seat.index)) return;
-      const slot = this.createSlot(base);
+      const slot = this.createSlot(base, seat.label);
       this.slots.set(seat.index, slot);
       // Take the mesh over with its own material instance.
       object.material = slot.material;
       object.userData.monitorSeat = seat.index;
+      slot.mesh = object;
+      this.moveInFrontOfShell(scene, object, shells.get(seat.index), seat);
     });
     return this.slots.size;
   }
 
-  private createSlot(base: THREE.MeshStandardMaterial): ScreenSlot {
+  /**
+   * Slide the flat screen plane out of the monitor body. Measured from the
+   * asset: the plane is 0.006 thick and sits inside a 0.168 deep monitor, so
+   * without this the thumbnail is painted onto a surface nobody can see.
+   */
+  private moveInFrontOfShell(
+    scene: THREE.Object3D,
+    plane: THREE.Object3D,
+    shell: THREE.Object3D | undefined,
+    seat: Workstation,
+  ) {
+    if (!shell) return;
+    scene.updateMatrixWorld(true);
+    const planeBox = new THREE.Box3().setFromObject(plane);
+    const shellBox = new THREE.Box3().setFromObject(shell);
+    const planeCenter = planeBox.getCenter(new THREE.Vector3());
+    const shellCenter = shellBox.getCenter(new THREE.Vector3());
+    const planeSize = planeBox.getSize(new THREE.Vector3());
+    const shellSize = shellBox.getSize(new THREE.Vector3());
+
+    // The thinnest dimension of a flat plane is the axis it faces along.
+    const axis: "x" | "y" | "z" =
+      planeSize.x <= planeSize.y && planeSize.x <= planeSize.z
+        ? "x"
+        : planeSize.y <= planeSize.z
+          ? "y"
+          : "z";
+
+    // Face the person sitting down, i.e. out of the monitor's front. A monitor
+    // screen is upright, so the axis is horizontal (x or z).
+    const pick = (v: THREE.Vector3, fallback: number) =>
+      axis === "x" ? v.x : axis === "z" ? v.z : fallback;
+    const chairCoord = pick(
+      new THREE.Vector3(seat.chair.x, seat.display.y, seat.chair.z),
+      seat.display.y,
+    );
+    const planeCoord = pick(planeCenter, planeCenter.y);
+    const shellCenterCoord = pick(shellCenter, shellCenter.y);
+    const shellSizeCoord = pick(shellSize, shellSize.y);
+
+    const towardChair = Math.sign(chairCoord - planeCoord) || 1;
+    const front = shellCenterCoord + towardChair * (shellSizeCoord / 2 + 0.012);
+    const delta = front - planeCoord;
+    if (Math.abs(delta) < 0.004) return;
+
+    const worldDelta = new THREE.Vector3();
+    if (axis === "x") worldDelta.x = delta;
+    else if (axis === "z") worldDelta.z = delta;
+    else worldDelta.y = delta;
+    // Convert the world offset into the plane's parent space.
+    const parent = plane.parent;
+    if (parent) {
+      const inverse = new THREE.Quaternion();
+      parent.getWorldQuaternion(inverse);
+      worldDelta.applyQuaternion(inverse.invert());
+    }
+    plane.position.add(worldDelta);
+    plane.updateMatrixWorld(true);
+  }
+
+  private createSlot(
+    base: THREE.MeshStandardMaterial,
+    label: string,
+  ): ScreenSlot {
     const canvas = document.createElement("canvas");
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     const context = canvas.getContext("2d")!;
-    this.paintIdle(context);
+    this.paintIdle(context, label);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     // glTF UVs put the origin at the top-left, unlike three's default.
@@ -77,19 +157,38 @@ export class MonitorScreens {
       shown: null,
       pending: null,
       loading: false,
+      label,
     };
   }
 
-  private paintIdle(context: CanvasRenderingContext2D) {
-    context.fillStyle = "#101a17";
+  /**
+   * Placeholder shown whenever a desk has nothing to show: its label plus a
+   * border, so an idle workstation still reads as a live screen.
+   */
+  private paintIdle(context: CanvasRenderingContext2D, label: string) {
+    context.fillStyle = "#0f1a16";
     context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    context.fillStyle = "#2f4a40";
-    context.fillRect(0, CANVAS_HEIGHT - 18, CANVAS_WIDTH, 18);
+    context.strokeStyle = "#26443a";
+    context.lineWidth = 6;
+    context.strokeRect(7, 7, CANVAS_WIDTH - 14, CANVAS_HEIGHT - 14);
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = "#4d8a70";
+    context.font = "600 40px system-ui, sans-serif";
+    context.fillText(label, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 18);
+    context.fillStyle = "#2f5245";
+    context.font = "400 22px system-ui, sans-serif";
+    context.fillText("未共享屏幕", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
   }
 
   /** Material the scene should use for this seat's monitor, if we own it. */
   materialFor(seatIndex: number) {
     return this.slots.get(seatIndex)?.material;
+  }
+
+  /** The screen plane for a seat, so a test can check if it is occluded. */
+  meshFor(seatIndex: number) {
+    return this.slots.get(seatIndex)?.mesh;
   }
 
   /**
@@ -128,7 +227,7 @@ export class MonitorScreens {
     if (!preview) {
       slot.shown = null;
       slot.pending = null;
-      this.paintIdle(slot.context);
+      this.paintIdle(slot.context, slot.label);
       slot.texture.needsUpdate = true;
       return;
     }
