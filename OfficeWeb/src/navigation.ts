@@ -1,9 +1,9 @@
 import * as THREE from "three";
-export const chairSeats = Array.from({ length: 8 }, (_, i) => ({
-  x: (i < 4 ? 1.1268 : 0.8) + (i % 4 < 2 ? -0.86 : 0.86),
-  z: -(i < 4 ? -3.8 : 1) + (i % 2 === 0 ? 1.18 : -1.18),
-  angle: i % 2 === 0 ? Math.PI : 0,
-}));
+
+// Seat transforms live in seats.ts so the ring markers, the avatar and the
+// monitor thumbnail all agree. Re-exported here for existing importers.
+export { chairSeats } from "./seats";
+
 // Walkable floor with clearance around desks and fixed furniture.
 const obstacles = [
   [-0.95, 3.2, 2.6, 5],

@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OfficeAvatar } from "./OfficeAvatar";
+import { MonitorScreens } from "./monitorScreens";
+import { WORKSTATIONS } from "./seats";
 import "./avatar.css";
 import type { Person } from "./types";
 
@@ -13,11 +15,21 @@ interface Props {
   selected: number;
   view: View;
   onSelect: (seat: number) => void;
+  /** Claim a workstation server-side; resolves false if someone else has it. */
+  onClaimSeat: (seat: number | null) => Promise<boolean>;
 }
-const seats = Array.from({ length: 8 }, (_, i) => ({
-  x: (i < 4 ? 1.1268 : 0.8) + (i % 4 < 2 ? -0.86 : 0.86),
-  z: -(i < 4 ? -3.8 : 1) + (i % 2 === 0 ? 0.65 : -0.65),
-}));
+
+/** Paint every occupied workstation's screen with its occupant's thumbnail. */
+function syncMonitors(
+  monitors: MonitorScreens,
+  state: { people: Person[]; previews: Record<string, string> },
+) {
+  for (const workstation of WORKSTATIONS) {
+    const occupant = state.people.find((p) => p.seat === workstation.index);
+    const preview = occupant ? state.previews[occupant.id] : undefined;
+    monitors.setPreview(workstation.index, preview ?? null);
+  }
+}
 const views: Record<View, [number[], number[]]> = {
   overview: [
     [19, 23, 29],
@@ -46,9 +58,23 @@ export default function OfficeScene(props: Props) {
   const [character, setCharacter] = useState<"woman" | "man">("woman");
   const [stats, setStats] = useState("");
   const api = useRef<{ focus: (v: View) => void }>();
+  const monitorsRef = useRef<MonitorScreens>();
   useEffect(() => {
     api.current?.focus(props.view);
   }, [props.view]);
+  // Push each occupant's broadcast thumbnail onto their own workstation screen.
+  // The preview map is the ambient, unreadably small JPEG; nothing here grants
+  // access to the real video stream, which still needs an approved request.
+  useEffect(() => {
+    const monitors = monitorsRef.current;
+    if (!monitors) return;
+    syncMonitors(monitors, props);
+    if (import.meta.env.DEV) {
+      (window as unknown as { __officeDebug?: unknown }).__officeDebug = {
+        monitors,
+      };
+    }
+  }, [props.people, props.previews]);
   useEffect(() => {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -133,7 +159,8 @@ export default function OfficeScene(props: Props) {
     let stopped = false,
       frame = 0,
       tick = 0;
-    const screenMeshes: THREE.Mesh[] = [];
+    const monitors = new MonitorScreens();
+    monitorsRef.current = monitors;
     new GLTFLoader().load(
       "/assets/office-white.glb",
       (gltf) => {
@@ -149,9 +176,13 @@ export default function OfficeScene(props: Props) {
                 : white;
           o.castShadow = o.material !== glass;
           o.receiveShadow = true;
-          if (o.userData.role === "shared_screen") screenMeshes.push(o);
         });
+        // Hand every per-seat screen its own material so a thumbnail can be
+        // painted on it without touching the other monitors.
+        monitors.attach(gltf.scene, screenMat);
         world.add(gltf.scene);
+        // Thumbnails that arrived while the model was still loading.
+        syncMonitors(monitors, latest.current);
         setStatus("白模已就绪");
       },
       (p) => {
@@ -161,13 +192,15 @@ export default function OfficeScene(props: Props) {
       () => setStatus("模型加载失败，请刷新重试"),
     );
     const markers: THREE.Mesh[] = [];
-    seats.forEach((seat, i) => {
+    WORKSTATIONS.forEach((workstation) => {
+      const i = workstation.index;
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.28, 0.045, 8, 32),
         new THREE.MeshBasicMaterial({ color: 0x608673 }),
       );
       ring.rotation.x = -Math.PI / 2;
-      ring.position.set(seat.x, 0.83, seat.z);
+      // Marker sits on the real chair, taken from the authored asset.
+      ring.position.set(workstation.chair.x, 0.83, workstation.chair.z);
       ring.userData.seat = i;
       world.add(ring);
       markers.push(ring);
@@ -250,6 +283,8 @@ export default function OfficeScene(props: Props) {
       cancelAnimationFrame(frame);
       resize.disconnect();
       controls.dispose();
+      monitors.dispose();
+      monitorsRef.current = undefined;
       el.removeEventListener("pointerdown", start);
       el.removeEventListener("pointerup", end);
       world.traverse((o) => {
@@ -288,10 +323,24 @@ export default function OfficeScene(props: Props) {
             <option value="man">男角色</option>
           </select>
         </label>
-        <button onClick={() => actor.current?.sit(latest.current.selected)}>
+        <button
+          onClick={async () => {
+            // Sitting at a workstation is the same act as claiming it, so the
+            // seat is only taken if the server grants it.
+            if (await props.onClaimSeat(props.selected))
+              actor.current?.sit(props.selected);
+          }}
+        >
           坐到 {props.selected + 1} 号工位
         </button>
-        <button onClick={() => actor.current?.standUp()}>起身</button>
+        <button
+          onClick={() => {
+            void props.onClaimSeat(null);
+            actor.current?.standUp();
+          }}
+        >
+          起身
+        </button>
         <span role="status">{actorState}</span>
       </div>
       <div className="scene-help">

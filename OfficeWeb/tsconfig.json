@@ -12,6 +12,9 @@
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "types": [
+      "vite/client"
+    ],
     "noEmit": true
   },
   "include": [

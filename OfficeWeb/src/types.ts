@@ -1,7 +1,10 @@
 export interface Person {
   id: string;
   name: string;
-  seat: number;
+  /** Chosen workstation, or null while the player has not picked one yet. */
+  seat: number | null;
+  /** Whether this person's tiny thumbnail may show on their monitor. */
+  previewAllowed: boolean;
   sharing: boolean;
   meeting: boolean;
 }

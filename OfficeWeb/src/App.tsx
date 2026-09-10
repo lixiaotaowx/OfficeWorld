@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
+import { WORKSTATIONS } from "./seats";
 import { useOffice } from "./useOffice";
 import "./styles.css";
 
@@ -135,13 +136,20 @@ export default function App() {
               selected={selected}
               view={view}
               onSelect={setSelected}
+              onClaimSeat={office.claimSeat}
             />
             <div className="bottom-bar">
               <div className="identity">
                 <span className="avatar">我</span>
                 <div>
                   <strong>{me?.name || "正在进入空间"}</strong>
-                  <small>{me?.meeting ? "在会议室" : "在开放办公区"}</small>
+                  <small>
+                    {me?.meeting
+                      ? "在会议室"
+                      : me?.seat === null || me?.seat === undefined
+                        ? "还没选工位"
+                        : `${WORKSTATIONS[me.seat]?.label ?? ""} 工位`}
+                  </small>
                 </div>
               </div>
               <div className="actions">
@@ -152,8 +160,24 @@ export default function App() {
                   {office.muted ? "打开麦克风" : "麦克风"}
                 </button>
                 <button
-                  className={office.sharing ? "danger" : "primary"}
+                  title="缩略图很小、看不清，只用来表示工位有人在共享；真正的画面需要对方同意"
                   disabled={!office.connected}
+                  onClick={() =>
+                    office.setPreviewAllowed(!me?.previewAllowed)
+                  }
+                >
+                  {me?.previewAllowed ? "工位预览：开" : "工位预览：关"}
+                </button>
+                <button
+                  className={office.sharing ? "danger" : "primary"}
+                  // Sharing is workstation-centric: your share appears on the
+                  // screen of the desk you occupy, so a desk is required first.
+                  disabled={!office.connected || me?.seat === null || me?.seat === undefined}
+                  title={
+                    me?.seat === null || me?.seat === undefined
+                      ? "请先占用一个工位，你的共享画面会显示在该工位的屏幕上"
+                      : undefined
+                  }
                   onClick={() => void office.share()}
                 >
                   {office.sharing ? "停止共享" : "↗ 共享屏幕"}
@@ -193,30 +217,36 @@ export default function App() {
                   <span>选择一个位置</span>
                 </div>
                 <div className="seat-grid">
-                  {Array.from({ length: 8 }, (_, i) => {
+                  {WORKSTATIONS.map((workstation) => {
+                    const i = workstation.index;
                     const p = office.people.find((x) => x.seat === i);
+                    const mine = me?.seat === i;
                     return (
                       <button
                         key={i}
-                        className={"seat " + (i === selected ? "chosen" : "")}
+                        className={
+                          "seat " +
+                          (i === selected ? "chosen" : "") +
+                          (mine ? " mine" : "")
+                        }
                         onClick={() => {
                           setSelected(i);
                           setView("desks");
                         }}
                       >
-                        <span className="seat-num">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
+                        <span className="seat-num">{workstation.label}</span>
                         <span className={"seat-state " + (p ? "occupied" : "")}>
                           {p ? "●" : "○"}
                         </span>
                         <strong>{p?.name || "空闲工位"}</strong>
                         <small>
-                          {p?.sharing
-                            ? "屏幕共享中"
-                            : p
-                              ? "在线 · 可交流"
-                              : "等待伙伴加入"}
+                          {mine
+                            ? "这是我的工位"
+                            : p?.sharing
+                              ? "屏幕共享中"
+                              : p
+                                ? "在线 · 可交流"
+                                : "点击可占用"}
                         </small>
                       </button>
                     );
@@ -224,7 +254,7 @@ export default function App() {
                 </div>
                 <div className="detail">
                   <div className="eyebrow">
-                    DESK {String(selected + 1).padStart(2, "0")}
+                    DESK {WORKSTATIONS[selected]?.label ?? selected + 1}
                   </div>
                   <h3>{person?.name || "给灵感留一个位置"}</h3>
                   {person && office.previews[person.id] ? (
@@ -240,6 +270,17 @@ export default function App() {
                     </div>
                   )}
                   <div className="detail-actions">
+                    <button
+                      className={me?.seat === selected ? "danger" : "primary"}
+                      disabled={Boolean(person && person.id !== office.myId)}
+                      onClick={() =>
+                        void office.claimSeat(
+                          me?.seat === selected ? null : selected,
+                        )
+                      }
+                    >
+                      {me?.seat === selected ? "离开这个工位" : "占用这个工位"}
+                    </button>
                     <button
                       disabled={
                         !person || person.id === office.myId || !person.sharing

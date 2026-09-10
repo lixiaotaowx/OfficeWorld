@@ -14,7 +14,7 @@ export function useOffice() {
   const [sharing, setSharing] = useState(false);
   const [muted, setMuted] = useState(false);
   const [notice, setNotice] = useState(
-    "点击工位探索办公室，也可以打开另一个标签页测试协作。",
+    "先在右侧选一个工位，再点击「占用这个工位」。也可以打开另一个标签页测试协作。",
   );
   const [myId, setMyId] = useState("");
   const socket = useRef<Socket>();
@@ -119,6 +119,29 @@ export function useOffice() {
     socket.current?.emit("respond", { id, accept });
     setRequests((old) => old.filter((r) => r.id !== id));
   }
+  /** Claim a workstation (or pass null to give it up). Resolves to success. */
+  async function claimSeat(seat: number | null) {
+    const reply = await new Promise<{
+      ok: boolean;
+      seat?: number | null;
+      error?: string;
+    }>((resolve) => {
+      const active = socket.current;
+      if (!active) return resolve({ ok: false, error: "尚未连接" });
+      active.timeout(6000).emit("seat", seat, (error: unknown, answer: never) => {
+        if (error) resolve({ ok: false, error: "工位请求超时" });
+        else resolve(answer ?? { ok: false, error: "工位请求失败" });
+      });
+    });
+    setNotice(
+      reply.ok
+        ? seat === null
+          ? "已离开工位"
+          : `已占用 ${seat + 1} 号工位`
+        : reply.error || "无法占用该工位",
+    );
+    return reply.ok;
+  }
   return {
     people,
     messages,
@@ -134,7 +157,10 @@ export function useOffice() {
     share,
     meeting,
     respond,
+    claimSeat,
     setNotice,
+    setPreviewAllowed: (allowed: boolean) =>
+      socket.current?.emit("preview-allowed", allowed),
     chat: (text: string) => socket.current?.emit("chat", text),
     request: (target: string, kind: "screen" | "voice") =>
       socket.current?.emit("request", { target, kind }),

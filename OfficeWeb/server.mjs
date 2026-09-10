@@ -10,6 +10,9 @@ import {
   voiceRoom,
 } from "./livekit.mjs";
 
+/** Must match the number of workstations in src/seats.ts; a test asserts this. */
+export const SEAT_COUNT = 8;
+
 export function createOfficeServer() {
   const http = createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -61,19 +64,54 @@ export function createOfficeServer() {
     });
     s.on("join", (data) => {
       if (people.has(s.id)) return;
-      const used = new Set([...people.values()].map((x) => x.seat));
-      let seat = 0;
-      while (used.has(seat)) seat++;
       people.set(s.id, {
         id: s.id,
         name:
           String(data?.name || "同事")
             .trim()
             .slice(0, 24) || "同事",
-        seat,
+        // Seats are chosen by the player, never auto-assigned.
+        seat: null,
+        // The tiny ambient thumbnail may be shown on the workstation screen.
+        // It is deliberately unreadable, and the sharer can turn it off.
+        previewAllowed: true,
         sharing: false,
         meeting: false,
       });
+      publish();
+    });
+    // Seat arbitration. Two players clicking the same workstation must not both
+    // win, and this handler runs synchronously on the event loop, so the
+    // find-then-assign below cannot interleave with another claim.
+    s.on("seat", (requested, reply) => {
+      // A call with no seat at all arrives with the ack in `requested`
+      // (socket.io drops undefined arguments). Treat it as malformed.
+      if (typeof requested === "function" && reply === undefined)
+        return requested({ ok: false, error: "无效的工位" });
+      if (typeof reply !== "function") return;
+      const person = people.get(s.id);
+      if (!person) return reply({ ok: false, error: "请先进入空间" });
+      if (requested === null) {
+        person.seat = null;
+        publish();
+        return reply({ ok: true, seat: null });
+      }
+      if (!Number.isInteger(requested) || requested < 0 || requested >= SEAT_COUNT)
+        return reply({ ok: false, error: "无效的工位" });
+      const holder = [...people.values()].find(
+        (x) => x.seat === requested && x.id !== s.id,
+      );
+      if (holder) return reply({ ok: false, error: `${holder.name} 已在这个工位` });
+      person.seat = requested;
+      publish();
+      reply({ ok: true, seat: requested });
+    });
+    s.on("preview-allowed", (allowed) => {
+      const p = people.get(s.id);
+      if (!p) return;
+      p.previewAllowed = allowed === true;
+      // Clear the thumbnail already pushed to everyone if the sharer opts out.
+      if (!p.previewAllowed) io.emit("preview", { id: s.id, image: null });
       publish();
     });
     s.on("sharing", (v) => {
@@ -92,6 +130,8 @@ export function createOfficeServer() {
       const p = people.get(s.id);
       if (
         !p?.sharing ||
+        // The sharer can opt out of the ambient workstation thumbnail.
+        !p.previewAllowed ||
         typeof image !== "string" ||
         image.length > 250000 ||
         !image.startsWith("data:image/jpeg;base64,") ||
@@ -99,7 +139,9 @@ export function createOfficeServer() {
       )
         return;
       lastFrame = Date.now();
-      s.broadcast.emit("preview", { id: s.id, image });
+      // Everyone, including the sharer: their own workstation monitor should
+      // show their own screen, exactly like standing at a real desk.
+      io.emit("preview", { id: s.id, image });
     });
     s.on("chat", (text) => {
       const p = people.get(s.id);

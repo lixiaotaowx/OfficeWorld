@@ -75,6 +75,15 @@ try {
   const sharerName = (await sharer.locator(".identity strong").innerText()).trim();
   check("分享方已进入空间", Boolean(sharerName), sharerName);
 
+  // Sharing is workstation-centric: the sharer occupies a desk first, which is
+  // also how the viewer finds them in the seat grid.
+  await sharer.locator(".seat").first().click();
+  await sharer.getByRole("button", { name: "占用这个工位" }).click();
+  const seated = await waitFor(async () =>
+    /工位/.test(await sharer.locator(".identity small").innerText()) ? true : null,
+  );
+  check("分享方先占用了一个工位", Boolean(seated));
+
   // 1. Start sharing. getDisplayMedia is auto-granted by the launch flags.
   await sharer.getByRole("button", { name: /共享屏幕/ }).click();
   const sharingOn = await waitFor(async () =>

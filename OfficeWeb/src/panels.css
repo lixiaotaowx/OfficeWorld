@@ -63,6 +63,12 @@
   background: #eef3e7;
   border-color: #95ad82;
 }
+/* The workstation the player has actually claimed. */
+.seat.mine {
+  background: #e6efe4;
+  border-color: #6e9853;
+  box-shadow: inset 3px 0 0 #6e9853;
+}
 .seat-num {
   font-size: 10px;
   color: #8d9c83;

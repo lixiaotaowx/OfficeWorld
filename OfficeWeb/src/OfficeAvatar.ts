@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { chairSeats, findPath, walkable } from "./navigation";
+import { findPath, walkable } from "./navigation";
+import { WORKSTATIONS } from "./seats";
 export class OfficeAvatar {
   root = new THREE.Group();
   private model?: THREE.Group;
@@ -111,12 +112,8 @@ export class OfficeAvatar {
   }
   private stand() {
     if (this.sitting && this.seatedAt !== null) {
-      const seat = chairSeats[this.seatedAt];
-      this.root.position.set(
-        seat.x,
-        0,
-        seat.z + (this.seatedAt % 2 === 0 ? 0.8 : -0.8),
-      );
+      const seat = WORKSTATIONS[this.seatedAt];
+      this.root.position.set(seat.stand.x, 0, seat.stand.z);
     }
     this.sitting = false;
     this.seatedAt = null;
@@ -131,12 +128,8 @@ export class OfficeAvatar {
   sit(seatIndex: number) {
     if (!this.model) return;
     this.stand();
-    const seat = chairSeats[seatIndex];
-    const target = new THREE.Vector3(
-      seat.x,
-      0,
-      seat.z + (seatIndex % 2 === 0 ? 0.8 : -0.8),
-    );
+    const seat = WORKSTATIONS[seatIndex];
+    const target = new THREE.Vector3(seat.stand.x, 0, seat.stand.z);
     this.path = findPath(this.root.position, target);
     if (this.path.length) {
       this.pendingSeat = seatIndex;
@@ -262,7 +255,7 @@ export class OfficeAvatar {
       }
       if (!this.path.length && this.pendingSeat !== null) {
         const i = this.pendingSeat,
-          seat = chairSeats[i];
+          seat = WORKSTATIONS[i].chair;
         this.root.position.set(seat.x, 0, seat.z);
         this.root.rotation.y = seat.angle;
         this.sitting = true;
