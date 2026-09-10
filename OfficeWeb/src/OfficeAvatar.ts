@@ -38,7 +38,7 @@ export class OfficeAvatar {
     window.addEventListener("keydown", this.keydown);
     window.addEventListener("keyup", this.keyup);
     window.addEventListener("blur", this.blur);
-    void this.load("woman");
+    // The model is loaded by the caller, which owns the character choice.
   }
   private keydown = (e: KeyboardEvent) => {
     if (

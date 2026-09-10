@@ -3,11 +3,15 @@
 // player until they explicitly re-pick from the settings panel.
 import { useState } from "react";
 import { WORKSTATIONS } from "./seats";
+import type { CharacterKind } from "./characterModel";
 import type { Person } from "./types";
 
 interface Props {
   people: Person[];
   myId: string;
+  /** Which avatar the player wears; they choose it here on a first visit. */
+  character: CharacterKind;
+  onCharacter: (kind: CharacterKind) => void;
   /** Claims the desk; resolves false when somebody else got there first. */
   onPick: (seat: number) => Promise<boolean>;
   onDone: () => void;
@@ -18,6 +22,8 @@ interface Props {
 export default function SeatPicker({
   people,
   myId,
+  character,
+  onCharacter,
   onPick,
   onDone,
   dismissable,
@@ -28,10 +34,22 @@ export default function SeatPicker({
   return (
     <div className="modal-backdrop">
       <section className="modal seat-picker">
-        <h2>先选一个工位</h2>
+        <h2>先选个角色，再选一个工位</h2>
         <p>
-          选定后这个工位就是你的了，别人无法再占用，你的共享画面也会显示在这张桌子上。
+          工位选定后就是你的，别人无法再占用，你的共享画面也会显示在这张桌子上。
         </p>
+        <div className="character-picker" role="group" aria-label="选择角色">
+          {(["woman", "man"] as CharacterKind[]).map((kind) => (
+            <button
+              key={kind}
+              className={character === kind ? "chosen" : ""}
+              aria-pressed={character === kind}
+              onClick={() => onCharacter(kind)}
+            >
+              {kind === "woman" ? "女角色" : "男角色"}
+            </button>
+          ))}
+        </div>
         <div className="seat-picker-grid">
           {WORKSTATIONS.map((workstation) => {
             const taken = people.find((p) => p.seat === workstation.index);

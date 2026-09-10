@@ -22,10 +22,8 @@ interface Props {
   selected: number;
   view: View;
   onSelect: (seat: number) => void;
-  /** Claim a workstation server-side; resolves false if someone else has it. */
-  onClaimSeat: (seat: number | null) => Promise<boolean>;
-  /** Bumped by the UI to ask the avatar to walk back to its own desk. */
-  returnSignal: number;
+  /** Which avatar we wear. Owned by the app so the picker can set it too. */
+  character: CharacterKind;
   /** Publish our own motion so everybody else can draw us. */
   onMotion: (motion: Motion) => void;
   onCharacter: (kind: CharacterKind) => void;
@@ -83,14 +81,20 @@ export default function OfficeScene(props: Props) {
   const [status, setStatus] = useState("正在载入办公室");
   const actor = useRef<OfficeAvatar>();
   const [actorState, setActorState] = useState("角色载入中…");
-  const [character, setCharacter] = useState<"woman" | "man">("woman");
   const [stats, setStats] = useState("");
   const api = useRef<{ focus: (v: View) => void }>();
   const monitorsRef = useRef<MonitorScreens>();
   const remotesRef = useRef<RemoteAvatars>();
+  const mySeat =
+    props.people.find((p) => p.id === props.myId)?.seat ?? null;
   useEffect(() => {
     api.current?.focus(props.view);
   }, [props.view]);
+  // The app owns the character choice (the first-visit dialog sets it too), so
+  // the avatar simply follows it.
+  useEffect(() => {
+    void actor.current?.load(props.character);
+  }, [props.character]);
   // Push each occupant's broadcast thumbnail onto their own workstation screen.
   // The preview map is the ambient, unreadably small JPEG; nothing here grants
   // access to the real video stream, which still needs an approved request.
@@ -99,27 +103,18 @@ export default function OfficeScene(props: Props) {
     if (!monitors) return;
     syncMonitors(monitors, props);
   }, [props.people, props.previews]);
-  // The avatar follows the seat the server says we hold, so claiming a desk
-  // from the picker and clicking "坐到 N 号工位" behave identically.
+  // The avatar follows whichever desk the server says we hold, so claiming one
+  // in the picker walks us over and sits us down.
   const lastSeat = useRef<number | null | undefined>(undefined);
   useEffect(() => {
-    const seat = props.people.find((p) => p.id === props.myId)?.seat ?? null;
-    if (lastSeat.current === seat) return;
+    if (lastSeat.current === mySeat) return;
     const first = lastSeat.current === undefined;
-    lastSeat.current = seat;
+    lastSeat.current = mySeat;
     // At startup there is nothing to undo.
-    if (first && seat === null) return;
-    if (seat === null) actor.current?.standUp();
-    else actor.current?.sit(seat);
-  }, [props.people, props.myId]);
-  // "回到我的座位": the seat has not changed, so walk back on an explicit ask.
-  useEffect(() => {
-    if (!props.returnSignal) return;
-    const seat = latest.current.people.find(
-      (p) => p.id === latest.current.myId,
-    )?.seat;
-    if (seat !== null && seat !== undefined) actor.current?.sit(seat);
-  }, [props.returnSignal]);
+    if (first && mySeat === null) return;
+    if (mySeat === null) actor.current?.standUp();
+    else actor.current?.sit(mySeat);
+  }, [mySeat]);
   useEffect(() => {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -401,25 +396,24 @@ export default function OfficeScene(props: Props) {
           我的角色{" "}
           <select
             aria-label="选择角色"
-            value={character}
-            onChange={(e) => {
-              const kind = e.target.value as "woman" | "man";
-              setCharacter(kind);
-              void actor.current?.load(kind);
-              latest.current.onCharacter(kind);
-            }}
+            value={props.character}
+            onChange={(e) =>
+              latest.current.onCharacter(e.target.value as CharacterKind)
+            }
           >
             <option value="woman">女角色</option>
             <option value="man">男角色</option>
           </select>
         </label>
-        <button
-          onClick={() => void props.onClaimSeat(props.selected)}
-          title="占用工位后角色会自动走过去坐下"
-        >
-          坐到 {props.selected + 1} 号工位
-        </button>
-        <button onClick={() => void props.onClaimSeat(null)}>起身</button>
+        {/* Deliberately no claim button here. A desk is taken in the picker and
+            then belongs to you, so the only seat actions are to return to it or
+            to stand up from it - standing up keeps it yours. */}
+        {mySeat !== null && (
+          <button onClick={() => actor.current?.sit(mySeat)}>
+            回到我的座位
+          </button>
+        )}
+        <button onClick={() => actor.current?.standUp()}>起身</button>
         <span role="status">{actorState}</span>
       </div>
       <div className="scene-help">

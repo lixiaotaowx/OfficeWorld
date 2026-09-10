@@ -18,7 +18,6 @@ interface Props {
   onTab: (tab: "people" | "chat") => void;
   onSelect: (seat: number) => void;
   onOpenDesks: () => void;
-  onReturnToSeat: () => void;
   onRequest: (target: string, kind: "screen" | "voice") => void;
   onText: (text: string) => void;
   onSend: (event: React.FormEvent) => void;
@@ -38,7 +37,6 @@ export default function SidePanel({
   onTab,
   onSelect,
   onOpenDesks,
-  onReturnToSeat,
   onRequest,
   onText,
   onSend,
@@ -111,16 +109,8 @@ export default function SidePanel({
                 short laptop screen the preview would push it below the fold. */}
             <div className="detail-actions">
               {/* A desk belongs to whoever picked it, so there is no take-over
-                  button. Changing desks is deliberate and lives in settings. */}
-              {mySeat === selected && (
-                <button
-                  className="primary"
-                  onClick={onReturnToSeat}
-                  title="让角色走回你的工位并坐下"
-                >
-                  回到我的座位
-                </button>
-              )}
+                  button and none to give it up either. Seat actions (return to
+                  it, stand up) live with the avatar controls under the scene. */}
               <button
                 disabled={!person || person.id === myId || !person.sharing}
                 onClick={() => person && onRequest(person.id, "screen")}

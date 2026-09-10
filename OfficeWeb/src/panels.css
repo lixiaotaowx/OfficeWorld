@@ -22,7 +22,7 @@
   border-radius: 0;
   background: none;
   padding: 12px 0 15px;
-  font-size: 12px;
+  font-size: 14px;
   color: #91998e;
 }
 .side-tabs .selected {
@@ -30,7 +30,7 @@
   border-bottom: 2px solid #52774e;
 }
 .side-tabs span {
-  font-size: 10px;
+  font-size: 12px;
   border-radius: 4px;
   background: #eaf0e4;
   padding: 2px 5px;
@@ -43,10 +43,10 @@
   justify-content: space-between;
 }
 .side-title h3 {
-  font-size: 13px;
+  font-size: 14px;
 }
 .side-title span {
-  font-size: 10px;
+  font-size: 12px;
   color: #99a18f;
 }
 .seat-grid {
@@ -74,7 +74,7 @@
   box-shadow: inset 3px 0 0 #6e9853;
 }
 .seat-num {
-  font-size: 10px;
+  font-size: 12px;
   color: #8d9c83;
 }
 .seat-state {
@@ -86,7 +86,7 @@
 }
 .seat strong {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   margin: 6px 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -94,7 +94,7 @@
   max-width: 95px;
 }
 .seat small {
-  font-size: 9px;
+  font-size: 11px;
   color: #9ca58f;
 }
 .detail {
@@ -103,7 +103,7 @@
   border-top: 1px solid #ecf0e6;
 }
 .detail h3 {
-  font-size: 14px;
+  font-size: 15px;
   margin: 7px 0 12px;
 }
 .empty-screen {
@@ -115,11 +115,11 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
-  font-size: 10px;
+  font-size: 12px;
   color: #9aa68c;
 }
 .empty-screen > span {
-  font-size: 25px;
+  font-size: 26px;
 }
 .detail-actions {
   display: flex;
@@ -128,7 +128,7 @@
 }
 .detail-actions button {
   flex: 1;
-  font-size: 10px;
+  font-size: 12px;
   padding: 9px 5px;
 }
 .screen-preview {
@@ -139,7 +139,7 @@
   margin-top: auto;
   padding: 15px 18px;
   background: #fafbf7;
-  font-size: 10px;
+  font-size: 12px;
   color: #919d85;
   display: flex;
   align-items: center;
@@ -150,7 +150,7 @@ footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 12px;
   color: #8a9584;
   gap: 15px;
 }
@@ -172,19 +172,19 @@ footer span {
 .chat-empty {
   color: #768a70;
   padding: 30px 0;
-  font-size: 14px;
+  font-size: 15px;
 }
 .chat-empty small {
   display: block;
   margin-top: 14px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
 }
 .messages article {
   margin-bottom: 18px;
 }
 .messages strong {
-  font-size: 11px;
+  font-size: 13px;
   color: #829379;
 }
 .messages p {
@@ -192,7 +192,7 @@ footer span {
   background: #f0f4e9;
   border-radius: 0 10px 10px;
   padding: 11px;
-  font-size: 12px;
+  font-size: 14px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -210,7 +210,7 @@ footer span {
   outline-color: #94ab80;
 }
 .chat form button {
-  font-size: 11px;
+  font-size: 13px;
   padding: 9px;
 }
 .modal-backdrop {
@@ -229,7 +229,7 @@ footer span {
   background: #fff;
 }
 .modal p {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.9;
   margin: 20px 0;
   color: #788575;
@@ -253,10 +253,10 @@ footer span {
   margin: 10px 0;
 }
 .session-panel span {
-  font-size: 12px;
+  font-size: 14px;
 }
 .session-panel button {
-  font-size: 11px;
+  font-size: 13px;
   float: right;
 }
 
@@ -277,7 +277,7 @@ main {
   height: 48px;
   padding: 0;
   border-radius: 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: #65805a;
   background: #fcfdf8;
   box-shadow: 0 2px 8px #30482d10;
@@ -299,8 +299,25 @@ main {
 /* First-visit seat picker: picking a desk claims it, so the choices are big
    and unambiguous. */
 .seat-picker {
-  width: 460px;
+  width: 520px;
   max-width: calc(100vw - 40px);
+}
+/* Character choice, in the same first-visit dialog as the desks. */
+.character-picker {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+.character-picker button {
+  flex: 1;
+  padding: 11px 12px;
+  background: #fbfcf9;
+  border-color: #e5e9e0;
+}
+.character-picker button.chosen {
+  background: #e6efe4;
+  border-color: #6e9853;
+  box-shadow: inset 0 0 0 1px #6e9853;
 }
 .seat-picker-grid {
   display: grid;
@@ -322,19 +339,19 @@ main {
   border-color: #6e9853;
 }
 .seat-picker-grid .pick-label {
-  font-size: 10px;
+  font-size: 12px;
   color: #8d9c83;
 }
 .seat-picker-grid strong {
-  font-size: 12px;
+  font-size: 14px;
 }
 .seat-picker-grid small {
-  font-size: 9px;
+  font-size: 11px;
   color: #9ca58f;
 }
 .pick-error {
   color: #a8552f;
-  font-size: 12px;
+  font-size: 14px;
 }
 .settings-row {
   display: flex;
@@ -346,7 +363,7 @@ main {
   border: 1px solid #e1e6dc;
   border-radius: 10px;
   background: #fbfcf9;
-  font-size: 12px;
+  font-size: 14px;
 }
 @media (max-width: 560px) {
   .seat-picker-grid {
@@ -368,11 +385,11 @@ main {
   border-radius: 10px;
   background: #fdf4e6;
   color: #6b4a1e;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .insecure-banner strong {
-  font-size: 12px;
+  font-size: 14px;
 }
 .insecure-banner a {
   color: #8a5312;

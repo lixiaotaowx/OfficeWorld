@@ -3,6 +3,7 @@ import OfficeScene, { View } from "./OfficeScene";
 import SeatPicker from "./SeatPicker";
 import SidePanel from "./SidePanel";
 import { WORKSTATIONS } from "./seats";
+import type { CharacterKind } from "./characterModel";
 import { useOffice } from "./useOffice";
 import "./styles.css";
 
@@ -23,14 +24,25 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(true);
   // Set while the player is deliberately re-picking a desk from the settings.
   const [rePicking, setRePicking] = useState(false);
-  // Bumped to ask the scene to walk the avatar back to its own desk.
-  const [seatReturn, setSeatReturn] = useState(0);
+  // The avatar we wear. Owned here so the first-visit dialog can set it too.
+  const [character, setCharacter] = useState<CharacterKind>(() => {
+    const saved =
+      typeof sessionStorage !== "undefined"
+        ? sessionStorage.getItem("office-character")
+        : null;
+    return saved === "man" ? "man" : "woman";
+  });
   const person = office.people.find((p) => p.seat === selected);
   const me = office.people.find((p) => p.id === office.myId);
   const mySeat = me?.seat ?? null;
   // A first-time visitor holds no desk, so the picker stays up until they take
   // one. Derived from server state rather than stored, so it cannot drift.
   const showPicker = rePicking || (Boolean(me) && mySeat === null);
+  function chooseCharacter(kind: CharacterKind) {
+    sessionStorage.setItem("office-character", kind);
+    setCharacter(kind);
+    office.setCharacter(kind);
+  }
   // Screen capture and the microphone only exist in a secure context. Over
   // plain HTTP the browser hides them entirely, so a click would fail with no
   // picker at all. Say so plainly instead of failing silently.
@@ -165,10 +177,9 @@ export default function App() {
               selected={selected}
               view={view}
               onSelect={setSelected}
-              onClaimSeat={office.claimSeat}
-              returnSignal={seatReturn}
+              character={character}
               onMotion={office.reportMotion}
-              onCharacter={office.setCharacter}
+              onCharacter={chooseCharacter}
             />
             <div className="bottom-bar">
               <div className="identity">
@@ -255,7 +266,6 @@ export default function App() {
             onTab={setTab}
             onSelect={setSelected}
             onOpenDesks={() => setView("desks")}
-            onReturnToSeat={() => setSeatReturn((n) => n + 1)}
             onRequest={office.request}
             onText={setText}
             onSend={send}
@@ -346,6 +356,8 @@ export default function App() {
         <SeatPicker
           people={office.people}
           myId={office.myId}
+          character={character}
+          onCharacter={chooseCharacter}
           onPick={(seat) => office.claimSeat(seat)}
           onDone={() => setRePicking(false)}
           // On a first visit there is nothing to go back to, so the picker

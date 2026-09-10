@@ -14,7 +14,7 @@
   box-shadow: 0 4px 16px #35493412;
 }
 .actor-controls label {
-  font-size: 11px;
+  font-size: 13px;
   color: #72836a;
 }
 .actor-controls select {
@@ -25,10 +25,10 @@
   color: #395139;
 }
 .actor-controls button {
-  font-size: 11px;
+  font-size: 13px;
   padding: 8px 10px;
 }
 .actor-controls span {
-  font-size: 10px;
+  font-size: 12px;
   color: #829575;
 }

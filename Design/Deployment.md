@@ -1,8 +1,9 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
-更新于 2026-09-10。**当前地址：https://115.159.43.237/**（媒体可用；首次访问会有一次
-自签证书警告，点继续即可）。`http://115.159.43.237/` 同样可访问，但只能看和走，
-不能共享屏幕或语音。
+更新于 2026-09-10。**当前地址：https://115.159.43.237/**
+
+**证书已是 Let's Encrypt 正式签发，浏览器不再有任何警告**，直接打开即可（无需点「继续访问」）。
+`http://115.159.43.237/` 同样可访问，但只能看和走，不能共享屏幕或语音。
 
 ## 现在跑着什么
 
@@ -77,31 +78,41 @@ TLS，同源反代：静态与 `/socket.io/` → `127.0.0.1:3108`，`/rtc`（Web
 → `127.0.0.1:7880`。前端 `.env` 的 `LIVEKIT_URL` 改为 `wss://115.159.43.237`，
 于是页面与媒体面同源，一张证书全盖住。应用自身退到 `127.0.0.1:3108`，由 nginx 转出去。
 
-### 为什么是自签证书
+### 证书：Let's Encrypt 的 IP 证书（无警告）
 
-本想用 `sslip.io` 通配 DNS（`115.159.43.237.sslip.io` 解析到本机）配合 Let's Encrypt 拿到
-**无需警告**的真证书，试了，**失败**，原因很关键：
+试过两条「用域名」的路，都不通：
 
-```
-Detail: 43.174.224.202: Invalid response from
-        https://dnspod.qcloud.com/static/webblock.html?d=115.159.43.237.sslip.io
-```
+1. `sslip.io` 通配 DNS + Let's Encrypt —— **失败**。这台机器在中国大陆，**未备案域名的请求会被
+   网络层拦截**并跳转到 DNSPod 的 webblock 页，校验请求拿不到 challenge 文件：
 
-这台机器在**中国大陆**，**未备案的域名请求会被网络层拦截**并跳转到 DNSPod 的 webblock 页，
-Let's Encrypt 的校验请求因此拿不到 challenge 文件。实测对照：
+   ```
+   Detail: 43.174.224.202: Invalid response from
+           https://dnspod.qcloud.com/static/webblock.html?d=115.159.43.237.sslip.io
+   ```
 
-| 请求 | 结果 |
-|---|---|
-| `http://115.159.43.237/`（裸 IP） | **200** ✅ |
-| 同一服务器，Host 填未备案域名 | 被拦截 ❌ |
-| `http://www.aiwb.org.cn/` | **301** ✅ 说明该域名已备案，可用 |
+2. 用户自己的已备案域名 `aiwb.org.cn` —— 它解析到**另一台**服务器（`8.138.233.99`），而且
+   `office.aiwb.org.cn` 之类的子域**没有 DNS 记录**，无法指向本机。改 DNS 需要用户操作。
 
-所以裸 IP 不被拦、未备案域名被拦。当前用**自签证书 + SAN=IP:115.159.43.237**（有效期到 2028-12），
-浏览器首次访问会有一次证书警告，点"继续"即可，之后该源就是正常的安全上下文。
+**最终做法：用 Let's Encrypt 新支持的 IP 地址证书。** 裸 IP 不被拦截，所以 HTTP-01 校验能通过：
 
-**想要无警告的正经证书**，只需要用户加一条 DNS 记录：把 `aiwb.org.cn` 的某个子域
-（例如 `office.aiwb.org.cn`）指向 `115.159.43.237`。因为该域名已备案不会被拦，就能用
-Let's Encrypt 签发，然后把 nginx 的 `server_name` 与 `LIVEKIT_URL` 换成该域名即可。
+- 系统自带的 certbot 2.9.0 **不支持** IP 证书（没有 `--ip-address` / `--preferred-profile`）。
+  已在 `/home/ubuntu/certbot-venv` 用 pip 装了 **certbot 5.8.0**。
+- 签发：`certbot certonly --webroot -w /var/www/html --ip-address 115.159.43.237 --preferred-profile shortlived`
+- 产物：`/etc/letsencrypt/live/115.159.43.237/{fullchain,privkey}.pem`，签发者 `Let's Encrypt`，
+  SAN 为 `IP Address:115.159.43.237`。
+
+⚠️ **IP 证书是短期的（这次到期 2026-09-17，约 6 天）**，必须自动续期。已建
+`officeweb-cert.timer`（每天 03:20 + 随机延迟）执行
+`/home/ubuntu/certbot-venv/bin/certbot renew --quiet --deploy-hook "systemctl reload nginx"`，
+续期后自动 reload nginx。**注意别用系统那个 2.9.0 的 certbot 续期，它做不了 IP 证书。**
+
+验证（**不带任何证书例外**）：`curl https://115.159.43.237/` → HTTP 200、`TLS=0`；
+`openssl s_client` → `Verify return code: 0 (ok)`；Playwright 不加 `ignoreHTTPSErrors` 也能直接打开，
+`isSecureContext=true`。三个浏览器测试套件已**移除**证书例外，以确保将来证书出问题会直接失败。
+
+如果以后愿意加一条 DNS 记录（例如把已备案域名的子域指向 `115.159.43.237`），可以换成
+有效期 90 天的常规 Let's Encrypt 证书，就不用每 6 天续一次。
+
 
 ### 已验证
 

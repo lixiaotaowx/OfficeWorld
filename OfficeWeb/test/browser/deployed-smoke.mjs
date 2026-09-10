@@ -49,12 +49,9 @@ const browser = await chromium.launch({
 });
 
 async function open() {
-  // The deployed HTTPS uses a self-signed certificate for the bare IP (this
-  // server is on mainland China, where unfiled domains get intercepted).
-  const context = await browser.newContext({
-    ignoreHTTPSErrors: true,
-    permissions: ["microphone"],
-  });
+  // Deliberately no ignoreHTTPSErrors: the deployed certificate is a real
+  // Let's Encrypt one, so a certificate regression must fail this run.
+  const context = await browser.newContext({ permissions: ["microphone"] });
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -254,7 +251,6 @@ try {
   // assert that the things a new visitor must press are genuinely in view on a
   // 1366x768 laptop, and that the sidebar can scroll if it is ever too tall.
   const small = await browser.newContext({
-    ignoreHTTPSErrors: true,
     viewport: { width: 1366, height: 768 },
   });
   const smallPage = await small.newPage();

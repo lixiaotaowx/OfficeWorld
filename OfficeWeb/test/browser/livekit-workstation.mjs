@@ -44,12 +44,9 @@ const browser = await chromium.launch({
 });
 
 async function open() {
-  const context = await browser.newContext({
-    permissions: ["microphone"],
-    // Needed when pointed at the deployed site, whose certificate is
-    // self-signed for the bare IP.
-    ignoreHTTPSErrors: true,
-  });
+  // Deliberately no ignoreHTTPSErrors: the deployed certificate is a real
+  // Let's Encrypt one, and bypassing it would hide a regression.
+  const context = await browser.newContext({ permissions: ["microphone"] });
   const page = await context.newPage();
   page.on("pageerror", (e) => console.log("  pageerror:", e.message));
   await page.goto(DEBUG_APP, { waitUntil: "domcontentloaded" });
@@ -115,13 +112,13 @@ try {
   );
   check("第二个玩家占用到 B-2", Boolean(viewerSeat), await seatsOf(viewer));
 
-  // Before sharing, every monitor is idle.
-  const idle = await monitorOf(viewer, 0);
-  check(
-    "未共享时显示器是空闲状态",
-    idle && idle.hasPreview === false,
-    JSON.stringify(idle),
-  );
+  // Before sharing, every monitor is idle. The monitors only exist once the
+  // office model has finished loading, so wait for them.
+  const idle = await waitFor(async () => {
+    const info = await monitorOf(viewer, 0);
+    return info && info.hasPreview === false ? info : null;
+  });
+  check("未共享时显示器是空闲状态", Boolean(idle), JSON.stringify(idle));
 
   // Sharer starts sharing; the ambient thumbnail should reach the other client.
   await sharer.getByRole("button", { name: /共享屏幕/ }).click();
@@ -186,14 +183,53 @@ try {
   check("工位一直属于原主人，别人始终选不了", Boolean(stillTaken));
   await viewer.getByRole("button", { name: "先不选" }).click();
 
-  // Selecting my own desk offers the walk-back action.
-  await sharer.locator(".seat", { hasText: "A-1" }).first().click();
+  // Seat actions moved out of the sidebar: they belong with the avatar, and the
+  // old 坐到 N 号工位 button contradicted desk ownership by claiming any desk.
+  const claimButtons = await sharer
+    .getByRole("button", { name: /坐到 \d+ 号工位/ })
+    .count();
+  check("不再有与归属规则冲突的「坐到 N 号工位」按钮", claimButtons === 0);
+
   const back = await waitFor(async () =>
     (await sharer.getByRole("button", { name: "回到我的座位" }).count()) > 0
       ? true
       : null,
   );
-  check("我的工位上有「回到我的座位」", Boolean(back));
+  check("角色控制区提供「回到我的座位」", Boolean(back));
+
+  // Standing up must not give the desk away.
+  await sharer.getByRole("button", { name: "起身" }).click();
+  await new Promise((r) => setTimeout(r, 1200));
+  const stillMine = await seatsOf(sharer);
+  check("起身之后工位仍然是自己的", /A-1/.test(stillMine), stillMine);
+
+  const viewerStillBlocked = await waitFor(async () => {
+    await viewer.locator('button[title="使用说明"]').click();
+    await viewer.getByRole("button", { name: "重新选座" }).click();
+    await viewer.locator(".seat-picker").waitFor({ timeout: 15000 });
+    const entry = viewer.locator(".seat-picker-grid button", { hasText: "A-1" });
+    return (await entry.isDisabled()) ? true : null;
+  });
+  check("起身后别人依然选不到这个工位", Boolean(viewerStillBlocked));
+  await viewer.getByRole("button", { name: "先不选" }).click();
+
+  // The first-visit dialog also picks the avatar.
+  const characterButtons = await viewer
+    .locator('button[title="使用说明"]')
+    .count();
+  const pickerAgain = viewer.locator(".seat-picker");
+  await viewer.locator('button[title="使用说明"]').click();
+  await viewer.getByRole("button", { name: "重新选座" }).click();
+  await pickerAgain.waitFor({ timeout: 15000 });
+  check("选座弹窗里同时能选角色", (await pickerAgain.locator(".character-picker button").count()) === 2);
+  await pickerAgain.getByRole("button", { name: "男角色" }).click();
+  const avatarSwitched = await waitFor(async () =>
+    (await viewer.locator("select[aria-label='选择角色']").inputValue()) === "man"
+      ? true
+      : null,
+  );
+  check("在弹窗里选角色会真的切换角色", Boolean(avatarSwitched));
+  await viewer.getByRole("button", { name: "先不选" }).click();
 } catch (error) {
   check("测试执行未抛异常", false, error.message);
 } finally {
