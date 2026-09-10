@@ -291,3 +291,28 @@ main {
 @media (max-width: 760px) {
   .panel-seam-toggle { right: -10px; top: 290px; }
 }
+
+/* Shown when the page is served over plain HTTP: the browser withholds screen
+   capture and microphone there, so media controls are disabled and explained. */
+.insecure-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border: 1px solid #e0b083;
+  border-left: 4px solid #d98b39;
+  border-radius: 10px;
+  background: #fdf4e6;
+  color: #6b4a1e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.insecure-banner strong {
+  font-size: 12px;
+}
+.insecure-banner a {
+  color: #8a5312;
+  font-weight: 600;
+}

@@ -1,0 +1,143 @@
+scene=Office_Concept_FinalLayout
+engine=CYCLES
+objects=461
+materials=110
+images=8
+types={'LIGHT': 12, 'MESH': 434, 'CAMERA': 3, 'EMPTY': 12}
+mesh_objs=434
+unique_meshes=379  shared_mesh_datablocks=13
+materials_used_by_meshes=66
+
+=== MATERIALS ===
+Approved pots - warm stone                    users=4   bsdf=1 imgs=- proc=-
+Atlas fabric / Chair upholstery - sage        users=8   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas fabric / Ivory porcelain                users=2   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas fabric / Manager upholstery - muted clay users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas fabric / Muted sage upholstery          users=23  bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / Collaboration rug - woven sage    users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / Sage woven rug                    users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / carpet                            users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / carpet.001                        users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / carpet.002                        users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / carpetDarker                      users=3   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas rug / carpetWhite                       users=3   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas stone / Chair frame - warm ivory        users=9   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas stone / Floor - warm limestone 120cm    users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=TEX_BRICK
+Atlas stone / Ivory porcelain                 users=28  bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas stone / Perimeter warm plaster          users=6   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas stone / Warm graphite                   users=3   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / Pale natural oak                 users=77  bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / Perimeter pale oak trim          users=6   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / Warm graphite                    users=2   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / wood                             users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / wood.002                         users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / wood.003                         users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Atlas wood / wood.004                         users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Black                                         users=0   bsdf=1 imgs=- proc=-
+Black.001                                     users=0   bsdf=1 imgs=- proc=-
+Black.002                                     users=0   bsdf=1 imgs=- proc=-
+Black.004                                     users=0   bsdf=1 imgs=- proc=-
+Blackboard - charcoal green                   users=1   bsdf=1 imgs=- proc=-
+Clear glass                                   users=6   bsdf=1 imgs=- proc=-
+Collaboration rug - woven sage                users=0   bsdf=1 imgs=- proc=-
+Cups - warm porcelain                         users=12  bsdf=1 imgs=- proc=-
+Desk accents - soft sage                      users=9   bsdf=1 imgs=- proc=-
+Detail frames - honey oak                     users=13  bsdf=1 imgs=- proc=-
+Detail trim - linen ivory                     users=24  bsdf=1 imgs=- proc=-
+Device shells - warm ivory                    users=44  bsdf=1 imgs=- proc=-
+Display background                            users=2   bsdf=1 imgs=- proc=-
+Exterior grass - quiet olive                  users=0   bsdf=1 imgs=- proc=-
+Floor - warm limestone 120cm                  users=0   bsdf=1 imgs=- proc=TEX_BRICK
+Graphite rubber                               users=40  bsdf=1 imgs=- proc=-
+Grey                                          users=0   bsdf=1 imgs=- proc=-
+Grey.002                                      users=0   bsdf=1 imgs=- proc=-
+GreyLight                                     users=0   bsdf=1 imgs=- proc=-
+GreyLight.001                                 users=0   bsdf=1 imgs=- proc=-
+GreyLight.003                                 users=0   bsdf=1 imgs=- proc=-
+GreyMetal                                     users=0   bsdf=1 imgs=- proc=-
+Honey oak                                     users=6   bsdf=1 imgs=- proc=-
+Ivory porcelain                               users=0   bsdf=1 imgs=- proc=-
+Keyboard keys - pearl                         users=9   bsdf=1 imgs=- proc=-
+Keyboard lettering - grey                     users=9   bsdf=1 imgs=- proc=-
+Keyboard recesses - soft grey                 users=9   bsdf=1 imgs=- proc=-
+Manager deep sage plaster                     users=2   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=TEX_BRICK
+Manager warm grey woven rug                   users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=-
+Material                                      users=1   bsdf=1 imgs=- proc=-
+Meeting floor warm beige                      users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=TEX_BRICK
+Meeting olive plaster                         users=1   bsdf=1 imgs=Office_Materials_Atlas.png[FILE] proc=TEX_BRICK
+Muted sage upholstery                         users=0   bsdf=1 imgs=- proc=-
+Muted terracotta                              users=8   bsdf=1 imgs=- proc=-
+Original generated abstract art               users=2   bsdf=1 imgs=Office_Abstract_Prints.png[FILE] proc=-
+Pale natural oak                              users=0   bsdf=1 imgs=- proc=-
+Park panorama - camera backdrop               users=0   bsdf=0 imgs=Park_City_Panorama.png[FILE] proc=-
+Perimeter pale oak trim                       users=0   bsdf=1 imgs=- proc=-
+Perimeter warm plaster                        users=0   bsdf=1 imgs=- proc=-
+Rubber                                        users=0   bsdf=1 imgs=- proc=-
+Sage green                                    users=2   bsdf=1 imgs=- proc=-
+Sage woven rug                                users=0   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_A_Seat_1 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_A_Seat_2 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_A_Seat_3 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_A_Seat_4 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_B_Seat_1 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_B_Seat_2 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_B_Seat_3 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Island_B_Seat_4 DISPLAY users=1   bsdf=1 imgs=- proc=-
+Screen - soft daylight Manager DISPLAY        users=1   bsdf=1 imgs=- proc=-
+T_Leaf                                        users=3   bsdf=1 imgs=T_Leaf_01.png[FILE] proc=-
+T_Leaf_02                                     users=0   bsdf=1 imgs=t_leafcard3.png[FILE] proc=-
+T_Trunk                                       users=3   bsdf=1 imgs=- proc=-
+Warm graphite                                 users=88  bsdf=1 imgs=- proc=-
+Warm ivory.001                                users=1   bsdf=1 imgs=- proc=-
+White                                         users=0   bsdf=1 imgs=- proc=-
+White.001                                     users=0   bsdf=1 imgs=- proc=-
+White.002                                     users=0   bsdf=1 imgs=- proc=-
+YellowBulb                                    users=3   bsdf=1 imgs=- proc=-
+_defaultMat                                   users=0   bsdf=1 imgs=- proc=-
+carpet                                        users=0   bsdf=1 imgs=- proc=-
+carpet.001                                    users=0   bsdf=1 imgs=- proc=-
+carpet.002                                    users=0   bsdf=1 imgs=- proc=-
+carpetDarker                                  users=0   bsdf=1 imgs=- proc=-
+carpetDarker.001                              users=0   bsdf=1 imgs=- proc=-
+carpetWhite                                   users=0   bsdf=1 imgs=- proc=-
+carpetWhite.001                               users=0   bsdf=1 imgs=- proc=-
+leafsGreen                                    users=0   bsdf=1 imgs=- proc=-
+leafsGreen.001                                users=0   bsdf=1 imgs=- proc=-
+metal                                         users=3   bsdf=1 imgs=- proc=-
+metal.001                                     users=0   bsdf=1 imgs=- proc=-
+plant                                         users=3   bsdf=1 imgs=- proc=-
+plant.001                                     users=0   bsdf=1 imgs=- proc=-
+tiny_treats_1                                 users=4   bsdf=1 imgs=tiny_treats_texture_1[FILE] proc=-
+tiny_treats_1.001                             users=4   bsdf=1 imgs=tiny_treats_texture_1[FILE] proc=-
+tiny_treats_1.003                             users=1   bsdf=1 imgs=tiny_treats_texture_1[FILE] proc=-
+tiny_treats_1.004                             users=1   bsdf=1 imgs=tiny_treats_texture_1[FILE] proc=-
+tiny_treats_1.005                             users=2   bsdf=1 imgs=tiny_treats_texture_1[FILE] proc=-
+wood                                          users=0   bsdf=1 imgs=- proc=-
+wood.001                                      users=0   bsdf=1 imgs=- proc=-
+wood.002                                      users=0   bsdf=1 imgs=- proc=-
+wood.003                                      users=0   bsdf=1 imgs=- proc=-
+wood.004                                      users=0   bsdf=1 imgs=- proc=-
+woodBark                                      users=0   bsdf=1 imgs=- proc=-
+woodBark.001                                  users=0   bsdf=1 imgs=- proc=-
+
+=== EXISTING IMAGES ===
+Office_Abstract_Prints.png                    size=1536x1024 src=FILE path=G:\C\wendang\ChatGPT\youxi\AssetSources\OfficeConcept\Textures\Office_Abstract_Prints.png
+Office_Materials_Atlas.png                    size=1254x1254 src=FILE path=G:\C\wendang\ChatGPT\youxi\AssetSources\OfficeConcept\Textures\Office_Materials_Atlas.png
+Park_City_Panorama.png                        size=2048x768 src=FILE path=G:\C\wendang\ChatGPT\youxi\AssetSources\OfficeConcept\Textures\Park_City_Panorama.png
+Render Result                                 size=0x0 src=VIEWER path=
+T_Leaf_01.png                                 size=512x512 src=FILE path=G:\C\wendang\ChatGPT\youxi\AssetSources\Decor\Erce_Trees\Models\FreeStylizedTreePack_Erce\Textures\T_Leaf_01.png
+t_leafcard3.png                               size=512x512 src=FILE path=//..\Decor\Erce_Trees\Models\Marmaris\Trees\t_leafcard3.png
+tiny_treats_texture_1                         size=1024x1024 src=FILE path=//..\Decor\TinyTreats_HousePlants\Models\Tiny_Treats_House_Plants_1.0_FREE\Assets\gltf\tiny_treats_texture_1.png
+Viewer Node                                   size=256x256 src=VIEWER path=
+
+=== PROCEDURAL-ONLY MATERIALS (no image texture) ===
+  Atlas stone / Floor - warm limestone 120cm    has_image=True  users=1
+  Floor - warm limestone 120cm                  has_image=False users=0
+  Manager deep sage plaster                     has_image=True  users=2
+  Meeting floor warm beige                      has_image=True  users=1
+  Meeting olive plaster                         has_image=True  users=1
+procedural_material_count=5
+
+=== UV LAYERS on meshes with UV ===
+meshes_without_uv=0
+sample_no_uv=[]

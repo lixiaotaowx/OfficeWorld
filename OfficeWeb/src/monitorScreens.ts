@@ -61,6 +61,13 @@ export class MonitorScreens {
     const material = base.clone();
     material.map = texture;
     material.emissiveMap = texture;
+    // The idle screen material glows a soft green. Left as-is it would tint
+    // whatever thumbnail is drawn on it, so take the tint out and let the image
+    // carry its own colours, lit strongly enough to read from across the room.
+    material.color.set(0xffffff);
+    material.emissive.set(0xffffff);
+    material.emissiveIntensity = 0.8;
+    material.roughness = 0.55;
     material.needsUpdate = true;
     return {
       material,

@@ -21,6 +21,13 @@ export default function App() {
   const [panelOpen, setPanelOpen] = useState(true);
   const person = office.people.find((p) => p.seat === selected);
   const me = office.people.find((p) => p.id === office.myId);
+  // Screen capture and the microphone only exist in a secure context. Over
+  // plain HTTP the browser hides them entirely, so a click would fail with no
+  // picker at all. Say so plainly instead of failing silently.
+  const insecure =
+    typeof window !== "undefined" && window.isSecureContext === false;
+  const httpsUrl =
+    typeof location !== "undefined" ? `https://${location.host}/` : "";
   const viewNames: Record<View, string> = {
     overview: "空间总览",
     desks: "开放工位",
@@ -100,6 +107,16 @@ export default function App() {
             {panelOpen ? "收起侧栏 ›" : "‹ 展开成员与聊天"}
           </button>
         </header>
+        {insecure && (
+          <div className="insecure-banner" role="alert">
+            <strong>当前是明文 HTTP，浏览器禁止网页采集屏幕与麦克风。</strong>
+            <span>
+              所以这里无法共享屏幕和语音。请改用{" "}
+              <a href={httpsUrl}>{httpsUrl}</a>
+              （首次会提示证书不安全，点「继续访问」即可）。
+            </span>
+          </div>
+        )}
         <main className={panelOpen ? "panel-open" : "panel-closed"}>
           <button
             className="panel-seam-toggle"
@@ -176,11 +193,19 @@ export default function App() {
                   className={office.sharing ? "danger" : "primary"}
                   // Sharing is workstation-centric: your share appears on the
                   // screen of the desk you occupy, so a desk is required first.
-                  disabled={!office.connected || me?.seat === null || me?.seat === undefined}
+                  // It also needs a secure context to reach the capture API.
+                  disabled={
+                    !office.connected ||
+                    insecure ||
+                    me?.seat === null ||
+                    me?.seat === undefined
+                  }
                   title={
-                    me?.seat === null || me?.seat === undefined
-                      ? "请先占用一个工位，你的共享画面会显示在该工位的屏幕上"
-                      : undefined
+                    insecure
+                      ? "浏览器要求 HTTPS 才能采集屏幕，请改用 https 地址打开"
+                      : me?.seat === null || me?.seat === undefined
+                        ? "请先占用一个工位，你的共享画面会显示在该工位的屏幕上"
+                        : "选择要共享的窗口或整个屏幕"
                   }
                   onClick={() => void office.share()}
                 >
@@ -188,7 +213,13 @@ export default function App() {
                 </button>
                 <button
                   className={me?.meeting ? "danger" : ""}
-                  disabled={!office.connected}
+                  // Joining needs the microphone, which plain HTTP cannot get.
+                  disabled={!office.connected || (insecure && !me?.meeting)}
+                  title={
+                    insecure && !me?.meeting
+                      ? "语音需要麦克风权限，浏览器要求 HTTPS，请改用 https 地址打开"
+                      : undefined
+                  }
                   onClick={() => {
                     setView("meeting");
                     void office.meeting();

@@ -1,0 +1,114 @@
+=== NODE TYPES ACROSS USED MATERIALS ===
+  VECT_MATH              108
+  BSDF_PRINCIPLED        66
+  OUTPUT_MATERIAL        66
+  TEX_IMAGE              34
+  MIX_RGB                34
+  UVMAP                  27
+  NEW_GEOMETRY           4
+  TEX_BRICK              4
+  HUE_SAT                3
+
+=== PER-MATERIAL SHADING SUMMARY ===
+Approved pots - warm stone                     base=(0.58, 0.6, 0.55, 1.0)     rough=0.750                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas fabric / Chair upholstery - sage         base=LINK:MIX_RGB(Color)        rough=0.860                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas fabric / Ivory porcelain                 base=LINK:MIX_RGB(Color)        rough=0.860                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas fabric / Manager upholstery - muted clay base=LINK:MIX_RGB(Color)        rough=0.860                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas fabric / Muted sage upholstery           base=LINK:MIX_RGB(Color)        rough=0.860                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / Collaboration rug - woven sage     base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / Sage woven rug                     base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / carpet                             base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / carpet.001                         base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / carpet.002                         base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / carpetDarker                       base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas rug / carpetWhite                        base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas stone / Chair frame - warm ivory         base=LINK:MIX_RGB(Color)        rough=0.630                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas stone / Floor - warm limestone 120cm     base=LINK:MIX_RGB(Color)        rough=0.630                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas stone / Ivory porcelain                  base=LINK:MIX_RGB(Color)        rough=0.630                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas stone / Perimeter warm plaster           base=LINK:MIX_RGB(Color)        rough=0.630                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas stone / Warm graphite                    base=LINK:MIX_RGB(Color)        rough=0.630                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / Pale natural oak                  base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / Perimeter pale oak trim           base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / Warm graphite                     base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / wood                              base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / wood.002                          base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / wood.003                          base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Atlas wood / wood.004                          base=LINK:MIX_RGB(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Blackboard - charcoal green                    base=(0.055, 0.09, 0.075, 1.0)  rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Clear glass                                    base=(0.83, 0.95, 0.92, 1.0)    rough=0.200                  metal=0.000              emis=0.000          alpha=0.090          bump=-
+Cups - warm porcelain                          base=(0.8, 0.72, 0.6, 1.0)      rough=0.300                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Desk accents - soft sage                       base=(0.32, 0.4, 0.3, 1.0)      rough=0.650                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Detail frames - honey oak                      base=(0.48, 0.31, 0.15, 1.0)    rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Detail trim - linen ivory                      base=(0.72, 0.7, 0.61, 1.0)     rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Device shells - warm ivory                     base=(0.68, 0.7, 0.65, 1.0)     rough=0.420                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Display background                             base=(0.16, 0.28, 0.3, 1.0)     rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Graphite rubber                                base=(0.035, 0.04, 0.035, 1.0)  rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Honey oak                                      base=(0.58, 0.37, 0.17, 1.0)    rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Keyboard keys - pearl                          base=(0.74, 0.76, 0.7, 1.0)     rough=0.630                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Keyboard lettering - grey                      base=(0.25, 0.29, 0.27, 1.0)    rough=0.800                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Keyboard recesses - soft grey                  base=(0.32, 0.37, 0.34, 1.0)    rough=0.700                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Manager deep sage plaster                      base=LINK:MIX_RGB(Color)        rough=0.800                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Manager warm grey woven rug                    base=LINK:MIX_RGB(Color)        rough=0.950                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Material                                       base=(0.8, 0.8, 0.8, 1.0)       rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Meeting floor warm beige                       base=LINK:MIX_RGB(Color)        rough=0.800                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Meeting olive plaster                          base=LINK:MIX_RGB(Color)        rough=0.800                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Muted terracotta                               base=(0.56, 0.25, 0.12, 1.0)    rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Original generated abstract art                base=LINK:TEX_IMAGE(Color)      rough=0.850                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Sage green                                     base=(0.28, 0.37, 0.26, 1.0)    rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Screen - soft daylight Island_A_Seat_1 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_A_Seat_2 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_A_Seat_3 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_A_Seat_4 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_B_Seat_1 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_B_Seat_2 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_B_Seat_3 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Island_B_Seat_4 DISPLAY base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+Screen - soft daylight Manager DISPLAY         base=(0.53, 0.67, 0.7, 1.0)     rough=0.360                  metal=0.000              emis=0.240          alpha=1.000          bump=-
+T_Leaf                                         base=(0.423, 0.689, 0.403, 1.0) rough=0.830                  metal=0.000              emis=0.000          alpha=LINK:TEX_IMAGE(Alpha) bump=-
+T_Trunk                                        base=(0.28, 0.17, 0.085, 1.0)   rough=0.830                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Warm graphite                                  base=(0.075, 0.085, 0.075, 1.0) rough=0.400                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+Warm ivory.001                                 base=(0.82, 0.78, 0.68, 1.0)    rough=0.550                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+YellowBulb                                     base=(1.0, 1.0, 1.0, 1.0)       rough=1.000                  metal=1.000              emis=1.000          alpha=1.000          bump=-
+metal                                          base=(0.741, 0.823, 0.84, 1.0)  rough=1.000                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+plant                                          base=(0.182, 0.821, 0.576, 1.0) rough=1.000                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+tiny_treats_1                                  base=LINK:TEX_IMAGE(Color)      rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+tiny_treats_1.001                              base=LINK:TEX_IMAGE(Color)      rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+tiny_treats_1.003                              base=LINK:HUE_SAT(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+tiny_treats_1.004                              base=LINK:HUE_SAT(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+tiny_treats_1.005                              base=LINK:HUE_SAT(Color)        rough=0.500                  metal=0.000              emis=0.000          alpha=1.000          bump=-
+
+=== FLAT-COLOUR MATERIALS (constant base color, no texture) ===
+  Warm graphite                                  objects=88
+  Device shells - warm ivory                     objects=44
+  Graphite rubber                                objects=40
+  Detail trim - linen ivory                      objects=24
+  Detail frames - honey oak                      objects=13
+  Cups - warm porcelain                          objects=12
+  Keyboard recesses - soft grey                  objects=9
+  Keyboard keys - pearl                          objects=9
+  Keyboard lettering - grey                      objects=9
+  Desk accents - soft sage                       objects=9
+  Muted terracotta                               objects=8
+  Honey oak                                      objects=6
+  Clear glass                                    objects=6
+  Approved pots - warm stone                     objects=4
+  T_Leaf                                         objects=3
+  T_Trunk                                        objects=3
+  plant                                          objects=3
+  metal                                          objects=3
+  YellowBulb                                     objects=3
+  Display background                             objects=2
+  Sage green                                     objects=2
+  Material                                       objects=1
+  Warm ivory.001                                 objects=1
+  Blackboard - charcoal green                    objects=1
+  Screen - soft daylight Island_A_Seat_1 DISPLAY objects=1
+  Screen - soft daylight Island_A_Seat_2 DISPLAY objects=1
+  Screen - soft daylight Island_A_Seat_3 DISPLAY objects=1
+  Screen - soft daylight Island_A_Seat_4 DISPLAY objects=1
+  Screen - soft daylight Island_B_Seat_1 DISPLAY objects=1
+  Screen - soft daylight Island_B_Seat_2 DISPLAY objects=1
+  Screen - soft daylight Island_B_Seat_3 DISPLAY objects=1
+  Screen - soft daylight Island_B_Seat_4 DISPLAY objects=1
+  Screen - soft daylight Manager DISPLAY         objects=1
+flat_material_count=33  total_slots=312

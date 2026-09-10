@@ -1,0 +1,341 @@
+=== UV RANGE PER MATERIAL GROUP (layer 0 and layer 1) ===
+--- Approved pots - warm stone  (4 objs)
+    Approved floor plant - lounge              L0 u[0.15..0.96] v[0.55..0.89] n=9324
+    Approved floor plant - manager             L0 u[0.15..0.96] v[0.55..0.89] n=9324
+    Approved floor plant - meeting             L0 u[0.18..0.98] v[0.32..0.96] n=4392
+    Collaboration table plant                  L0 u[0.18..0.97] v[0.32..0.92] n=1692
+--- Atlas fabric / Chair upholstery - sage  (8 objs)
+    Island_A_Seat_1 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+    Island_A_Seat_2 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+    Island_A_Seat_3 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+    Island_A_Seat_4 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+--- Atlas fabric / Ivory porcelain  (2 objs)
+    Lounge / continuous curved back            L0 u[-9.17..2.25] v[0.34..2.88] n=584
+    Lounge / continuous curved seat            L0 u[-9.05..2.19] v[0.30..2.78] n=584
+--- Atlas fabric / Manager upholstery - muted clay  (1 objs)
+    Manager approved chair                     L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+--- Atlas fabric / Muted sage upholstery  (23 objs)
+    Architecture / rear room wall              L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-5.00..5.00] v[-1.60..1.60] n=24
+    Coffee / stool cushion                     L0 u[-0.00..1.00] v[0.01..1.00] n=144 | L1 u[-0.22..0.22] v[-0.22..0.22] n=144
+    Coffee / stool cushion.001                 L0 u[-0.00..1.00] v[0.01..1.00] n=144 | L1 u[-0.22..0.22] v[-0.22..0.22] n=144
+    Island_A felt panel 0                      L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.82..0.82] v[-0.16..0.16] n=24
+--- Atlas rug / Collaboration rug - woven sage  (1 objs)
+    Collaboration zone rug                     L0 u[0.00..1.00] v[0.01..1.00] n=384 | L1 u[-1.90..1.90] v[-1.90..1.90] n=384
+--- Atlas rug / Sage woven rug  (1 objs)
+    Lounge / rug                               L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.42..2.42] v[-1.75..1.75] n=24
+--- Atlas rug / carpet  (1 objs)
+    Collaboration stool 0                      L0 u[-9.89..10.45] v[0.00..18.19] n=528 | L1 u[-0.22..0.22] v[-0.19..0.46] n=528
+--- Atlas rug / carpet.001  (1 objs)
+    Collaboration stool 1                      L0 u[-9.89..10.45] v[0.00..18.19] n=528 | L1 u[-0.22..0.22] v[-0.19..0.46] n=528
+--- Atlas rug / carpet.002  (1 objs)
+    Collaboration stool 2                      L0 u[-9.89..10.45] v[0.00..18.19] n=528 | L1 u[-0.22..0.22] v[-0.19..0.46] n=528
+--- Atlas rug / carpetDarker  (3 objs)
+    Island_A approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Island_B approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Manager approved books                     L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+--- Atlas rug / carpetWhite  (3 objs)
+    Island_A approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Island_B approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Manager approved books                     L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+--- Atlas stone / Chair frame - warm ivory  (9 objs)
+    Island_A_Seat_1 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+    Island_A_Seat_2 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+    Island_A_Seat_3 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+    Island_A_Seat_4 approved chair             L0 u[0.00..1.00] v[0.00..1.00] n=16095 | L1 u[-0.35..0.35] v[-0.32..1.19] n=16095
+--- Atlas stone / Floor - warm limestone 120cm  (1 objs)
+    Architecture / ivory floor                 L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-10.50..10.50] v[-7.35..7.35] n=24
+--- Atlas stone / Ivory porcelain  (28 objs)
+    Architecture / room divider                L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.17..2.17] v[-2.17..2.17] n=24
+    Coffee / countertop                        L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-1.95..1.95] v[-0.42..0.42] n=24
+    Coffee cup                                 L0 u[-0.00..1.00] v[0.01..1.00] n=144 | L1 u[-0.05..0.05] v[-0.05..0.05] n=144
+    Front cutaway base                         L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-10.50..10.50] v[-0.28..0.28] n=24
+--- Atlas stone / Perimeter warm plaster  (6 objs)
+    Coffee backing wall                        L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.15..2.15] v[-2.15..2.15] n=24
+    Front low wall left                        L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.35..0.35] v[-0.35..0.35] n=24
+    Front low wall main                        L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-9.55..9.55] v[-0.35..0.35] n=24
+    Left window head                           L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-7.35..7.35] v[-7.35..7.35] n=24
+--- Atlas stone / Warm graphite  (3 objs)
+    Meeting side frame                         L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.03..0.03] v[-1.60..1.60] n=24
+    Meeting side frame.001                     L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.03..0.03] v[-1.60..1.60] n=24
+    Meeting side frame.002                     L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.03..0.03] v[-1.60..1.60] n=24
+--- Atlas wood / Pale natural oak  (77 objs)
+    Coffee / cabinets                          L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-1.90..1.90] v[-0.46..0.46] n=24
+    Coffee / door panel 0                      L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.30..0.30] v[-0.41..0.41] n=24
+    Coffee / door panel 1                      L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.30..0.30] v[-0.41..0.41] n=24
+    Coffee / door panel 2                      L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.30..0.30] v[-0.41..0.41] n=24
+--- Atlas wood / Perimeter pale oak trim  (6 objs)
+    Left window upright                        L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.08..0.08] v[-1.50..1.50] n=24
+    Left window upright.001                    L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.08..0.08] v[-1.50..1.50] n=24
+    Left window upright.002                    L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.08..0.08] v[-1.50..1.50] n=24
+    Left window upright.003                    L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-0.08..0.08] v[-1.50..1.50] n=24
+--- Atlas wood / Warm graphite  (2 objs)
+    Manager office top rail                    L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.12..2.12] v[-0.03..0.03] n=24
+    Meeting room top rail                      L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.75..2.75] v[-0.03..0.03] n=24
+--- Atlas wood / wood  (1 objs)
+    Collaboration round table                  L0 u[-27.56..27.56] v[-18.49..31.50] n=240 | L1 u[-0.67..0.67] v[-0.78..0.78] n=240
+--- Atlas wood / wood.002  (1 objs)
+    Collaboration stool 1                      L0 u[-9.89..10.45] v[0.00..18.19] n=528 | L1 u[-0.22..0.22] v[-0.19..0.46] n=528
+--- Atlas wood / wood.003  (1 objs)
+    Collaboration stool 2                      L0 u[-9.89..10.45] v[0.00..18.19] n=528 | L1 u[-0.22..0.22] v[-0.19..0.46] n=528
+--- Atlas wood / wood.004  (1 objs)
+    Window low storage                         L0 u[-15.75..15.75] v[0.00..15.75] n=552 | L1 u[-1.10..1.10] v[-0.21..0.82] n=552
+--- Blackboard - charcoal green  (1 objs)
+    Front collaboration blackboard             L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Clear glass  (6 objs)
+    Manager office glazing                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Manager office open glass door             L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Meeting left glass                         L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Meeting room glazing                       L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Cups - warm porcelain  (12 objs)
+    Island_A_Seat_1 approved mug               L0 u[-0.00..1.00] v[0.00..1.00] n=4212
+    Island_A_Seat_2 approved mug               L0 u[-0.00..1.00] v[0.00..1.00] n=4212
+    Island_A_Seat_3 approved mug               L0 u[-0.00..1.00] v[0.00..1.00] n=4212
+    Island_A_Seat_4 approved mug               L0 u[-0.00..1.00] v[0.00..1.00] n=4212
+--- Desk accents - soft sage  (9 objs)
+    Window shelf book group 0                  L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.19..0.19] v[-0.12..0.26] n=186
+    Window shelf book group 0                  L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.19..0.19] v[-0.12..0.26] n=186
+    Window shelf book group 0                  L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.19..0.19] v[-0.12..0.26] n=186
+    Window shelf book group 1                  L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.19..0.19] v[-0.12..0.26] n=186
+--- Detail frames - honey oak  (13 objs)
+    Blackboard chalk ledge                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Blackboard timber horizontal frame         L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Blackboard timber horizontal frame.001     L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Blackboard timber side frame               L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Detail trim - linen ivory  (24 objs)
+    Island_A divider clip                      L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Island_A divider clip.001                  L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Island_A divider clip.002                  L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Island_A divider clip.003                  L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Device shells - warm ivory  (44 objs)
+    Island_A approved pen cup                  L0 u[0.00..1.00] v[0.01..1.00] n=756
+    Island_A approved task lamp                L0 u[0.00..1.00] v[0.00..1.00] n=5844
+    Island_A approved task lamp                L0 u[0.00..1.00] v[0.00..1.00] n=5844
+    Island_A_Seat_1 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+--- Display background  (2 objs)
+    Coffee machine panel                       L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Meeting / display surface                  L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Graphite rubber  (40 objs)
+    Manager visitor chair caster               L0 u[0.00..1.00] v[0.00..1.00] n=360
+    Manager visitor chair caster.001           L0 u[0.00..1.00] v[0.00..1.00] n=360
+    Manager visitor chair caster.002           L0 u[0.00..1.00] v[0.00..1.00] n=360
+    Manager visitor chair caster.003           L0 u[0.00..1.00] v[0.00..1.00] n=360
+--- Honey oak  (6 objs)
+    Desk end support                           L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Desk end support.001                       L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Desk end support.002                       L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Desk end support.003                       L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Keyboard keys - pearl  (9 objs)
+    Island_A_Seat_1 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_2 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_3 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_4 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+--- Keyboard lettering - grey  (9 objs)
+    Island_A_Seat_1 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_2 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_3 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_4 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+--- Keyboard recesses - soft grey  (9 objs)
+    Island_A_Seat_1 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_2 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_3 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+    Island_A_Seat_4 approved keyboard          L0 u[0.00..1.00] v[0.00..1.00] n=7012
+--- Manager deep sage plaster  (2 objs)
+    Architecture / manager side wall           L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.30..2.30] v[-2.30..2.30] n=24
+    Manager interior color panel               L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.05..2.05] v[-1.58..1.58] n=24
+--- Manager warm grey woven rug  (1 objs)
+    Manager / rug                              L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-1.83..1.83] v[-1.62..1.62] n=24
+--- Material  (1 objs)
+    Cube                                       L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Meeting floor warm beige  (1 objs)
+    Meeting floor tone                         L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.67..2.67] v[-2.14..2.14] n=24
+--- Meeting olive plaster  (1 objs)
+    Meeting interior color panel               L0 u[0.12..0.88] v[0.00..1.00] n=24 | L1 u[-2.67..2.67] v[-1.58..1.58] n=24
+--- Muted terracotta  (8 objs)
+    Lounge / back                              L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Lounge / back.001                          L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Lounge / left arm                          L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Lounge / left arm.001                      L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Original generated abstract art  (2 objs)
+    Coffee abstract print print                L0 u[0.00..0.50] v[0.00..1.00] n=4
+    Manager abstract print print               L0 u[0.50..1.00] v[0.00..1.00] n=4
+--- Sage green  (2 objs)
+    Manager office rear wall                   L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Meeting room rear wall                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_A_Seat_1 DISPLAY  (1 objs)
+    Island_A_Seat_1 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_A_Seat_2 DISPLAY  (1 objs)
+    Island_A_Seat_2 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_A_Seat_3 DISPLAY  (1 objs)
+    Island_A_Seat_3 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_A_Seat_4 DISPLAY  (1 objs)
+    Island_A_Seat_4 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_B_Seat_1 DISPLAY  (1 objs)
+    Island_B_Seat_1 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_B_Seat_2 DISPLAY  (1 objs)
+    Island_B_Seat_2 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_B_Seat_3 DISPLAY  (1 objs)
+    Island_B_Seat_3 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Island_B_Seat_4 DISPLAY  (1 objs)
+    Island_B_Seat_4 DISPLAY                    L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Screen - soft daylight Manager DISPLAY  (1 objs)
+    Manager DISPLAY                            L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- T_Leaf  (3 objs)
+    Erce exterior broad 1                      L0 u[-0.46..1.40] v[-0.43..1.82] n=1368
+    Erce exterior slender 1                    L0 u[0.00..1.00] v[0.00..9.27] n=2606
+    Erce exterior slender 3                    L0 u[0.00..1.00] v[0.00..9.27] n=2606
+--- T_Trunk  (3 objs)
+    Erce exterior broad 1                      L0 u[-0.46..1.40] v[-0.43..1.82] n=1368
+    Erce exterior slender 1                    L0 u[0.00..1.00] v[0.00..9.27] n=2606
+    Erce exterior slender 3                    L0 u[0.00..1.00] v[0.00..9.27] n=2606
+--- Warm graphite  (88 objs)
+    Coffee / drawer pull 0                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Coffee / drawer pull 1                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Coffee / drawer pull 2                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+    Coffee / drawer pull 3                     L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- Warm ivory.001  (1 objs)
+    Floor - new concept                        L0 u[0.12..0.88] v[0.00..1.00] n=24
+--- YellowBulb  (3 objs)
+    Island_A approved task lamp                L0 u[0.00..1.00] v[0.00..1.00] n=5844
+    Island_B approved task lamp                L0 u[0.00..1.00] v[0.00..1.00] n=5844
+    Manager approved lamp                      L0 u[0.00..1.00] v[0.00..1.00] n=5844
+--- metal  (3 objs)
+    Island_A approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Island_B approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Manager approved books                     L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+--- plant  (3 objs)
+    Island_A approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Island_B approved books                    L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+    Manager approved books                     L0 u[-5.92..5.92] v[-0.93..4.20] n=186 | L1 u[-0.13..0.13] v[-0.08..0.18] n=186
+--- tiny_treats_1  (4 objs)
+    Island_A desktop plant 1                   L0 u[0.15..0.96] v[0.55..0.89] n=3468
+    Island_A desktop plant 3                   L0 u[0.15..0.96] v[0.55..0.89] n=3468
+    Island_B desktop plant 2                   L0 u[0.15..0.96] v[0.55..0.89] n=3468
+    Island_B desktop plant 4                   L0 u[0.15..0.96] v[0.55..0.89] n=3468
+--- tiny_treats_1.001  (4 objs)
+    Island_A desktop plant 2                   L0 u[0.16..0.95] v[0.55..0.92] n=4104
+    Island_A desktop plant 4                   L0 u[0.16..0.95] v[0.55..0.92] n=4104
+    Island_B desktop plant 1                   L0 u[0.16..0.95] v[0.55..0.92] n=4104
+    Island_B desktop plant 3                   L0 u[0.16..0.95] v[0.55..0.92] n=4104
+--- tiny_treats_1.003  (1 objs)
+    Collaboration table plant                  L0 u[0.18..0.97] v[0.32..0.92] n=1692
+--- tiny_treats_1.004  (1 objs)
+    Approved floor plant - meeting             L0 u[0.18..0.98] v[0.32..0.96] n=4392
+--- tiny_treats_1.005  (2 objs)
+    Approved floor plant - lounge              L0 u[0.15..0.96] v[0.55..0.89] n=9324
+    Approved floor plant - manager             L0 u[0.15..0.96] v[0.55..0.89] n=9324
+
+=== WHICH IMAGE NODE / UV MAP FEEDS EACH ATLAS MATERIAL ===
+Atlas fabric / Chair upholstery - sage        node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas fabric / Ivory porcelain                node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas fabric / Manager upholstery - muted clay node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas fabric / Muted sage upholstery          node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / carpet                            node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / carpet.001                        node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / carpet.002                        node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / carpetDarker                      node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / carpetWhite                       node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / Collaboration rug - woven sage    node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas rug / Sage woven rug                    node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas stone / Chair frame - warm ivory        node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas stone / Floor - warm limestone 120cm    node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas stone / Ivory porcelain                 node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas stone / Perimeter warm plaster          node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas stone / Warm graphite                   node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / Pale natural oak                 node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / Perimeter pale oak trim          node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / Warm graphite                    node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / wood                             node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / wood.002                         node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / wood.003                         node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Atlas wood / wood.004                         node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Manager deep sage plaster                     node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Manager warm grey woven rug                   node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Meeting floor warm beige                      node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Meeting olive plaster                         node=图像纹理           image=Office_Materials_Atlas.png   vector=矢量运算.003:Vector          interp=Linear ext=REPEAT
+Original generated abstract art               node=图像纹理           image=Office_Abstract_Prints.png   vector=-                        interp=Linear ext=REPEAT
+Park panorama - camera backdrop               node=图像纹理           image=Park_City_Panorama.png       vector=-                        interp=Linear ext=REPEAT
+T_Leaf                                        node=Image Texture  image=T_Leaf_01.png                vector=-                        interp=Linear ext=REPEAT
+T_Leaf_02                                     node=Image Texture  image=t_leafcard3.png              vector=-                        interp=Linear ext=REPEAT
+tiny_treats_1                                 node=图像纹理           image=tiny_treats_texture_1        vector=-                        interp=Linear ext=REPEAT
+tiny_treats_1.001                             node=图像纹理           image=tiny_treats_texture_1        vector=-                        interp=Linear ext=REPEAT
+tiny_treats_1.003                             node=图像纹理           image=tiny_treats_texture_1        vector=-                        interp=Linear ext=REPEAT
+tiny_treats_1.004                             node=图像纹理           image=tiny_treats_texture_1        vector=-                        interp=Linear ext=REPEAT
+tiny_treats_1.005                             node=图像纹理           image=tiny_treats_texture_1        vector=-                        interp=Linear ext=REPEAT
+
+=== BRICK/COORD DETAIL ===
+--- Atlas stone / Floor - warm limestone 120cm
+  node 原理化 BSDF             BSDF_PRINCIPLED    {'Metallic': 0.0, 'Roughness': 0.63, 'IOR': 1.5, 'Alpha': 1.0, 'Weight': 0.0, 'Diffuse Roughness': 0.0, 'Subsurface Weight': 0.0, 'Subsurface Scale': 0.05, 'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.0, 'Specular IOR Level': 0.5, 'Anisotropic': 0.0, 'Anisotropic Rotation': 0.0, 'Transmission Weight': 0.0, 'Coat Weight': 0.0, 'Coat Roughness': 0.03, 'Coat IOR': 1.5, 'Sheen Weight': 0.0, 'Sheen Roughness': 0.5, 'Emission Strength': 0.0, 'Thin Film Thickness': 0.0, 'Thin Film IOR': 1.33}
+  node 材质输出                 OUTPUT_MATERIAL    {'Thickness': 0.0}
+  node 几何数据                 NEW_GEOMETRY       {}
+  node 砖墙纹理                 TEX_BRICK          {'Scale': 1.0, 'Mortar Size': 0.004, 'Mortar Smooth': 0.1, 'Bias': 0.0, 'Brick Width': 1.2, 'Row Height': 1.2}
+  node UV 贴图                UVMAP              {}
+  node 矢量运算                 VECT_MATH          {'Scale': 0.833}
+  node 矢量运算.001             VECT_MATH          {'Scale': 1.0}
+  node 矢量运算.002             VECT_MATH          {'Scale': 0.492}
+  node 矢量运算.003             VECT_MATH          {'Scale': 1.0}
+  node 图像纹理                 TEX_IMAGE          {}
+  node 混合 (旧版)              MIX_RGB            {'Factor': 0.22}
+  node 混合 (旧版).001          MIX_RGB            {'Factor': 0.32}
+   原理化 BSDF.BSDF -> 材质输出.Surface
+   几何数据.Position -> 砖墙纹理.Vector
+   UV 贴图.UV -> 矢量运算.Vector
+   矢量运算.Vector -> 矢量运算.001.Vector
+   矢量运算.001.Vector -> 矢量运算.002.Vector
+   矢量运算.002.Vector -> 矢量运算.003.Vector
+   矢量运算.003.Vector -> 图像纹理.Vector
+   图像纹理.Color -> 混合 (旧版).Color2
+   砖墙纹理.Color -> 混合 (旧版).001.Color1
+   图像纹理.Color -> 混合 (旧版).001.Color2
+   混合 (旧版).001.Color -> 原理化 BSDF.Base Color
+--- Meeting olive plaster
+  node 原理化 BSDF             BSDF_PRINCIPLED    {'Metallic': 0.0, 'Roughness': 0.8, 'IOR': 1.5, 'Alpha': 1.0, 'Weight': 0.0, 'Diffuse Roughness': 0.0, 'Subsurface Weight': 0.0, 'Subsurface Scale': 0.05, 'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.0, 'Specular IOR Level': 0.5, 'Anisotropic': 0.0, 'Anisotropic Rotation': 0.0, 'Transmission Weight': 0.0, 'Coat Weight': 0.0, 'Coat Roughness': 0.03, 'Coat IOR': 1.5, 'Sheen Weight': 0.0, 'Sheen Roughness': 0.5, 'Emission Strength': 0.0, 'Thin Film Thickness': 0.0, 'Thin Film IOR': 1.33}
+  node 材质输出                 OUTPUT_MATERIAL    {'Thickness': 0.0}
+  node 几何数据                 NEW_GEOMETRY       {}
+  node 砖墙纹理                 TEX_BRICK          {'Scale': 1.0, 'Mortar Size': 0.004, 'Mortar Smooth': 0.1, 'Bias': 0.0, 'Brick Width': 1.2, 'Row Height': 1.2}
+  node UV 贴图                UVMAP              {}
+  node 矢量运算                 VECT_MATH          {'Scale': 0.833}
+  node 矢量运算.001             VECT_MATH          {'Scale': 1.0}
+  node 矢量运算.002             VECT_MATH          {'Scale': 0.492}
+  node 矢量运算.003             VECT_MATH          {'Scale': 1.0}
+  node 图像纹理                 TEX_IMAGE          {}
+  node 混合 (旧版)              MIX_RGB            {'Factor': 0.22}
+  node 混合 (旧版).001          MIX_RGB            {'Factor': 0.32}
+  node 混合 (旧版).002          MIX_RGB            {'Factor': 0.16}
+   原理化 BSDF.BSDF -> 材质输出.Surface
+   几何数据.Position -> 砖墙纹理.Vector
+   UV 贴图.UV -> 矢量运算.Vector
+   矢量运算.Vector -> 矢量运算.001.Vector
+   矢量运算.001.Vector -> 矢量运算.002.Vector
+   矢量运算.002.Vector -> 矢量运算.003.Vector
+   矢量运算.003.Vector -> 图像纹理.Vector
+   图像纹理.Color -> 混合 (旧版).Color2
+   砖墙纹理.Color -> 混合 (旧版).001.Color1
+   图像纹理.Color -> 混合 (旧版).001.Color2
+   图像纹理.Color -> 混合 (旧版).002.Color2
+   混合 (旧版).002.Color -> 原理化 BSDF.Base Color
+--- Manager deep sage plaster
+  node 原理化 BSDF             BSDF_PRINCIPLED    {'Metallic': 0.0, 'Roughness': 0.8, 'IOR': 1.5, 'Alpha': 1.0, 'Weight': 0.0, 'Diffuse Roughness': 0.0, 'Subsurface Weight': 0.0, 'Subsurface Scale': 0.05, 'Subsurface IOR': 1.4, 'Subsurface Anisotropy': 0.0, 'Specular IOR Level': 0.5, 'Anisotropic': 0.0, 'Anisotropic Rotation': 0.0, 'Transmission Weight': 0.0, 'Coat Weight': 0.0, 'Coat Roughness': 0.03, 'Coat IOR': 1.5, 'Sheen Weight': 0.0, 'Sheen Roughness': 0.5, 'Emission Strength': 0.0, 'Thin Film Thickness': 0.0, 'Thin Film IOR': 1.33}
+  node 材质输出                 OUTPUT_MATERIAL    {'Thickness': 0.0}
+  node 几何数据                 NEW_GEOMETRY       {}
+  node 砖墙纹理                 TEX_BRICK          {'Scale': 1.0, 'Mortar Size': 0.004, 'Mortar Smooth': 0.1, 'Bias': 0.0, 'Brick Width': 1.2, 'Row Height': 1.2}
+  node UV 贴图                UVMAP              {}
+  node 矢量运算                 VECT_MATH          {'Scale': 0.833}
+  node 矢量运算.001             VECT_MATH          {'Scale': 1.0}
+  node 矢量运算.002             VECT_MATH          {'Scale': 0.492}
+  node 矢量运算.003             VECT_MATH          {'Scale': 1.0}
+  node 图像纹理                 TEX_IMAGE          {}
+  node 混合 (旧版)              MIX_RGB            {'Factor': 0.22}
+  node 混合 (旧版).001          MIX_RGB            {'Factor': 0.32}
+  node 混合 (旧版).002          MIX_RGB            {'Factor': 0.16}
+   原理化 BSDF.BSDF -> 材质输出.Surface
+   几何数据.Position -> 砖墙纹理.Vector
+   UV 贴图.UV -> 矢量运算.Vector
+   矢量运算.Vector -> 矢量运算.001.Vector
+   矢量运算.001.Vector -> 矢量运算.002.Vector
+   矢量运算.002.Vector -> 矢量运算.003.Vector
+   矢量运算.003.Vector -> 图像纹理.Vector
+   图像纹理.Color -> 混合 (旧版).Color2
+   砖墙纹理.Color -> 混合 (旧版).001.Color1
+   图像纹理.Color -> 混合 (旧版).001.Color2
+   图像纹理.Color -> 混合 (旧版).002.Color2
+   混合 (旧版).002.Color -> 原理化 BSDF.Base Color
