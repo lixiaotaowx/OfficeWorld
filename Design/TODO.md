@@ -71,7 +71,20 @@ Do not call the project complete while required items remain failed, unimplement
 - [ ] Validate updated scene in browser after export; no runtime performance claim yet.
 
 - [x] Apply generated shared atlas/metric UVs, repair chair-back folds, warm lighting and room palette; retain approved concept.
-- [ ] Bake/recreate atlas repeat and tile shader for browser; inspect UV seams and final lighting in exported scene.
+- [x] Bake/recreate atlas repeat and tile shader for browser; inspect UV seams and final lighting in exported scene.
+  Baked 2026-09-10 on user request (lighting baked in, web-friendly PNGs, one texture per repeated item).
+  Scene `AssetSources/OfficeConcept/OfficeConcept_09Baked.blend`; backup `Before_Bake_Textures.blend`.
+  18 textures / 17.7 MB in `AssetSources/OfficeConcept/BakedTextures`, manifest `materials.json`.
+  5 family atlases (wood 2048, stone 2048, fabric 2048, rug 1024, trim 1024) each hold every object in
+  its own UV cell, so duplicates that share a mesh sample identical texels. Single large surfaces
+  (floor, rear wall, window sills, beams, perimeter walls) have dedicated textures.
+  195 objects on baked materials, every one with a single "UVMap" layer inside 0..1; 0 objects left on
+  unbaked atlas materials. Verified against a Cycles render of the original scene: correlation 0.88,
+  mean luminance 0.581 vs 0.594.
+  Caveat: bakes store scene-referred linear values, so the browser needs an AgX tone map matching
+  Blender's AgX/Medium-High-Contrast with exposure 0.15, otherwise everything reads darker.
+  Helper scripts: `_bake_tmp/bake_*.py`; log `_bake_tmp/bake_log.txt`.
+- [ ] Validate the baked textures in the browser and choose the tone-mapping path (AgX vs baked-in AgX).
 
 - [x] Reference detail pass: thin framed desk dividers, eight downloaded small desktop plants, capsule meeting tabletop, two framed abstract prints and front collaboration blackboard. Actual viewport Reference_Details_Final.png inspected.
 - [ ] Inspect these details at browser camera distance after export; lighting and external scenery still differ from the concept.
@@ -134,9 +147,18 @@ Do not call the project complete while required items remain failed, unimplement
 - [x] 静态前端与信令同进程同源，`server.mjs` 通过 `static.mjs` 托管 `dist/`。
 - [x] 修掉 PM2 下入口判断失效导致「显示 online 但没监听、日志为空」的问题（新增 `start.mjs`）。
 - [x] 实测部署站点 6/6：可访问、信令已连、模型加载、两客户端互通、**能看到并跟随另一个玩家的角色**。
-- [x] **TLS 已启用**：nginx 在 443 终止 TLS，同源反代应用与 LiveKit（`/rtc`、`/twirp/`），未改动既有 livekit-server。地址 https://115.159.43.237/
-- [x] 实测部署站点（HTTPS）12/12：安全上下文成立、真的采集到屏幕视频轨与麦克风音轨、**经 nginx 的 wss 反代连上 LiveKit 并入会发布轨道**。
-- [x] 查明自签的原因：中国大陆**未备案域名被网络层拦截**，`sslip.io` 的 Let's Encrypt 校验被跳转到 DNSPod webblock；裸 IP 不被拦，故用 SAN=IP 自签证书。
-- [ ] 想要无警告证书：需加一条 DNS 记录把已备案域名的子域（如 `office.aiwb.org.cn`）指向 `115.159.43.237`，再签 Let's Encrypt。
+- [x] **TLS 已是正式证书，浏览器无警告**：Let's Encrypt 的 **IP 证书**（`--ip-address` + `shortlived`），
+  系统 certbot 2.9.0 不支持，改用 `/home/ubuntu/certbot-venv` 里的 5.8.0；`officeweb-cert.timer` 每天续期并 reload nginx。
+- [x] 实测部署站点（HTTPS）15/15：安全上下文成立、真的采集到屏幕视频轨与麦克风音轨、**经 nginx 的 wss 反代连上 LiveKit 并入会发布轨道**。
+- [x] 三个浏览器测试套件**移除了证书例外**，将来证书出问题会直接失败。
+- [ ] ⚠️ **IP 证书约 6 天到期**，依赖 `officeweb-cert.timer` 自动续期；**别用系统那个 2.9.0 的 certbot 续期**。
+- [x] 首访弹窗同时选**角色**与工位；工位一旦选定归其所有，换座只在设置里的「重新选座」。
+- [x] 收敛按钮语义：删掉与归属规则冲突的「坐到 N 号工位」，「起身」不再交出工位，座位操作只留「回到我的座位」「起身」。
+- [x] UI 字号整体上调 1–2px（原来大量 9–12px），最小 11px、正文 14px。
+- [x] 拆分逼近上限的文件：`OfficeScene.tsx` 475→430（探针抽成 `sceneProbe.ts`）、`App.tsx` 448→360（侧栏抽成 `SidePanel.tsx`）。
+- [x] **接入隔壁会话烘焙好的办公室材质**：`office-baked.glb`（JPEG 后 5.73MB）替换白模；烘焙面改用不受光且不走色调映射的材质，避免二次受光/二次色调映射。
+- [x] **修掉工位屏幕「一条绿杠」**：不复用 266 顶点、UV 不适合整图映射的 `DISPLAY` 网格，改为自建 `PlaneGeometry`；8/8 工位屏幕从椅子上可见。
+- [ ] **烘焙材质的观感与屏幕朝向未经人眼确认**（我看不了图片，只有亮度/像素/射线数值证据）。
+- [ ] 工位屏幕目前仍用程序绘制的内容；`flipY` 用 glTF 约定，正反需人眼过一遍。
 - [ ] 无鉴权、状态仅存内存，重启即清空；任何人知道网址就能进。
 - [ ] 尚未在真正两台不同网络的机器之间验证。
