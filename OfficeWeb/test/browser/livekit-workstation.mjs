@@ -69,11 +69,22 @@ try {
   // first-time visitor automatically.
   const seatsOf = (page) => page.locator(".identity small").innerText();
   const picker = (page) => page.locator(".seat-picker");
-  const pickDesk = async (page, label) => {
+  /** Pick the first desk still on offer, so somebody else being in the office
+   *  (which is normal) cannot fail the run. Returns the label it took. */
+  const pickFreeDesk = async (page, avoid = "") => {
     await picker(page).waitFor({ timeout: 20000 });
-    await picker(page)
-      .locator(".seat-picker-grid button", { hasText: label })
-      .click();
+    const options = picker(page).locator(
+      ".seat-picker-grid button:not([disabled])",
+    );
+    const count = await options.count();
+    for (let i = 0; i < count; i++) {
+      const option = options.nth(i);
+      const text = (await option.innerText()).replace(/\s+/g, " ").trim();
+      if (avoid && text.includes(avoid)) continue;
+      await option.click();
+      return text.split(" ")[0];
+    }
+    return "";
   };
   check(
     "首次进入自动弹出选座窗口",
@@ -82,12 +93,18 @@ try {
   );
   check("初始未占工位", /没选工位/.test(await seatsOf(sharer)), await seatsOf(sharer));
 
-  // Sharer claims A-1 from the picker; it closes on success.
-  await pickDesk(sharer, "A-1");
+  // Sharer claims a desk from the picker; it closes on success.
+  const sharerLabel = await pickFreeDesk(sharer);
   const claimed = await waitFor(async () =>
-    /A-1/.test(await seatsOf(sharer)) ? true : null,
+    sharerLabel && new RegExp(sharerLabel).test(await seatsOf(sharer))
+      ? true
+      : null,
   );
-  check("在弹窗里点选即占用工位 A-1", Boolean(claimed), await seatsOf(sharer));
+  check(
+    `在弹窗里点选即占用工位 ${sharerLabel}`,
+    Boolean(claimed),
+    await seatsOf(sharer),
+  );
   const closed = await waitFor(async () =>
     (await picker(sharer).count()) === 0 ? true : null,
   );
@@ -97,7 +114,7 @@ try {
   // server refuses it independently (covered by test/seats.test.mjs).
   await picker(viewer).waitFor({ timeout: 20000 });
   const takenEntry = picker(viewer).locator(".seat-picker-grid button", {
-    hasText: "A-1",
+    hasText: sharerLabel,
   });
   // The other client's seat is relayed asynchronously, so wait for it to land.
   const blocked = await waitFor(async () =>
@@ -105,12 +122,18 @@ try {
   );
   check("别人已占的工位在弹窗里不可选", Boolean(blocked));
 
-  // The viewer takes a different desk.
-  await pickDesk(viewer, "B-2");
+  // The viewer takes any other desk.
+  const viewerLabel = await pickFreeDesk(viewer, sharerLabel);
   const viewerSeat = await waitFor(async () =>
-    /B-2/.test(await seatsOf(viewer)) ? true : null,
+    viewerLabel && new RegExp(viewerLabel).test(await seatsOf(viewer))
+      ? true
+      : null,
   );
-  check("第二个玩家占用到 B-2", Boolean(viewerSeat), await seatsOf(viewer));
+  check(
+    `第二个玩家占用到 ${viewerLabel}`,
+    Boolean(viewerSeat),
+    await seatsOf(viewer),
+  );
 
   // Before sharing, every monitor is idle. The monitors only exist once the
   // office model has finished loading, so wait for them.
