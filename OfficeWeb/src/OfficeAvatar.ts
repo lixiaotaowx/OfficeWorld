@@ -1,10 +1,17 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import {
+  applySitPose,
+  loadCharacter,
+  releaseCharacter,
+  type CharacterKind,
+  type LoadedCharacter,
+} from "./characterModel";
 import { findPath, walkable } from "./navigation";
 import { WORKSTATIONS } from "./seats";
 export class OfficeAvatar {
   root = new THREE.Group();
   private model?: THREE.Group;
+  private character?: LoadedCharacter;
   private mixer?: THREE.AnimationMixer;
   private idle?: THREE.AnimationAction;
   private walk?: THREE.AnimationAction;
@@ -15,6 +22,7 @@ export class OfficeAvatar {
   private seatedAt: number | null = null;
   private bones = new Map<string, THREE.Bone>();
   private keys = new Set<string>();
+  private moving = false;
   private token = 0;
   private disposed = false;
   private clock = new THREE.Clock();
@@ -59,43 +67,26 @@ export class OfficeAvatar {
     this.keys.delete(e.code);
   };
   private blur = () => this.keys.clear();
-  async load(kind: "woman" | "man") {
+  async load(kind: CharacterKind) {
     const token = ++this.token;
     this.report("角色载入中…");
     try {
-      const gltf = await new GLTFLoader().loadAsync(
-        `/assets/characters/${kind}.glb`,
-      );
-      if (this.disposed || token !== this.token) return;
-      if (this.model) {
-        this.root.remove(this.model);
-        this.mixer?.stopAllAction();
-        this.release(this.model);
+      const loaded = await loadCharacter(kind);
+      if (this.disposed || token !== this.token) {
+        releaseCharacter(loaded);
+        return;
       }
-      const model = gltf.scene;
-      this.model = model;
-      this.root.add(model);
-      this.bones.clear();
-      model.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(model);
-      const scale = 1.72 / (box.max.y - box.min.y);
-      model.scale.multiplyScalar(scale);
-      model.position.y = -box.min.y * scale;
-      model.traverse((o) => {
-        if (o instanceof THREE.Bone) this.bones.set(o.name, o);
-        if (o instanceof THREE.Mesh) {
-          o.castShadow = true;
-          o.receiveShadow = true;
-        }
-      });
-      this.mixer = new THREE.AnimationMixer(model);
-      this.idle = this.mixer.clipAction(
-        gltf.animations.find((a) => a.name === "Idle_Neutral") ||
-          gltf.animations.find((a) => a.name === "Idle")!,
-      );
-      this.walk = this.mixer.clipAction(
-        gltf.animations.find((a) => a.name === "Walk")!,
-      );
+      if (this.character) {
+        this.root.remove(this.character.model);
+        releaseCharacter(this.character);
+      }
+      this.character = loaded;
+      this.model = loaded.model;
+      this.mixer = loaded.mixer;
+      this.idle = loaded.idle;
+      this.walk = loaded.walk;
+      this.bones = loaded.bones;
+      this.root.add(loaded.model);
       this.current = undefined;
       this.play(false);
       this.report("已就绪 · 点击地面行走");
@@ -141,59 +132,11 @@ export class OfficeAvatar {
     this.path = [];
     this.report("已起身");
   }
-  private aimBone(name: string, childName: string, desired: THREE.Vector3) {
-    const bone = this.bones.get(name),
-      child = this.bones.get(childName);
-    if (!bone || !child || !bone.parent) return;
-    this.root.updateMatrixWorld(true);
-    const from = child
-      .getWorldPosition(new THREE.Vector3())
-      .sub(bone.getWorldPosition(new THREE.Vector3()))
-      .normalize();
-    const to = desired
-      .clone()
-      .applyQuaternion(this.root.quaternion)
-      .normalize();
-    const delta = new THREE.Quaternion().setFromUnitVectors(from, to);
-    const world = bone
-      .getWorldQuaternion(new THREE.Quaternion())
-      .premultiply(delta);
-    bone.quaternion.copy(
-      bone.parent
-        .getWorldQuaternion(new THREE.Quaternion())
-        .invert()
-        .multiply(world),
-    );
-  }
   private poseSit() {
     if (!this.model) return;
-    for (const side of ["L", "R"]) {
-      this.aimBone(
-        `UpperLeg.${side}`,
-        `LowerLeg.${side}`,
-        new THREE.Vector3(0, -0.08, 1),
-      );
-      this.aimBone(
-        `LowerLeg.${side}`,
-        `Foot.${side}`,
-        new THREE.Vector3(0, -1, 0.08),
-      );
-      this.aimBone(
-        `UpperArm.${side}`,
-        `LowerArm.${side}`,
-        new THREE.Vector3(side === "L" ? 0.13 : -0.13, -1, 0.12),
-      );
-      this.aimBone(
-        `LowerArm.${side}`,
-        `Wrist.${side}`,
-        new THREE.Vector3(0, -0.1, 1),
-      );
-    }
-    this.root.updateMatrixWorld(true);
-    const hips = this.bones.get("Hips");
-    if (hips)
-      this.model.position.y +=
-        0.58 - hips.getWorldPosition(new THREE.Vector3()).y;
+    // Same shared pose the remote avatars use, so a seated colleague looks
+    // identical from every client.
+    applySitPose(this.root, this.model, this.bones);
   }
   update() {
     const dt = Math.min(this.clock.getDelta(), 0.05);
@@ -263,6 +206,7 @@ export class OfficeAvatar {
         this.pendingSeat = null;
       }
     }
+    this.moving = moving;
     this.play(moving);
     this.mixer?.update(dt);
     if (this.sitting) this.poseSit();
@@ -276,23 +220,27 @@ export class OfficeAvatar {
       this.lastState = state;
     }
   }
-  private release(model: THREE.Object3D) {
-    model.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.geometry.dispose();
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach((m) => m.dispose());
-      }
-    });
-  }
   dispose() {
     this.disposed = true;
     this.token++;
-    this.mixer?.stopAllAction();
-    if (this.model) this.release(this.model);
+    if (this.character) {
+      releaseCharacter(this.character);
+      this.character = undefined;
+    }
     this.world.remove(this.root);
     window.removeEventListener("keydown", this.keydown);
     window.removeEventListener("keyup", this.keyup);
     window.removeEventListener("blur", this.blur);
+  }
+
+  /** Current motion state, broadcast so other players can see this avatar. */
+  getState() {
+    return {
+      x: this.root.position.x,
+      z: this.root.position.z,
+      rot: this.root.rotation.y,
+      sitting: this.sitting,
+      moving: this.moving,
+    };
   }
 }

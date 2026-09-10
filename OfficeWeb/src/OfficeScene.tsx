@@ -3,20 +3,45 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OfficeAvatar } from "./OfficeAvatar";
+import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
 import { MonitorScreens } from "./monitorScreens";
 import { WORKSTATIONS } from "./seats";
 import "./avatar.css";
-import type { Person } from "./types";
+import type { CharacterKind } from "./characterModel";
+import type { Motion, Person } from "./types";
 
 export type View = "overview" | "desks" | "meeting" | "lounge";
 interface Props {
   people: Person[];
+  /** Our own socket id: we never draw ourselves as a remote avatar. */
+  myId: string;
   previews: Record<string, string>;
+  /** Latest motion snapshot per player, relayed by the server. */
+  motions: Record<string, Motion>;
   selected: number;
   view: View;
   onSelect: (seat: number) => void;
   /** Claim a workstation server-side; resolves false if someone else has it. */
   onClaimSeat: (seat: number | null) => Promise<boolean>;
+  /** Publish our own motion so everybody else can draw us. */
+  onMotion: (motion: Motion) => void;
+  onCharacter: (kind: CharacterKind) => void;
+}
+
+/** Everyone except us is drawn from the last snapshot the server relayed. */
+function remoteStates(state: {
+  people: Person[];
+  motions: Record<string, Motion>;
+  myId: string;
+}): Map<string, RemoteState> {
+  const out = new Map<string, RemoteState>();
+  for (const person of state.people) {
+    if (person.id === state.myId) continue;
+    const motion = state.motions[person.id];
+    if (!motion) continue;
+    out.set(person.id, { ...motion, character: person.character });
+  }
+  return out;
 }
 
 /** Paint every occupied workstation's screen with its occupant's thumbnail. */
@@ -59,6 +84,7 @@ export default function OfficeScene(props: Props) {
   const [stats, setStats] = useState("");
   const api = useRef<{ focus: (v: View) => void }>();
   const monitorsRef = useRef<MonitorScreens>();
+  const remotesRef = useRef<RemoteAvatars>();
   useEffect(() => {
     api.current?.focus(props.view);
   }, [props.view]);
@@ -69,12 +95,20 @@ export default function OfficeScene(props: Props) {
     const monitors = monitorsRef.current;
     if (!monitors) return;
     syncMonitors(monitors, props);
-    if (import.meta.env.DEV) {
-      (window as unknown as { __officeDebug?: unknown }).__officeDebug = {
-        monitors,
-      };
-    }
   }, [props.people, props.previews]);
+  // The avatar follows the seat the server says we hold, so claiming a desk
+  // from the sidebar and clicking "坐到 N 号工位" behave identically.
+  const lastSeat = useRef<number | null | undefined>(undefined);
+  useEffect(() => {
+    const seat = props.people.find((p) => p.id === props.myId)?.seat ?? null;
+    if (lastSeat.current === seat) return;
+    const first = lastSeat.current === undefined;
+    lastSeat.current = seat;
+    // At startup there is nothing to undo.
+    if (first && seat === null) return;
+    if (seat === null) actor.current?.standUp();
+    else actor.current?.sit(seat);
+  }, [props.people, props.myId]);
   useEffect(() => {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -89,6 +123,19 @@ export default function OfficeScene(props: Props) {
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
     const avatar = new OfficeAvatar(world, camera, setActorState);
     actor.current = avatar;
+    const remotes = new RemoteAvatars(world);
+    remotesRef.current = remotes;
+    if (import.meta.env.DEV) {
+      // `monitors` is created further down, once the model starts loading, so
+      // it has to be resolved lazily.
+      (window as unknown as { __officeDebug?: unknown }).__officeDebug = {
+        get monitors() {
+          return monitorsRef.current;
+        },
+        remotes,
+        local: () => avatar.getState(),
+      };
+    }
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.mouseButtons = {
@@ -158,7 +205,9 @@ export default function OfficeScene(props: Props) {
     });
     let stopped = false,
       frame = 0,
-      tick = 0;
+      tick = 0,
+      sinceReport = 0;
+    const clock = new THREE.Clock();
     const monitors = new MonitorScreens();
     monitorsRef.current = monitors;
     new GLTFLoader().load(
@@ -255,6 +304,7 @@ export default function OfficeScene(props: Props) {
     resize.observe(el);
     function animate() {
       frame = requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
       if (traveling) {
         camera.position.lerp(goalPosition, 0.075);
         controls.target.lerp(goalTarget, 0.075);
@@ -262,6 +312,28 @@ export default function OfficeScene(props: Props) {
       }
       controls.update();
       avatar.update();
+      // Draw the other players, then tell the server where we are. Reporting is
+      // throttled: the server would reject a faster stream anyway.
+      remotes.sync(
+        remoteStates({
+          people: latest.current.people,
+          motions: latest.current.motions,
+          myId: latest.current.myId,
+        }),
+      );
+      remotes.update(dt);
+      sinceReport += dt;
+      if (sinceReport >= 0.07) {
+        sinceReport = 0;
+        const me = avatar.getState();
+        latest.current.onMotion({
+          x: me.x,
+          z: me.z,
+          rot: me.rot,
+          moving: me.moving,
+          sitting: me.sitting,
+        });
+      }
       markers.forEach((m, i) => {
         (m.material as THREE.MeshBasicMaterial).color.setHex(
           i === latest.current.selected
@@ -273,13 +345,16 @@ export default function OfficeScene(props: Props) {
         m.scale.setScalar(i === latest.current.selected ? 1.25 : 1);
       });
       renderer.render(world, camera);
-      if (++tick % 120 === 0)
+      if (++tick % 120 === 0) {
         setStats(`${renderer.info.render.triangles.toLocaleString()} 面`);
+      }
     }
     animate();
     return () => {
       stopped = true;
       avatar.dispose();
+      remotes.dispose();
+      remotesRef.current = undefined;
       cancelAnimationFrame(frame);
       resize.disconnect();
       controls.dispose();
@@ -317,6 +392,7 @@ export default function OfficeScene(props: Props) {
               const kind = e.target.value as "woman" | "man";
               setCharacter(kind);
               void actor.current?.load(kind);
+              latest.current.onCharacter(kind);
             }}
           >
             <option value="woman">女角色</option>
@@ -324,23 +400,12 @@ export default function OfficeScene(props: Props) {
           </select>
         </label>
         <button
-          onClick={async () => {
-            // Sitting at a workstation is the same act as claiming it, so the
-            // seat is only taken if the server grants it.
-            if (await props.onClaimSeat(props.selected))
-              actor.current?.sit(props.selected);
-          }}
+          onClick={() => void props.onClaimSeat(props.selected)}
+          title="占用工位后角色会自动走过去坐下"
         >
           坐到 {props.selected + 1} 号工位
         </button>
-        <button
-          onClick={() => {
-            void props.onClaimSeat(null);
-            actor.current?.standUp();
-          }}
-        >
-          起身
-        </button>
+        <button onClick={() => void props.onClaimSeat(null)}>起身</button>
         <span role="status">{actorState}</span>
       </div>
       <div className="scene-help">

@@ -13,6 +13,11 @@ import {
 /** Must match the number of workstations in src/seats.ts; a test asserts this. */
 export const SEAT_COUNT = 8;
 
+/** Players cannot be relayed outside the building, whatever a client claims. */
+export const MOTION_BOUNDS = { minX: -11, maxX: 12, minZ: -9, maxZ: 7 };
+/** Ceiling on motion relays per client, in milliseconds between updates. */
+export const MOTION_INTERVAL_MS = 60;
+
 export function createOfficeServer() {
   const http = createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -72,6 +77,8 @@ export function createOfficeServer() {
             .slice(0, 24) || "同事",
         // Seats are chosen by the player, never auto-assigned.
         seat: null,
+        // Which bundled avatar this player wears, so colleagues render it.
+        character: data?.character === "man" ? "man" : "woman",
         // The tiny ambient thumbnail may be shown on the workstation screen.
         // It is deliberately unreadable, and the sharer can turn it off.
         previewAllowed: true,
@@ -113,6 +120,37 @@ export function createOfficeServer() {
       // Clear the thumbnail already pushed to everyone if the sharer opts out.
       if (!p.previewAllowed) io.emit("preview", { id: s.id, image: null });
       publish();
+    });
+    s.on("character", (kind) => {
+      const p = people.get(s.id);
+      if (!p) return;
+      p.character = kind === "man" ? "man" : "woman";
+      publish();
+    });
+    // Motion relay. Throttled so one client cannot flood the room, and clamped
+    // so a bogus position cannot place an avatar outside the building.
+    let lastMotion = 0;
+    s.on("motion", (m) => {
+      const p = people.get(s.id);
+      if (!p) return;
+      const now = Date.now();
+      if (now - lastMotion < MOTION_INTERVAL_MS) return;
+      if (
+        !m ||
+        !Number.isFinite(m.x) ||
+        !Number.isFinite(m.z) ||
+        !Number.isFinite(m.rot)
+      )
+        return;
+      lastMotion = now;
+      s.broadcast.emit("motion", {
+        id: s.id,
+        x: Math.min(MOTION_BOUNDS.maxX, Math.max(MOTION_BOUNDS.minX, m.x)),
+        z: Math.min(MOTION_BOUNDS.maxZ, Math.max(MOTION_BOUNDS.minZ, m.z)),
+        rot: m.rot,
+        moving: m.moving === true,
+        sitting: m.sitting === true,
+      });
     });
     s.on("sharing", (v) => {
       const p = people.get(s.id);

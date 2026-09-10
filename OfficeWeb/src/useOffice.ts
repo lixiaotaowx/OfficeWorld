@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
-import type { Person, Message, Request, Session } from "./types";
+import type { CharacterKind } from "./characterModel";
+import type { Person, Message, Motion, Request, Session } from "./types";
 
 export function useOffice() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -9,6 +10,7 @@ export function useOffice() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [motions, setMotions] = useState<Record<string, Motion>>({});
   const [videos, setVideos] = useState<Record<string, MediaStream>>({});
   const [connected, setConnected] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -43,14 +45,20 @@ export function useOffice() {
         name:
           sessionStorage.getItem("office-name") ||
           "访客 " + Math.floor(Math.random() * 900 + 100),
+        character: sessionStorage.getItem("office-character") || "woman",
       });
     });
     s.on("disconnect", () => {
       setConnected(false);
       setPeople([]);
+      setMotions({});
       setNotice("连接已断开，正在重连…");
     });
     s.on("people", setPeople);
+    // Motion snapshots are keyed by player; anybody absent is simply not drawn.
+    s.on("motion", (motion: Motion & { id: string }) =>
+      setMotions((old) => ({ ...old, [motion.id]: motion })),
+    );
     s.on("notice", setNotice);
     s.on("chat", (message: Message) =>
       setMessages((old) => [...old.slice(-99), message]),
@@ -148,6 +156,7 @@ export function useOffice() {
     requests,
     sessions,
     previews,
+    motions,
     videos,
     connected,
     sharing,
@@ -159,6 +168,11 @@ export function useOffice() {
     respond,
     claimSeat,
     setNotice,
+    reportMotion: (motion: Motion) => socket.current?.emit("motion", motion),
+    setCharacter: (kind: CharacterKind) => {
+      sessionStorage.setItem("office-character", kind);
+      socket.current?.emit("character", kind);
+    },
     setPreviewAllowed: (allowed: boolean) =>
       socket.current?.emit("preview-allowed", allowed),
     chat: (text: string) => socket.current?.emit("chat", text),

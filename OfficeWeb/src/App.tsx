@@ -132,11 +132,15 @@ export default function App() {
             </div>
             <OfficeScene
               people={office.people}
+              myId={office.myId}
               previews={office.previews}
+              motions={office.motions}
               selected={selected}
               view={view}
               onSelect={setSelected}
               onClaimSeat={office.claimSeat}
+              onMotion={office.reportMotion}
+              onCharacter={office.setCharacter}
             />
             <div className="bottom-bar">
               <div className="identity">

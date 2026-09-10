@@ -1,12 +1,25 @@
+import type { CharacterKind } from "./characterModel";
+
 export interface Person {
   id: string;
   name: string;
   /** Chosen workstation, or null while the player has not picked one yet. */
   seat: number | null;
+  /** Which bundled avatar this player wears, so colleagues render it. */
+  character: CharacterKind;
   /** Whether this person's tiny thumbnail may show on their monitor. */
   previewAllowed: boolean;
   sharing: boolean;
   meeting: boolean;
+}
+
+/** One throttled motion snapshot relayed from another player. */
+export interface Motion {
+  x: number;
+  z: number;
+  rot: number;
+  moving: boolean;
+  sitting: boolean;
 }
 
 export interface Request {
