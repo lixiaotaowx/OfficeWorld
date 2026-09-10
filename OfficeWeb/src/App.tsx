@@ -292,18 +292,9 @@ export default function App() {
                     DESK {WORKSTATIONS[selected]?.label ?? selected + 1}
                   </div>
                   <h3>{person?.name || "给灵感留一个位置"}</h3>
-                  {person && office.previews[person.id] ? (
-                    <img
-                      className="screen-preview"
-                      src={office.previews[person.id]}
-                      alt="对方主动共享的屏幕预览"
-                    />
-                  ) : (
-                    <div className="empty-screen">
-                      <span>▱</span>
-                      {person ? "尚未共享屏幕" : "这个工位暂时无人"}
-                    </div>
-                  )}
+                  {/* The primary action comes before the preview on purpose:
+                      on a short laptop screen the preview would push it below
+                      the fold. */}
                   <div className="detail-actions">
                     <button
                       className={me?.seat === selected ? "danger" : "primary"}
@@ -335,6 +326,18 @@ export default function App() {
                       邀请语音
                     </button>
                   </div>
+                  {person && office.previews[person.id] ? (
+                    <img
+                      className="screen-preview"
+                      src={office.previews[person.id]}
+                      alt="对方主动共享的屏幕预览"
+                    />
+                  ) : (
+                    <div className="empty-screen">
+                      <span>▱</span>
+                      {person ? "尚未共享屏幕" : "这个工位暂时无人"}
+                    </div>
+                  )}
                 </div>
               </>
             ) : (

@@ -5,7 +5,11 @@
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* On a 1366x768 laptop the content is taller than the panel, and the page
+     itself does not scroll, so with overflow:hidden the 占用这个工位 button was
+     simply unreachable. Let the panel scroll instead. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .side-tabs {
   display: flex;
@@ -54,7 +58,7 @@
 .seat {
   position: relative;
   text-align: left;
-  padding: 11px;
+  padding: 9px;
   border-color: #e5e9e0;
   background: #fbfcf9;
   border-radius: 11px;
