@@ -1,15 +1,18 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
-更新于 2026-09-10。**当前地址：http://115.159.43.237/**
+更新于 2026-09-10。**当前地址：https://115.159.43.237/**（媒体可用；首次访问会有一次
+自签证书警告，点继续即可）。`http://115.159.43.237/` 同样可访问，但只能看和走，
+不能共享屏幕或语音。
 
 ## 现在跑着什么
 
 | 组件 | 位置 | 说明 |
 |---|---|---|
-| 前端（构建产物） | `/home/ubuntu/officeweb/dist` | 由应用进程直接托管，与信令同源同端口 |
-| 信令 + 静态托管 | `/home/ubuntu/officeweb/start.mjs` | systemd 服务 `officeweb`，监听 `0.0.0.0:80` |
-| 媒体面 | 既有的 `livekit-server`（`115.159.43.237:7880`） | 未改动其配置，只由客户端直连 |
-| 配置 | `/home/ubuntu/officeweb/.env` | `LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` |
+| 前端（构建产物） | `/home/ubuntu/officeweb/dist` | 由应用进程托管 |
+| 信令 + 静态托管 | `/home/ubuntu/officeweb/start.mjs` | systemd 服务 `officeweb`，监听 `127.0.0.1:3108` |
+| TLS 终止与反代 | nginx（`/etc/nginx/sites-available/officeweb`） | 监听 80 与 443，同源反代应用与 LiveKit |
+| 媒体面 | 既有的 `livekit-server`（`115.159.43.237:7880`） | 配置未改动，经 nginx 以 wss 反代给浏览器 |
+| 配置 | `/home/ubuntu/officeweb/.env` | `LIVEKIT_URL=wss://115.159.43.237` 等 |
 
 `start.mjs` 是独立入口。`server.mjs` 原本用 `import.meta.url === pathToFileURL(process.argv[1])`
 判断"我是不是入口"再自启动，**但 PM2 会用容器包一层执行脚本**，`argv[1]` 指向那层容器，
@@ -64,36 +67,59 @@ ssh -i <key> ubuntu@115.159.43.237 "sudo -n systemctl restart officeweb"
 用两个真实浏览器客户端验证：站点可访问且信令已连接、办公室模型加载完成、两个客户端
 连到同一台服务器、**能看到另一个玩家的角色并跟随其走动（误差 0.17 米）**、页面无未预期错误。
 
-## TLS：还没做，但必须做
+## TLS 已启用（2026-09-10）
 
-**现状：明文 HTTP，媒体捕获不可用。** 实测部署页面上
-`window.isSecureContext === false`、`navigator.mediaDevices.getDisplayMedia === false`。
+**HTTPS 地址：https://115.159.43.237/　——媒体功能在此地址才可用。**
+`http://115.159.43.237/` 仍然可以访问（只是看和走，不能共享屏幕/语音）。
 
-浏览器规定屏幕捕获与麦克风只能在**安全上下文**（`https://` 或 `localhost`）里使用。
-所以在 `http://115.159.43.237/` 上：
+未改动既有 `livekit-server` 的任何配置（它还服务着别的应用）。做法是 nginx 在 443 终止
+TLS，同源反代：静态与 `/socket.io/` → `127.0.0.1:3108`，`/rtc`（WebSocket）与 `/twirp/`
+→ `127.0.0.1:7880`。前端 `.env` 的 `LIVEKIT_URL` 改为 `wss://115.159.43.237`，
+于是页面与媒体面同源，一张证书全盖住。应用自身退到 `127.0.0.1:3108`，由 nginx 转出去。
 
-- ✅ 能进办公室、能看到别人、能走动、能选工位、能聊天
-- ❌ **不能共享屏幕、不能语音**（点了也不会成功）
+### 为什么是自签证书
 
-好消息是前置条件都具备：**443 已放行**，apt 可用（`nginx 1.24.0` 可装）。
+本想用 `sslip.io` 通配 DNS（`115.159.43.237.sslip.io` 解析到本机）配合 Let's Encrypt 拿到
+**无需警告**的真证书，试了，**失败**，原因很关键：
 
-计划做法（不碰既有 livekit-server，避免影响共用它的另一个应用）：
+```
+Detail: 43.174.224.202: Invalid response from
+        https://dnspod.qcloud.com/static/webblock.html?d=115.159.43.237.sslip.io
+```
 
-1. 装 nginx，在 443 终止 TLS；
-2. 反代 `/socket.io/` 与静态文件到 `127.0.0.1:80`（或直接把 root 指向 dist）；
-3. 反代 `/rtc`（WebSocket）与 `/twirp/` 到 `127.0.0.1:7880`，让客户端用 `wss://<host>/` 连 LiveKit；
-4. 前端 `LIVEKIT_URL` 改成 `wss://<host>`（同源，证书一并覆盖）。
+这台机器在**中国大陆**，**未备案的域名请求会被网络层拦截**并跳转到 DNSPod 的 webblock 页，
+Let's Encrypt 的校验请求因此拿不到 challenge 文件。实测对照：
 
-**证书这一关还没解决。** 唯一现有的证书是 coturn 那把**自签、只签了裸 IP**的证书，
-浏览器会拒绝。可选路线：
+| 请求 | 结果 |
+|---|---|
+| `http://115.159.43.237/`（裸 IP） | **200** ✅ |
+| 同一服务器，Host 填未备案域名 | 被拦截 ❌ |
+| `http://www.aiwb.org.cn/` | **301** ✅ 说明该域名已备案，可用 |
 
-- **需要用户操作**：加一条 DNS 记录指向 `115.159.43.237`，然后 Let's Encrypt 签真证书（最干净，无警告）。
-- **不需要 DNS**：用 `115-159-43-237.sslip.io` 这类通配 DNS + Let's Encrypt（待验证是否可签发）。
-- **兜底**：自签证书 + 浏览器手动信任（每个浏览器一次性点"继续访问"，体验差）。
+所以裸 IP 不被拦、未备案域名被拦。当前用**自签证书 + SAN=IP:115.159.43.237**（有效期到 2028-12），
+浏览器首次访问会有一次证书警告，点"继续"即可，之后该源就是正常的安全上下文。
+
+**想要无警告的正经证书**，只需要用户加一条 DNS 记录：把 `aiwb.org.cn` 的某个子域
+（例如 `office.aiwb.org.cn`）指向 `115.159.43.237`。因为该域名已备案不会被拦，就能用
+Let's Encrypt 签发，然后把 nginx 的 `server_name` 与 `LIVEKIT_URL` 换成该域名即可。
+
+### 已验证
+
+`node test/browser/deployed-smoke.mjs https://115.159.43.237/`：**12/12 通过**。
+
+- 部署站点可访问、信令已连接、模型加载完成
+- 两个客户端连到同一台服务器
+- **能看到另一个玩家的角色并跟随其走动（误差 0.15 米）**
+- **`isSecureContext = true`**（TLS 生效）
+- `getDisplayMedia` / `getUserMedia` 均可用，**并真的采集到 1 条屏幕视频轨与 1 条麦克风音轨**
+- **经 nginx 的 wss 反代连上 LiveKit：2 人入会，双方麦克风轨道成功发布**
+- 除已知的 `/rtc/v1` 版本探测 404 外无未预期错误
 
 ## 已知限制
 
+- 证书是自签的，浏览器首次访问有一次警告（见上，加一条 DNS 记录即可根治）。
 - 没有鉴权：身份是 socket id + 随机「访客 123」，任何人打开网址就能进。
 - 状态全在内存：重启服务 = 所有人掉线、工位与聊天记录清空。
-- 明文 HTTP，媒体不可用（见上）。
+- `livekit-server` 版本偏旧（protocol 15 / 客户端 17），靠回退到 `/rtc` 工作。
 - 只有本机与单机双客户端验证过，尚未在真正的两台不同网络机器之间验证。
+

@@ -6,6 +6,8 @@
 // Defaults to http://115.159.43.237/ . Chromium runs with --no-proxy-server
 // because a local VPN/proxy can otherwise intercept the request.
 import { createRequire } from "node:module";
+import { RoomServiceClient } from "livekit-server-sdk";
+import { livekit } from "../../livekit.mjs";
 const require = createRequire(import.meta.url);
 let chromium;
 try {
@@ -34,11 +36,25 @@ const waitFor = async (fn, timeoutMs = 45000, interval = 500) => {
 };
 
 const browser = await chromium.launch({
-  args: ["--no-proxy-server", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+  args: [
+    "--no-proxy-server",
+    "--use-fake-ui-for-media-stream",
+    "--use-fake-device-for-media-stream",
+    // Auto-select a capture source so getDisplayMedia resolves unattended.
+    "--enable-usermedia-screen-capturing",
+    "--allow-http-screen-capture",
+    "--auto-select-desktop-capture-source=Entire screen",
+    "--autoplay-policy=no-user-gesture-required",
+  ],
 });
 
 async function open() {
-  const context = await browser.newContext({ permissions: ["microphone"] });
+  // The deployed HTTPS uses a self-signed certificate for the bare IP (this
+  // server is on mainland China, where unfiled domains get intercepted).
+  const context = await browser.newContext({
+    ignoreHTTPSErrors: true,
+    permissions: ["microphone"],
+  });
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -105,19 +121,94 @@ try {
 
   await a.page.screenshot({ path: "../Build/deployed-office.png" }).catch(() => undefined);
 
-  // Media capture needs a secure context; report the truth rather than assume.
+  // Media capture needs a secure context, so this is the real test of whether
+  // TLS did its job. Ask the page to actually capture a screen and a mic.
   const secure = await a.page.evaluate(() => ({
     isSecureContext: window.isSecureContext,
-    hasMediaDevices: Boolean(navigator.mediaDevices?.getDisplayMedia),
+    hasGetDisplayMedia: Boolean(navigator.mediaDevices?.getDisplayMedia),
+    hasGetUserMedia: Boolean(navigator.mediaDevices?.getUserMedia),
   }));
-  const mediaUsable = secure.isSecureContext && secure.hasMediaDevices;
-  console.log(
-    `\n媒体捕获：isSecureContext=${secure.isSecureContext} getDisplayMedia=${secure.hasMediaDevices}` +
-      (mediaUsable ? "  -> 可用" : "  -> 不可用（明文 HTTP 不是安全上下文，需要 TLS）"),
+  check(
+    "部署页面处于安全上下文（TLS 生效）",
+    secure.isSecureContext === true,
+    `isSecureContext=${secure.isSecureContext}`,
+  );
+  check(
+    "媒体接口已可用",
+    secure.hasGetDisplayMedia && secure.hasGetUserMedia,
+    `getDisplayMedia=${secure.hasGetDisplayMedia} getUserMedia=${secure.hasGetUserMedia}`,
   );
 
-  const realErrors = a.errors.filter((e) => !/favicon|404|WebGL/i.test(e));
-  check("页面无未预期错误", realErrors.length === 0, realErrors.slice(0, 2).join(" | "));
+  const capture = await a.page.evaluate(async () => {
+    const result = { display: null, mic: null };
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      result.display = stream.getVideoTracks().length;
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (error) {
+      result.display = "err: " + String(error.message || error).slice(0, 80);
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      result.mic = stream.getAudioTracks().length;
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (error) {
+      result.mic = "err: " + String(error.message || error).slice(0, 80);
+    }
+    return result;
+  });
+  check(
+    "能真正采集到屏幕视频轨",
+    capture.display === 1,
+    JSON.stringify(capture.display),
+  );
+  check(
+    "能真正采集到麦克风音轨",
+    capture.mic === 1,
+    JSON.stringify(capture.mic),
+  );
+
+  // The page now reaches LiveKit as wss://<this host>, proxied by nginx. If the
+  // websocket upgrade or the media path were broken, nobody would arrive in the
+  // room, so ask the LiveKit server itself.
+  const service = new RoomServiceClient(
+    livekit.url.replace(/^wss?/, "http").replace(/:0$/, ""),
+    livekit.apiKey,
+    livekit.apiSecret,
+  );
+  for (const client of [a, b]) {
+    await client.page.getByRole("button", { name: "加入会议" }).click();
+  }
+  const inRoom = await waitFor(async () => {
+    const list = await service.listParticipants("meeting").catch(() => []);
+    return list.length >= 2 ? list : null;
+  });
+  check(
+    "经 nginx 的 wss 反代连上了 LiveKit",
+    Boolean(inRoom),
+    inRoom ? `${inRoom.length} 人入会` : "没人进入会议室",
+  );
+
+  const micUp = await waitFor(async () => {
+    const list = await service.listParticipants("meeting").catch(() => []);
+    if (list.length < 2) return null;
+    return list.every((p) => p.tracks?.some((t) => /microphone/i.test(t.name || "")))
+      ? list
+      : null;
+  });
+  check("双方麦克风轨道经反代成功发布", Boolean(micUp));
+
+  // The client probes /rtc/v1 first and falls back to /rtc on this older
+  // LiveKit server, which the browser reports as one 404. That is expected.
+  const probe = a.errors.filter((e) => /rtc\/v1/.test(e));
+  const realErrors = a.errors.filter(
+    (e) => !/rtc\/v1|favicon|404|WebGL|Autoplay/i.test(e),
+  );
+  check(
+    "除已知的版本探测 404 外无未预期错误",
+    realErrors.length === 0,
+    realErrors.slice(0, 2).join(" | ") || `${probe.length} 次 /rtc/v1 探测`,
+  );
 } catch (error) {
   check("测试执行未抛异常", false, error.message);
 } finally {
