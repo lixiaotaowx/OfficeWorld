@@ -1,0 +1,50 @@
+[
+  {
+    "label": "left upper eyelid",
+    "source": [
+      594,
+      158
+    ],
+    "target": [
+      594,
+      156
+    ],
+    "solve": true
+  },
+  {
+    "label": "left lower eyelid",
+    "source": [
+      595,
+      169
+    ],
+    "target": [
+      595,
+      171
+    ],
+    "solve": true
+  },
+  {
+    "label": "right upper eyelid",
+    "source": [
+      652,
+      157
+    ],
+    "target": [
+      652,
+      155
+    ],
+    "solve": true
+  },
+  {
+    "label": "right lower eyelid",
+    "source": [
+      652,
+      168
+    ],
+    "target": [
+      652,
+      170
+    ],
+    "solve": true
+  }
+]

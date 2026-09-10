@@ -1,0 +1,9 @@
+{
+  "authors": {
+    "Rico Cilliers": "All"
+  },
+  "url": "https://polyhaven.com/a/tree_small_02",
+  "license": "CC0",
+  "verification": "source MD5 and byte size",
+  "modifications": "flatten hierarchy, retain original PBR textures, adapt placement"
+}

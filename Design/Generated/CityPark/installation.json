@@ -1,0 +1,33 @@
+{
+  "actor": {
+    "refPath": "/Game/Maps/OfficeNatural_A.OfficeNatural_A:PersistentLevel.StaticMeshActor_57"
+  },
+  "component": {
+    "refPath": "/Game/Maps/OfficeNatural_A.OfficeNatural_A:PersistentLevel.StaticMeshActor_57.StaticMeshComponent0"
+  },
+  "material": {
+    "refPath": "/Game/ExteriorBackdrop/Materials/M_CityParkPanorama.M_CityParkPanorama"
+  },
+  "brightness_node": {
+    "refPath": "/Game/ExteriorBackdrop/Materials/M_CityParkPanorama.M_CityParkPanorama:MaterialExpressionMultiply_1"
+  },
+  "saved": [
+    "/Game/ExteriorBackdrop/Meshes/SM_CityParkArc.SM_CityParkArc",
+    "/Game/ExteriorBackdrop/Textures/T_CityParkPanorama.T_CityParkPanorama",
+    "/Game/ExteriorBackdrop/Materials/M_CityParkPanorama.M_CityParkPanorama",
+    "/Game/Maps/OfficeNatural_A"
+  ],
+  "bounds": {
+    "min": {
+      "x": -8000,
+      "y": -7878.4619140625,
+      "z": -3265.49951171875
+    },
+    "max": {
+      "x": -1389.1846923828125,
+      "y": 7878.46240234375,
+      "z": 4181.23876953125
+    },
+    "isValid": true
+  }
+}

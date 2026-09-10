@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-08",
+  "map": "/Game/Maps/OfficeNatural_A",
+  "ui": "/Game/OfficeInteraction/UI/WBP_OfficeHUD",
+  "native_pie_checks_passed": 20,
+  "detailed_result": "../OfficeWorld/Saved/office-interaction-tests.json",
+  "additional_native_input_checks": {
+    "Tab_from_focused_UI_to_game_camera": "passed: MenuOpen false, cursor false",
+    "Tab_from_game_viewport_to_UI": "passed: MenuOpen true, cursor true"
+  },
+  "final_actual_ue_capture": "../OfficeWorld/Saved/office-ui-ready.png",
+  "network_verified": false,
+  "real_screen_capture_or_transmission": false,
+  "third_person_seated_animation_verified": false
+}

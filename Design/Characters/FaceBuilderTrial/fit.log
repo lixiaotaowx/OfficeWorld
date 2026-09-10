@@ -1,0 +1,41 @@
+2026-09-08 16:12:13,851 - keentools - INFO - 
+---
+System Info:
+Blender version: 4.2.1 LTS release API: 4.2.1 Hash: 396f546c9d82
+Python: 3.11.7 (main, Feb  5 2024, 18:45:06) [MSC v.1928 64 bit (AMD64)]
+Platform: WindowsPE / 64bit
+Machine: AMD64, AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
+System: Windows-10-10.0.19045-SP0
+GPU backend: OPENGL
+NumPy version: 1.24.3
+Package: keentools
+Addon: KeenTools: FaceBuilder, FaceTracker, GeoTracker 2026.3.1
+Package: keentools
+---
+
+2026-09-08 16:12:13,851 - keentools - INFO - Basic checks have been passed
+2026-09-08 16:12:15,994 - keentools - INFO - KeenTools addon classes have been registered
+2026-09-08 16:12:16,018 - keentools - INFO - FaceBuilder classes have been registered
+2026-09-08 16:12:16,022 - keentools - INFO - GeoTracker classes have been registered
+2026-09-08 16:12:16,026 - keentools - INFO - FaceTracker classes have been registered
+2026-09-08 16:12:16,026 - keentools - INFO - Common timeline panel has been registered
+CREATE {'FINISHED'}
+DETECT {'file': 'Front_Original.png', 'detected_faces': 1}
+FIT {'file': 'Front_Original.png', 'detected_faces': 1, 'pose_aligned': True, 'solve_result': '[<pykeentools.Pin object at 0x000001E255DF6070>, <pykeentools.Pin object at 0x000001E255DF6130>, <pykeentools.Pin object at 0x000001E255DF61B0>, <pykeentools.Pin object at 0x000001E255DF5530>, <pykeentools.Pin object at 0x000001E255DF6270>, <pykeentools.Pin object at 0x000001E255DF5CB0>, <pykeentools.Pin object at 0x000001E255DF6370>, <pykeentools.Pin object at 0x000001E255DF64F0>, <pykeentools.Pin object at 0x000001E255DF6530>, <pykeentools.Pin object at 0x000001E255DF5F70>, <pykeentools.Pin object at 0x000001E255DF65B0>, <pykeentools.Pin object at 0x000001E255DF5EF0>, <pykeentools.Pin object at 0x000001E255DF6670>, <pykeentools.Pin object at 0x000001E255DF66B0>, <pykeentools.Pin object at 0x000001E255DF6770>]', 'pins': 15}
+DETECT {'file': 'Side_Original.png', 'detected_faces': 1}
+Traceback (most recent call last):
+  File "G:\C\wendang\ChatGPT\youxi\Design\Characters\FaceBuilderTrial\fit_trial.py", line 32, in <module>
+    result['pose_aligned']=bool(fb.detect_face_pose(kid,faces[0]))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pykeentools.UnlicensedException: valid license not found
+Blender 4.2.1 LTS (hash 396f546c9d82 built 2024-08-20 00:50:53)
+Info: Total files 2 | Changed 2 | Failed 0
+Info: Saved "FaceBuilder_Trial.blend"
+REPORT {'status': 'blocked', 'views': [{'file': 'Front_Original.png', 'detected_faces': 1, 'pose_aligned': True, 'solve_result': '[<pykeentools.Pin object at 0x000001E255DF6070>, <pykeentools.Pin object at 0x000001E255DF6130>, <pykeentools.Pin object at 0x000001E255DF61B0>, <pykeentools.Pin object at 0x000001E255DF5530>, <pykeentools.Pin object at 0x000001E255DF6270>, <pykeentools.Pin object at 0x000001E255DF5CB0>, <pykeentools.Pin object at 0x000001E255DF6370>, <pykeentools.Pin object at 0x000001E255DF64F0>, <pykeentools.Pin object at 0x000001E255DF6530>, <pykeentools.Pin object at 0x000001E255DF5F70>, <pykeentools.Pin object at 0x000001E255DF65B0>, <pykeentools.Pin object at 0x000001E255DF5EF0>, <pykeentools.Pin object at 0x000001E255DF6670>, <pykeentools.Pin object at 0x000001E255DF66B0>, <pykeentools.Pin object at 0x000001E255DF6770>]', 'pins': 15}, {'file': 'Side_Original.png', 'detected_faces': 1}], 'error': 'valid license not found', 'traceback': 'Traceback (most recent call last):\n  File "G:\\C\\wendang\\ChatGPT\\youxi\\Design\\Characters\\FaceBuilderTrial\\fit_trial.py", line 32, in <module>\n    result[\'pose_aligned\']=bool(fb.detect_face_pose(kid,faces[0]))\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npykeentools.UnlicensedException: valid license not found\n'}
+2026-09-08 16:12:19,760 - keentools - INFO - Common timeline panel has been unregistered
+2026-09-08 16:12:19,761 - keentools - INFO - FaceTracker classes have been unregistered
+2026-09-08 16:12:19,762 - keentools - INFO - GeoTracker classes have been unregistered
+2026-09-08 16:12:19,763 - keentools - INFO - FaceBuilder classes have been unregistered
+2026-09-08 16:12:19,763 - keentools - INFO - KeenTools addon classes have been unregistered
+
+Blender quit

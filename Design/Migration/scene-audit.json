@@ -1,0 +1,2606 @@
+{
+  "objects": 209,
+  "meshes": [
+    {
+      "name": "bed 1 chair iron",
+      "triangles": 136,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.001",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.002",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.003",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.004",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.005",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.006",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.007",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.008",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.009",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.010",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.011",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.012",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.013",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.014",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.015",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.016",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.017",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.018",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.019",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.020",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.021",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.022",
+      "triangles": 144,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.023",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.024",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 chair iron.025",
+      "triangles": 128,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 table",
+      "triangles": 72,
+      "uv_layers": [],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "bed 1 table.001",
+      "triangles": 72,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cube.018",
+      "triangles": 176,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Cube.133",
+      "triangles": 28,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cube.134",
+      "triangles": 12,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cube.135",
+      "triangles": 12,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cube.136",
+      "triangles": 150,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Cube.172",
+      "triangles": 144,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cube.180",
+      "triangles": 44,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cube.181",
+      "triangles": 44,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Cylinder.011",
+      "triangles": 64,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "Plane.001",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.002",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.003",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.005",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.006",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.007",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.009",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.010",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.011",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.013",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.014",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.015",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.018",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.019",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.021",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.022",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.023",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.025",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.026",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.027",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.029",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.030",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.031",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.033",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.034",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.035",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.037",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.038",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.039",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.040",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.041",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.042",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.043",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.044",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.045",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.046",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.047",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.048",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.049",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.050",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.051",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.052",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.053",
+      "triangles": 136,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.054",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.055",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.056",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.058",
+      "triangles": 26,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.059",
+      "triangles": 84,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Plane.060",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "Retopo_立方体.030",
+      "triangles": 44,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "tree1 Coo",
+      "triangles": 3710,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕1",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕2",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕3",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕4",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕5",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕6",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕7",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕8",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "屏幕老板",
+      "triangles": 2,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "平面",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": true
+    },
+    {
+      "name": "平面.001",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.002",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.003",
+      "triangles": 8,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "平面.005",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.006",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.009",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.010",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.011",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "平面.012",
+      "triangles": 8,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "平面.015",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.016",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.017",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.018",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.019",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.020",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.021",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.022",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.023",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.024",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.025",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.026",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.027",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.028",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.029",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.030",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.031",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.032",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.033",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.034",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.035",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "平面.036",
+      "triangles": 2,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "柱体",
+      "triangles": 28,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "柱体.001",
+      "triangles": 28,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "柱体.002",
+      "triangles": 84,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "柱体.003",
+      "triangles": 28,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "柱体.004",
+      "triangles": 28,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.001",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.002",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.003",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.004",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.005",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.006",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.007",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.008",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.009",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "棱角球.010",
+      "triangles": 80,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.001",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.002",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.003",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.004",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.005",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.006",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.007",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.008",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.009",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.010",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.011",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.012",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.013",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.014",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.015",
+      "triangles": 50,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.016",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.017",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.018",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.019",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.020",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.021",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.022",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.023",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.024",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.025",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.026",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.027",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.028",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.029",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.030",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.031",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.032",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.033",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.034",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.035",
+      "triangles": 12,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.036",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.037",
+      "triangles": 174,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.038",
+      "triangles": 174,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.039",
+      "triangles": 174,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.040",
+      "triangles": 174,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "立方体.041",
+      "triangles": 60,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "立方体.042",
+      "triangles": 56,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 0,
+      "hidden": false
+    },
+    {
+      "name": "结构.001",
+      "triangles": 468,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "结构.002",
+      "triangles": 76,
+      "uv_layers": [],
+      "materials": 0,
+      "hidden": true
+    },
+    {
+      "name": "贝塞尔曲线",
+      "triangles": 130,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    },
+    {
+      "name": "贝塞尔曲线.001",
+      "triangles": 57,
+      "uv_layers": [
+        "UV贴图"
+      ],
+      "materials": 1,
+      "hidden": false
+    }
+  ],
+  "images": [
+    {
+      "name": "1.jpg",
+      "size": [
+        5504,
+        3072
+      ],
+      "source": "FILE",
+      "packed": false,
+      "path": "G:\\my\\ai\\code\\irulerdream\\resources\\blender\\..\\..\\图片\\test\\1.jpg",
+      "exists": true
+    },
+    {
+      "name": "CAD平面图（顶视图） (1).png",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": false,
+      "path": "G:\\my\\ai\\code\\irulerdream\\resources\\blender\\..\\..\\..\\..\\光隙第二集\\下载\\h\\CAD平面图（顶视图） (1).png",
+      "exists": true
+    },
+    {
+      "name": "chuang ",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "dadi",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "dimian",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "jianpan ",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "qinagqq ",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "Render Result",
+      "size": [
+        0,
+        0
+      ],
+      "source": "VIEWER",
+      "packed": false,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "shu",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "taiqiu",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "Viewer Node",
+      "size": [
+        256,
+        256
+      ],
+      "source": "VIEWER",
+      "packed": false,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "会议桌",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "去掉文字.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "source": "FILE",
+      "packed": false,
+      "path": "G:\\my\\ai\\code\\irulerdream\\resources\\blender\\..\\..\\..\\..\\光隙第二集\\下载\\h\\去掉文字.png",
+      "exists": true
+    },
+    {
+      "name": "小桌子",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "桌子",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "椅子",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "GENERATED",
+      "packed": false,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "沙发",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "绿化",
+      "size": [
+        1024,
+        1024
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "老板桌子",
+      "size": [
+        2048,
+        2048
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "老板椅",
+      "size": [
+        1024,
+        1024
+      ],
+      "source": "GENERATED",
+      "packed": false,
+      "path": "",
+      "exists": false
+    },
+    {
+      "name": "键盘2",
+      "size": [
+        1024,
+        1024
+      ],
+      "source": "FILE",
+      "packed": true,
+      "path": "",
+      "exists": false
+    }
+  ],
+  "materials": [
+    {
+      "name": "Material",
+      "nodes": [
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "Material Output",
+          "image": null
+        },
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "Principled BSDF",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "沙发"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "Material Output",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "CAD平面图（顶视图） (1).png"
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理.001",
+          "image": "去掉文字.png"
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ],
+        [
+          "图像纹理.001",
+          "Color",
+          "原理化 BSDF",
+          "Base Color"
+        ]
+      ]
+    },
+    {
+      "name": "材质.001",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.002",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.003",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_CHECKER",
+          "name": "棋盘格纹理",
+          "image": null
+        },
+        {
+          "type": "MAPPING",
+          "name": "映射",
+          "image": null
+        },
+        {
+          "type": "TEX_COORD",
+          "name": "纹理坐标",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "qinagqq "
+        }
+      ],
+      "links": [
+        [
+          "映射",
+          "Vector",
+          "棋盘格纹理",
+          "Vector"
+        ],
+        [
+          "纹理坐标",
+          "UV",
+          "映射",
+          "Vector"
+        ],
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.004",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.005",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.006",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.007",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "键盘2"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.008",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "绿化"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.009",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "dimian"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.010",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "老板椅"
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.012",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "椅子"
+        }
+      ],
+      "links": [
+        [
+          "原理化 BSDF",
+          "BSDF",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.013",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "桌子"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.014",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "小桌子"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.015",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "老板桌子"
+        },
+        {
+          "type": "MAPPING",
+          "name": "映射",
+          "image": null
+        },
+        {
+          "type": "TEX_COORD",
+          "name": "纹理坐标",
+          "image": null
+        }
+      ],
+      "links": [
+        [
+          "映射",
+          "Vector",
+          "图像纹理",
+          "Vector"
+        ],
+        [
+          "纹理坐标",
+          "UV",
+          "映射",
+          "Vector"
+        ],
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.016",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "会议桌"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.017",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "shu"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.018",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "taiqiu"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.019",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "chuang "
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.020",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "dadi"
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    },
+    {
+      "name": "材质.021",
+      "nodes": [
+        {
+          "type": "BSDF_PRINCIPLED",
+          "name": "原理化 BSDF",
+          "image": null
+        },
+        {
+          "type": "OUTPUT_MATERIAL",
+          "name": "材质输出",
+          "image": null
+        },
+        {
+          "type": "TEX_IMAGE",
+          "name": "图像纹理",
+          "image": "jianpan "
+        }
+      ],
+      "links": [
+        [
+          "图像纹理",
+          "Color",
+          "原理化 BSDF",
+          "Base Color"
+        ],
+        [
+          "图像纹理",
+          "Color",
+          "材质输出",
+          "Surface"
+        ]
+      ]
+    }
+  ],
+  "triangles": 15501
+}

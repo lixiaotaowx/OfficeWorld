@@ -1,0 +1,67 @@
+{
+  "status": "Candidate selection only; not imported or browser-tested",
+  "author": "MrEliptik / Victor Meunier",
+  "license": "CC0",
+  "source": "https://mreliptik.itch.io/office-low-poly-pack",
+  "models": [
+    {
+      "file": "lamp_architect.glb",
+      "bytes": 144672,
+      "mesh_count": 1,
+      "indexed_triangles": 1948,
+      "images": 0
+    },
+    {
+      "file": "mini_pc.glb",
+      "bytes": 44740,
+      "mesh_count": 1,
+      "indexed_triangles": 716,
+      "images": 0
+    },
+    {
+      "file": "monitor.glb",
+      "bytes": 40680,
+      "mesh_count": 1,
+      "indexed_triangles": 610,
+      "images": 0
+    },
+    {
+      "file": "monitor_ultrawide.glb",
+      "bytes": 40696,
+      "mesh_count": 1,
+      "indexed_triangles": 610,
+      "images": 0
+    },
+    {
+      "file": "pencil_holder.glb",
+      "bytes": 17180,
+      "mesh_count": 1,
+      "indexed_triangles": 252,
+      "images": 0
+    },
+    {
+      "file": "speaker_desktop.glb",
+      "bytes": 65288,
+      "mesh_count": 1,
+      "indexed_triangles": 1052,
+      "images": 0
+    },
+    {
+      "file": "wireless_mouse.glb",
+      "bytes": 103096,
+      "mesh_count": 1,
+      "indexed_triangles": 1504,
+      "images": 0
+    }
+  ],
+  "total_file_bytes": 456352,
+  "total_indexed_triangles": 6692,
+  "excluded_as_is": [
+    "keyboard.glb",
+    "keyboard_slim.glb",
+    "laptop.glb",
+    "desktop.glb",
+    "mousepad.glb",
+    "all_objects.glb"
+  ]
+}

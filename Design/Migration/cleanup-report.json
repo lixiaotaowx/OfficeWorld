@@ -1,0 +1,48 @@
+{
+  "date": "2026-09-09T14:01:29.168243",
+  "deleted": [
+    {
+      "path": "OfficeWorld/DerivedDataCache",
+      "bytes": 2828323383,
+      "verified_absent": true
+    },
+    {
+      "path": "OfficeWorld/Intermediate",
+      "bytes": 293430459,
+      "verified_absent": true
+    },
+    {
+      "path": "OfficeWorld/Saved/Cooked",
+      "bytes": 1294790935,
+      "verified_absent": true
+    },
+    {
+      "path": "OfficeWorld/Saved/StagedBuilds",
+      "bytes": 1692337960,
+      "verified_absent": true
+    },
+    {
+      "path": "OfficeWorld/Saved/Shaders",
+      "bytes": 19599233,
+      "verified_absent": true
+    },
+    {
+      "path": "OfficeWorld/Saved/ShaderDebugInfo",
+      "bytes": 119810,
+      "verified_absent": true
+    },
+    {
+      "path": "OfficeWorld/Saved/Temp",
+      "bytes": 672536,
+      "verified_absent": true
+    },
+    {
+      "path": "Builds/OfficeWorld",
+      "bytes": 1694820110,
+      "verified_absent": true
+    }
+  ],
+  "preserved_files": 1427,
+  "preserved_verified": true,
+  "bytes_freed": 7824094426
+}

@@ -1,0 +1,52 @@
+{
+  "source": "https://polyhaven.com/a/ceramic_vase_01",
+  "license": "CC0",
+  "metadata": {
+    "type": 2,
+    "tags": [
+      "pot",
+      "clean",
+      "tall",
+      "modern",
+      "fancy",
+      "decor"
+    ],
+    "name": "Ceramic Vase 01",
+    "categories": [
+      "vases",
+      "containers",
+      "decorative"
+    ],
+    "authors": {
+      "James Ray Cock": "All"
+    },
+    "date_published": 1623767601,
+    "staging": null,
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "polycount": 2548,
+    "texel_density": 12083.371395475848,
+    "dimensions": [
+      204.87193763256073,
+      206.37669414281845,
+      401.379804010503
+    ],
+    "files_hash": "989b1a754be36032e5d643c9c333a08e218c65cf",
+    "description": "Free 8K Ceramic Vase 01 - a tall, modern glossy white pot with an elegant fluted rim and clean lines; a fancy decorative vase/container for stylish interiors.",
+    "category_id": "bda68bac-fe45-5d4f-aab6-ea0162d45774",
+    "category": "Decor & Art/Vases & Vessels/Ceramic Vases",
+    "attributes": {
+      "condition": [
+        "clean"
+      ],
+      "material": [
+        "ceramic"
+      ]
+    },
+    "download_count": 19610,
+    "img_version": "ff07fd46",
+    "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/ceramic_vase_01.png?width=256&height=256&v=ff07fd46"
+  }
+}

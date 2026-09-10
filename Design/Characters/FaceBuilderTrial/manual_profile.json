@@ -1,0 +1,18 @@
+[
+  {
+    "label": "profile nose bridge",
+    "status": "surface miss"
+  },
+  {
+    "label": "profile lower jaw",
+    "source": [
+      582,
+      224
+    ],
+    "target": [
+      582,
+      222
+    ],
+    "solve": true
+  }
+]

@@ -1,0 +1,68 @@
+{
+  "units": "cm",
+  "rooms": [
+    {
+      "name": "01  BILLIARDS",
+      "bounds": [
+        800,
+        -1450,
+        1400,
+        -950
+      ],
+      "door": [
+        800,
+        -1200
+      ],
+      "window_x": 1400
+    },
+    {
+      "name": "02  FITNESS",
+      "bounds": [
+        800,
+        -950,
+        1400,
+        -450
+      ],
+      "door": [
+        800,
+        -700
+      ],
+      "window_x": 1400
+    },
+    {
+      "name": "03  MEETING",
+      "bounds": [
+        800,
+        -450,
+        1400,
+        50
+      ],
+      "door": [
+        800,
+        -200
+      ],
+      "window_x": 1400
+    },
+    {
+      "name": "04  RESTROOM",
+      "bounds": [
+        800,
+        50,
+        1400,
+        550
+      ],
+      "door": [
+        800,
+        300
+      ],
+      "window_x": 1400
+    }
+  ],
+  "corridor_width": 200,
+  "room_door_width": 120,
+  "connection_to_existing": [
+    400,
+    455
+  ],
+  "scope": "Original measured architecture and joinery; licensed equipment imported separately"
+}

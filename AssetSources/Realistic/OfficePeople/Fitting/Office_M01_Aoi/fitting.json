@@ -1,0 +1,33 @@
+{
+  "identity": "Office_M01_Aoi",
+  "garment": "male_casualsuit01",
+  "shoes": "shoes04",
+  "landmarks": {
+    "joint-pelvis": "pelvis",
+    "joint-neck": "neck_01",
+    "joint-l-shoulder": "upperarm_l",
+    "joint-l-elbow": "lowerarm_l",
+    "joint-l-hand": "hand_l",
+    "joint-l-upper-leg": "thigh_l",
+    "joint-l-knee": "calf_l",
+    "joint-l-ankle": "foot_l",
+    "joint-l-foot-1": "ball_l",
+    "joint-r-shoulder": "upperarm_r",
+    "joint-r-elbow": "lowerarm_r",
+    "joint-r-hand": "hand_r",
+    "joint-r-upper-leg": "thigh_r",
+    "joint-r-knee": "calf_r",
+    "joint-r-ankle": "foot_r",
+    "joint-r-foot-1": "ball_r"
+  },
+  "skin_weights_transferred": {
+    "male_casualsuit01": 8421,
+    "shoes04": 1722
+  },
+  "status": "candidate; requires UE fit and motion review",
+  "vertices": {
+    "SK_Office_M01_Aoi_male_casualsuit01": 3659,
+    "SK_Office_M01_Aoi_shoes04": 1578,
+    "SK_Office_M01_Aoi_NativeTop": 10282
+  }
+}

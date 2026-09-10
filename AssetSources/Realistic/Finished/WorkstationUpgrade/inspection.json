@@ -1,0 +1,2592 @@
+{
+  "monitor": {
+    "objects": [
+      {
+        "name": "USB-C.001",
+        "dimensions": [
+          0.004200000315904617,
+          0.007900000549852848,
+          0.008939996361732483
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 8240,
+        "materials": [
+          "Metal.001",
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "USB-C",
+        "dimensions": [
+          0.004199999384582043,
+          0.007900000549852848,
+          0.008939996361732483
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 8240,
+        "materials": [
+          "Metal.001",
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "SpeakerGrill",
+        "dimensions": [
+          0.5345016717910767,
+          0.04560535401105881,
+          0.008121594786643982
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 7928,
+        "materials": [
+          "BlackGloss"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ]
+        ]
+      },
+      {
+        "name": "ScreenBezel",
+        "dimensions": [
+          0.8078547120094299,
+          0.046825721859931946,
+          0.35462871193885803
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 192,
+        "materials": [
+          "ScreenRim"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Screen",
+        "dimensions": [
+          0.8038547039031982,
+          0.04636719822883606,
+          0.349628746509552
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 96,
+        "materials": [
+          "Screen"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Samsung_Odyssey_Logo",
+        "dimensions": [
+          0.027011513710021973,
+          0.008714422583580017,
+          0.021658390760421753
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 144,
+        "materials": [
+          "Samsung_Odyssey_Logo"
+        ],
+        "modifiers": [
+          [
+            "Shrinkwrap",
+            "SHRINKWRAP"
+          ]
+        ]
+      },
+      {
+        "name": "Rail",
+        "dimensions": [
+          0.19590313732624054,
+          0.015500009059906006,
+          0.4401452839374542
+        ],
+        "location": [
+          4.656612873077393e-10,
+          -0.07565175741910934,
+          -0.3630862534046173
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 4714,
+        "materials": [
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "PowerButton",
+        "dimensions": [
+          0.008600041270256042,
+          0.0006589135155081749,
+          0.008600011467933655
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 5187,
+        "materials": [
+          "Metal"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "OuterRing",
+        "dimensions": [
+          0.23978015780448914,
+          0.004674733616411686,
+          0.23978011310100555
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 6385,
+        "materials": [
+          "BlackGloss"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Neck",
+        "dimensions": [
+          0.06000000238418579,
+          0.07147330045700073,
+          0.034002333879470825
+        ],
+        "location": [
+          -0.0009684562683105469,
+          0.19119364023208618,
+          0.36308401823043823
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 7202,
+        "materials": [
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Monitor",
+        "dimensions": [
+          0.8136000037193298,
+          0.08180563151836395,
+          0.3633607029914856
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 23501,
+        "materials": [
+          "Metal"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "MiniDisplayPort",
+        "dimensions": [
+          0.0056961290538311005,
+          0.005690000951290131,
+          0.008737623691558838
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 13968,
+        "materials": [
+          "Metal.001",
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "MicroUSB",
+        "dimensions": [
+          0.003175167366862297,
+          0.005007147789001465,
+          0.007874488830566406
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 10332,
+        "materials": [
+          "Metal.001",
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Logo",
+        "dimensions": [
+          0.02420353889465332,
+          0.007983486168086529,
+          0.0
+        ],
+        "location": [
+          0.0,
+          0.055763982236385345,
+          0.1797742247581482
+        ],
+        "rotation": [
+          1.570796251296997,
+          -0.0,
+          0.0
+        ],
+        "vertices": 4,
+        "materials": [
+          "Logo"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Led",
+        "dimensions": [
+          0.1826733499765396,
+          0.015264391899108887,
+          0.18264758586883545
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 5551,
+        "materials": [
+          "Led"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Hinge",
+        "dimensions": [
+          0.09512423723936081,
+          0.027417654171586037,
+          0.0951957255601883
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 5811,
+        "materials": [
+          "BlackPlastic Matte"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "DCinput",
+        "dimensions": [
+          0.013173598796129227,
+          0.012247317470610142,
+          0.0132579505443573
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 2886,
+        "materials": [
+          "BlackPlastic Matte",
+          "Metal.001"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "ControlPanel",
+        "dimensions": [
+          0.09627220034599304,
+          0.003732450306415558,
+          0.005531966686248779
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 2324,
+        "materials": [
+          "BlackGloss"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "ConicRing",
+        "dimensions": [
+          0.21107527613639832,
+          0.04444662854075432,
+          0.21112146973609924
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 4769,
+        "materials": [
+          "Transparent"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Base",
+        "dimensions": [
+          0.19598019123077393,
+          0.21000000834465027,
+          0.4427199959754944
+        ],
+        "location": [
+          4.656612873077393e-10,
+          -0.07565175741910934,
+          -0.3630862534046173
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 2715,
+        "materials": [
+          "Metal"
+        ],
+        "modifiers": []
+      }
+    ],
+    "materials": [
+      {
+        "name": "BlackGloss",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "BlackPlastic Matte",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Led",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Color Ramp",
+            "VALTORGB"
+          ],
+          [
+            "Gradient Texture",
+            "TEX_GRADIENT"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Color Ramp",
+            "Color",
+            "Principled BSDF",
+            "Emission Color"
+          ],
+          [
+            "Gradient Texture",
+            "Color",
+            "Color Ramp",
+            "Factor"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Gradient Texture",
+            "Vector"
+          ],
+          [
+            "Color Ramp",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Texture Coordinate",
+            "Object",
+            "Mapping",
+            "Vector"
+          ]
+        ]
+      },
+      {
+        "name": "Logo",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ]
+        ],
+        "links": [
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Image Texture",
+            "Alpha",
+            "Principled BSDF",
+            "Alpha"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Metal",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Metal.001",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Samsung_Odyssey_Logo",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Invert Color",
+            "INVERT"
+          ]
+        ],
+        "links": [
+          [
+            "Invert Color",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Image Texture",
+            "Alpha",
+            "Principled BSDF",
+            "Alpha"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Invert Color",
+            "Color"
+          ]
+        ]
+      },
+      {
+        "name": "Screen",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Image Texture",
+            "Vector"
+          ],
+          [
+            "Texture Coordinate",
+            "UV",
+            "Mapping",
+            "Vector"
+          ]
+        ]
+      },
+      {
+        "name": "ScreenRim",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Transparent",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      }
+    ],
+    "images": [
+      {
+        "name": "samsung logo.png",
+        "size": [
+          2104,
+          694
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\..\\asus\\Desktop\\BlenderKit Model\\Samsung Odyssey G8\\samsung logo.png"
+      },
+      {
+        "name": "Samsung_Odyssey_Logo.png",
+        "size": [
+          268,
+          196
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\..\\asus\\Desktop\\BlenderKit Model\\Samsung Odyssey G8\\Samsung_Odyssey_Logo.png"
+      },
+      {
+        "name": "Wallpaper.png",
+        "size": [
+          1175,
+          916
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\..\\asus\\Desktop\\BlenderKit Model\\Samsung Odyssey G8\\Wallpaper.png"
+      }
+    ]
+  },
+  "keyboard": {
+    "objects": [
+      {
+        "name": "VolumeWheelFrame",
+        "dimensions": [
+          0.051500022411346436,
+          0.02191019058227539,
+          0.006500000134110451
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 68,
+        "materials": [
+          "Plastic"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "VolumeWheel",
+        "dimensions": [
+          0.03257113695144653,
+          0.013541589491069317,
+          0.013541591353714466
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 192,
+        "materials": [
+          "Stainless Steel"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ]
+        ]
+      },
+      {
+        "name": "USB",
+        "dimensions": [
+          0.00760650634765625,
+          0.011097490787506104,
+          0.00260486570186913
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 32,
+        "materials": [
+          "Stainless Steel"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "SwitchBottom",
+        "dimensions": [
+          0.34532347321510315,
+          0.11396078020334244,
+          0.0007499996572732925
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 4176,
+        "materials": [
+          "switch_base"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "SwitchBase",
+        "dimensions": [
+          0.3442935645580292,
+          0.11337795853614807,
+          0.0032211244106292725
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.002203049138188362
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 16356,
+        "materials": [
+          "switch"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "Solidify",
+            "SOLIDIFY"
+          ]
+        ]
+      },
+      {
+        "name": "Switch",
+        "dimensions": [
+          0.33844467997550964,
+          0.10379887372255325,
+          0.006068069487810135
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07350000739097595,
+          0.0022030500695109367
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 3828,
+        "materials": [
+          "Sticker"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ]
+        ]
+      },
+      {
+        "name": "Sticker",
+        "dimensions": [
+          0.0988113135099411,
+          0.03252122551202774,
+          0.0
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 20,
+        "materials": [
+          "Sticker"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Stabillizers",
+        "dimensions": [
+          0.27338707447052,
+          0.0700797587633133,
+          0.003230373840779066
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999248981476,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 864,
+        "materials": [
+          "switch_base"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ]
+        ]
+      },
+      {
+        "name": "Screws",
+        "dimensions": [
+          0.35595691204071045,
+          0.1124107763171196,
+          0.002928477246314287
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07350000739097595,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 96,
+        "materials": [
+          "Stainless Steel"
+        ],
+        "modifiers": [
+          [
+            "Subdivision",
+            "SUBSURF"
+          ],
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "RubberFeet",
+        "dimensions": [
+          0.303438663482666,
+          0.1387093961238861,
+          0.022193465381860733
+        ],
+        "location": [
+          -0.07368940860033035,
+          0.07349999994039536,
+          0.0022030500695109367
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 80,
+        "materials": [
+          "rubberfeet"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "Logo",
+        "dimensions": [
+          0.01594647392630577,
+          0.016652293503284454,
+          0.002506427001208067
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 99,
+        "materials": [
+          "logo"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Lightspeed",
+        "dimensions": [
+          0.03700000047683716,
+          0.02149999886751175,
+          0.0012335758656263351
+        ],
+        "location": [
+          -0.07368939369916916,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 20,
+        "materials": [
+          "Keycaps"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "LEDs",
+        "dimensions": [
+          0.3403143584728241,
+          0.12723904848098755,
+          0.0070497822016477585
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030500695109367
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 352,
+        "materials": [
+          "LEDs"
+        ],
+        "modifiers": [
+          [
+            "Solidify",
+            "SOLIDIFY"
+          ],
+          [
+            "Subdivision",
+            "SUBSURF"
+          ]
+        ]
+      },
+      {
+        "name": "Keycaps",
+        "dimensions": [
+          0.34878259897232056,
+          0.1169218122959137,
+          0.004429551772773266
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030500695109367
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 6285,
+        "materials": [
+          "Keycaps"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "Feet2",
+        "dimensions": [
+          0.30934393405914307,
+          0.002957388758659363,
+          0.002957387361675501
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 16,
+        "materials": [],
+        "modifiers": [
+          [
+            "Subdivision",
+            "SUBSURF"
+          ]
+        ]
+      },
+      {
+        "name": "Feet",
+        "dimensions": [
+          0.30306705832481384,
+          0.016483504325151443,
+          0.023248018696904182
+        ],
+        "location": [
+          -0.07368939369916916,
+          0.07349999994039536,
+          0.0022030500695109367
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 500,
+        "materials": [
+          "Plastic"
+        ],
+        "modifiers": [
+          [
+            "Subdivision",
+            "SUBSURF"
+          ],
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "Case3",
+        "dimensions": [
+          0.32578134536743164,
+          0.058914586901664734,
+          0.0028919470496475697
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 111,
+        "materials": [
+          "Plastic"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "Case2",
+        "dimensions": [
+          0.36689668893814087,
+          0.1469999998807907,
+          0.004108482040464878
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 412,
+        "materials": [
+          "Plastic"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "Case",
+        "dimensions": [
+          0.36500000953674316,
+          0.1466868370771408,
+          0.007000000216066837
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 56,
+        "materials": [
+          "Plastic"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ]
+        ]
+      },
+      {
+        "name": "Buttons",
+        "dimensions": [
+          0.24306967854499817,
+          0.013131817802786827,
+          0.005000002216547728
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 192,
+        "materials": [
+          "Keycaps"
+        ],
+        "modifiers": [
+          [
+            "Subdivision",
+            "SUBSURF"
+          ],
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "BatteryIndicator",
+        "dimensions": [
+          0.042780399322509766,
+          0.0186474546790123,
+          0.0
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.0022030496038496494
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 4,
+        "materials": [
+          "Material.001"
+        ],
+        "modifiers": []
+      },
+      {
+        "name": "Aluminium.003",
+        "dimensions": [
+          0.15376457571983337,
+          0.045761898159980774,
+          0.002740714931860566
+        ],
+        "location": [
+          -0.07368940860033035,
+          0.07349999994039536,
+          0.002203049836680293
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "vertices": 22,
+        "materials": [
+          "Plastic"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      },
+      {
+        "name": "Aluminium",
+        "dimensions": [
+          0.36742183566093445,
+          0.1469999998807907,
+          0.005796951707452536
+        ],
+        "location": [
+          -0.07368940114974976,
+          0.07349999994039536,
+          0.024718772619962692
+        ],
+        "rotation": [
+          0.14681148529052734,
+          3.248171836756494e-17,
+          2.3886401490874868e-18
+        ],
+        "vertices": 651,
+        "materials": [
+          "Stainless Steel"
+        ],
+        "modifiers": [
+          [
+            "Bevel",
+            "BEVEL"
+          ],
+          [
+            "\u81ea\u52a8\u5e73\u6ed1",
+            "NODES"
+          ]
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "Keycaps",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Mix Shader",
+            "MIX_SHADER"
+          ],
+          [
+            "Translucent BSDF",
+            "BSDF_TRANSLUCENT"
+          ],
+          [
+            "Color Ramp",
+            "VALTORGB"
+          ],
+          [
+            "Mapping.001",
+            "MAPPING"
+          ],
+          [
+            "Noise Texture",
+            "TEX_NOISE"
+          ],
+          [
+            "Texture Coordinate.001",
+            "TEX_COORD"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "RGB Curves",
+            "CURVE_RGB"
+          ]
+        ],
+        "links": [
+          [
+            "Mapping",
+            "Vector",
+            "Image Texture",
+            "Vector"
+          ],
+          [
+            "Texture Coordinate",
+            "UV",
+            "Mapping",
+            "Vector"
+          ],
+          [
+            "Mix Shader",
+            "Shader",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Mix Shader",
+            "Shader"
+          ],
+          [
+            "Translucent BSDF",
+            "BSDF",
+            "Mix Shader",
+            "Shader"
+          ],
+          [
+            "Noise Texture",
+            "Factor",
+            "Color Ramp",
+            "Factor"
+          ],
+          [
+            "Mapping.001",
+            "Vector",
+            "Noise Texture",
+            "Vector"
+          ],
+          [
+            "Color Ramp",
+            "Color",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Texture Coordinate.001",
+            "UV",
+            "Mapping.001",
+            "Vector"
+          ],
+          [
+            "RGB Curves",
+            "Color",
+            "Mix Shader",
+            "Factor"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "RGB Curves",
+            "Color"
+          ]
+        ]
+      },
+      {
+        "name": "LEDs",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Image Texture",
+            "Vector"
+          ],
+          [
+            "Texture Coordinate",
+            "UV",
+            "Mapping",
+            "Vector"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Emission Color"
+          ]
+        ]
+      },
+      {
+        "name": "logo",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Translucent BSDF",
+            "BSDF_TRANSLUCENT"
+          ]
+        ],
+        "links": [
+          [
+            "Translucent BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Material.001",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Invert Color",
+            "INVERT"
+          ],
+          [
+            "RGB Curves",
+            "CURVE_RGB"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "RGB Curves",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Invert Color",
+            "Color"
+          ],
+          [
+            "Invert Color",
+            "Color",
+            "Principled BSDF",
+            "Alpha"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "RGB Curves",
+            "Color"
+          ]
+        ]
+      },
+      {
+        "name": "Plastic",
+        "nodes": [
+          [
+            "Color Ramp",
+            "VALTORGB"
+          ],
+          [
+            "Mapping.001",
+            "MAPPING"
+          ],
+          [
+            "Noise Texture",
+            "TEX_NOISE"
+          ],
+          [
+            "Texture Coordinate.001",
+            "TEX_COORD"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Noise Texture",
+            "Factor",
+            "Color Ramp",
+            "Factor"
+          ],
+          [
+            "Mapping.001",
+            "Vector",
+            "Noise Texture",
+            "Vector"
+          ],
+          [
+            "Color Ramp",
+            "Color",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Texture Coordinate.001",
+            "UV",
+            "Mapping.001",
+            "Vector"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "rubberfeet",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "Stainless Steel",
+        "nodes": [
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ],
+          [
+            "Image Texture.002",
+            "TEX_IMAGE"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Combine XYZ",
+            "COMBXYZ"
+          ],
+          [
+            "Separate XYZ",
+            "SEPXYZ"
+          ],
+          [
+            "Math",
+            "MATH"
+          ],
+          [
+            "Normal Map",
+            "NORMAL_MAP"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Image Texture.003",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "RGB Curves",
+            "CURVE_RGB"
+          ],
+          [
+            "Color Ramp",
+            "VALTORGB"
+          ]
+        ],
+        "links": [
+          [
+            "Mapping",
+            "Vector",
+            "Image Texture",
+            "Vector"
+          ],
+          [
+            "Texture Coordinate",
+            "UV",
+            "Mapping",
+            "Vector"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Image Texture.002",
+            "Vector"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Image Texture.003",
+            "Vector"
+          ],
+          [
+            "Image Texture.002",
+            "Color",
+            "Separate XYZ",
+            "Vector"
+          ],
+          [
+            "Separate XYZ",
+            "X",
+            "Combine XYZ",
+            "X"
+          ],
+          [
+            "Separate XYZ",
+            "Z",
+            "Combine XYZ",
+            "Z"
+          ],
+          [
+            "Separate XYZ",
+            "Y",
+            "Math",
+            "Value"
+          ],
+          [
+            "Math",
+            "Value",
+            "Combine XYZ",
+            "Y"
+          ],
+          [
+            "Combine XYZ",
+            "Vector",
+            "Normal Map",
+            "Color"
+          ],
+          [
+            "Normal Map",
+            "Normal",
+            "Principled BSDF",
+            "Normal"
+          ],
+          [
+            "Image Texture.003",
+            "Color",
+            "Color Ramp",
+            "Factor"
+          ],
+          [
+            "RGB Curves",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Color Ramp",
+            "Color",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "RGB Curves",
+            "Color"
+          ]
+        ]
+      },
+      {
+        "name": "Sticker",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ]
+        ]
+      },
+      {
+        "name": "switch",
+        "nodes": [
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Glass BSDF",
+            "BSDF_GLASS"
+          ]
+        ],
+        "links": [
+          [
+            "Glass BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "switch_base",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      }
+    ],
+    "images": [
+      {
+        "name": "al_diffuse.jpg",
+        "size": [
+          1920,
+          1920
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\al_diffuse.jpg"
+      },
+      {
+        "name": "al_normal.jpg",
+        "size": [
+          1920,
+          1920
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\al_normal.jpg"
+      },
+      {
+        "name": "al_roughness.jpg",
+        "size": [
+          1920,
+          1920
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\al_roughness.jpg"
+      },
+      {
+        "name": "battery_caps.png",
+        "size": [
+          700,
+          300
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\battery_caps.png"
+      },
+      {
+        "name": "layout.png",
+        "size": [
+          3600,
+          2200
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\layout.png"
+      },
+      {
+        "name": "rear_sticker.png",
+        "size": [
+          438,
+          157
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\rear_sticker.png"
+      },
+      {
+        "name": "rgb.jpg",
+        "size": [
+          800,
+          600
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\Pictures\\LogitechG915TKL\\rgb.jpg"
+      }
+    ]
+  },
+  "mouse": {
+    "objects": [
+      {
+        "name": "logitech_mx4_transparent",
+        "dimensions": [
+          0.07953725755214691,
+          0.10831350088119507,
+          0.04508968070149422
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 1348,
+        "materials": [
+          "mx4_transp_mat"
+        ],
+        "modifiers": [
+          [
+            "Subdivision",
+            "SUBSURF"
+          ]
+        ]
+      },
+      {
+        "name": "logitech_mx4_body",
+        "dimensions": [
+          0.08828173577785492,
+          0.1259380280971527,
+          0.05027178302407265
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 9768,
+        "materials": [
+          "mx4_main_mat"
+        ],
+        "modifiers": [
+          [
+            "Subdivision",
+            "SUBSURF"
+          ]
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "mx4_main_mat",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture.001",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture.002",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture.003",
+            "TEX_IMAGE"
+          ],
+          [
+            "Normal Map",
+            "NORMAL_MAP"
+          ],
+          [
+            "Image Texture.004",
+            "TEX_IMAGE"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Reroute",
+            "REROUTE"
+          ],
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ],
+          [
+            "Frame",
+            "FRAME"
+          ],
+          [
+            "Frame.001",
+            "FRAME"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Image Texture.001",
+            "Color",
+            "Principled BSDF",
+            "Metallic"
+          ],
+          [
+            "Image Texture.002",
+            "Color",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Image Texture.003",
+            "Color",
+            "Normal Map",
+            "Color"
+          ],
+          [
+            "Normal Map",
+            "Normal",
+            "Principled BSDF",
+            "Normal"
+          ],
+          [
+            "Image Texture.004",
+            "Color",
+            "Principled BSDF",
+            "Emission Color"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.001",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.002",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.004",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.003",
+            "Vector"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Reroute",
+            "Input"
+          ],
+          [
+            "Texture Coordinate",
+            "UV",
+            "Mapping",
+            "Vector"
+          ]
+        ]
+      },
+      {
+        "name": "mx4_transp_mat",
+        "nodes": [
+          [
+            "Principled BSDF",
+            "BSDF_PRINCIPLED"
+          ],
+          [
+            "Material Output",
+            "OUTPUT_MATERIAL"
+          ],
+          [
+            "Image Texture",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture.001",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture.002",
+            "TEX_IMAGE"
+          ],
+          [
+            "Image Texture.003",
+            "TEX_IMAGE"
+          ],
+          [
+            "Normal Map",
+            "NORMAL_MAP"
+          ],
+          [
+            "Image Texture.004",
+            "TEX_IMAGE"
+          ],
+          [
+            "Mapping",
+            "MAPPING"
+          ],
+          [
+            "Reroute",
+            "REROUTE"
+          ],
+          [
+            "Texture Coordinate",
+            "TEX_COORD"
+          ],
+          [
+            "Frame",
+            "FRAME"
+          ],
+          [
+            "Frame.001",
+            "FRAME"
+          ]
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Image Texture.001",
+            "Color",
+            "Principled BSDF",
+            "Metallic"
+          ],
+          [
+            "Image Texture.002",
+            "Color",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Image Texture.003",
+            "Color",
+            "Normal Map",
+            "Color"
+          ],
+          [
+            "Normal Map",
+            "Normal",
+            "Principled BSDF",
+            "Normal"
+          ],
+          [
+            "Image Texture.004",
+            "Color",
+            "Principled BSDF",
+            "Alpha"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.001",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.002",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.004",
+            "Vector"
+          ],
+          [
+            "Reroute",
+            "Output",
+            "Image Texture.003",
+            "Vector"
+          ],
+          [
+            "Mapping",
+            "Vector",
+            "Reroute",
+            "Input"
+          ],
+          [
+            "Texture Coordinate",
+            "UV",
+            "Mapping",
+            "Vector"
+          ]
+        ]
+      }
+    ],
+    "images": [
+      {
+        "name": "mx4_main_mat_BaseColor.png",
+        "size": [
+          2048,
+          2048
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_main_mat_BaseColor.png"
+      },
+      {
+        "name": "mx4_main_mat_Emissive.png",
+        "size": [
+          2048,
+          2048
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_main_mat_Emissive.png"
+      },
+      {
+        "name": "mx4_main_mat_Metallic.png",
+        "size": [
+          2048,
+          2048
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_main_mat_Metallic.png"
+      },
+      {
+        "name": "mx4_main_mat_Normal.png",
+        "size": [
+          2048,
+          2048
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_main_mat_Normal.png"
+      },
+      {
+        "name": "mx4_main_mat_Roughness.png",
+        "size": [
+          2048,
+          2048
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_main_mat_Roughness.png"
+      },
+      {
+        "name": "mx4_transp_mat_BaseColor.png",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_transp_mat_BaseColor.png"
+      },
+      {
+        "name": "mx4_transp_mat_Metallic.png",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_transp_mat_Metallic.png"
+      },
+      {
+        "name": "mx4_transp_mat_Normal.png",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_transp_mat_Normal.png"
+      },
+      {
+        "name": "mx4_transp_mat_Opacity.png",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_transp_mat_Opacity.png"
+      },
+      {
+        "name": "mx4_transp_mat_Roughness.png",
+        "size": [
+          1024,
+          1024
+        ],
+        "packed": true,
+        "path": "//..\\..\\..\\..\\OneDrive\\! blender\\! Models\\! AV landing pack\\! AV pack\\Logitech\\Logitech MX4\\textures\\mx4_transp_mat_Roughness.png"
+      }
+    ]
+  }
+}

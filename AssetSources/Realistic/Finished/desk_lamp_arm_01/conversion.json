@@ -1,0 +1,13 @@
+{
+  "dimensions_m": [
+    0.5985962152481079,
+    0.460171639919281,
+    0.830940306186676
+  ],
+  "materials": [
+    "desk_lamp_arm_01",
+    "desk_lamp_arm_01_light",
+    "Unassigned"
+  ],
+  "vertices": 13797
+}

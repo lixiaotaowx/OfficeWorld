@@ -1,0 +1,14 @@
+{
+  "source": "office_desk_03.blend",
+  "source_parts": 14,
+  "dimensions_m": [
+    2.1999988555908203,
+    1.2713851928710938,
+    0.754605233669281
+  ],
+  "textures": [
+    "D1_BaseColor.png",
+    "D1_Roughness.png"
+  ],
+  "geometry": "original mesh with source modifiers applied"
+}

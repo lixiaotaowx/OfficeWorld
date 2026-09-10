@@ -1,0 +1,50 @@
+[
+  {
+    "label": "left nose wing",
+    "source": [
+      613,
+      194
+    ],
+    "target": [
+      615,
+      194
+    ],
+    "solve": true
+  },
+  {
+    "label": "right nose wing",
+    "source": [
+      634,
+      194
+    ],
+    "target": [
+      632,
+      194
+    ],
+    "solve": true
+  },
+  {
+    "label": "left jaw contour",
+    "source": [
+      584,
+      219
+    ],
+    "target": [
+      587,
+      219
+    ],
+    "solve": true
+  },
+  {
+    "label": "right jaw contour",
+    "source": [
+      663,
+      219
+    ],
+    "target": [
+      660,
+      219
+    ],
+    "solve": true
+  }
+]

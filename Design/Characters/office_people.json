@@ -1,0 +1,50 @@
+{
+  "status": "Four final identities assembled and saved; wardrobe adaptation incomplete. Paused after character-only work.",
+  "requirements": "Four distinct natural adult Asian appearances, two men and two women, distinct hairstyles and office casual garment styles with shoes. Preserve native walking, seating and HUD.",
+  "characters": [
+    {
+      "id": "Office_M01_Aoi",
+      "role": "player",
+      "preset": "Aoi",
+      "gender_presentation": "man",
+      "hair": "Hair_S_Clean",
+      "outfit_target": "navy hoodie, straight jeans, casual sneakers",
+      "revision_note": "Aoi assembled, installed as final player and saved. Kelvin-based Office_M01 retained only as fallback.",
+      "outfit_current": "navy native MetaHuman T-shirt, CC0 dark jeans and black shoes",
+      "outfit_acceptance": "Not final: different-cut external shirts failed shoulder/arm fit; candidates retained, native tops installed."
+    },
+    {
+      "id": "Office_F01",
+      "role": "LinKe",
+      "preset": "Aera",
+      "gender_presentation": "woman",
+      "hair": "Hair_M_BobStraight",
+      "outfit_target": "sage sweater, slim jeans, loafers",
+      "outfit_current": "sage native MetaHuman T-shirt, CC0 denim trousers and black shoes; trouser/foot clipping remains",
+      "outfit_acceptance": "Not final: different-cut external shirts failed shoulder/arm fit; candidates retained, native tops installed."
+    },
+    {
+      "id": "Office_M02",
+      "role": "ZhouChen",
+      "preset": "Bo",
+      "gender_presentation": "man",
+      "hair": "Hair_S_SideSweptFringe",
+      "outfit_target": "light tucked T-shirt, charcoal cargo trousers, running shoes",
+      "outfit_current": "grey native MetaHuman T-shirt, CC0 blue jeans and brown shoes; foot clipping remains",
+      "outfit_acceptance": "Not final: different-cut external shirts failed shoulder/arm fit; candidates retained, native tops installed."
+    },
+    {
+      "id": "Office_F02",
+      "role": "ChenYi",
+      "preset": "Tuya",
+      "gender_presentation": "woman",
+      "hair": "Hair_S_LowPonytail",
+      "outfit_target": "cream relaxed T-shirt, dark straight jeans, flats",
+      "outfit_current": "tan native MetaHuman T-shirt, CC0 dark skirt and black shoes; foot clipping remains",
+      "outfit_acceptance": "Not final: different-cut external shirts failed shoulder/arm fit; candidates retained, native tops installed."
+    }
+  ],
+  "author": "Epic Games (MetaHuman preset/wardrobe source); OfficeWorld adaptation",
+  "source": "Installed UE 5.8 MetaHuman Character Optional/Presets; https://www.fab.com/sellers/Epic%20Games",
+  "license_note": "Epic terms for MetaHuman sources and native shirts; CC0 MakeHuman trousers/skirt/shoes. See AssetSources/Realistic/OfficePeople/SOURCES.md."
+}

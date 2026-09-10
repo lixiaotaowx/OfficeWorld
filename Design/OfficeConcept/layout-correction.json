@@ -1,0 +1,14 @@
+{
+  "island_A_center": [
+    -2.4,
+    -2.9
+  ],
+  "island_B_center": [
+    2.2,
+    0
+  ],
+  "room_front_y": 3.0,
+  "hidden_placeholder_objects": 313,
+  "moved_root_objects": 352,
+  "note": "User prioritizes layout. Procedural plants and placeholder wall art hidden; no user-created plants edited."
+}

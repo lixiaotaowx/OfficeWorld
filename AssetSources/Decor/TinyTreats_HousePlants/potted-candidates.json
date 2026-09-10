@@ -1,0 +1,122 @@
+{
+  "status": "Preassembled candidates identified by filenames; not imported",
+  "author": "Isa Lousberg",
+  "license": "CC0",
+  "models": [
+    {
+      "model": "cacti_plant_pot_large.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\cacti_plant_pot_large.gltf",
+      "triangles": 2256,
+      "bytes_with_dependencies": 105737
+    },
+    {
+      "model": "cacti_plant_pot_small.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\cacti_plant_pot_small.gltf",
+      "triangles": 792,
+      "bytes_with_dependencies": 58101
+    },
+    {
+      "model": "monstera_plant_large_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\monstera_plant_large_potted.gltf",
+      "triangles": 5900,
+      "bytes_with_dependencies": 215963
+    },
+    {
+      "model": "monstera_plant_medium_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\monstera_plant_medium_potted.gltf",
+      "triangles": 3108,
+      "bytes_with_dependencies": 128073
+    },
+    {
+      "model": "monstera_plant_small_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\monstera_plant_small_potted.gltf",
+      "triangles": 1156,
+      "bytes_with_dependencies": 67268
+    },
+    {
+      "model": "pothos_plant_large_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\pothos_plant_large_potted.gltf",
+      "triangles": 6800,
+      "bytes_with_dependencies": 285835
+    },
+    {
+      "model": "pothos_plant_medium_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\pothos_plant_medium_potted.gltf",
+      "triangles": 3680,
+      "bytes_with_dependencies": 166541
+    },
+    {
+      "model": "pothos_plant_small_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\pothos_plant_small_potted.gltf",
+      "triangles": 1792,
+      "bytes_with_dependencies": 93610
+    },
+    {
+      "model": "sansevieria_plant_large_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\sansevieria_plant_large_potted.gltf",
+      "triangles": 1464,
+      "bytes_with_dependencies": 87271
+    },
+    {
+      "model": "sansevieria_plant_medium_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\sansevieria_plant_medium_potted.gltf",
+      "triangles": 936,
+      "bytes_with_dependencies": 63882
+    },
+    {
+      "model": "sansevieria_plant_small_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\sansevieria_plant_small_potted.gltf",
+      "triangles": 564,
+      "bytes_with_dependencies": 47340
+    },
+    {
+      "model": "succulent_plant_pot_large.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\succulent_plant_pot_large.gltf",
+      "triangles": 4590,
+      "bytes_with_dependencies": 242732
+    },
+    {
+      "model": "succulent_plant_pot_small.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\succulent_plant_pot_small.gltf",
+      "triangles": 3386,
+      "bytes_with_dependencies": 187829
+    },
+    {
+      "model": "yucca_plant_large_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\yucca_plant_large_potted.gltf",
+      "triangles": 5328,
+      "bytes_with_dependencies": 248587
+    },
+    {
+      "model": "yucca_plant_medium_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\yucca_plant_medium_potted.gltf",
+      "triangles": 2908,
+      "bytes_with_dependencies": 148914
+    },
+    {
+      "model": "yucca_plant_small_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\yucca_plant_small_potted.gltf",
+      "triangles": 1792,
+      "bytes_with_dependencies": 102696
+    },
+    {
+      "model": "zzplant_plant_large_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\zzplant_plant_large_potted.gltf",
+      "triangles": 7856,
+      "bytes_with_dependencies": 348788
+    },
+    {
+      "model": "zzplant_plant_medium_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\zzplant_plant_medium_potted.gltf",
+      "triangles": 2992,
+      "bytes_with_dependencies": 151857
+    },
+    {
+      "model": "zzplant_plant_small_potted.gltf",
+      "relative_path": "Models\\Tiny_Treats_House_Plants_1.0_FREE\\Assets\\gltf\\zzplant_plant_small_potted.gltf",
+      "triangles": 1368,
+      "bytes_with_dependencies": 82717
+    }
+  ],
+  "unique_dependency_bytes": 2456209
+}

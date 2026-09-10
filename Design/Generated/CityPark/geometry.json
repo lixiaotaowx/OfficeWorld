@@ -1,0 +1,11 @@
+{
+  "radius_m": 80,
+  "arc_degrees": 160,
+  "height_m": 74.46738141842472,
+  "bottom_m": -32.65499545247537,
+  "texture_resolution": [
+    2172,
+    724
+  ],
+  "type": "LDR generated scenic backdrop, not a lighting HDRI"
+}

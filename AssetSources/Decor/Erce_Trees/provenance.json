@@ -1,0 +1,25 @@
+{
+  "source": "https://erces.itch.io/free-stylized-3d-tree-pack",
+  "author": "erces",
+  "license": "Author grants free use in projects on source page; inspect archive terms",
+  "bytes": 8748667,
+  "sha256": "761a4f0d1cfe935c2d151f17a1d768b3564492695dcbc28d0f5c9c9453bf1aa8",
+  "files": [
+    "FreeStylizedTreePack_Erce/",
+    "FreeStylizedTreePack_Erce/FBX Files/",
+    "FreeStylizedTreePack_Erce/FBX Files/SM_Tree_01.fbx",
+    "FreeStylizedTreePack_Erce/FBX Files/SM_Tree_02.fbx",
+    "FreeStylizedTreePack_Erce/FBX Files/SM_Tree_03.fbx",
+    "FreeStylizedTreePack_Erce/FBX Files/SM_Tree_04.fbx",
+    "FreeStylizedTreePack_Erce/FBX Files/SM_Tree_05.fbx",
+    "FreeStylizedTreePack_Erce/Preview.png",
+    "FreeStylizedTreePack_Erce/Preview_UE5.png",
+    "FreeStylizedTreePack_Erce/Textures/",
+    "FreeStylizedTreePack_Erce/Textures/T_Leaf_01.png",
+    "FreeStylizedTreePack_Erce/Textures/T_Leaf_02.png",
+    "FreeStylizedTreePack_Erce/Textures/T_Trunk.png",
+    "FreeStylizedTreePack_Erce/Tree_Pack_Erce.blend",
+    "FreeStylizedTreePack_Erce/Tree_Pack_Erce.blend1"
+  ],
+  "modifications": "None; original free package extracted."
+}

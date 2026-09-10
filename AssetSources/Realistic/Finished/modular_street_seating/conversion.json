@@ -1,0 +1,14 @@
+{
+  "dimensions_m": [
+    4.340000152587891,
+    0.7703701257705688,
+    0.9500000476837158
+  ],
+  "materials": [
+    "modular_street_seating_armrests",
+    "modular_street_seating_supports",
+    "modular_street_seating_timber",
+    "modular_street_seating_connectors"
+  ],
+  "vertices": 12830
+}

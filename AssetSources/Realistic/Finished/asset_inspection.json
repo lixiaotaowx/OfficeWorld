@@ -1,0 +1,1015 @@
+{
+  "desk": {
+    "meshes": [
+      {
+        "name": "Cube.004",
+        "dimensions": [
+          0.5100060105323792,
+          0.23505465686321259,
+          0.14243337512016296
+        ],
+        "location": [
+          1.1439160108566284,
+          47.58076477050781,
+          0.6695541739463806
+        ],
+        "vertices": 16,
+        "materials": [
+          "Polished Wood.001",
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Cylinder.007",
+        "dimensions": [
+          0.01160117145627737,
+          0.011601172387599945,
+          0.011601172387599945
+        ],
+        "location": [
+          0.53166663646698,
+          47.6175651550293,
+          0.5043157339096069
+        ],
+        "vertices": 164,
+        "materials": []
+      },
+      {
+        "name": "Cylinder.008",
+        "dimensions": [
+          0.01160117145627737,
+          0.011601172387599945,
+          0.011601172387599945
+        ],
+        "location": [
+          0.53166663646698,
+          47.6175651550293,
+          0.26715198159217834
+        ],
+        "vertices": 164,
+        "materials": []
+      },
+      {
+        "name": "Plane.070",
+        "dimensions": [
+          1.2000000476837158,
+          0.48000001907348633,
+          0.019999999552965164
+        ],
+        "location": [
+          0.833653450012207,
+          47.441864013671875,
+          0.5516117811203003
+        ],
+        "vertices": 104,
+        "materials": [
+          "Polished Wood.001",
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.098",
+        "dimensions": [
+          0.8290702104568481,
+          2.063694477081299,
+          0.7546051740646362
+        ],
+        "location": [
+          0.833653450012207,
+          48.24186325073242,
+          0.7540451884269714
+        ],
+        "vertices": 70,
+        "materials": [
+          "Polished Wood.001",
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.099",
+        "dimensions": [
+          1.2000000476837158,
+          0.48000001907348633,
+          0.47756659984588623
+        ],
+        "location": [
+          0.833653450012207,
+          47.441864013671875,
+          0.4040451943874359
+        ],
+        "vertices": 216,
+        "materials": [
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.100",
+        "dimensions": [
+          0.009999997913837433,
+          1.6054050922393799,
+          0.3977837860584259
+        ],
+        "location": [
+          1.3883280754089355,
+          48.48466873168945,
+          0.5151532888412476
+        ],
+        "vertices": 32,
+        "materials": [
+          "Polished Wood.001",
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.101",
+        "dimensions": [
+          1.2000000476837158,
+          0.48000001907348633,
+          0.019999999552965164
+        ],
+        "location": [
+          0.833653450012207,
+          47.441864013671875,
+          0.0540451817214489
+        ],
+        "vertices": 104,
+        "materials": [
+          "Polished Wood.001",
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.102",
+        "dimensions": [
+          0.44031479954719543,
+          0.01998930424451828,
+          0.47756659984588623
+        ],
+        "location": [
+          0.5189040899276733,
+          47.38201904296875,
+          0.3128284811973572
+        ],
+        "vertices": 8,
+        "materials": [
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.103",
+        "dimensions": [
+          1.0660619735717773,
+          0.38343629240989685,
+          0.04741235077381134
+        ],
+        "location": [
+          0.833653450012207,
+          47.38186264038086,
+          0.026742566376924515
+        ],
+        "vertices": 208,
+        "materials": [
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.104",
+        "dimensions": [
+          0.27370408177375793,
+          0.019989296793937683,
+          0.23878329992294312
+        ],
+        "location": [
+          0.645476758480072,
+          47.61186981201172,
+          0.3128284811973572
+        ],
+        "vertices": 8,
+        "materials": [
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.105",
+        "dimensions": [
+          0.44031479954719543,
+          0.01998930424451828,
+          0.47756659984588623
+        ],
+        "location": [
+          0.7713423371315002,
+          47.38201904296875,
+          0.3128284811973572
+        ],
+        "vertices": 8,
+        "materials": [
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.106",
+        "dimensions": [
+          0.44031479954719543,
+          0.01998930424451828,
+          0.47756659984588623
+        ],
+        "location": [
+          1.1174359321594238,
+          47.38201904296875,
+          0.3128284811973572
+        ],
+        "vertices": 8,
+        "materials": [
+          "Material.006"
+        ]
+      },
+      {
+        "name": "Plane.107",
+        "dimensions": [
+          0.27370408177375793,
+          0.019989296793937683,
+          0.23878329992294312
+        ],
+        "location": [
+          0.645476758480072,
+          47.61186981201172,
+          0.43222013115882874
+        ],
+        "vertices": 8,
+        "materials": [
+          "Material.006"
+        ]
+      }
+    ],
+    "images": [
+      {
+        "name": "coal_AO.bmp",
+        "path": "//textures\\coal_AO.bmp",
+        "packed": false
+      },
+      {
+        "name": "coal_color.jpg",
+        "path": "//textures\\coal_color.jpg",
+        "packed": false
+      },
+      {
+        "name": "coal_height.bmp",
+        "path": "//textures\\coal_height.bmp",
+        "packed": false
+      },
+      {
+        "name": "coal_normal.jpg",
+        "path": "//textures\\coal_normal.jpg",
+        "packed": false
+      },
+      {
+        "name": "coal_roughness.jpg",
+        "path": "//textures\\coal_roughness.jpg",
+        "packed": false
+      },
+      {
+        "name": "coffee bump Kopie.jpg",
+        "path": "//textures\\coffee bump Kopie.jpg",
+        "packed": false
+      },
+      {
+        "name": "coffee diffuse.jpg",
+        "path": "//textures\\coffee diffuse.jpg",
+        "packed": false
+      },
+      {
+        "name": "coffee rough 2.jpg",
+        "path": "//textures\\coffee rough 2.jpg",
+        "packed": false
+      },
+      {
+        "name": "coffee spec.jpg",
+        "path": "//textures\\coffee spec.jpg",
+        "packed": false
+      },
+      {
+        "name": "double arrow purple design diffuse.jpg",
+        "path": "//textures\\double arrow purple design diffuse.jpg",
+        "packed": false
+      },
+      {
+        "name": "fancy-interior-studio-01-neutral_2K_5141720c-a4bb-4632-9ab1-464",
+        "path": "C:\\Users\\wondi\\blenderkit_data\\hdrs\\fancy-interior-s_43b87319-cf4a-4343-93b5-a04728d62c29\\fancy-interior-studio-01-neutral_2K_5141720c-a4bb-4632-9ab1-46434e54a22a.exr",
+        "packed": false
+      },
+      {
+        "name": "normal map.jpg.006",
+        "path": "//textures\\normal map.jpg",
+        "packed": false
+      },
+      {
+        "name": "OIP (8).jpeg",
+        "path": "//textures\\OIP (8).jpeg",
+        "packed": false
+      },
+      {
+        "name": "pattern collections 03.jpg",
+        "path": "//textures\\pattern collections 03.jpg",
+        "packed": false
+      },
+      {
+        "name": "Render Result",
+        "path": "",
+        "packed": false
+      }
+    ],
+    "materials": {
+      "Coffee": [
+        {
+          "name": "Texture Coordinate",
+          "type": "TEX_COORD"
+        },
+        {
+          "name": "Mapping",
+          "type": "MAPPING"
+        },
+        {
+          "name": "Texture Coordinate.001",
+          "type": "TEX_COORD"
+        },
+        {
+          "name": "Texture Coordinate.002",
+          "type": "TEX_COORD"
+        },
+        {
+          "name": "Texture Coordinate.003",
+          "type": "TEX_COORD"
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP"
+        },
+        {
+          "name": "Bump",
+          "type": "BUMP"
+        },
+        {
+          "name": "Image Texture.003",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL"
+        },
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED"
+        },
+        {
+          "name": "Image Texture.007",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "ColorRamp",
+          "type": "VALTORGB"
+        },
+        {
+          "name": "Bright/Contrast",
+          "type": "BRIGHTCONTRAST"
+        },
+        {
+          "name": "Mix",
+          "type": "MIX"
+        }
+      ],
+      "Hot coal": [
+        {
+          "name": "Frame",
+          "type": "FRAME"
+        },
+        {
+          "name": "Frame.001",
+          "type": "FRAME"
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL"
+        },
+        {
+          "name": "Displacement",
+          "type": "DISPLACEMENT"
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP"
+        },
+        {
+          "name": "Texture Coordinate",
+          "type": "TEX_COORD"
+        },
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED"
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Reroute",
+          "type": "REROUTE"
+        },
+        {
+          "name": "Mapping",
+          "type": "MAPPING"
+        },
+        {
+          "name": "Image Texture.003",
+          "type": "TEX_IMAGE"
+        },
+        {
+          "name": "Mix",
+          "type": "MIX"
+        },
+        {
+          "name": "Image Texture.004",
+          "type": "TEX_IMAGE"
+        }
+      ],
+      "Material.001": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED"
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL"
+        }
+      ],
+      "Material.006": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED"
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL"
+        }
+      ],
+      "Polished Wood.001": [
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL"
+        },
+        {
+          "name": "Color Ramp.003",
+          "type": "VALTORGB"
+        },
+        {
+          "name": "Mix.002",
+          "type": "MIX"
+        },
+        {
+          "name": "Mapping.002",
+          "type": "MAPPING"
+        },
+        {
+          "name": "Color Ramp.004",
+          "type": "VALTORGB"
+        },
+        {
+          "name": "Wave Texture",
+          "type": "TEX_WAVE"
+        },
+        {
+          "name": "Mix",
+          "type": "MIX"
+        },
+        {
+          "name": "Color Ramp",
+          "type": "VALTORGB"
+        },
+        {
+          "name": "Color Ramp.002",
+          "type": "VALTORGB"
+        },
+        {
+          "name": "Mix.004",
+          "type": "MIX"
+        },
+        {
+          "name": "Bump.001",
+          "type": "BUMP"
+        },
+        {
+          "name": "Wave Texture.001",
+          "type": "TEX_WAVE"
+        },
+        {
+          "name": "Noise Texture.003",
+          "type": "TEX_NOISE"
+        },
+        {
+          "name": "Voronoi Texture.002",
+          "type": "TEX_VORONOI"
+        },
+        {
+          "name": "Color Ramp.001",
+          "type": "VALTORGB"
+        },
+        {
+          "name": "Noise Texture.002",
+          "type": "TEX_NOISE"
+        },
+        {
+          "name": "Voronoi Texture",
+          "type": "TEX_VORONOI"
+        },
+        {
+          "name": "Mapping.001",
+          "type": "MAPPING"
+        },
+        {
+          "name": "Mapping.003",
+          "type": "MAPPING"
+        },
+        {
+          "name": "Mapping",
+          "type": "MAPPING"
+        },
+        {
+          "name": "Mix.001",
+          "type": "MIX"
+        },
+        {
+          "name": "Noise Texture.001",
+          "type": "TEX_NOISE"
+        },
+        {
+          "name": "Texture Coordinate",
+          "type": "TEX_COORD"
+        },
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED"
+        },
+        {
+          "name": "Hue/Saturation/Value",
+          "type": "HUE_SAT"
+        }
+      ]
+    }
+  },
+  "chair": {
+    "meshes": [
+      {
+        "name": "Back.002",
+        "dimensions": [
+          1.4141918420791626,
+          0.46256840229034424,
+          2.3603920936584473
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 486,
+        "materials": [
+          "Back_Mat"
+        ]
+      },
+      {
+        "name": "Chair",
+        "dimensions": [
+          1.9191595315933228,
+          2.0120742321014404,
+          0.5871570706367493
+        ],
+        "location": [
+          0.40303847193717957,
+          0.0,
+          0.0
+        ],
+        "vertices": 432,
+        "materials": [
+          "Chair_Mat"
+        ]
+      },
+      {
+        "name": "Fabric.002",
+        "dimensions": [
+          1.4133859872817993,
+          0.240312397480011,
+          1.8246192932128906
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 116,
+        "materials": [
+          "Fabric_Mat"
+        ]
+      },
+      {
+        "name": "Middle.002",
+        "dimensions": [
+          1.6213762760162354,
+          1.1898287534713745,
+          1.4626659154891968
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 746,
+        "materials": [
+          "BlackPlastic",
+          "BlackMetal",
+          "Fabric",
+          "GreyMetal"
+        ]
+      },
+      {
+        "name": "Middle_Fabric.001",
+        "dimensions": [
+          1.3850955963134766,
+          1.4523844718933105,
+          0.1954958438873291
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 136,
+        "materials": [
+          "Middle_Fabric_Mat"
+        ]
+      },
+      {
+        "name": "Roue01.002",
+        "dimensions": [
+          0.13576090335845947,
+          0.223624587059021,
+          0.301760733127594
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 176,
+        "materials": [
+          "Roue_Mat"
+        ]
+      },
+      {
+        "name": "Roue02.002",
+        "dimensions": [
+          0.249251127243042,
+          0.19114843010902405,
+          0.301760733127594
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 176,
+        "materials": [
+          "Roue_Mat"
+        ]
+      },
+      {
+        "name": "Roue03.002",
+        "dimensions": [
+          0.20500928163528442,
+          0.2530769109725952,
+          0.301760733127594
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 176,
+        "materials": [
+          "Roue_Mat"
+        ]
+      },
+      {
+        "name": "Roue04.002",
+        "dimensions": [
+          0.2551364004611969,
+          0.21883010864257812,
+          0.301760733127594
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 176,
+        "materials": [
+          "Roue_Mat"
+        ]
+      },
+      {
+        "name": "Roue05.002",
+        "dimensions": [
+          0.2551649808883667,
+          0.22691813111305237,
+          0.301760733127594
+        ],
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "vertices": 176,
+        "materials": [
+          "Roue_Mat"
+        ]
+      }
+    ],
+    "materials": {
+      "Back_Mat": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "Back_Diffuse.png"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE",
+          "image": "Back_Roughness.png"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "TEX_IMAGE",
+          "image": "Back_Metal.png"
+        },
+        {
+          "name": "Image Texture.003",
+          "type": "TEX_IMAGE",
+          "image": "Back_Diffuse.png.001"
+        }
+      ],
+      "BlackMetal": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        }
+      ],
+      "BlackPlastic": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        }
+      ],
+      "Chair_Mat": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "Chair_Diffuse.png"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE",
+          "image": "Chair_Roughness.png"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "TEX_IMAGE",
+          "image": "Chair_Metal.png"
+        },
+        {
+          "name": "Image Texture.003",
+          "type": "TEX_IMAGE",
+          "image": "Chair_Diffuse.png.001"
+        }
+      ],
+      "Fabric": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "Fabric01Normal.png"
+        },
+        {
+          "name": "Texture Coordinate",
+          "type": "TEX_COORD",
+          "image": null
+        },
+        {
+          "name": "Mapping",
+          "type": "MAPPING",
+          "image": null
+        }
+      ],
+      "Fabric_Mat": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "Fabric_Diffuse.png"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE",
+          "image": "Fabric_Diffuse.png.002"
+        }
+      ],
+      "GreyMetal": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        }
+      ],
+      "Middle_Fabric_Mat": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "Middle_Fabric_Diffuse.png"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE",
+          "image": "Middle_Fabric_Roughness.png"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "TEX_IMAGE",
+          "image": "Middle_Fabric_Metal.png"
+        },
+        {
+          "name": "Image Texture.003",
+          "type": "TEX_IMAGE",
+          "image": "Middle_Fabric_Diffuse.png.001"
+        }
+      ],
+      "Roue_Mat": [
+        {
+          "name": "Principled BSDF",
+          "type": "BSDF_PRINCIPLED",
+          "image": null
+        },
+        {
+          "name": "Material Output",
+          "type": "OUTPUT_MATERIAL",
+          "image": null
+        },
+        {
+          "name": "Normal Map",
+          "type": "NORMAL_MAP",
+          "image": null
+        },
+        {
+          "name": "Image Texture",
+          "type": "TEX_IMAGE",
+          "image": "roulette_Diffuse.png"
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "TEX_IMAGE",
+          "image": "roulette_Roughness.png"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "TEX_IMAGE",
+          "image": "Chair_Metal.png"
+        },
+        {
+          "name": "Image Texture.003",
+          "type": "TEX_IMAGE",
+          "image": "roulette_Diffuse.png.001"
+        }
+      ]
+    }
+  }
+}

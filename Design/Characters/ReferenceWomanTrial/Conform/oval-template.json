@@ -1,0 +1,13 @@
+{
+  "objects": [
+    {
+      "name": "SK_RefWoman_Face_R07.001",
+      "vertices": 34657,
+      "z_bounds_m": [
+        1.3726768493652344,
+        1.7358120679855347
+      ]
+    }
+  ],
+  "method": "Oval correction: no cheek widening; taper lower jaw 16%, round chin by a smooth 6mm central extension; same source topology."
+}

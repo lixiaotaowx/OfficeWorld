@@ -1,0 +1,12 @@
+{
+  "dimensions_m": [
+    0.5873871445655823,
+    0.633564829826355,
+    1.3501639366149902
+  ],
+  "materials": [
+    "potted_plant_01_pot",
+    "potted_plant_01_leaves"
+  ],
+  "vertices": 93568
+}

@@ -1,0 +1,395 @@
+@import "./panels.css";
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+:root {
+  font-family: "DM Sans", "Microsoft YaHei", sans-serif;
+  color: #253b32;
+  background: #f5f6f2;
+  font-synthesis: none;
+  font-size: 14px;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+  border: 1px solid #dde3db;
+  background: #fff;
+  color: #385144;
+  border-radius: 10px;
+  padding: 10px 15px;
+  transition:
+    background 0.18s,
+    transform 0.18s;
+}
+button:hover:not(:disabled) {
+  background: #edf2e8;
+  transform: translateY(-1px);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #dca258;
+  outline-offset: 3px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+.app {
+  display: flex;
+  height: 100dvh;
+  min-height: 680px;
+}
+.rail {
+  width: 76px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e6de;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 26px 0;
+  gap: 18px;
+}
+.brand {
+  font-size: 38px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #315e48;
+  line-height: 1;
+  margin-bottom: 33px;
+}
+.brand span {
+  color: #d4a569;
+}
+.rail-icon {
+  font-size: 23px;
+  border: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+}
+.rail-icon.active {
+  background: #e7eee3;
+}
+.rail-bottom {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-direction: column;
+}
+.avatar {
+  background: #e4eadb;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 600;
+  color: #49653f;
+}
+.workspace {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 30px;
+}
+header {
+  height: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #829083;
+  font-weight: 700;
+}
+h1 {
+  font-size: 23px;
+  letter-spacing: 0.5px;
+  margin-top: 9px;
+  font-weight: 600;
+}
+.version {
+  font-size: 10px;
+  background: #e9eddf;
+  border-radius: 5px;
+  padding: 5px 8px;
+  color: #7c8569;
+  margin-left: 15px;
+  vertical-align: middle;
+}
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6c7c70;
+}
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #78995f;
+  flex-shrink: 0;
+}
+.offline {
+  background: #cb9654;
+}
+.divider {
+  width: 1px;
+  height: 14px;
+  background: #d9dfd4;
+  margin: 0 7px;
+}
+main {
+  display: flex;
+  gap: 22px;
+  flex: 1;
+  min-height: 0;
+}
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #dfe4da;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #e9ede8;
+  display: flex;
+  flex-direction: column;
+}
+.stage-heading {
+  position: absolute;
+  top: 27px;
+  left: 27px;
+  right: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+  pointer-events: none;
+}
+h2 {
+  font-size: 23px;
+  margin-top: 7px;
+  font-weight: 500;
+}
+.tag {
+  font-size: 11px;
+  padding: 8px 11px;
+  border: 1px solid #d4dccc;
+  border-radius: 20px;
+  background: #eff3e9b8;
+  color: #6e7d68;
+}
+.view-tabs {
+  position: absolute;
+  top: 106px;
+  left: 27px;
+  display: flex;
+  gap: 4px;
+  background: #f9faf5de;
+  border: 1px solid #e2e7db;
+  padding: 4px;
+  border-radius: 11px;
+  z-index: 2;
+}
+.view-tabs button {
+  font-size: 11px;
+  background: transparent;
+  border: 0;
+  padding: 9px 12px;
+}
+.view-tabs .selected {
+  background: #fff;
+  box-shadow: 0 2px 8px #38514412;
+  color: #35563e;
+}
+.scene-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.scene {
+  position: absolute;
+  inset: 0;
+}
+.scene canvas {
+  display: block;
+}
+.scene-status {
+  position: absolute;
+  left: 27px;
+  bottom: 44px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 10px;
+  color: #627160;
+  pointer-events: none;
+}
+.scene-status > span:last-child {
+  margin-left: 9px;
+  opacity: 0.6;
+}
+.scene-help {
+  position: absolute;
+  left: 27px;
+  bottom: 21px;
+  font-size: 10px;
+  color: #869180;
+  pointer-events: none;
+}
+.bottom-bar {
+  height: 82px;
+  background: #fdfef9ed;
+  border-top: 1px solid #e2e6db;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 23px;
+  gap: 14px;
+}
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.identity strong {
+  font-size: 12px;
+}
+.identity small {
+  display: block;
+  color: #8c9687;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.actions button {
+  font-size: 12px;
+}
+.primary {
+  background: #355b46;
+  color: #fff;
+  border-color: #355b46;
+}
+.primary:hover:not(:disabled) {
+  background: #477153;
+}
+.danger {
+  color: #a64e44;
+  background: #fff0ec;
+}
+@media (max-width: 1100px) {
+  .workspace {
+    padding: 0 16px;
+  }
+  .sidebar {
+    width: 270px;
+  }
+  .stage-heading {
+    left: 18px;
+  }
+  .tag {
+    display: none;
+  }
+  .bottom-bar {
+    padding: 12px;
+  }
+  .identity {
+    display: none;
+  }
+  .view-tabs {
+    left: 15px;
+  }
+  .connection {
+    font-size: 10px;
+  }
+  .version {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .app {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .rail {
+    width: 54px;
+    padding: 20px 0;
+  }
+  .workspace {
+    padding: 0 12px;
+  }
+  header {
+    height: 94px;
+  }
+  h1 {
+    font-size: 18px;
+  }
+  .connection {
+    display: none;
+  }
+  main {
+    flex-direction: column;
+  }
+  .stage {
+    height: 580px;
+    flex: none;
+  }
+  .sidebar {
+    width: 100%;
+    max-height: 650px;
+  }
+  .seat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .seat strong {
+    max-width: 70px;
+  }
+  .bottom-bar {
+    justify-content: center;
+  }
+  .view-tabs button {
+    padding: 8px;
+    font-size: 10px;
+  }
+  footer {
+    height: auto;
+    padding: 15px 0;
+    line-height: 1.7;
+  }
+  footer span {
+    display: none;
+  }
+  .session-panel {
+    right: 15px;
+    width: 290px;
+  }
+  .eyebrow {
+    letter-spacing: 1px;
+  }
+}

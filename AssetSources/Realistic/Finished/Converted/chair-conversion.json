@@ -1,0 +1,29 @@
+{
+  "source_bounds": [
+    [
+      -0.7915055751800537,
+      -1.0210168361663818,
+      -0.43004369735717773
+    ],
+    [
+      1.3522541522979736,
+      1.0404239892959595,
+      3.0616838932037354
+    ]
+  ],
+  "uniform_scale": 0.34366942118964994,
+  "height_m": 1.2,
+  "parts": 10,
+  "materials": [
+    "Back_Mat",
+    "BlackMetal",
+    "BlackPlastic",
+    "Chair_Mat",
+    "Fabric",
+    "Fabric_Mat",
+    "GreyMetal",
+    "Material",
+    "Middle_Fabric_Mat",
+    "Roue_Mat"
+  ]
+}

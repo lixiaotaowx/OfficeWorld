@@ -1,0 +1,10 @@
+00:03.109  image.write      | ERROR OpenImageIO write failed: Could not open file "팡ɸ\.thumbnails\large\blender_14160_e1931b1879b196cae0a5fc368217e442.png.png"
+FBX version: 7300
+
+FBX export starting... 'G:\\C\\wendang\\ChatGPT\\youxi\\Design\\Characters\\ReferenceWomanTrial\\Conform\\Face_Oval_B.fbx'
+(bpy.data.armatures['root'], 'POSE')
+export finished in 0.9709 sec.
+Info: Saved as "Face_Oval_B.blend"
+Blender 5.1.2 (hash ec6e62d40fa9 built 2026-05-19 01:37:34)
+
+Blender quit

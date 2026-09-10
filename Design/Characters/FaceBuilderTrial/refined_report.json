@@ -1,0 +1,12 @@
+{
+  "vertices": 18024,
+  "pins": [
+    23,
+    10
+  ],
+  "texture": [
+    2048,
+    2048
+  ],
+  "stage": "manually specified pin refinement and two-view texture projection; hair and collar are projected colors only"
+}

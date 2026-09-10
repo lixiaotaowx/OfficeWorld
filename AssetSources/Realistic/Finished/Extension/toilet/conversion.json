@@ -1,0 +1,22 @@
+{
+  "source_parts": 11,
+  "dimensions_m": [
+    0.39710676670074463,
+    0.727001428604126,
+    0.6922694444656372
+  ],
+  "vertices": 69720,
+  "bounds_before_centering": [
+    [
+      -0.20210914313793182,
+      -0.7270216941833496,
+      -3.063678741455078e-05
+    ],
+    [
+      0.1949976235628128,
+      -2.0235776901245117e-05,
+      0.6922388076782227
+    ]
+  ],
+  "modification": "source modifiers evaluated, subdivision capped at 1, origin centered on footprint, source shaders baked to 2K PBR; keyboard legend mask preserved; no source normal bake yet"
+}

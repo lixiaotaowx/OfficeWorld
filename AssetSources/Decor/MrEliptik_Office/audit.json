@@ -1,0 +1,198 @@
+[
+  {
+    "file": "all_objects.glb",
+    "bytes": 25744228,
+    "mesh_count": 27,
+    "indexed_triangles": 319647,
+    "images": 0
+  },
+  {
+    "file": "boom_mic.glb",
+    "bytes": 189512,
+    "mesh_count": 1,
+    "indexed_triangles": 2888,
+    "images": 0
+  },
+  {
+    "file": "camera.glb",
+    "bytes": 238248,
+    "mesh_count": 1,
+    "indexed_triangles": 3592,
+    "images": 0
+  },
+  {
+    "file": "deskmat.glb",
+    "bytes": 5436,
+    "mesh_count": 1,
+    "indexed_triangles": 76,
+    "images": 0
+  },
+  {
+    "file": "desktop.glb",
+    "bytes": 132,
+    "mesh_count": 0,
+    "indexed_triangles": 0,
+    "images": 0
+  },
+  {
+    "file": "desk_big.glb",
+    "bytes": 75364,
+    "mesh_count": 1,
+    "indexed_triangles": 1276,
+    "images": 0
+  },
+  {
+    "file": "desk_corner.glb",
+    "bytes": 125392,
+    "mesh_count": 1,
+    "indexed_triangles": 2250,
+    "images": 0
+  },
+  {
+    "file": "keyboard.glb",
+    "bytes": 8443884,
+    "mesh_count": 1,
+    "indexed_triangles": 93348,
+    "images": 0
+  },
+  {
+    "file": "keyboard_slim.glb",
+    "bytes": 8442064,
+    "mesh_count": 1,
+    "indexed_triangles": 93348,
+    "images": 0
+  },
+  {
+    "file": "lamp.glb",
+    "bytes": 88452,
+    "mesh_count": 1,
+    "indexed_triangles": 1182,
+    "images": 0
+  },
+  {
+    "file": "lamp_architect.glb",
+    "bytes": 144672,
+    "mesh_count": 1,
+    "indexed_triangles": 1948,
+    "images": 0
+  },
+  {
+    "file": "laptop.glb",
+    "bytes": 6221440,
+    "mesh_count": 1,
+    "indexed_triangles": 94778,
+    "images": 0
+  },
+  {
+    "file": "mic_desktop.glb",
+    "bytes": 140388,
+    "mesh_count": 1,
+    "indexed_triangles": 2208,
+    "images": 0
+  },
+  {
+    "file": "mini_pc.glb",
+    "bytes": 44740,
+    "mesh_count": 1,
+    "indexed_triangles": 716,
+    "images": 0
+  },
+  {
+    "file": "monitor.glb",
+    "bytes": 40680,
+    "mesh_count": 1,
+    "indexed_triangles": 610,
+    "images": 0
+  },
+  {
+    "file": "monitor_ultrawide.glb",
+    "bytes": 40696,
+    "mesh_count": 1,
+    "indexed_triangles": 610,
+    "images": 0
+  },
+  {
+    "file": "mousepad.glb",
+    "bytes": 132,
+    "mesh_count": 0,
+    "indexed_triangles": 0,
+    "images": 0
+  },
+  {
+    "file": "mug.glb",
+    "bytes": 96272,
+    "mesh_count": 1,
+    "indexed_triangles": 1404,
+    "images": 0
+  },
+  {
+    "file": "office_chair.glb",
+    "bytes": 681348,
+    "mesh_count": 1,
+    "indexed_triangles": 8424,
+    "images": 0
+  },
+  {
+    "file": "pen.glb",
+    "bytes": 62176,
+    "mesh_count": 1,
+    "indexed_triangles": 692,
+    "images": 0
+  },
+  {
+    "file": "pencil.glb",
+    "bytes": 19012,
+    "mesh_count": 1,
+    "indexed_triangles": 219,
+    "images": 0
+  },
+  {
+    "file": "pencil_holder.glb",
+    "bytes": 17180,
+    "mesh_count": 1,
+    "indexed_triangles": 252,
+    "images": 0
+  },
+  {
+    "file": "printer_big.glb",
+    "bytes": 102932,
+    "mesh_count": 1,
+    "indexed_triangles": 1490,
+    "images": 0
+  },
+  {
+    "file": "printer_desktop.glb",
+    "bytes": 208576,
+    "mesh_count": 1,
+    "indexed_triangles": 3110,
+    "images": 0
+  },
+  {
+    "file": "speaker_bookshelf.glb",
+    "bytes": 58060,
+    "mesh_count": 1,
+    "indexed_triangles": 916,
+    "images": 0
+  },
+  {
+    "file": "speaker_desktop.glb",
+    "bytes": 65288,
+    "mesh_count": 1,
+    "indexed_triangles": 1052,
+    "images": 0
+  },
+  {
+    "file": "tablet.glb",
+    "bytes": 42124,
+    "mesh_count": 1,
+    "indexed_triangles": 586,
+    "images": 0
+  },
+  {
+    "file": "wireless_mouse.glb",
+    "bytes": 103096,
+    "mesh_count": 1,
+    "indexed_triangles": 1504,
+    "images": 0
+  }
+]

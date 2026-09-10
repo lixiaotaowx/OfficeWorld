@@ -1,0 +1,33 @@
+{
+  "identity": "Office_F02",
+  "garment": "female_elegantsuit01",
+  "shoes": "shoes03",
+  "landmarks": {
+    "joint-pelvis": "pelvis",
+    "joint-neck": "neck_01",
+    "joint-l-shoulder": "upperarm_l",
+    "joint-l-elbow": "lowerarm_l",
+    "joint-l-hand": "hand_l",
+    "joint-l-upper-leg": "thigh_l",
+    "joint-l-knee": "calf_l",
+    "joint-l-ankle": "foot_l",
+    "joint-l-foot-1": "ball_l",
+    "joint-r-shoulder": "upperarm_r",
+    "joint-r-elbow": "lowerarm_r",
+    "joint-r-hand": "hand_r",
+    "joint-r-upper-leg": "thigh_r",
+    "joint-r-knee": "calf_r",
+    "joint-r-ankle": "foot_r",
+    "joint-r-foot-1": "ball_r"
+  },
+  "skin_weights_transferred": {
+    "female_elegantsuit01": 2205,
+    "shoes03": 2190
+  },
+  "status": "candidate; requires UE fit and motion review",
+  "vertices": {
+    "SK_Office_F02_female_elegantsuit01": 395,
+    "SK_Office_F02_shoes03": 2082,
+    "SK_Office_F02_NativeTop": 10282
+  }
+}

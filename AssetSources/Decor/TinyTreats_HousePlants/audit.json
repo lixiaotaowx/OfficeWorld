@@ -1,0 +1,18 @@
+{
+  "file_formats": {
+    ".txt": 1,
+    ".url": 2,
+    ".png": 7,
+    ".fbx": 226,
+    ".bin": 113,
+    ".gltf": 113,
+    ".mtl": 113,
+    ".obj": 113
+  },
+  "gltf_count": 113,
+  "missing_references": [],
+  "triangle_range": [
+    92,
+    7856
+  ]
+}

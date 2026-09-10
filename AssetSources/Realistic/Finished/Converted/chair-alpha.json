@@ -1,0 +1,42 @@
+{
+  "Back_Diffuse.png": {
+    "alpha_min": 0.0,
+    "alpha_max": 1.0,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "Chair_Diffuse.png": {
+    "alpha_min": 0.0,
+    "alpha_max": 1.0,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "Fabric_Diffuse.png": {
+    "alpha_min": 0.0,
+    "alpha_max": 1.0,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "Middle_Fabric_Diffuse.png": {
+    "alpha_min": 0.0,
+    "alpha_max": 1.0,
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "roulette_Diffuse.png": {
+    "alpha_min": 0.0,
+    "alpha_max": 1.0,
+    "size": [
+      1024,
+      1024
+    ]
+  }
+}

@@ -1,0 +1,478 @@
+{
+  "passed": true,
+  "running": false,
+  "method": "Possessed CharacterMovement AddMovementInput; initial setup teleport only; no UI or keyboard simulation",
+  "checks": [
+    {
+      "name": "office aisle",
+      "location": [
+        389.52793098397854,
+        131.8925917295316,
+        92.15000200271606
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "original entry",
+      "location": [
+        399.41157200026447,
+        384.9349822158798,
+        92.15000200271606
+      ],
+      "seconds": 0.75,
+      "passed": true
+    },
+    {
+      "name": "connector",
+      "location": [
+        399.97045481610166,
+        541.7120254172886,
+        92.15000200271606
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "corridor start",
+      "location": [
+        689.3010698313382,
+        549.7044542355135,
+        92.15000200271606
+      ],
+      "seconds": 0.875,
+      "passed": true
+    },
+    {
+      "name": "restroom corridor",
+      "location": [
+        699.4747850222238,
+        312.2580965867222,
+        92.15000200271606
+      ],
+      "seconds": 0.75,
+      "passed": true
+    },
+    {
+      "name": "restroom entrance",
+      "location": [
+        886.0022321676383,
+        300.85568286315834,
+        92.15000200271606
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "restroom vestibule",
+      "location": [
+        898.4628388561614,
+        162.11525027510982,
+        92.15000200271606
+      ],
+      "seconds": 0.5,
+      "passed": true
+    },
+    {
+      "name": "vanity approach",
+      "location": [
+        991.383440781757,
+        144.52346216566258,
+        92.15000124561325
+      ],
+      "seconds": 0.5,
+      "passed": true
+    },
+    {
+      "name": "cubicle approach",
+      "location": [
+        999.3150538155411,
+        241.6154754688394,
+        92.15000124561325
+      ],
+      "seconds": 0.5,
+      "passed": true
+    },
+    {
+      "name": "toilet one",
+      "location": [
+        1169.1909495315924,
+        249.49841560835745,
+        92.15000124561325
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "cubicle return",
+      "location": [
+        1008.9492197526555,
+        249.97346909537572,
+        92.15000124561325
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "second cubicle aisle",
+      "location": [
+        1000.3053148120524,
+        462.4934954346331,
+        92.15000124561325
+      ],
+      "seconds": 0.75,
+      "passed": true
+    },
+    {
+      "name": "toilet two",
+      "location": [
+        1169.0954768098684,
+        465.74623790465944,
+        92.15000714519888
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "second cubicle return",
+      "location": [
+        1009.4901273206693,
+        467.6356983063683,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "privacy screen return",
+      "location": [
+        909.3478745108572,
+        497.23685195855586,
+        92.15000344886144
+      ],
+      "seconds": 0.5,
+      "passed": true
+    },
+    {
+      "name": "restroom exit",
+      "location": [
+        900.6378375984798,
+        313.4581481425404,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "corridor restroom exit",
+      "location": [
+        714.0210679978211,
+        300.94048865602775,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "meeting corridor",
+      "location": [
+        700.3934294061207,
+        -185.9436728368669,
+        92.15000344886144
+      ],
+      "seconds": 1.25,
+      "passed": true
+    },
+    {
+      "name": "meeting entrance",
+      "location": [
+        886.1382059815758,
+        -199.02385021088628,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "meeting north aisle",
+      "location": [
+        899.1659551075533,
+        -369.11091643797687,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "meeting display",
+      "location": [
+        1292.3658064396252,
+        -379.7926090044827,
+        92.15000344886144
+      ],
+      "seconds": 1.125,
+      "passed": true
+    },
+    {
+      "name": "meeting window aisle",
+      "location": [
+        1299.7964338791714,
+        -107.4606827297946,
+        92.15000344886144
+      ],
+      "seconds": 0.875,
+      "passed": true
+    },
+    {
+      "name": "meeting backtrack",
+      "location": [
+        1299.9884042774836,
+        -364.4753621835522,
+        92.15000344886144
+      ],
+      "seconds": 0.75,
+      "passed": true
+    },
+    {
+      "name": "meeting return aisle",
+      "location": [
+        907.5200863733264,
+        -379.70812499551033,
+        92.15000344886144
+      ],
+      "seconds": 1.125,
+      "passed": true
+    },
+    {
+      "name": "meeting exit",
+      "location": [
+        900.4456245438499,
+        -210.64912651953156,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "meeting corridor exit",
+      "location": [
+        713.974874531017,
+        -200.7424467723555,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "fitness corridor",
+      "location": [
+        700.3859131186554,
+        -686.2131113269915,
+        92.15000344886144
+      ],
+      "seconds": 1.25,
+      "passed": true
+    },
+    {
+      "name": "fitness entrance",
+      "location": [
+        886.1386961674026,
+        -699.0426314305346,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "fitness clear floor",
+      "location": [
+        913.667943852886,
+        -659.1709609693584,
+        92.15000344886144
+      ],
+      "seconds": 0.375,
+      "passed": true
+    },
+    {
+      "name": "fitness equipment approach",
+      "location": [
+        1019.8805335531672,
+        -650.797761467375,
+        92.15000344886144
+      ],
+      "seconds": 0.5,
+      "passed": true
+    },
+    {
+      "name": "fitness return",
+      "location": [
+        927.4710505029311,
+        -650.0596724506771,
+        92.15000344886144
+      ],
+      "seconds": 0.5,
+      "passed": true
+    },
+    {
+      "name": "fitness exit",
+      "location": [
+        905.1370832703532,
+        -690.661164517819,
+        92.15000344886144
+      ],
+      "seconds": 0.375,
+      "passed": true
+    },
+    {
+      "name": "fitness corridor exit",
+      "location": [
+        714.7206547069001,
+        -699.3298443640414,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards corridor",
+      "location": [
+        700.4120894048862,
+        -1185.9842601712794,
+        92.15000344886144
+      ],
+      "seconds": 1.25,
+      "passed": true
+    },
+    {
+      "name": "billiards entrance",
+      "location": [
+        886.170364794403,
+        -1199.0288361234427,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards side aisle",
+      "location": [
+        899.1854716711706,
+        -1030.544317079379,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards table end",
+      "location": [
+        1085.964776662231,
+        -1020.7369578604938,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards window corner",
+      "location": [
+        1284.0147537107068,
+        -1020.0550397860742,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards window aisle",
+      "location": [
+        1299.0457893989008,
+        -1189.258508405615,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards return corner",
+      "location": [
+        1299.9494779259624,
+        -1028.9616389541045,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards return end",
+      "location": [
+        1113.8900733095302,
+        -1020.6225463718993,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards return aisle",
+      "location": [
+        915.9139654730594,
+        -1020.0463190334847,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards exit",
+      "location": [
+        900.950044068764,
+        -1189.256987672621,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "billiards corridor exit",
+      "location": [
+        714.0578167882899,
+        -1199.2484535161334,
+        92.15000344886144
+      ],
+      "seconds": 0.625,
+      "passed": true
+    },
+    {
+      "name": "return corridor",
+      "location": [
+        700.0977792307958,
+        537.8330916648085,
+        92.15000344886144
+      ],
+      "seconds": 3.875,
+      "passed": true
+    },
+    {
+      "name": "return connector",
+      "location": [
+        410.72625321416416,
+        549.5651239406988,
+        92.15000344886144
+      ],
+      "seconds": 0.875,
+      "passed": true
+    },
+    {
+      "name": "return original office",
+      "location": [
+        400.228303935184,
+        415.37624989996215,
+        92.15000590165963
+      ],
+      "seconds": 0.5,
+      "passed": true
+    }
+  ],
+  "capsule_radius": 30.0
+}

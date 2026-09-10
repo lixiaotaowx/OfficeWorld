@@ -1,0 +1,512 @@
+{
+  "pk": 77477,
+  "url": "https://www.blenderkit.com/api/v1/assets/deb44584-e363-40f9-928f-db8bcdad51c8/",
+  "id": "deb44584-e363-40f9-928f-db8bcdad51c8",
+  "assetBaseId": "1db0380b-c09a-43e6-94e7-fc85cd580b79",
+  "versionNumber": 1,
+  "author": {
+    "id": 791292,
+    "firstName": "Patrik",
+    "lastName": "",
+    "gravatarHash": "70f1ccb6a5bb5b8917c4c9b1409925f4",
+    "avatar128": "/avatar-redirect/9722a6db-56f8-411f-8021-f0dad58cf4f5/128/",
+    "avatar256": "/avatar-redirect/9722a6db-56f8-411f-8021-f0dad58cf4f5/256/",
+    "avatar512": "/avatar-redirect/9722a6db-56f8-411f-8021-f0dad58cf4f5/512/",
+    "aboutMe": "",
+    "aboutMeUrl": null,
+    "fullName": "Patrik ",
+    "socialNetworks": [
+      {
+        "socialNetwork": {
+          "name": "Instagram",
+          "icon": "<i class=\"fab fa-instagram\" title=\"Instagram\"></i><span class=\"sr-only\">Instagram</span>",
+          "order": 3
+        },
+        "url": "https://www.instagram.com/p.capka.av"
+      },
+      {
+        "socialNetwork": {
+          "name": "ArtStation",
+          "icon": "<i class=\"fab fa-artstation\" title=\"ArtStation\"></i><span class=\"sr-only\">ArtStation</span>",
+          "order": 5
+        },
+        "url": "https://www.artstation.com/pcapka"
+      }
+    ]
+  },
+  "name": "G915 keyboard",
+  "displayName": "G915 keyboard",
+  "description": "A detailed 1:1 scale model of the Logitech G915 TKL mechanical low-profile keyboard",
+  "descriptionHtml": "<p>A detailed 1:1 scale model of the Logitech G915 TKL mechanical low-profile keyboard</p>",
+  "assetType": "model",
+  "category": "keyboard",
+  "isFree": true,
+  "isForSale": false,
+  "basePrice": null,
+  "tags": [
+    "keyboard",
+    "mechanical",
+    "logitech",
+    "low-profile",
+    "rgb",
+    "gaming",
+    "wireless"
+  ],
+  "license": "royalty_free",
+  "sourceAppName": "blender",
+  "sourceAppVersion": "3.6.1",
+  "addonVersion": "3.10.0",
+  "created": "2024-01-17T16:01:29.492814+01:00",
+  "lastUserInteraction": "2024-01-17T16:01:37.849987+01:00",
+  "verificationStatus": "validated",
+  "isPrivate": false,
+  "files": [
+    {
+      "fileType": "blend",
+      "id": 298094,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/a72e2b00-337f-49e3-8508-d78b6e6a4b3f/",
+      "uuid": "a72e2b00-337f-49e3-8508-d78b6e6a4b3f",
+      "created": "2024-01-17T16:01:37.179675+01:00",
+      "isThumbnail": false,
+      "modified": "2024-01-17T16:01:37.179696+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 3799093,
+      "isFeatured": false,
+      "filename": "assets/deb44584e36340f9928fdb8bcdad51c8/files/blend_ba074ba5-81b4-4c6c-b695-e24001558ff0.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_0_5K",
+      "id": 302796,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/6f916e41-aef4-459e-b268-2c4dd55ba004/",
+      "uuid": "6f916e41-aef4-459e-b268-2c4dd55ba004",
+      "created": "2024-01-23T09:43:41.747501+01:00",
+      "isThumbnail": false,
+      "modified": "2024-01-23T09:43:41.747528+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 1316080,
+      "isFeatured": false,
+      "filename": "assets/deb44584e36340f9928fdb8bcdad51c8/files/resolution_0_5K_393ede16-e463-4dfa-be22-9fe5229115c2.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_1K",
+      "id": 302795,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/2fcc53fa-117f-416f-9ef6-87f9b714d565/",
+      "uuid": "2fcc53fa-117f-416f-9ef6-87f9b714d565",
+      "created": "2024-01-23T09:43:40.189223+01:00",
+      "isThumbnail": false,
+      "modified": "2024-01-23T09:43:40.189249+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 1303470,
+      "isFeatured": false,
+      "filename": "assets/deb44584e36340f9928fdb8bcdad51c8/files/resolution_1K_30ed361c-b44c-47c6-8b86-a230420ddb27.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_2K",
+      "id": 302794,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/4e312e50-26ca-4d3e-b6e1-d4dcbce269f0/",
+      "uuid": "4e312e50-26ca-4d3e-b6e1-d4dcbce269f0",
+      "created": "2024-01-23T09:43:38.458240+01:00",
+      "isThumbnail": false,
+      "modified": "2024-01-23T09:43:38.458260+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 1814030,
+      "isFeatured": false,
+      "filename": "assets/deb44584e36340f9928fdb8bcdad51c8/files/resolution_2K_b8fd15b7-408b-4648-87a9-551857cd5e7a.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_4K",
+      "id": 302793,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/8e0e7b7c-3dc9-438b-9fd5-9a7bc251993e/",
+      "uuid": "8e0e7b7c-3dc9-438b-9fd5-9a7bc251993e",
+      "created": "2024-01-23T09:43:36.690319+01:00",
+      "isThumbnail": false,
+      "modified": "2024-01-23T09:43:36.690346+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 2864387,
+      "isFeatured": false,
+      "filename": "assets/deb44584e36340f9928fdb8bcdad51c8/files/resolution_4K_d9433d06-bd67-4ea8-b316-158b309d105e.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "thumbnail",
+      "id": 298093,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/fbea9490-2030-4d8e-9c80-f42bc97243b9/",
+      "uuid": "fbea9490-2030-4d8e-9c80-f42bc97243b9",
+      "fileThumbnail": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.96x96_q85_crop-%2C.png",
+      "fileThumbnailLarge": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85_crop-%2C.png",
+      "created": "2024-01-17T16:01:35.723100+01:00",
+      "isThumbnail": true,
+      "modified": "2025-12-22T21:27:50.830632+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 3698786,
+      "width": 1920,
+      "height": 1920,
+      "isFeatured": false,
+      "filename": "assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png",
+      "thumbnailSmallUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85_crop-%2C.png",
+      "thumbnailMiddleUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85_crop-%2C.png",
+      "thumbnailLargeUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85_crop-%2C.png",
+      "thumbnailXlargeUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85_crop-%2C.png",
+      "thumbnailSmallUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85.png",
+      "thumbnailMiddleUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85.png",
+      "thumbnailLargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85.png",
+      "thumbnailXlargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85.png",
+      "thumbnailSmallUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85_crop-%2C.png.webp?webp_generated=1766512513",
+      "thumbnailMiddleUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85_crop-%2C.png.webp?webp_generated=1766512513",
+      "thumbnailLargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85_crop-%2C.png.webp?webp_generated=1766512513",
+      "thumbnailXlargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85_crop-%2C.png.webp?webp_generated=1766512513",
+      "thumbnailSmallUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85.png.webp?webp_generated=1766512513",
+      "thumbnailMiddleUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85.png.webp?webp_generated=1766512513",
+      "thumbnailLargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85.png.webp?webp_generated=1766512513",
+      "thumbnailXlargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85.png.webp?webp_generated=1766512513",
+      "flexFactor": null
+    }
+  ],
+  "filesSize": 14795846,
+  "showMarketingLabels": true,
+  "webpGeneratedTimestamp": 1766512513,
+  "score": 784.0,
+  "ratingsMedian": {
+    "bookmarks": 1.0,
+    "workingHours": 8.0,
+    "quality": 10.0,
+    "virtualPrice": null
+  },
+  "ratingsAverage": {
+    "bookmarks": 0.9835294117647059,
+    "workingHours": 8.0,
+    "quality": 9.8,
+    "virtualPrice": null
+  },
+  "ratingsCount": {
+    "bookmarks": 425,
+    "workingHours": 5,
+    "quality": 5,
+    "virtualPrice": 0
+  },
+  "ratingsSum": {
+    "bookmarks": 418.0,
+    "workingHours": 74.0,
+    "quality": 49.0,
+    "virtualPrice": null,
+    "score": 784.0
+  },
+  "pageBlocks": null,
+  "access": "free",
+  "accessLabel": "Free",
+  "videoLink": "",
+  "dictParameters": {
+    "sexualizedContent": false,
+    "joinBlenderkitDiscounts": true,
+    "addons": true,
+    "platforms": [
+      "windows-x64",
+      "macos-arm64",
+      "linux-x64",
+      "macos-x64",
+      "windows-arm64"
+    ],
+    "faceCount": 30469,
+    "textureResolutionMax": 3600,
+    "productionLevel": "finished",
+    "procedural": false,
+    "modelStyle": "realistic",
+    "condition": "new",
+    "manufacturer": "Logitech",
+    "validatedManufacturer": true,
+    "validatedManufacturerDate": "2026-03-03T05:22:37.502451+00:00",
+    "validatedManufacturerOutput": "Heuristics approved metadata",
+    "validatedManufacturerActor": "heuristic",
+    "purePbr": false,
+    "shaders": [
+      "principled",
+      "glass",
+      "translucent",
+      "mix shader"
+    ],
+    "animated": false,
+    "uv": true,
+    "textureResolutionMin": 157,
+    "engines": [
+      "cycles"
+    ],
+    "modifiers": [
+      "bevel",
+      "solidify",
+      "subsurf"
+    ],
+    "materials": [
+      "Stainless Steel",
+      "Plastic",
+      "switch_base",
+      "switch",
+      "Sticker",
+      "rubberfeet",
+      "logo",
+      "Keycaps",
+      "LEDs",
+      "Material.001"
+    ],
+    "rig": false,
+    "simulation": false,
+    "dimensionX": 0.3674,
+    "dimensionY": 0.1471,
+    "dimensionZ": 0.035,
+    "boundBoxMinX": 0.0,
+    "boundBoxMinY": -0.0001,
+    "boundBoxMinZ": -0.0004,
+    "boundBoxMaxX": 0.3674,
+    "boundBoxMaxY": 0.1469,
+    "boundBoxMaxZ": 0.0345,
+    "faceCountRender": 58595,
+    "meshPolyType": "quad_dominant",
+    "manifold": false,
+    "objectCount": 24,
+    "nodeCount": 52,
+    "textureCount": 7,
+    "megapixels": 19,
+    "textAIcheckedDate": "2024-01-20",
+    "imageAltTextGen4v": "Highly detailed 3D render of a mechanical low-profile keyboard for Blender artists and enthusiasts."
+  },
+  "lastPrxcUpload": null,
+  "lastZipFileUpload": null,
+  "lastGltfUpload": null,
+  "lastResolutionUpload": "2024-01-23T08:43:41.747501+00:00",
+  "lastBlendUpload": "2024-01-17T15:01:37.179675+00:00",
+  "lastWireThumbnailUpload": null,
+  "lastPhotoThumbnailUpload": null,
+  "lastThumbnailUpload": "2024-01-17T15:01:35.723100+00:00",
+  "lastVideoUpload": null,
+  "lastGltfGodotUpload": null,
+  "lastAnimatedThumbnailUpload": null,
+  "canDownload": true,
+  "canDownloadError": true,
+  "parameters": [
+    {
+      "parameterType": "sexualizedContent",
+      "value": false
+    },
+    {
+      "parameterType": "joinBlenderkitDiscounts",
+      "value": true
+    },
+    {
+      "parameterType": "addons",
+      "value": true
+    },
+    {
+      "parameterType": "platforms",
+      "value": [
+        "windows-x64",
+        "macos-arm64",
+        "linux-x64",
+        "macos-x64",
+        "windows-arm64"
+      ]
+    },
+    {
+      "parameterType": "faceCount",
+      "value": 30469
+    },
+    {
+      "parameterType": "textureResolutionMax",
+      "value": 3600
+    },
+    {
+      "parameterType": "productionLevel",
+      "value": "finished"
+    },
+    {
+      "parameterType": "procedural",
+      "value": false
+    },
+    {
+      "parameterType": "modelStyle",
+      "value": "realistic"
+    },
+    {
+      "parameterType": "condition",
+      "value": "new"
+    },
+    {
+      "parameterType": "manufacturer",
+      "value": "Logitech"
+    },
+    {
+      "parameterType": "validatedManufacturer",
+      "value": true
+    },
+    {
+      "parameterType": "validatedManufacturerDate",
+      "value": "2026-03-03T05:22:37.502451+00:00"
+    },
+    {
+      "parameterType": "validatedManufacturerOutput",
+      "value": "Heuristics approved metadata"
+    },
+    {
+      "parameterType": "validatedManufacturerActor",
+      "value": "heuristic"
+    },
+    {
+      "parameterType": "purePbr",
+      "value": false
+    },
+    {
+      "parameterType": "shaders",
+      "value": [
+        "principled",
+        "glass",
+        "translucent",
+        "mix shader"
+      ]
+    },
+    {
+      "parameterType": "animated",
+      "value": false
+    },
+    {
+      "parameterType": "uv",
+      "value": true
+    },
+    {
+      "parameterType": "textureResolutionMin",
+      "value": 157
+    },
+    {
+      "parameterType": "engines",
+      "value": [
+        "cycles"
+      ]
+    },
+    {
+      "parameterType": "modifiers",
+      "value": [
+        "bevel",
+        "solidify",
+        "subsurf"
+      ]
+    },
+    {
+      "parameterType": "materials",
+      "value": [
+        "Stainless Steel",
+        "Plastic",
+        "switch_base",
+        "switch",
+        "Sticker",
+        "rubberfeet",
+        "logo",
+        "Keycaps",
+        "LEDs",
+        "Material.001"
+      ]
+    },
+    {
+      "parameterType": "rig",
+      "value": false
+    },
+    {
+      "parameterType": "simulation",
+      "value": false
+    },
+    {
+      "parameterType": "dimensionX",
+      "value": 0.3674
+    },
+    {
+      "parameterType": "dimensionY",
+      "value": 0.1471
+    },
+    {
+      "parameterType": "dimensionZ",
+      "value": 0.035
+    },
+    {
+      "parameterType": "boundBoxMinX",
+      "value": 0.0
+    },
+    {
+      "parameterType": "boundBoxMinY",
+      "value": -0.0001
+    },
+    {
+      "parameterType": "boundBoxMinZ",
+      "value": -0.0004
+    },
+    {
+      "parameterType": "boundBoxMaxX",
+      "value": 0.3674
+    },
+    {
+      "parameterType": "boundBoxMaxY",
+      "value": 0.1469
+    },
+    {
+      "parameterType": "boundBoxMaxZ",
+      "value": 0.0345
+    },
+    {
+      "parameterType": "faceCountRender",
+      "value": 58595
+    },
+    {
+      "parameterType": "meshPolyType",
+      "value": "quad_dominant"
+    },
+    {
+      "parameterType": "manifold",
+      "value": false
+    },
+    {
+      "parameterType": "objectCount",
+      "value": 24
+    },
+    {
+      "parameterType": "nodeCount",
+      "value": 52
+    },
+    {
+      "parameterType": "textureCount",
+      "value": 7
+    },
+    {
+      "parameterType": "megapixels",
+      "value": 19
+    },
+    {
+      "parameterType": "textAIcheckedDate",
+      "value": "2024-01-20"
+    },
+    {
+      "parameterType": "imageAltTextGen4v",
+      "value": "Highly detailed 3D render of a mechanical low-profile keyboard for Blender artists and enthusiasts."
+    }
+  ],
+  "thumbnailSmallUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85_crop-%2C.png",
+  "thumbnailMiddleUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85_crop-%2C.png",
+  "thumbnailLargeUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85_crop-%2C.png",
+  "thumbnailXlargeUrl": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85_crop-%2C.png",
+  "thumbnailSmallUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85.png",
+  "thumbnailMiddleUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85.png",
+  "thumbnailLargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85.png",
+  "thumbnailXlargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85.png",
+  "thumbnailSmallUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85_crop-%2C.png.webp?webp_generated=1766512513",
+  "thumbnailMiddleUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85_crop-%2C.png.webp?webp_generated=1766512513",
+  "thumbnailLargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85_crop-%2C.png.webp?webp_generated=1766512513",
+  "thumbnailXlargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85_crop-%2C.png.webp?webp_generated=1766512513",
+  "thumbnailSmallUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.256x256_q85.png.webp?webp_generated=1766512513",
+  "thumbnailMiddleUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.512x512_q85.png.webp?webp_generated=1766512513",
+  "thumbnailLargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.1024x1024_q85.png.webp?webp_generated=1766512513",
+  "thumbnailXlargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/deb44584e36340f9928fdb8bcdad51c8/files/thumbnail_737187bb-a369-4818-9172-ec727a31afb6.png.2048x2048_q85.png.webp?webp_generated=1766512513"
+}

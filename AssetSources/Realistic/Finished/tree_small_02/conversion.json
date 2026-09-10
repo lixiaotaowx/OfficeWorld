@@ -1,0 +1,13 @@
+{
+  "dimensions_m": [
+    2.9166998863220215,
+    4.292477130889893,
+    4.556740760803223
+  ],
+  "materials": [
+    "tree_small_02_branches",
+    "tree_small_02_leaves",
+    "tree_small_02_trunk"
+  ],
+  "vertices": 1755568
+}

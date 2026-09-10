@@ -1,0 +1,457 @@
+{
+  "pk": 91156,
+  "url": "https://www.blenderkit.com/api/v1/assets/0e9c6773-1a2f-485c-9c20-ffefe2d0ff7a/",
+  "id": "0e9c6773-1a2f-485c-9c20-ffefe2d0ff7a",
+  "assetBaseId": "ae1a4d88-b999-41d5-971b-2e54e38a2494",
+  "versionNumber": 1,
+  "author": {
+    "id": 855757,
+    "firstName": "Steven",
+    "lastName": "Yap",
+    "gravatarHash": "07c56b4f6047112f8a27f8c9c6ef04df",
+    "avatar128": "/avatar-redirect/7b3fc512-28a7-4d58-8868-cdf2e71b98fc/128/",
+    "avatar256": "/avatar-redirect/7b3fc512-28a7-4d58-8868-cdf2e71b98fc/256/",
+    "avatar512": "/avatar-redirect/7b3fc512-28a7-4d58-8868-cdf2e71b98fc/512/",
+    "aboutMe": "Creating asset...",
+    "aboutMeUrl": "https://instagram.com/stevenabielyap",
+    "fullName": "Steven Yap",
+    "socialNetworks": [
+      {
+        "socialNetwork": {
+          "name": "Instagram",
+          "icon": "<i class=\"fab fa-instagram\" title=\"Instagram\"></i><span class=\"sr-only\">Instagram</span>",
+          "order": 3
+        },
+        "url": "https://instagram.com/stevenabielyap"
+      }
+    ]
+  },
+  "name": "Samsung Odyssey G8 Monitor 34inch",
+  "displayName": "Samsung Odyssey G8 Monitor 34inch",
+  "description": "Samsung Odyssey G8 Monitor 34inch",
+  "descriptionHtml": "<p>Samsung Odyssey G8 Monitor 34inch</p>",
+  "assetType": "model",
+  "category": "monitor",
+  "isFree": true,
+  "isForSale": false,
+  "basePrice": null,
+  "tags": [
+    "samsung",
+    "odyssey",
+    "monitor",
+    "34inch",
+    "34",
+    "curve",
+    "oled",
+    "g8"
+  ],
+  "license": "royalty_free",
+  "sourceAppName": "blender",
+  "sourceAppVersion": "4.1.1",
+  "addonVersion": "3.12.0",
+  "created": "2024-05-06T15:43:51.054278+02:00",
+  "lastUserInteraction": "2024-05-06T16:44:15.782205+02:00",
+  "verificationStatus": "validated",
+  "isPrivate": false,
+  "files": [
+    {
+      "fileType": "blend",
+      "id": 379931,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/379931/",
+      "uuid": null,
+      "created": "2024-05-06T16:44:15.389134+02:00",
+      "isThumbnail": false,
+      "modified": "2024-07-15T20:05:17.099581+02:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 6818440,
+      "isFeatured": false,
+      "filename": "assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/blend_521948d3-06e3-4c31-be80-205c648c3f5a.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_0_5K",
+      "id": 382326,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/382326/",
+      "uuid": null,
+      "created": "2024-05-10T13:44:21.100380+02:00",
+      "isThumbnail": false,
+      "modified": "2024-07-15T20:05:17.126124+02:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 6368285,
+      "isFeatured": false,
+      "filename": "assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/resolution_0_5K_9f6a87ad-e62a-48af-aa96-d67cc1ce164e.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_1K",
+      "id": 382325,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/382325/",
+      "uuid": null,
+      "created": "2024-05-10T13:44:19.346528+02:00",
+      "isThumbnail": false,
+      "modified": "2024-07-15T20:05:17.150782+02:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 6387854,
+      "isFeatured": false,
+      "filename": "assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/resolution_1K_243feccb-dbbf-4acf-a5ef-49ddba2007cb.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "resolution_2K",
+      "id": 382322,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/382322/",
+      "uuid": null,
+      "created": "2024-05-10T13:44:17.716549+02:00",
+      "isThumbnail": false,
+      "modified": "2024-07-15T20:05:17.170316+02:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 6569557,
+      "isFeatured": false,
+      "filename": "assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/resolution_2K_cefa6247-dfdc-44ae-938c-74cf2c427270.blend",
+      "flexFactor": null
+    },
+    {
+      "fileType": "thumbnail",
+      "id": 379930,
+      "downloadUrl": "https://www.blenderkit.com/api/v1/downloads/379930/",
+      "uuid": null,
+      "fileThumbnail": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.96x96_q85_crop-%2C.jpg",
+      "fileThumbnailLarge": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85_crop-%2C.jpg",
+      "created": "2024-05-06T16:44:02.561575+02:00",
+      "isThumbnail": true,
+      "modified": "2025-12-22T22:31:39.522501+01:00",
+      "mimeType": null,
+      "resolution": null,
+      "fileUploadSize": 79851,
+      "width": 1024,
+      "height": 1024,
+      "isFeatured": false,
+      "filename": "assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg",
+      "thumbnailSmallUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85_crop-%2C.jpg",
+      "thumbnailMiddleUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85_crop-%2C.jpg",
+      "thumbnailLargeUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85_crop-%2C.jpg",
+      "thumbnailXlargeUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85_crop-%2C.jpg",
+      "thumbnailSmallUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85.jpg",
+      "thumbnailMiddleUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85.jpg",
+      "thumbnailLargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85.jpg",
+      "thumbnailXlargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85.jpg",
+      "thumbnailSmallUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+      "thumbnailMiddleUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+      "thumbnailLargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+      "thumbnailXlargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+      "thumbnailSmallUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85.jpg.webp?webp_generated=1766534358",
+      "thumbnailMiddleUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85.jpg.webp?webp_generated=1766534358",
+      "thumbnailLargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85.jpg.webp?webp_generated=1766534358",
+      "thumbnailXlargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85.jpg.webp?webp_generated=1766534358",
+      "flexFactor": null
+    }
+  ],
+  "filesSize": 26223987,
+  "showMarketingLabels": true,
+  "webpGeneratedTimestamp": 1766534358,
+  "score": 270.0,
+  "ratingsMedian": {
+    "bookmarks": 1.0,
+    "workingHours": 3.0,
+    "quality": 9.0,
+    "virtualPrice": null
+  },
+  "ratingsAverage": {
+    "bookmarks": 0.9793510324483776,
+    "workingHours": 3.0,
+    "quality": 9.0,
+    "virtualPrice": null
+  },
+  "ratingsCount": {
+    "bookmarks": 339,
+    "workingHours": 2,
+    "quality": 3,
+    "virtualPrice": 0
+  },
+  "ratingsSum": {
+    "bookmarks": 332.0,
+    "workingHours": 6.0,
+    "quality": 27.0,
+    "virtualPrice": null,
+    "score": 270.0
+  },
+  "pageBlocks": null,
+  "access": "free",
+  "accessLabel": "Free",
+  "videoLink": "",
+  "dictParameters": {
+    "sexualizedContent": false,
+    "joinBlenderkitDiscounts": true,
+    "addons": true,
+    "platforms": [
+      "windows-x64",
+      "macos-arm64",
+      "linux-x64",
+      "macos-x64",
+      "windows-arm64"
+    ],
+    "faceCount": 151545,
+    "textureResolutionMax": 2104,
+    "productionLevel": "finished",
+    "procedural": false,
+    "modelStyle": "realistic",
+    "condition": "new",
+    "manufacturer": "Samsung",
+    "validatedManufacturer": true,
+    "validatedManufacturerDate": "2026-03-03T04:29:37.834076+00:00",
+    "validatedManufacturerOutput": "Heuristics approved metadata",
+    "validatedManufacturerActor": "heuristic",
+    "purePbr": true,
+    "shaders": [
+      "[principled]"
+    ],
+    "pbrType": "metallic",
+    "uv": true,
+    "textureResolutionMin": 196,
+    "engines": [
+      "[cycles]"
+    ],
+    "modifiers": [
+      "[bevel shrinkwrap]"
+    ],
+    "materials": [
+      "[Metal Metal.001 BlackPlastic Matte BlackGloss ScreenRim Screen Samsung_Odyssey_Logo Logo Led Transparent]"
+    ],
+    "rig": false,
+    "simulation": false,
+    "dimensionX": 0.8136,
+    "dimensionY": 0.21,
+    "dimensionZ": 0.5434,
+    "boundBoxMinX": -0.4068,
+    "boundBoxMinY": -0.0283,
+    "boundBoxMinZ": 0.0,
+    "boundBoxMaxX": 0.4068,
+    "boundBoxMaxY": 0.1817,
+    "boundBoxMaxZ": 0.5434,
+    "faceCountRender": 151545,
+    "meshPolyType": "tri_dominant",
+    "manifold": false,
+    "objectCount": 23,
+    "nodeCount": 30,
+    "textureCount": 3,
+    "megapixels": 2,
+    "textAIcheckedDate": "2024-05-10"
+  },
+  "lastAnimatedThumbnailUpload": null,
+  "lastPhotoThumbnailUpload": null,
+  "lastWireThumbnailUpload": null,
+  "lastGltfUpload": null,
+  "lastVideoUpload": null,
+  "lastGltfGodotUpload": null,
+  "lastPrxcUpload": null,
+  "lastThumbnailUpload": "2024-05-06T14:44:02.561575+00:00",
+  "lastResolutionUpload": "2024-05-10T11:44:21.100380+00:00",
+  "lastBlendUpload": "2024-05-06T14:44:15.389134+00:00",
+  "lastZipFileUpload": null,
+  "canDownload": true,
+  "canDownloadError": true,
+  "parameters": [
+    {
+      "parameterType": "sexualizedContent",
+      "value": false
+    },
+    {
+      "parameterType": "joinBlenderkitDiscounts",
+      "value": true
+    },
+    {
+      "parameterType": "addons",
+      "value": true
+    },
+    {
+      "parameterType": "platforms",
+      "value": [
+        "windows-x64",
+        "macos-arm64",
+        "linux-x64",
+        "macos-x64",
+        "windows-arm64"
+      ]
+    },
+    {
+      "parameterType": "faceCount",
+      "value": 151545
+    },
+    {
+      "parameterType": "textureResolutionMax",
+      "value": 2104
+    },
+    {
+      "parameterType": "productionLevel",
+      "value": "finished"
+    },
+    {
+      "parameterType": "procedural",
+      "value": false
+    },
+    {
+      "parameterType": "modelStyle",
+      "value": "realistic"
+    },
+    {
+      "parameterType": "condition",
+      "value": "new"
+    },
+    {
+      "parameterType": "manufacturer",
+      "value": "Samsung"
+    },
+    {
+      "parameterType": "validatedManufacturer",
+      "value": true
+    },
+    {
+      "parameterType": "validatedManufacturerDate",
+      "value": "2026-03-03T04:29:37.834076+00:00"
+    },
+    {
+      "parameterType": "validatedManufacturerOutput",
+      "value": "Heuristics approved metadata"
+    },
+    {
+      "parameterType": "validatedManufacturerActor",
+      "value": "heuristic"
+    },
+    {
+      "parameterType": "purePbr",
+      "value": true
+    },
+    {
+      "parameterType": "shaders",
+      "value": [
+        "[principled]"
+      ]
+    },
+    {
+      "parameterType": "pbrType",
+      "value": "metallic"
+    },
+    {
+      "parameterType": "uv",
+      "value": true
+    },
+    {
+      "parameterType": "textureResolutionMin",
+      "value": 196
+    },
+    {
+      "parameterType": "engines",
+      "value": [
+        "[cycles]"
+      ]
+    },
+    {
+      "parameterType": "modifiers",
+      "value": [
+        "[bevel shrinkwrap]"
+      ]
+    },
+    {
+      "parameterType": "materials",
+      "value": [
+        "[Metal Metal.001 BlackPlastic Matte BlackGloss ScreenRim Screen Samsung_Odyssey_Logo Logo Led Transparent]"
+      ]
+    },
+    {
+      "parameterType": "rig",
+      "value": false
+    },
+    {
+      "parameterType": "simulation",
+      "value": false
+    },
+    {
+      "parameterType": "dimensionX",
+      "value": 0.8136
+    },
+    {
+      "parameterType": "dimensionY",
+      "value": 0.21
+    },
+    {
+      "parameterType": "dimensionZ",
+      "value": 0.5434
+    },
+    {
+      "parameterType": "boundBoxMinX",
+      "value": -0.4068
+    },
+    {
+      "parameterType": "boundBoxMinY",
+      "value": -0.0283
+    },
+    {
+      "parameterType": "boundBoxMinZ",
+      "value": 0.0
+    },
+    {
+      "parameterType": "boundBoxMaxX",
+      "value": 0.4068
+    },
+    {
+      "parameterType": "boundBoxMaxY",
+      "value": 0.1817
+    },
+    {
+      "parameterType": "boundBoxMaxZ",
+      "value": 0.5434
+    },
+    {
+      "parameterType": "faceCountRender",
+      "value": 151545
+    },
+    {
+      "parameterType": "meshPolyType",
+      "value": "tri_dominant"
+    },
+    {
+      "parameterType": "manifold",
+      "value": false
+    },
+    {
+      "parameterType": "objectCount",
+      "value": 23
+    },
+    {
+      "parameterType": "nodeCount",
+      "value": 30
+    },
+    {
+      "parameterType": "textureCount",
+      "value": 3
+    },
+    {
+      "parameterType": "megapixels",
+      "value": 2
+    },
+    {
+      "parameterType": "textAIcheckedDate",
+      "value": "2024-05-10"
+    }
+  ],
+  "thumbnailSmallUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85_crop-%2C.jpg",
+  "thumbnailMiddleUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85_crop-%2C.jpg",
+  "thumbnailLargeUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85_crop-%2C.jpg",
+  "thumbnailXlargeUrl": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85_crop-%2C.jpg",
+  "thumbnailSmallUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85.jpg",
+  "thumbnailMiddleUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85.jpg",
+  "thumbnailLargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85.jpg",
+  "thumbnailXlargeUrlNonsquared": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85.jpg",
+  "thumbnailSmallUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+  "thumbnailMiddleUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+  "thumbnailLargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+  "thumbnailXlargeUrlWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85_crop-%2C.jpg.webp?webp_generated=1766534358",
+  "thumbnailSmallUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.256x256_q85.jpg.webp?webp_generated=1766534358",
+  "thumbnailMiddleUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.512x512_q85.jpg.webp?webp_generated=1766534358",
+  "thumbnailLargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.1024x1024_q85.jpg.webp?webp_generated=1766534358",
+  "thumbnailXlargeUrlNonsquaredWebp": "https://public.blenderkit.com/thumbnails/assets/0e9c67731a2f485c9c20ffefe2d0ff7a/files/thumbnail_938c1a58-c371-4edc-99d5-c7a4594673e5.jpg.2048x2048_q85.jpg.webp?webp_generated=1766534358"
+}

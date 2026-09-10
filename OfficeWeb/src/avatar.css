@@ -1,0 +1,34 @@
+.actor-controls {
+  position: absolute;
+  left: 24px;
+  bottom: 78px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffffff0;
+  border: 1px solid #dce5d4;
+  border-radius: 12px;
+  padding: 10px;
+  max-width: calc(100% - 48px);
+  flex-wrap: wrap;
+  box-shadow: 0 4px 16px #35493412;
+}
+.actor-controls label {
+  font-size: 11px;
+  color: #72836a;
+}
+.actor-controls select {
+  padding: 7px;
+  border: 1px solid #dce5d4;
+  border-radius: 8px;
+  background: white;
+  color: #395139;
+}
+.actor-controls button {
+  font-size: 11px;
+  padding: 8px 10px;
+}
+.actor-controls span {
+  font-size: 10px;
+  color: #829575;
+}

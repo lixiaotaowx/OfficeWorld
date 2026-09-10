@@ -1,0 +1,13 @@
+{
+  "objects": [
+    {
+      "name": "SK_RefWoman_Face_R07.001",
+      "vertices": 34657,
+      "z_bounds_m": [
+        1.3726768493652344,
+        1.7358120679855347
+      ]
+    }
+  ],
+  "method": "Smooth lower-face vertical compression 20%, fading to zero at neck; topology, UVs and skin groups preserved."
+}

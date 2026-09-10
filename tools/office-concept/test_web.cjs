@@ -1,0 +1,20 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'msedge'});
+ const page=await browser.newPage({viewport:{width:1500,height:950}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:5188/');
+ await page.getByText('白模已就绪',{exact:false}).waitFor();
+ await page.screenshot({path:'Design/OfficeConcept/Web_White_Prototype.png'});
+ await page.getByRole('button',{name:'会议空间',exact:true}).click();
+ await page.getByRole('button',{name:'开放工位',exact:true}).click();
+ const other=await browser.newPage();await other.goto('http://127.0.0.1:5188/');
+ await other.getByText('白模已就绪',{exact:false}).waitFor();
+ await page.getByRole('button',{name:'聊天',exact:true}).click();
+ await other.getByRole('button',{name:'聊天',exact:true}).click();
+ await page.getByRole('textbox',{name:'聊天消息'}).fill('双页面通信验证');
+ await page.getByRole('button',{name:'发送',exact:true}).click();
+ await other.getByText('双页面通信验证',{exact:true}).waitFor();
+ console.log(JSON.stringify({loaded:true,viewControls:true,twoPageChat:true,errors}));
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

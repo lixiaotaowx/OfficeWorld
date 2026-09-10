@@ -1,0 +1,63 @@
+{
+  "source": "https://polyhaven.com/a/calathea_orbifolia_01",
+  "license": "CC0",
+  "metadata": {
+    "date_published": 1651795200,
+    "name": "Calathea Orbifolia 01",
+    "type": 2,
+    "staging": null,
+    "authors": {
+      "Rob Tuytel": "scanning",
+      "Rico Cilliers": "modeling"
+    },
+    "categories": [
+      "plants",
+      "nature",
+      "ground cover",
+      "collection: smugglers_cove"
+    ],
+    "tags": [
+      "nature",
+      "bush",
+      "leaf",
+      "shrub",
+      "green",
+      "leaves",
+      "forest",
+      "plant",
+      "jungle",
+      "outdoor",
+      "botany",
+      "decorative"
+    ],
+    "max_resolution": [
+      8192,
+      8192
+    ],
+    "polycount": 16688,
+    "dimensions": [
+      2491.507411003113,
+      1193.592220544815,
+      424.2942640557885
+    ],
+    "texel_density": 20169.022167680178,
+    "files_hash": "5b3ad0b0352b1429f1f11e3de6f5b360ea6ef35a",
+    "description": "Free 8K shrub featuring clusters of broad, glossy, ribbed heart-shaped leaves with deep green tones and subtle vein highlights.",
+    "collections": [
+      "smugglers_cove"
+    ],
+    "category_id": "5a6111fb-71be-5686-a0cc-7e96df75aaf7",
+    "category": "Nature/Plants/Tropical Plants",
+    "attributes": {
+      "condition": [
+        "clean"
+      ],
+      "material": [
+        "plant"
+      ]
+    },
+    "download_count": 24014,
+    "img_version": "35d3c40e",
+    "thumbnail_url": "https://cdn.polyhaven.com/asset_img/thumbs/calathea_orbifolia_01.png?width=256&height=256&v=35d3c40e"
+  }
+}

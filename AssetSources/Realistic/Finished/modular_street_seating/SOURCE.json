@@ -1,0 +1,9 @@
+{
+  "authors": {
+    "Stuart Attenborrow": "All"
+  },
+  "url": "https://polyhaven.com/a/modular_street_seating",
+  "license": "CC0",
+  "verification": "source MD5 and byte size",
+  "modifications": "flatten hierarchy, retain original PBR textures, adapt placement"
+}

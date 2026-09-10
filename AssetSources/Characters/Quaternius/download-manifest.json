@@ -1,0 +1,515 @@
+[
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\All together\\Blends\\Humans_Master.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\All together\\FBX\\Humans_Master.fbx",
+    "bytes": 12748668,
+    "sha256": "39b729db833fafb9fed5a5da93818b458675d519508195f128099f29c4d93775"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\All Together\\Humans_Master.blend",
+    "bytes": 9104132,
+    "sha256": "1c4bd98437d0611be72498e8caf402adbd6f11002b244b35e8d9cc22e6a541bd"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Adventurer.blend",
+    "bytes": 1895452,
+    "sha256": "444a74f3bc20bbe02714e2894f6f6f95f44706f5e85ea9e85d00c235f53a4b23"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Beach.blend",
+    "bytes": 1535912,
+    "sha256": "2e8e3c8a9067858cf198871ba0b132e5d174796114f3c2ffaf0ab8fb825dca24"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Casual.blend",
+    "bytes": 1499748,
+    "sha256": "0320cfab3c1089bae100daac0d9307319c89e262d4ced43693a849158a403253"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Casual2.blend",
+    "bytes": 1477016,
+    "sha256": "debdc9a89261e3fba889effdfc30b6f06b481076d8e072679e660a99a8b5c7a7"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Farmer.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\King.blend",
+    "bytes": 1973092,
+    "sha256": "0a59c2dab5689dbe34d22033c77e148e687b07d7cf729061c342d4b5051f72df"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Punk.blend",
+    "bytes": 1448532,
+    "sha256": "ade5867830ad133f16e313fd662396ccf100d35b5e2abe80009eaa7ff3634f5b"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Spacesuit.blend",
+    "bytes": 1880384,
+    "sha256": "6c776d16798ba8702506aa5129a70552d1e2fa8c759f1d5354dcb375cfe1d167"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Suit.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Swat.blend",
+    "bytes": 1568460,
+    "sha256": "9e866fb568cd31e0e934b7bfce9167aabb469dd911bf524c3813d9c0889241c8"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\Blend\\Worker.blend",
+    "bytes": 1434072,
+    "sha256": "6ae9a1a412ef1be5c7f2c3ef4d57910212fee19c0fc933e55d409555487c8a72"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Adventurer.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Beach.fbx",
+    "bytes": 447948,
+    "sha256": "2ab227a41c6a8a594c61828fd63beec69b0d5f3d23edc2fd5a938e5859322862"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Casual.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Casual2.fbx",
+    "bytes": 429964,
+    "sha256": "16087f97266eab15cbc154859dc9cb8c0dd068f7adcaa6ad4be685744bd61d49"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Farmer.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\King.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Punk.fbx",
+    "bytes": 425484,
+    "sha256": "59b0ee5aa13c02398e818abb6bb9011e2b95bd6b5ae0a8f8014c4a3553434993"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Spacesuit.fbx",
+    "bytes": 537932,
+    "sha256": "9b8f320e3ee853a928a4d3abf646690eeaac5b2918e0d5ef3a31a526c2953548"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Suit.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Swat.fbx",
+    "bytes": 481820,
+    "sha256": "3c5eda6fe78350350363cb1e2ff8be0c7d8a02d58fc60584992b471c04357fa0"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Humanoid Rig\\Individual Characters\\FBX\\Worker.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Adventurer.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Beach.blend",
+    "bytes": 5802916,
+    "sha256": "94e0da4781462a9e2702429de230191240209ab670f5ec0528227b0fa1019e56"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Casual_2.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Casual_Hoodie.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Farmer.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\King.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Punk.blend",
+    "bytes": 5854440,
+    "sha256": "c6e38e88eca44194376392b0050655f2f17045a198e51807b2acfc870adba1dd"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Spacesuit.blend",
+    "bytes": 6313348,
+    "sha256": "8725db0eb03d5174514c4f456d0eb2f809d3763a2aed06c1a3ee0b7f7bf987fa"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Suit.blend",
+    "bytes": 6098956,
+    "sha256": "e1e74a71661f4836bd933c2c9c5129c5f98474f92a3b7acb73caaf439f0e722f"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Swat.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\Blends\\Worker.blend",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Adventurer.fbx",
+    "bytes": 8259852,
+    "sha256": "b3a28d7a6578e2039908b11d1516c98130f7b4f1a5553141be51349c8fc63bf3"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Beach.fbx",
+    "bytes": 8114300,
+    "sha256": "74a9aa79850d9871ba417718792bb7406844af200fea1ba48c0f977e02030d44"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Casual_2.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Casual_Hoodie.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Farmer.fbx",
+    "bytes": 8096108,
+    "sha256": "2dc21f6ece90959015b55c0e42917a02c9d08e2b890b840df386b3b7971378d1"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\King.fbx",
+    "bytes": 8226716,
+    "sha256": "1548dabf222d4d7785706bbcb077e744df7724c042f59449032e406cf0de9838"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Punk.fbx",
+    "bytes": 8095660,
+    "sha256": "b55a6f4391b4b0a8314cd50947c84bcfded7510a371a8113a47870b74234d121"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Spacesuit.fbx",
+    "bytes": 8191180,
+    "sha256": "c90accfe763e245f0a1ed8107b99fb710541c5f432b96e178b21e72c2a7cba34"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Suit.fbx",
+    "bytes": 8118684,
+    "sha256": "75adb87a522c0af711890db5afac22259f4e7fda5ec5173e9af09d1581704268"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Swat.fbx",
+    "bytes": 8143196,
+    "sha256": "c4f76953cf9b5b6625e75c92b5cea3e3f5c1420df26c53934b7e55cc05e0813f"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\FBX\\Worker.fbx",
+    "bytes": 8091404,
+    "sha256": "41f5e13b9bea4a990fd0552a8083e2ce6375ed30b1b1775f3644891e6b4a1bbb"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Adventurer.gltf",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Beach.gltf",
+    "bytes": 3166143,
+    "sha256": "76e001ea131fd76a1bd938a7862606cb8037f7049b632783580b9bf4da2371a8"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Casual_2.gltf",
+    "bytes": 3058092,
+    "sha256": "55c654d09a2a5ff6e3bd6158d4a1b462f181cd6f1e12a0f5e9d959f9c3abc438"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Casual_Hoodie.gltf",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Farmer.gltf",
+    "bytes": 2998119,
+    "sha256": "46d3e85fa8d848ee479ab8e4672c16724ee4ea51f3af5733705a153937f93555"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\King.gltf",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Punk.gltf",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Spacesuit.gltf",
+    "bytes": 3715406,
+    "sha256": "33e0e0fbc6140ffc936a099fd84a274be406115c4b32aa0a697641710b67392a"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Suit.gltf",
+    "bytes": 3315342,
+    "sha256": "6c89fbb31b96c1a63ad94e3dee0942bd7b34bc789a5d39fd6a6a1738a9214fb3"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Swat.gltf",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Individual Characters\\glTF\\Worker.gltf",
+    "bytes": 2967023,
+    "sha256": "e49f8ec0f8a7de72dd26b1c01e6413c9a87a9116eeee21f9364ccd36bc286335"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Adventurer\\Adventurer_Backpack.fbx",
+    "bytes": 180508,
+    "sha256": "b94044161018597daae96a4594789bf6d5149995f07bd874a358ac8eb183facc"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Adventurer\\Adventurer_Body.fbx",
+    "bytes": 232604,
+    "sha256": "08bbed7cf27467c5d3ce267325176b9db0a3484a653df7a64ea9a219f8a17c42"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Adventurer\\Adventurer_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Adventurer\\Adventurer_Head.fbx",
+    "bytes": 223580,
+    "sha256": "759f7f23de24d3d63005d30ad9578acedfabfa7e8a03802fa4e8d17f77ea3a43"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Adventurer\\Adventurer_Legs.fbx",
+    "bytes": 163212,
+    "sha256": "d9d81eca70a7e87e40302f0785f8ae2e82b0057d94726a676ba81d12cf358651"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Beach\\Beach_Body.fbx",
+    "bytes": 225980,
+    "sha256": "917fa30154bdb1171dd9f55d435f59add2b8923cccfdc425e0aaa27fbc552f3e"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Beach\\Beach_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Beach\\Beach_Head.fbx",
+    "bytes": 195692,
+    "sha256": "aea5839b3334fe84796d1c4a91f097a6938ebcc05c168e4f338247331acc2450"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Beach\\Beach_Legs.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_2\\Casual2_Body.fbx",
+    "bytes": 226348,
+    "sha256": "164160a8a8d4782e458fb26a78da24ecd9d6efeb9442263034bdb53f04bb9032"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_2\\Casual2_Feet.fbx",
+    "bytes": 158492,
+    "sha256": "eba4aa8849f1a705f60f5faa9547bfe9a32f58a35526b1cefbe785bf1537ebb4"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_2\\Casual2_Head.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_2\\Casual2_Legs.fbx",
+    "bytes": 163260,
+    "sha256": "b6f2a124bbd98f9c903aca5dd82caea3fd7c22a3e7debf23823b85d1cbebaba7"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_Hoodie\\Casual_Body.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_Hoodie\\Casual_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_Hoodie\\Casual_Head.fbx",
+    "bytes": 186396,
+    "sha256": "d81b37f8b1bae73b0af09466b9c0acfcfe33745312b1746061c54f8863bccd3a"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Casual_Hoodie\\Casual_Legs.fbx",
+    "bytes": 164492,
+    "sha256": "ab923176e06b9b3f25caecb2f1bb441b9d3bed73d27c3fb19745f02dd1cc6da1"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Farmer\\Farmer_Body.fbx",
+    "bytes": 244300,
+    "sha256": "7e5af5ce3328970aed1fa4702e58f0e7a48229d81155e26b457ad007e7f468d0"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Farmer\\Farmer_Feet.fbx",
+    "bytes": 154956,
+    "sha256": "3c458b1b2a66830c44c7b76c123c68d63c9f9e7461362efe0c33ce4d18a276e4"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Farmer\\Farmer_Head.fbx",
+    "error": "<urlopen error [Errno 2] No such file or directory>"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Farmer\\Farmer_Legs.fbx",
+    "bytes": 166732,
+    "sha256": "2adadf445fc8f6ad275005f103efdc31ed1cb5429c787a35c599c313ce44c105"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Horse\\Horse_Head.fbx",
+    "bytes": 168652,
+    "sha256": "5a6f479538ac5a035dcd3e2a11f3f1139db9582d5269bd0ddb5b13268f4cd04f"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\King\\King_Body.fbx",
+    "bytes": 287436,
+    "sha256": "a9e00810a21acf6d5a6ca0dd637ca9e7346109a12e28c3fcde4eaf5edcaaa83e"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\King\\King_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\King\\King_Head.fbx",
+    "bytes": 226316,
+    "sha256": "3fdfa851b779da708ca685d28f438d1bfd7c678ba221688d83e7463d5c32b11a"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\King\\King_Legs.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Punk\\Punk_Body.fbx",
+    "bytes": 232492,
+    "sha256": "8a918b6104d0a82681df830ea60f8194a952697718163f4c086d8902d5de2a94"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Punk\\Punk_Feet.fbx",
+    "bytes": 158348,
+    "sha256": "84d6d2199cff1612ec6abd1fc0dc09dd6995d4ee711a783898123515d510c16b"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Punk\\Punk_Head.fbx",
+    "bytes": 176652,
+    "sha256": "5c6fce42215dbff15554184549a455afb709b5f954b1758b9d03a2a64938c01f"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Punk\\Punk_Legs.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\SpaceSuit\\SpaceSuit_Body.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\SpaceSuit\\SpaceSuit_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\SpaceSuit\\SpaceSuit_Head.fbx",
+    "bytes": 236556,
+    "sha256": "da77cb4ddf6e6d83087c982d775755581c6385f1ec78c8043d503b8f67cf9941"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\SpaceSuit\\SpaceSuit_Legs.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Suit\\Suit_Body.fbx",
+    "bytes": 232604,
+    "sha256": "73846a4cb0ec2fcd2829c774c69b3914c21a6ebafabf94ea8e896161fe045745"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Suit\\Suit_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Suit\\Suit_Head.fbx",
+    "bytes": 199580,
+    "sha256": "8efc1f267ad198b466ab3fff04fb9f656aa6879e04b2150fe2810a27d4123430"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Suit\\Suit_Legs.fbx",
+    "bytes": 163212,
+    "sha256": "74301bb3cbf359c5d276b4d61931aafdddb9d80f6b383608ccc1bf0c124dd5e1"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Swat\\Swat_Body.fbx",
+    "bytes": 235788,
+    "sha256": "629d35234d4579b949d10086ddf8d938bb07a06842d8b3217b297262e6a01090"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Swat\\Swat_Feet.fbx",
+    "bytes": 156716,
+    "sha256": "1f6613779a2637809c7a148c12fae5fdacd262fb1707fd50ab72c2d84aa740bb"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Swat\\Swat_Head.fbx",
+    "bytes": 198988,
+    "sha256": "efd79c4d709814176255eb514f9623cb172c30ffd233fee946d01a0cfd6945ac"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Swat\\Swat_Legs.fbx",
+    "bytes": 188716,
+    "sha256": "15f0f8f5270a3dca650e52f1b635c2b1e20730162314e66d463f9180935cc2db"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Weapons\\Pistol.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Weapons\\Sword.fbx",
+    "bytes": 163356,
+    "sha256": "e9148f0a58a780bf4961502917f148dc4c5884bcfb8e0ed3c4caf8b0640f98a0"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Worker\\Worker_Body.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Worker\\Worker_Feet.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Worker\\Worker_Head.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Worker\\Worker_Legs.fbx",
+    "bytes": 165692,
+    "sha256": "812c4123fb4087eed0cd5d8f7df16b6a6fc678ec3b6f4edfec0e35e5f51ab464"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Animations.fbx",
+    "error": "HTML instead of asset"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Separate Skeletal Meshes and Animations\\Humans_master.blend",
+    "bytes": 11872904,
+    "sha256": "94542739fa8d7f441afe1241a6a4d65f57051160b7442752598cb6d0bfb91882"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\How To Use.txt",
+    "bytes": 1224,
+    "sha256": "9b684add13cc5aa20e7671bd1f47202d762bae1839c00a247fcdd57e29a37439"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\License.txt",
+    "bytes": 372,
+    "sha256": "e8dbf915a2b82229913e301a0787696611241bdefec4832bc084f54161db1efe"
+  },
+  {
+    "path": "AssetSources\\Characters\\Quaternius\\UltimateModularMen\\Preview.jpg",
+    "bytes": 360869,
+    "sha256": "ccf065362f4035d5a62a7a18dcb092365670d1e0877e55c1de0b5cc184652e4b"
+  }
+]

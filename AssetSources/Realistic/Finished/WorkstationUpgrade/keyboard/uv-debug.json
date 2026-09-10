@@ -1,0 +1,421 @@
+[
+  {
+    "name": "VolumeWheelFrame",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "VolumeWheel",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "USB",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "SwitchBottom",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "SwitchBase",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Switch",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Sticker",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Stabillizers",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Screws",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "RubberFeet",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Logo",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Lightspeed",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "LEDs",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.252387523651123,
+      1.252387523651123,
+      1.252387523651123
+    ]
+  },
+  {
+    "name": "Keycaps",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Feet2",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Feet",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Case3",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Case2",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Case",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Buttons",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "BatteryIndicator",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Aluminium.003",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "name": "Aluminium",
+    "uv": [
+      [
+        "UVMap",
+        true
+      ]
+    ],
+    "hide": false,
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  {
+    "node": "Mapping",
+    "values": [
+      [
+        "Vector",
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        "Location",
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        "Rotation",
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        "Scale",
+        [
+          1.0,
+          1.0,
+          1.0
+        ]
+      ]
+    ]
+  },
+  {
+    "node": "Mapping.001",
+    "values": [
+      [
+        "Vector",
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        "Location",
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        "Rotation",
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        "Scale",
+        [
+          1.0,
+          1.0,
+          1.0
+        ]
+      ]
+    ]
+  }
+]

@@ -1,0 +1,68 @@
+# ---- Dependencies ----
+node_modules/
+
+# ---- Python ----
+__pycache__/
+*.pyc
+
+# ---- Build outputs, caches, backups, downloads ----
+Build/
+Builds/
+Backups/
+Downloads/
+
+# ---- OfficeWeb (browser project) ----
+OfficeWeb/node_modules/
+OfficeWeb/dist/
+# Unused 17MB textured scene export; the app loads office-white.glb instead.
+OfficeWeb/public/assets/office.glb
+
+# ---- Unreal project: generated and large binary content ----
+OfficeWorld/Binaries/
+OfficeWorld/DerivedDataCache/
+OfficeWorld/Intermediate/
+OfficeWorld/Saved/
+OfficeWorld/Build/
+OfficeWorld/.vs/
+OfficeWorld/.idea/
+# Keep only the Python source builders; skip the multi-GB binary .uasset/.umap.
+OfficeWorld/Content/*
+!OfficeWorld/Content/Python/
+
+# ---- tools: keep scripts/schemas, skip bundled runtimes and caches ----
+tools/npm-cache/
+tools/WebRuntime/
+
+# ---- AssetSources: keep provenance/licenses (text), skip downloaded binaries ----
+AssetSources/**
+!AssetSources/**/
+!AssetSources/**/*.md
+!AssetSources/**/*.json
+!AssetSources/**/*.txt
+
+# ---- Design: keep text docs, skip screenshots/models/blends/archives ----
+Design/**/*.blend
+Design/**/*.blend1
+Design/**/*.zip
+Design/**/*.dat
+Design/**/*.pyd
+Design/**/*.fbx
+Design/**/*.dll
+Design/**/*.exe
+Design/**/*.obj
+Design/**/*.pgm
+Design/**/*.pem
+Design/**/*.tga
+Design/**/*.exr
+Design/**/*.hdr
+Design/**/*.glb
+Design/**/*.gltf
+Design/**/*.png
+Design/**/*.jpg
+Design/**/*.jpeg
+# Keep the single approved concept image (design anchor, mandated by AGENTS.md).
+!Design/References/Approved_Natural_Office_Concept.png
+
+# Vendored third-party code bundled under Design (not project source).
+Design/Migration/runtime/
+Design/Characters/FaceBuilderTrial/addons/

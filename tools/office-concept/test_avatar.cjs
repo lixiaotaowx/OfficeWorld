@@ -1,0 +1,21 @@
+const {chromium}=require('C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true,channel:'msedge'});
+ const page=await browser.newPage({viewport:{width:1500,height:950}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:5188/');
+ await page.getByText('待机 · 点击地面或 WASD 行走',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'开放工位',exact:true}).click();
+ await page.getByRole('button',{name:'坐到 1 号工位',exact:true}).click();
+ await page.getByText('已坐在 1 号工位',{exact:true}).waitFor({timeout:25000});
+ await page.screenshot({path:'Design/OfficeConcept/Web_Avatar_Seated.png'});
+ await page.getByRole('button',{name:'起身',exact:true}).click();
+ await page.keyboard.down('KeyD');await page.waitForTimeout(900);await page.keyboard.up('KeyD');
+ await page.getByLabel('选择角色').selectOption('man');
+ await page.waitForTimeout(1600);
+ await page.getByRole('button',{name:'坐到 1 号工位',exact:true}).click();
+ await page.getByText('已坐在 1 号工位',{exact:true}).waitFor({timeout:25000});
+ await page.screenshot({path:'Design/OfficeConcept/Web_Avatar_Man.png'});
+ console.log(JSON.stringify({femaleSit:true,maleSit:true,keyboardInput:true,errors}));
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

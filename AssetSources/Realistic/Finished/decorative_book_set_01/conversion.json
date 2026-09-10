@@ -1,0 +1,13 @@
+{
+  "dimensions_m": [
+    0.3919528126716614,
+    0.321111798286438,
+    0.2852616012096405
+  ],
+  "materials": [
+    "book_softcover_01_cover01",
+    "book_hardcover_01_cover02",
+    "catalogue_hardcover_01_cover03"
+  ],
+  "vertices": 6846
+}

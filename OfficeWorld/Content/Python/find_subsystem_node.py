@@ -1,0 +1,3 @@
+import unreal as u,json,pathlib
+from editor_toolset.toolsets.blueprint import BlueprintTools as B,_BlueprintCache
+old=u.InternationalizationLibrary.get_current_language();u.InternationalizationLibrary.set_current_language('en');bp=u.load_asset('/Game/OfficeInteraction/BP_RuntimeSmokeProbe');ed=u.BlueprintGraphEditor.get_graph_editor(B.get_graph(bp,'EventGraph'));names=ed.list_available_nodes([]);pathlib.Path(u.Paths.project_saved_dir(),'subsystem-node-options.json').write_text(json.dumps([str(n) for n in names if 'EnhancedInputLocal' in str(n) or 'Enhanced Input Local' in str(n)],indent=2));u.InternationalizationLibrary.set_current_language(old)

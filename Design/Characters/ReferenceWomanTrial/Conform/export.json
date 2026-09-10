@@ -1,0 +1,15 @@
+{
+  "parts": [
+    {
+      "name": "Body",
+      "mesh": "<Object '/Engine/Transient.UnrealEdEngine_0:MetaHumanCharacterEditorSubsystem_0.BodyMesh_1' (0x0000022012910000) Class 'SkeletalMesh'>"
+    },
+    {
+      "name": "Face",
+      "mesh": "<Object '/Engine/Transient.UnrealEdEngine_0:MetaHumanCharacterEditorSubsystem_0.FaceMesh_0' (0x00000220E6891E00) Class 'SkeletalMesh'>"
+    }
+  ],
+  "exported": true,
+  "face": "/Game/MetaHumans/Trials/Conform/SK_RefWoman_Face_R07.SK_RefWoman_Face_R07",
+  "map_saved": true
+}

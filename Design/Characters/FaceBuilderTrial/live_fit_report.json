@@ -1,0 +1,14 @@
+[
+  {
+    "view": 0,
+    "detected": 1,
+    "aligned": true,
+    "pins": 15
+  },
+  {
+    "view": 1,
+    "detected": 1,
+    "aligned": true,
+    "pins": 9
+  }
+]

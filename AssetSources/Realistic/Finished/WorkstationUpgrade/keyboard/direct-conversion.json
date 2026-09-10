@@ -1,0 +1,17 @@
+{
+  "dimensions_m": [
+    0.36742183566093445,
+    0.1470564901828766,
+    0.03495704382658005
+  ],
+  "vertices": 118177,
+  "slots": [
+    "G915_Plastic",
+    "G915_Metal",
+    "G915_Rubber",
+    "G915_Light",
+    "G915_Keys"
+  ],
+  "source_uv_preserved": true,
+  "modifications": "Original geometry evaluated; geometry-node auto smooth replaced with source shading; source key legend texture inverted to light legends on graphite keycaps; neutral PBR materials; no UV repack."
+}

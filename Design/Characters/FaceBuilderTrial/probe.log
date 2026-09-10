@@ -1,0 +1,31 @@
+2026-09-08 16:10:57,268 - keentools - INFO - 
+---
+System Info:
+Blender version: 4.2.1 LTS release API: 4.2.1 Hash: 396f546c9d82
+Python: 3.11.7 (main, Feb  5 2024, 18:45:06) [MSC v.1928 64 bit (AMD64)]
+Platform: WindowsPE / 64bit
+Machine: AMD64, AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
+System: Windows-10-10.0.19045-SP0
+GPU backend: OPENGL
+NumPy version: 1.24.3
+Package: keentools
+Addon: KeenTools: FaceBuilder, FaceTracker, GeoTracker 2026.3.1
+Package: keentools
+---
+
+2026-09-08 16:10:57,268 - keentools - INFO - Basic checks have been passed
+2026-09-08 16:11:01,010 - keentools - INFO - KeenTools addon classes have been registered
+2026-09-08 16:11:01,267 - keentools - INFO - FaceBuilder classes have been registered
+2026-09-08 16:11:01,271 - keentools - INFO - GeoTracker classes have been registered
+2026-09-08 16:11:01,274 - keentools - INFO - FaceTracker classes have been registered
+2026-09-08 16:11:01,274 - keentools - INFO - Common timeline panel has been registered
+CORE_LOADED <module 'pykeentools' from 'C:\\Users\\Administrator\\AppData\\Local\\Temp\\pykeentools_shadow_copies\\10024_7jzvd5ku\\pykeentools\\pykeentools_installation\\pykeentools\\pykeentools.cp311-win_amd64.pyd'>
+BUILDER_CREATED ['TopologyInfo', 'add_pin', 'add_preset_pins', 'add_preset_pins_and_solve', 'applied_args_model', 'applied_args_model_at', 'applied_args_model_hash', 'applied_args_model_hash_at', 'applied_args_model_vertices_at', 'applied_args_replaced_uvs_model', 'applied_args_replaced_uvs_model_at', 'applied_args_vertices', 'bake_deformation', 'blinking_locked', 'blinking_rigidity', 'center_geo', 'current_scale', 'default_face_texture_colors', 'default_rigidity', 'deserialize', 'detect_face_pose', 'detect_faces', 'disable_focal_length_estimation', 'expressions_rigidity', 'face_texture', 'face_texture_available', 'face_texture_colors', 'face_texture_hash', 'fixed_dofs', 'focal_length_at', 'focal_length_estimation_mode', 'focal_length_fixed_at', 'is_face_detector_available', 'is_key_at', 'keyframes', 'keyframes_count', 'license_manager', 'mask_names', 'masks', 'max_rigidity', 'min_rigidity', 'model_mat', 'models_list', 'move_pin', 'neck_movement_locked', 'neck_movement_rigidity', 'pin', 'pin_enable', 'pins_count', 'pixel_aspect_ratio', 'projected_pins', 'projection_mat', 'remove_keyframe', 'remove_pin', 'remove_pins', 'reset_to_neutral_emotions', 'select_model', 'select_uv_set', 'selected_model', 'selected_uv_set', 'serialize', 'set_blinking_locked', 'set_blinking_rigidity', 'set_centered_geo_keyframe', 'set_detected_face_pose_keyframe', 'set_expressions_rigidity', 'set_face_texture_colors', 'set_fixed_dofs', 'set_focal_length_at', 'set_focal_length_fixed_at', 'set_keyframe', 'set_mask', 'set_neck_movement_locked', 'set_neck_movement_rigidity', 'set_scale', 'set_shape_rigidity', 'set_static_focal_length_estimation', 'set_use_emotions', 'set_varying_focal_length_estimation', 'shape_rigidity', 'solve_for_current_pins', 'static_focal_length', 'unmorph', 'update_model_mat', 'use_emotions', 'uv_sets_list', 'varying_focal_length_at']
+2026-09-08 16:11:03,686 - keentools - INFO - Common timeline panel has been unregistered
+2026-09-08 16:11:03,687 - keentools - INFO - FaceTracker classes have been unregistered
+2026-09-08 16:11:03,687 - keentools - INFO - GeoTracker classes have been unregistered
+2026-09-08 16:11:03,687 - keentools - INFO - FaceBuilder classes have been unregistered
+2026-09-08 16:11:03,687 - keentools - INFO - KeenTools addon classes have been unregistered
+Blender 4.2.1 LTS (hash 396f546c9d82 built 2024-08-20 00:50:53)
+
+Blender quit

@@ -1,0 +1,17 @@
+{
+  "scene": "Office_Concept_FinalLayout",
+  "objects": 856,
+  "shared_workstations": 8,
+  "screen_objects": [
+    "Island_A_Seat_1 DISPLAY",
+    "Island_A_Seat_2 DISPLAY",
+    "Island_A_Seat_3 DISPLAY",
+    "Island_A_Seat_4 DISPLAY",
+    "Island_B_Seat_1 DISPLAY",
+    "Island_B_Seat_2 DISPLAY",
+    "Island_B_Seat_3 DISPLAY",
+    "Island_B_Seat_4 DISPLAY"
+  ],
+  "roof_slabs": 0,
+  "status": "Editable original blockout, not final concept matching; lighting and bake unverified."
+}
