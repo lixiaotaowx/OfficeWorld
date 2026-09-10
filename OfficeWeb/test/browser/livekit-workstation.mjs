@@ -12,6 +12,8 @@ try {
 }
 
 const APP = process.env.OFFICE_APP_URL || "http://127.0.0.1:5188/";
+// The monitor probe lives behind the diagnostic flag on a built bundle.
+const DEBUG_APP = `${APP}${APP.includes("?") ? "&" : "?"}debug=1`;
 // Centre colour of the idle placeholder painted by MonitorScreens.paintIdle.
 const IDLE = [15, 26, 22];
 const results = [];
@@ -42,10 +44,15 @@ const browser = await chromium.launch({
 });
 
 async function open() {
-  const context = await browser.newContext({ permissions: ["microphone"] });
+  const context = await browser.newContext({
+    permissions: ["microphone"],
+    // Needed when pointed at the deployed site, whose certificate is
+    // self-signed for the bare IP.
+    ignoreHTTPSErrors: true,
+  });
   const page = await context.newPage();
   page.on("pageerror", (e) => console.log("  pageerror:", e.message));
-  await page.goto(APP, { waitUntil: "domcontentloaded" });
+  await page.goto(DEBUG_APP, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("text=本地协作已连接", { timeout: 30000 });
   return page;
 }
@@ -61,31 +68,48 @@ try {
   const sharer = await open();
   const viewer = await open();
 
-  // Nobody holds a desk until they pick one.
-  const seatsOf = (page) =>
-    page.locator(".identity small").innerText();
+  // Nobody holds a desk until they pick one, and the picker is shown to a
+  // first-time visitor automatically.
+  const seatsOf = (page) => page.locator(".identity small").innerText();
+  const picker = (page) => page.locator(".seat-picker");
+  const pickDesk = async (page, label) => {
+    await picker(page).waitFor({ timeout: 20000 });
+    await picker(page)
+      .locator(".seat-picker-grid button", { hasText: label })
+      .click();
+  };
+  check(
+    "首次进入自动弹出选座窗口",
+    (await picker(sharer).count()) > 0,
+    "弹出" + (await picker(sharer).count()),
+  );
   check("初始未占工位", /没选工位/.test(await seatsOf(sharer)), await seatsOf(sharer));
 
-  // Sharer claims desk 0 (A-1).
-  await sharer.locator(".seat").first().click();
-  await sharer.getByRole("button", { name: "占用这个工位" }).click();
+  // Sharer claims A-1 from the picker; it closes on success.
+  await pickDesk(sharer, "A-1");
   const claimed = await waitFor(async () =>
     /A-1/.test(await seatsOf(sharer)) ? true : null,
   );
-  check("玩家成功自选并占用工位 A-1", Boolean(claimed), await seatsOf(sharer));
-
-  // A desk someone else holds cannot be claimed: the UI disables it, and the
-  // server refuses it independently (covered by test/seats.test.mjs).
-  await viewer.locator(".seat").first().click();
-  const takeButton = viewer.getByRole("button", { name: "占用这个工位" });
-  const blocked = await waitFor(async () =>
-    (await takeButton.isDisabled()) ? true : null,
+  check("在弹窗里点选即占用工位 A-1", Boolean(claimed), await seatsOf(sharer));
+  const closed = await waitFor(async () =>
+    (await picker(sharer).count()) === 0 ? true : null,
   );
-  check("已被占用的工位不能再占有", Boolean(blocked));
+  check("选定后弹窗自动关闭", Boolean(closed));
+
+  // A desk someone else holds is offered as disabled in the picker, and the
+  // server refuses it independently (covered by test/seats.test.mjs).
+  await picker(viewer).waitFor({ timeout: 20000 });
+  const takenEntry = picker(viewer).locator(".seat-picker-grid button", {
+    hasText: "A-1",
+  });
+  // The other client's seat is relayed asynchronously, so wait for it to land.
+  const blocked = await waitFor(async () =>
+    (await takenEntry.isDisabled()) ? true : null,
+  );
+  check("别人已占的工位在弹窗里不可选", Boolean(blocked));
 
   // The viewer takes a different desk.
-  await viewer.locator(".seat").nth(5).click();
-  await viewer.getByRole("button", { name: "占用这个工位" }).click();
+  await pickDesk(viewer, "B-2");
   const viewerSeat = await waitFor(async () =>
     /B-2/.test(await seatsOf(viewer)) ? true : null,
   );
@@ -132,6 +156,44 @@ try {
     return info && info.hasPreview === false ? true : null;
   }, 20000);
   check("关闭工位预览后显示器回到空闲", Boolean(cleared));
+
+  // The desk is the player's; the only way to change it is deliberately, from
+  // the settings panel, and backing out of that keeps the original desk.
+  await sharer.locator('button[title="使用说明"]').click();
+  const settingsSeat = await sharer.locator(".settings-row strong").innerText();
+  check("设置里显示当前工位", /A-1/.test(settingsSeat), settingsSeat);
+
+  await sharer.getByRole("button", { name: "重新选座" }).click();
+  await sharer.locator(".seat-picker").waitFor({ timeout: 15000 });
+  check("设置可以重新打开选座弹窗", true);
+
+  const canBack = await sharer.getByRole("button", { name: "先不选" }).count();
+  check("重新选座时可以取消（首次进入则不能）", canBack > 0);
+  await sharer.getByRole("button", { name: "先不选" }).click();
+  const kept = await waitFor(async () =>
+    /A-1/.test(await seatsOf(sharer)) ? true : null,
+  );
+  check("取消重新选座后工位没有被放弃", Boolean(kept), await seatsOf(sharer));
+
+  // The seat is occupied until the end: the other client still cannot take it.
+  const stillTaken = await waitFor(async () => {
+    await viewer.locator('button[title="使用说明"]').click();
+    await viewer.getByRole("button", { name: "重新选座" }).click();
+    await viewer.locator(".seat-picker").waitFor({ timeout: 15000 });
+    const entry = viewer.locator(".seat-picker-grid button", { hasText: "A-1" });
+    return (await entry.isDisabled()) ? true : null;
+  });
+  check("工位一直属于原主人，别人始终选不了", Boolean(stillTaken));
+  await viewer.getByRole("button", { name: "先不选" }).click();
+
+  // Selecting my own desk offers the walk-back action.
+  await sharer.locator(".seat", { hasText: "A-1" }).first().click();
+  const back = await waitFor(async () =>
+    (await sharer.getByRole("button", { name: "回到我的座位" }).count()) > 0
+      ? true
+      : null,
+  );
+  check("我的工位上有「回到我的座位」", Boolean(back));
 } catch (error) {
   check("测试执行未抛异常", false, error.message);
 } finally {

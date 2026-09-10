@@ -81,13 +81,27 @@ try {
   check("分享方已进入空间", Boolean(sharerName), sharerName);
 
   // Sharing is workstation-centric: the sharer occupies a desk first, which is
-  // also how the viewer finds them in the seat grid.
-  await sharer.locator(".seat").first().click();
-  await sharer.getByRole("button", { name: "占用这个工位" }).click();
+  // also how the viewer finds them in the seat grid. A first-time visitor gets
+  // the picker automatically, and picking a desk there claims it.
+  const picker = sharer.locator(".seat-picker");
+  await picker.waitFor({ timeout: 20000 });
+  await picker.locator(".seat-picker-grid button").first().click();
   const seated = await waitFor(async () =>
     /工位/.test(await sharer.locator(".identity small").innerText()) ? true : null,
   );
   check("分享方先占用了一个工位", Boolean(seated));
+
+  // The viewer also gets the first-visit picker, and it blocks the page, so
+  // answer it before trying to reach the sidebar.
+  const viewerPicker = viewer.locator(".seat-picker");
+  await viewerPicker.waitFor({ timeout: 20000 });
+  await viewerPicker.locator(".seat-picker-grid button").nth(4).click();
+  const viewerSeated = await waitFor(async () =>
+    /工位/.test(await viewer.locator(".identity small").innerText())
+      ? true
+      : null,
+  );
+  check("观看方也选到了自己的工位", Boolean(viewerSeated));
 
   // 1. Start sharing. getDisplayMedia is auto-granted by the launch flags.
   await sharer.getByRole("button", { name: /共享屏幕/ }).click();

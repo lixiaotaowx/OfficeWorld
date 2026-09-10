@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
+import SeatPicker from "./SeatPicker";
+import SidePanel from "./SidePanel";
 import { WORKSTATIONS } from "./seats";
 import { useOffice } from "./useOffice";
 import "./styles.css";
@@ -19,8 +21,16 @@ export default function App() {
   const [text, setText] = useState("");
   const [help, setHelp] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+  // Set while the player is deliberately re-picking a desk from the settings.
+  const [rePicking, setRePicking] = useState(false);
+  // Bumped to ask the scene to walk the avatar back to its own desk.
+  const [seatReturn, setSeatReturn] = useState(0);
   const person = office.people.find((p) => p.seat === selected);
   const me = office.people.find((p) => p.id === office.myId);
+  const mySeat = me?.seat ?? null;
+  // A first-time visitor holds no desk, so the picker stays up until they take
+  // one. Derived from server state rather than stored, so it cannot drift.
+  const showPicker = rePicking || (Boolean(me) && mySeat === null);
   // Screen capture and the microphone only exist in a secure context. Over
   // plain HTTP the browser hides them entirely, so a click would fail with no
   // picker at all. Say so plainly instead of failing silently.
@@ -156,6 +166,7 @@ export default function App() {
               view={view}
               onSelect={setSelected}
               onClaimSeat={office.claimSeat}
+              returnSignal={seatReturn}
               onMotion={office.reportMotion}
               onCharacter={office.setCharacter}
             />
@@ -230,154 +241,25 @@ export default function App() {
               </div>
             </div>
           </section>
-          <aside id="office-side-panel" className="sidebar" hidden={!panelOpen}>
-            <div className="side-tabs">
-              <button
-                className={tab === "people" ? "selected" : ""}
-                onClick={() => setTab("people")}
-              >
-                空间成员 <span>{office.people.length}</span>
-              </button>
-              <button
-                className={tab === "chat" ? "selected" : ""}
-                onClick={() => setTab("chat")}
-              >
-                聊天
-              </button>
-            </div>
-            {tab === "people" ? (
-              <>
-                <div className="side-title">
-                  <h3>开放工位</h3>
-                  <span>选择一个位置</span>
-                </div>
-                <div className="seat-grid">
-                  {WORKSTATIONS.map((workstation) => {
-                    const i = workstation.index;
-                    const p = office.people.find((x) => x.seat === i);
-                    const mine = me?.seat === i;
-                    return (
-                      <button
-                        key={i}
-                        className={
-                          "seat " +
-                          (i === selected ? "chosen" : "") +
-                          (mine ? " mine" : "")
-                        }
-                        onClick={() => {
-                          setSelected(i);
-                          setView("desks");
-                        }}
-                      >
-                        <span className="seat-num">{workstation.label}</span>
-                        <span className={"seat-state " + (p ? "occupied" : "")}>
-                          {p ? "●" : "○"}
-                        </span>
-                        <strong>{p?.name || "空闲工位"}</strong>
-                        <small>
-                          {mine
-                            ? "这是我的工位"
-                            : p?.sharing
-                              ? "屏幕共享中"
-                              : p
-                                ? "在线 · 可交流"
-                                : "点击可占用"}
-                        </small>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="detail">
-                  <div className="eyebrow">
-                    DESK {WORKSTATIONS[selected]?.label ?? selected + 1}
-                  </div>
-                  <h3>{person?.name || "给灵感留一个位置"}</h3>
-                  {/* The primary action comes before the preview on purpose:
-                      on a short laptop screen the preview would push it below
-                      the fold. */}
-                  <div className="detail-actions">
-                    <button
-                      className={me?.seat === selected ? "danger" : "primary"}
-                      disabled={Boolean(person && person.id !== office.myId)}
-                      onClick={() =>
-                        void office.claimSeat(
-                          me?.seat === selected ? null : selected,
-                        )
-                      }
-                    >
-                      {me?.seat === selected ? "离开这个工位" : "占用这个工位"}
-                    </button>
-                    <button
-                      disabled={
-                        !person || person.id === office.myId || !person.sharing
-                      }
-                      onClick={() =>
-                        person && office.request(person.id, "screen")
-                      }
-                    >
-                      请求看屏幕
-                    </button>
-                    <button
-                      disabled={!person || person.id === office.myId}
-                      onClick={() =>
-                        person && office.request(person.id, "voice")
-                      }
-                    >
-                      邀请语音
-                    </button>
-                  </div>
-                  {person && office.previews[person.id] ? (
-                    <img
-                      className="screen-preview"
-                      src={office.previews[person.id]}
-                      alt="对方主动共享的屏幕预览"
-                    />
-                  ) : (
-                    <div className="empty-screen">
-                      <span>▱</span>
-                      {person ? "尚未共享屏幕" : "这个工位暂时无人"}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="chat">
-                <div className="messages">
-                  {office.messages.length === 0 ? (
-                    <div className="chat-empty">
-                      让交流自然发生。
-                      <small>消息会发送给当前连接的伙伴。</small>
-                    </div>
-                  ) : (
-                    office.messages.map((m) => (
-                      <article key={m.id}>
-                        <strong>{m.name}</strong>
-                        <p>{m.text}</p>
-                      </article>
-                    ))
-                  )}
-                </div>
-                <form onSubmit={send}>
-                  <input
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="给伙伴留句话…"
-                    maxLength={1000}
-                    aria-label="聊天消息"
-                  />
-                  <button
-                    disabled={!office.connected || !text.trim()}
-                    type="submit"
-                  >
-                    发送
-                  </button>
-                </form>
-              </div>
-            )}
-            <div className="side-foot">
-              <span className="dot" /> 一个可以一起专注的地方
-            </div>
-          </aside>
+          <SidePanel
+            people={office.people}
+            messages={office.messages}
+            previews={office.previews}
+            myId={office.myId}
+            mySeat={mySeat}
+            selected={selected}
+            tab={tab}
+            panelOpen={panelOpen}
+            connected={office.connected}
+            text={text}
+            onTab={setTab}
+            onSelect={setSelected}
+            onOpenDesks={() => setView("desks")}
+            onReturnToSeat={() => setSeatReturn((n) => n + 1)}
+            onRequest={office.request}
+            onText={setText}
+            onSend={send}
+          />
         </main>
         <footer role="status">
           {office.notice}
@@ -432,16 +314,44 @@ export default function App() {
           <section className="modal">
             <h2>欢迎来到 Office World</h2>
             <p>
-              中键拖动旋转，Shift＋中键平移，滚轮朝鼠标位置缩放。左键点击地面行走。选择工位查看成员，点击共享屏幕后由浏览器选择共享内容。
+              中键拖动旋转，Shift＋中键平移，滚轮朝鼠标位置缩放。左键点击地面行走。
             </p>
             <p>
-              打开第二个标签页可测试本机聊天与请求流程。跨网络语音和屏幕共享还需要后续部署与连接验证。
+              工位一旦选定就属于你，别人无法再占用，你的共享画面也会显示在那张桌子的屏幕上。
             </p>
-            <button className="primary" onClick={() => setHelp(false)}>
-              开始探索
-            </button>
+            <div className="settings-row">
+              <span>
+                我的工位：
+                <strong>
+                  {mySeat === null ? "还没选" : WORKSTATIONS[mySeat]?.label}
+                </strong>
+              </span>
+              <button
+                className="primary"
+                onClick={() => {
+                  setHelp(false);
+                  setRePicking(true);
+                }}
+              >
+                {mySeat === null ? "去选工位" : "重新选座"}
+              </button>
+            </div>
+            <div className="actions">
+              <button onClick={() => setHelp(false)}>关闭</button>
+            </div>
           </section>
         </div>
+      )}
+      {showPicker && (
+        <SeatPicker
+          people={office.people}
+          myId={office.myId}
+          onPick={(seat) => office.claimSeat(seat)}
+          onDone={() => setRePicking(false)}
+          // On a first visit there is nothing to go back to, so the picker
+          // cannot be dismissed until a desk has been taken.
+          dismissable={mySeat !== null}
+        />
       )}
     </div>
   );

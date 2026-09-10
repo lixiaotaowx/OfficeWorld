@@ -65,10 +65,23 @@ async function open() {
   return { page, errors };
 }
 
+/**
+ * A first-time visitor is shown the seat picker, and it blocks the page until
+ * a desk is taken. Take one so the rest of the run can reach the controls.
+ */
+async function claimAnyDesk(page) {
+  const picker = page.locator(".seat-picker");
+  await picker.waitFor({ timeout: 30000 });
+  await picker.locator(".seat-picker-grid button:not([disabled])").first().click();
+  await picker.waitFor({ state: "detached", timeout: 30000 }).catch(() => {});
+}
+
 try {
   console.log(`target: ${BASE}`);
   const a = await open();
   const b = await open();
+  await claimAnyDesk(a.page);
+  await claimAnyDesk(b.page);
 
   const connected = await waitFor(async () =>
     (await a.page.locator("text=本地协作已连接").count()) > 0 ? true : null,
@@ -115,15 +128,17 @@ try {
   });
   check("两个客户端都连到了同一台服务器", Boolean(twoPeople), twoPeople || "");
 
-  // A should see B as a rendered character.
+  // A should see B as a rendered character. Other people may be connected at
+  // the same time (this is a shared office), so any number above zero is fine.
   const remote = await waitFor(async () => {
     const list = await a.page.evaluate(() => window.__officeDebug?.remotes?.snapshot?.());
-    return list && list.length === 1 && list[0].loaded ? list : null;
+    if (!list || list.length < 1) return null;
+    return list.every((entry) => entry.loaded) ? list : null;
   });
   check(
-    "我在部署环境里能看到另一个玩家的角色",
+    "我在部署环境里能看到其他玩家的角色",
     Boolean(remote),
-    remote ? JSON.stringify(remote) : "没有远端角色",
+    remote ? `${remote.length} 个远端角色已加载` : "没有远端角色",
   );
 
   // Walk B and confirm A's copy follows.
@@ -137,14 +152,21 @@ try {
   const localB = await b.page.evaluate(() => window.__officeDebug?.local?.());
   const follows = await waitFor(async () => {
     const list = await a.page.evaluate(() => window.__officeDebug?.remotes?.snapshot?.());
-    const now = list?.[0];
-    if (!now || !localB) return null;
-    return Math.hypot(now.x - localB.x, now.z - localB.z) < 0.6 ? now : null;
+    if (!list?.length || !localB) return null;
+    // Match against whichever remote ended up where B actually is, so other
+    // people being in the office cannot confuse the comparison.
+    const nearest = list
+      .map((entry) => ({
+        entry,
+        gap: Math.hypot(entry.x - localB.x, entry.z - localB.z),
+      }))
+      .sort((p, q) => p.gap - q.gap)[0];
+    return nearest.gap < 0.6 ? nearest : null;
   });
   check(
     "对方走动时我这边也同步",
     Boolean(follows),
-    follows && localB ? `误差 ${Math.hypot(follows.x - localB.x, follows.z - localB.z).toFixed(2)}m` : "未同步",
+    follows && localB ? `误差 ${follows.gap.toFixed(2)}m` : "未同步",
   );
 
   await a.page.screenshot({ path: "../Build/deployed-office.png" }).catch(() => undefined);
@@ -228,9 +250,9 @@ try {
 
   // Regression guard that ordinary tests miss: Playwright scrolls an element
   // into view before clicking, so a control buried below the fold still passes
-  // them. On a 1366x768 laptop the 占用这个工位 button used to sit at y=780 in a
-  // 768px viewport, behind a panel that clipped its overflow, so a real user
-  // could never press it. Assert real visibility with no scrolling.
+  // them. A control a real user cannot reach without scrolling is a bug, so
+  // assert that the things a new visitor must press are genuinely in view on a
+  // 1366x768 laptop, and that the sidebar can scroll if it is ever too tall.
   const small = await browser.newContext({
     ignoreHTTPSErrors: true,
     viewport: { width: 1366, height: 768 },
@@ -238,29 +260,37 @@ try {
   const smallPage = await small.newPage();
   await smallPage.goto(APP, { waitUntil: "domcontentloaded", timeout: 60000 });
   await smallPage.waitForSelector("text=本地协作已连接", { timeout: 60000 });
-  await new Promise((r) => setTimeout(r, 3000));
+  await smallPage.waitForSelector(".seat-picker", { timeout: 30000 });
+  await new Promise((r) => setTimeout(r, 1500));
   const reachable = await smallPage.evaluate(() => {
-    const button = [...document.querySelectorAll(".detail-actions button")].find(
-      (b) => b.textContent.trim() === "占用这个工位",
-    );
-    if (!button) return null;
-    const rect = button.getBoundingClientRect();
+    const box = (el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        top: Math.round(r.top),
+        bottom: Math.round(r.bottom),
+        inView:
+          r.top >= 0 && r.bottom <= window.innerHeight && r.height > 0,
+      };
+    };
+    const picker = document.querySelector(".seat-picker");
+    const choices = [...document.querySelectorAll(".seat-picker-grid button")];
     const sidebar = document.querySelector(".sidebar");
     return {
-      top: Math.round(rect.top),
-      bottom: Math.round(rect.bottom),
+      seats: choices.length,
+      allChoicesInView: choices.length > 0 && choices.every((b) => box(b).inView),
+      lastChoice: choices.length ? box(choices[choices.length - 1]) : null,
+      picker: picker ? box(picker) : null,
       viewport: window.innerHeight,
-      inView: rect.top >= 0 && rect.bottom <= window.innerHeight && rect.height > 0,
       sidebarOverflow: sidebar ? getComputedStyle(sidebar).overflowY : "n/a",
     };
   });
   check(
-    "1366x768 笔记本上「占用这个工位」不用滚动就在视口内",
-    reachable?.inView === true,
-    JSON.stringify(reachable),
+    "1366x768 上选座弹窗的 8 个工位无需滚动全部可见",
+    reachable?.allChoicesInView === true && reachable?.seats === 8,
+    JSON.stringify(reachable?.lastChoice) + ` seats=${reachable?.seats}`,
   );
   check(
-    "侧栏内容可滚动，够长时不会把按钮裁掉",
+    "侧栏内容可滚动，够长时不会把内容裁掉",
     reachable?.sidebarOverflow === "auto",
     `overflow-y: ${reachable?.sidebarOverflow}`,
   );

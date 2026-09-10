@@ -6,6 +6,7 @@ import { OfficeAvatar } from "./OfficeAvatar";
 import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
 import { MonitorScreens } from "./monitorScreens";
 import { WORKSTATIONS } from "./seats";
+import { installSceneProbe } from "./sceneProbe";
 import "./avatar.css";
 import type { CharacterKind } from "./characterModel";
 import type { Motion, Person } from "./types";
@@ -23,6 +24,8 @@ interface Props {
   onSelect: (seat: number) => void;
   /** Claim a workstation server-side; resolves false if someone else has it. */
   onClaimSeat: (seat: number | null) => Promise<boolean>;
+  /** Bumped by the UI to ask the avatar to walk back to its own desk. */
+  returnSignal: number;
   /** Publish our own motion so everybody else can draw us. */
   onMotion: (motion: Motion) => void;
   onCharacter: (kind: CharacterKind) => void;
@@ -97,7 +100,7 @@ export default function OfficeScene(props: Props) {
     syncMonitors(monitors, props);
   }, [props.people, props.previews]);
   // The avatar follows the seat the server says we hold, so claiming a desk
-  // from the sidebar and clicking "坐到 N 号工位" behave identically.
+  // from the picker and clicking "坐到 N 号工位" behave identically.
   const lastSeat = useRef<number | null | undefined>(undefined);
   useEffect(() => {
     const seat = props.people.find((p) => p.id === props.myId)?.seat ?? null;
@@ -109,6 +112,14 @@ export default function OfficeScene(props: Props) {
     if (seat === null) actor.current?.standUp();
     else actor.current?.sit(seat);
   }, [props.people, props.myId]);
+  // "回到我的座位": the seat has not changed, so walk back on an explicit ask.
+  useEffect(() => {
+    if (!props.returnSignal) return;
+    const seat = latest.current.people.find(
+      (p) => p.id === latest.current.myId,
+    )?.seat;
+    if (seat !== null && seat !== undefined) actor.current?.sit(seat);
+  }, [props.returnSignal]);
   useEffect(() => {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -131,59 +142,13 @@ export default function OfficeScene(props: Props) {
       import.meta.env.DEV ||
       new URLSearchParams(location.search).has("debug")
     ) {
-      // `monitors` is created further down, once the model starts loading, so
-      // it has to be resolved lazily.
-      (window as unknown as { __officeDebug?: unknown }).__officeDebug = {
-        get monitors() {
-          return monitorsRef.current;
-        },
+      installSceneProbe({
+        monitors: () => monitorsRef.current,
         remotes,
-        local: () => avatar.getState(),
-        /**
-         * Is a desk screen actually visible? Raycast both from the current
-         * camera (what a visitor sees) and from the desk chair (what the person
-         * sitting there sees). The textured plane used to sit inside the
-         * monitor body, which no thumbnail-level test could detect.
-         */
-        probeMonitor: (seatIndex: number) => {
-          const target = monitorsRef.current?.meshFor(seatIndex);
-          const workstation = WORKSTATIONS[seatIndex];
-          if (!target || !workstation) return null;
-          world.updateMatrixWorld(true);
-          const center = new THREE.Box3()
-            .setFromObject(target)
-            .getCenter(new THREE.Vector3());
-          const shot = (from: THREE.Vector3) => {
-            const ray = new THREE.Raycaster(
-              from,
-              center.clone().sub(from).normalize(),
-            );
-            const first = ray
-              .intersectObjects(world.children, true)
-              .find((hit) => hit.object.visible);
-            return {
-              firstHit: first?.object?.name ?? null,
-              hitsScreen: first?.object === target,
-            };
-          };
-          return {
-            center: [
-              +center.x.toFixed(3),
-              +center.y.toFixed(3),
-              +center.z.toFixed(3),
-            ],
-            fromCamera: shot(camera.position.clone()),
-            // Eye height of somebody sitting at this desk.
-            fromChair: shot(
-              new THREE.Vector3(
-                workstation.chair.x,
-                1.2,
-                workstation.chair.z,
-              ),
-            ),
-          };
-        },
-      };
+        avatar,
+        world,
+        camera,
+      });
     }
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;

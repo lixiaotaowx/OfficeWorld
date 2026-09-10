@@ -296,6 +296,64 @@ main {
   .panel-seam-toggle { right: -10px; top: 290px; }
 }
 
+/* First-visit seat picker: picking a desk claims it, so the choices are big
+   and unambiguous. */
+.seat-picker {
+  width: 460px;
+  max-width: calc(100vw - 40px);
+}
+.seat-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+  margin: 16px 0 6px;
+}
+.seat-picker-grid button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 10px;
+  text-align: left;
+  background: #fbfcf9;
+  border-color: #e5e9e0;
+}
+.seat-picker-grid button.mine {
+  background: #e6efe4;
+  border-color: #6e9853;
+}
+.seat-picker-grid .pick-label {
+  font-size: 10px;
+  color: #8d9c83;
+}
+.seat-picker-grid strong {
+  font-size: 12px;
+}
+.seat-picker-grid small {
+  font-size: 9px;
+  color: #9ca58f;
+}
+.pick-error {
+  color: #a8552f;
+  font-size: 12px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 8px;
+  padding: 12px 14px;
+  border: 1px solid #e1e6dc;
+  border-radius: 10px;
+  background: #fbfcf9;
+  font-size: 12px;
+}
+@media (max-width: 560px) {
+  .seat-picker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* Shown when the page is served over plain HTTP: the browser withholds screen
    capture and microphone there, so media controls are disabled and explained. */
 .insecure-banner {
