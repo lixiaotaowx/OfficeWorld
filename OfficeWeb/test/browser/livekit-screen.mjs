@@ -60,7 +60,12 @@ const browser = await chromium.launch({
 });
 
 async function open() {
-  const context = await browser.newContext({ permissions: ["microphone"] });
+  const context = await browser.newContext({
+    permissions: ["microphone"],
+    // Needed when pointed at the deployed site, whose certificate is
+    // self-signed for the bare IP.
+    ignoreHTTPSErrors: true,
+  });
   const page = await context.newPage();
   page.on("pageerror", (e) => console.log("  pageerror:", e.message));
   await page.goto(APP, { waitUntil: "domcontentloaded" });
