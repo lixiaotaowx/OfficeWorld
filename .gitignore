@@ -69,3 +69,6 @@ Design/**/*.jpeg
 # Vendored third-party code bundled under Design (not project source).
 Design/Migration/runtime/
 Design/Characters/FaceBuilderTrial/addons/
+
+# Scratch directory used by concurrent modelling work; keep it out of the repo.
+_bake_tmp/
