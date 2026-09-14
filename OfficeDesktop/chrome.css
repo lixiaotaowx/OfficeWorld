@@ -2,6 +2,11 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 .bar { height: 54px; display: flex; align-items: center; gap: 30px; padding: 0 148px 0 20px; background: #222824; -webkit-app-region: drag; }
+/* The window itself is transparent (main.cjs); the title bar owns the top
+   corners and the page below owns the bottom ones, so the two half-shapes add up
+   to one rounded window. Maximized or full screen they go square. */
+.bar { border-radius: var(--window-radius, 16px) var(--window-radius, 16px) 0 0; }
+:host-context(html.iruler-maximized) .bar { border-radius: 0; }
 .window-controls { position: absolute; right: 0; top: 0; display: flex; height: 54px; -webkit-app-region: no-drag; }
 .window-controls button { width: 46px; font-size: 17px; color: #b8c1b9; }
 .window-controls button:hover { background: #ffffff12; color: #fff; }

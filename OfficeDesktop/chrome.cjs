@@ -41,6 +41,18 @@ function installChrome(window) {
     return actions[action]();
   });
   window.on('page-title-updated', event => { event.preventDefault(); window.setTitle('iruler dream'); });
+  // The window is rounded by CSS, so a maximized/full-screen window must drop the
+  // radius to fill the work area. The page gets a class; chrome.css reacts to it.
+  const setMaximized = value => {
+    if (window.isDestroyed() || window.webContents.isDestroyed()) return;
+    void window.webContents
+      .executeJavaScript(`document.documentElement.classList.toggle('iruler-maximized', ${value});`, true)
+      .catch(() => {});
+  };
+  window.on('maximize', () => setMaximized(true));
+  window.on('unmaximize', () => setMaximized(false));
+  window.on('enter-full-screen', () => setMaximized(true));
+  window.on('leave-full-screen', () => setMaximized(false));
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     let action;

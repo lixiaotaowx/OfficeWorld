@@ -1,6 +1,21 @@
-html.iruler-desktop { padding-top: 54px; background: #f4f2eb; overflow: hidden; }
-html.iruler-desktop body { height: calc(100dvh - 54px); overflow: auto; }
+/* Rounded window (2026-09-14). Windows 10 has no native frameless rounding and
+   Electron's roundedCorners only applies from Windows 11 Build 22000, so the
+   window is transparent and the shell paints the shape: the title bar owns the
+   top corners, the page box below owns the bottom ones. Because a transparent
+   <html> would otherwise let <body>'s background become the canvas, both stay
+   transparent and the page box (.app / .account-page) carries the colour. */
+html.iruler-desktop { padding-top: 54px; background: transparent; overflow: hidden; --window-radius: 16px; }
+html.iruler-desktop body { height: calc(100dvh - 54px); overflow: auto; background: transparent; }
 html.iruler-desktop .app { height: calc(100dvh - 54px); min-height: 586px; padding: 0 20px; }
+html.iruler-desktop .app,
+html.iruler-desktop .account-page {
+  border-radius: 0 0 var(--window-radius) var(--window-radius);
+  /* No DWM shadow survives a transparent window, so a hairline keeps the edge
+     readable against a light desktop. Left/right/bottom only: no seam under the bar. */
+  box-shadow: inset 1px 0 0 #26322b14, inset -1px 0 0 #26322b14, inset 0 -1px 0 #26322b14;
+}
+html.iruler-desktop.iruler-maximized .app,
+html.iruler-desktop.iruler-maximized .account-page { border-radius: 0; box-shadow: none; }
 html.iruler-desktop {
   --bg: #f4f2eb; --night: #26322b; --acid: #f0d274; --mint: #8d9663;
   --brand: #3d5141; --brand-soft: #edeedc; --line: #ddded3; --line-2: #e5e5dc;

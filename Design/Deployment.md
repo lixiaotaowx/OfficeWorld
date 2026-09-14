@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 桌面端窗口圆角（0.1.7）
+
+- 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。
+- 做法：窗口改 `transparent: true` + 全透明底色；**标题栏负责上两角**（`chrome.css` 的 `.bar`），**页面盒子负责下两角**（`desktop-theme.css` 的 `.app` / `.account-page`），半径由 `--window-radius: 16px` 统一控制。`html` 与 `body` 必须保持透明——否则 `body` 背景会被提升为整个画布的背景，圆角立刻失效。最大化/全屏时主进程给页面加 `iruler-maximized` 类，半径归零填满工作区（`chrome.cjs` 监听 maximize/unmaximize/enter-/leave-full-screen）。
+- 代价（已知并接受）：透明窗口拿不到 DWM 原生阴影，改用 1px 内描边（左/右/下，避免标题栏下出现接缝）保证边缘可辨；四角 16px 区域不再是窗口的一部分，那一点的鼠标事件会穿透到桌面。
+- 验证（真实打包 0.1.7、独立 profile、未影响用户正在运行的实例）：逐像素检查 `Build/desktop-017-normal.png` —— 四角 alpha=0、对角线剖面 `0/0/0/78/255…`（抗锯齿弧线而非 1px 切角）、直边与中心 alpha=255；最大化后四角变不透明、半径 0、窗口 1920×1040；还原后回到 16px 与 1440×940。合成效果图 `Build/desktop-017-on-desktop.png`。
+- 生效范围仅桌面外壳；网站未改动、未重新部署。
+
 ## 2026-09-14 桌面端品牌去重（0.1.6）
 
 - 问题：应用标题栏与网页（登录卡、应用内导航条）各显示一次 "iruler dream"；桌面预加载还会把网页里的 OFFICE 改写成 iruler dream，导致窗口顶部出现两行相同品牌。

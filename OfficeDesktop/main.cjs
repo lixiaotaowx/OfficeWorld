@@ -40,7 +40,7 @@ function createWindow() {
   else configurePermissions(officeSession, () => mainWindow);
   mainWindow = new BrowserWindow({
     width: 1440, height: 940, minWidth: 800, minHeight: 640,
-    title: 'iruler dream', backgroundColor: '#222824', show: !smoke, icon: iconPath,
+    title: 'iruler dream', transparent: true, backgroundColor: '#00000000', show: !smoke, icon: iconPath,
     frame: false,
     webPreferences: { session: officeSession, nodeIntegration: false, contextIsolation: true, sandbox: true,
       preload: path.join(__dirname, 'desktop-preload.cjs') },
