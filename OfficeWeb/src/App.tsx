@@ -1,11 +1,29 @@
+import NotificationSetting from './NotificationSetting';
+import PrivateCallPanel from "./PrivateCallPanel";
 import { useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
 import SeatPicker from "./SeatPicker";
 import SidePanel from "./SidePanel";
+import type { Account } from "./AccountGate";
+import MeetingCenter from "./MeetingCenter";
+import SharingPreview from "./SharingPreview";
+import AdminDialog from "./AdminDialog";
+import CharacterSetting from "./CharacterSetting";
+import {
+  AdminIcon,
+  ChatIcon,
+  SettingsIcon,
+  MembersIcon,
+  OverviewIcon,
+  ScreenIcon,
+  PreviewIcon,
+} from "./icons";
 import { WORKSTATIONS } from "./seats";
-import type { CharacterKind } from "./characterModel";
+import { resolveCharacterId, type CharacterId } from "./characters";
 import { useOffice } from "./useOffice";
 import "./styles.css";
+import "./workspace-ui.css";
+import "./workspace-responsive.css";
 
 function Stream({ stream }: { stream: MediaStream }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -14,34 +32,59 @@ function Stream({ stream }: { stream: MediaStream }) {
   }, [stream]);
   return <video ref={ref} autoPlay playsInline controls />;
 }
-export default function App() {
-  const office = useOffice();
+export default function App({ account, onLogout }: { account: Account; onLogout: () => void }) {
+  const office = useOffice(account);
+  const [focusSeat, setFocusSeat] = useState<{ seat: number; nonce: number } | null>(null);
   const [view, setView] = useState<View>("overview");
+  function chooseView(next: View) { setRenderPaused(false); setFocusSeat(null); setView(next); }
   const [selected, setSelected] = useState(0);
   const [tab, setTab] = useState<"people" | "chat">("people");
-  const [text, setText] = useState("");
   const [help, setHelp] = useState(false);
+  const [renderPaused, setRenderPaused] = useState(false);
+  const [meetingOpen, setMeetingOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+  useEffect(() => {
+    const openNotification = (event: Event) => {
+      const section = (event as CustomEvent<string>).detail;
+      if (section === 'meeting') setMeetingOpen(true);
+      if (section === 'chat') { setTab('chat'); setPanelOpen(true); }
+    };
+    window.addEventListener('office-notification-open', openNotification);
+    return () => window.removeEventListener('office-notification-open', openNotification);
+  }, []);
   // Set while the player is deliberately re-picking a desk from the settings.
   const [rePicking, setRePicking] = useState(false);
+  // Error from a failed chair click, shown inside the floating picker hint.
+  const [pickError, setPickError] = useState("");
   // The avatar we wear. Owned here so the first-visit dialog can set it too.
-  const [character, setCharacter] = useState<CharacterKind>(() => {
-    const saved =
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem("office-character")
-        : null;
-    return saved === "man" ? "man" : "woman";
-  });
-  const person = office.people.find((p) => p.seat === selected);
+  const [character, setCharacter] = useState<CharacterId>(() =>
+    resolveCharacterId(
+      account.character,
+    ),
+  );
+  // Dialogs for naming (first visit and rename) and the admin panel.
+  const [adminOpen, setAdminOpen] = useState(false);
   const me = office.people.find((p) => p.id === office.myId);
-  const mySeat = me?.seat ?? null;
-  // A first-time visitor holds no desk, so the picker stays up until they take
-  // one. Derived from server state rather than stored, so it cannot drift.
-  const showPicker = rePicking || (Boolean(me) && mySeat === null);
-  function chooseCharacter(kind: CharacterKind) {
-    sessionStorage.setItem("office-character", kind);
-    setCharacter(kind);
-    office.setCharacter(kind);
+  const previewAllowed = me?.previewAllowed ?? true;
+  const ownedSeat = office.seats.findIndex(owner => owner?.id === account.id);
+  const mySeat = me?.seat ?? (ownedSeat >= 0 ? ownedSeat : null);
+  // A first-time visitor must name themselves before doing anything else.
+  const needsName = false;
+  // A visitor with no desk sees the picker until they take one. Derived from
+  // server state rather than stored, so it cannot drift.
+  const showPicker =
+    !needsName && (rePicking || (Boolean(me) && mySeat === null));
+  function chooseCharacter(id: CharacterId) {
+    setCharacter(id);
+    office.setCharacter(id);
+  }
+  // Claim a chair clicked in the scene while the picker is up. The server does
+  // the authoritative check, so a race is simply reported as a failed claim.
+  async function pickSeat(seat: number) {
+    setPickError("");
+    const ok = await office.claimSeat(seat);
+    if (ok) setRePicking(false);
+    else setPickError("这张椅子刚刚被别人占了，换一张吧。");
   }
   // Screen capture and the microphone only exist in a secure context. Over
   // plain HTTP the browser hides them entirely, so a click would fail with no
@@ -56,86 +99,83 @@ export default function App() {
     meeting: "会议空间",
     lounge: "休闲角落",
   };
-  function send(e: React.FormEvent) {
-    e.preventDefault();
-    if (text.trim() && office.connected) {
-      office.chat(text);
-      setText("");
-    }
-  }
   return (
     <div className="app">
-      <aside className="rail">
+      <header className="rail" aria-label="办公室导航">
         <a className="brand" href="/" aria-label="Office World">
-          o<span>·</span>
+          <span className="brand-mark">o<span>·</span></span>
+          <span className="brand-wordmark">OFFICE<span>一起在场</span></span>
         </a>
         <button
-          className="rail-icon active"
+          className={"rail-icon" + (view === "overview" ? " active" : "")}
           title="空间总览"
-          onClick={() => setView("overview")}
+          aria-label="空间总览"
+          onClick={() => chooseView("overview")}
         >
-          ▦
+          <OverviewIcon /><span className="rail-label">空间</span>
         </button>
         <button
-          className="rail-icon"
+          className={
+            "rail-icon" + (panelOpen && tab === "people" ? " active" : "")
+          }
           title="团队成员"
+          aria-label="团队成员"
           onClick={() => {
             setTab("people");
             setPanelOpen(true);
           }}
         >
-          ♧
+          <MembersIcon /><span className="rail-label">成员</span>
         </button>
         <button
-          className="rail-icon"
+          className={"rail-icon" + (panelOpen && tab === "chat" ? " active" : "")}
           title="空间聊天"
+          aria-label="空间聊天"
           onClick={() => {
             setTab("chat");
             setPanelOpen(true);
           }}
         >
-          ☷
+          <ChatIcon /><span className="rail-label">聊天</span>
+        </button>
+        <div className="connection" role="status">
+          <span className={"dot " + (!office.connected ? "offline" : "")} />
+          <span className="connection-label">{office.connected ? "协作已连接" : "正在连接"}</span>
+          <span>{office.people.length} 人在线</span>
+        </div>
+        <button className="focus-switch" aria-expanded={panelOpen} aria-controls="office-side-panel"
+          aria-label={panelOpen ? '收起成员面板' : '展开成员面板'}
+          onClick={() => setPanelOpen(open => !open)}>
+          <span>{panelOpen ? '沉浸视图' : '协作视图'}</span> {panelOpen ? '↗' : '↙'}
         </button>
         <div className="rail-bottom">
           <button
             className="rail-icon"
-            title="使用说明"
+            title="管理员"
+            aria-label="管理员"
+            onClick={() => setAdminOpen(true)}
+          >
+            <AdminIcon />
+          </button>
+          <button
+            className="rail-icon"
+            title="设置"
+            aria-label="设置"
             onClick={() => setHelp(true)}
           >
-            ?
+            <SettingsIcon />
           </button>
-          <span className="avatar">我</span>
+          <button className="avatar" title={`${account.name} · 退出登录`} aria-label="退出登录" onClick={onLogout}>我</button>
         </div>
-      </aside>
+      </header>
       <div className="workspace">
-        <header>
-          <div>
-            <span className="eyebrow">OFFICE WORLD / WORKSPACE</span>
-            <h1>
-              一起，在这里工作<span className="version">空间原型</span>
-            </h1>
-          </div>
-          <div className="connection">
-            <span className={"dot " + (!office.connected ? "offline" : "")} />
-            {office.connected ? "本地协作已连接" : "正在连接"}
-            <span className="divider" />
-            {office.people.length} 人在线
-          </div>
-          <button
-            aria-expanded={panelOpen}
-            aria-controls="office-side-panel"
-            onClick={() => setPanelOpen((open) => !open)}
-          >
-            {panelOpen ? "收起侧栏 ›" : "‹ 展开成员与聊天"}
-          </button>
-        </header>
         {insecure && (
           <div className="insecure-banner" role="alert">
             <strong>当前是明文 HTTP，浏览器禁止网页采集屏幕与麦克风。</strong>
             <span>
               所以这里无法共享屏幕和语音。请改用{" "}
               <a href={httpsUrl}>{httpsUrl}</a>
-              （首次会提示证书不安全，点「继续访问」即可）。
+              。
             </span>
           </div>
         )}
@@ -150,40 +190,48 @@ export default function App() {
           >
             {panelOpen ? "▶" : "◀"}
           </button>
-          <section className="stage">
+          <section className={"stage" + (focusSeat ? " screen-focused" : "")}>
             <div className="stage-heading">
+              <span className="space-number" aria-hidden="true">{String(Object.keys(viewNames).indexOf(view) + 1).padStart(2, "0")}</span>
               <div>
-                <span className="eyebrow">THE COMMON ROOM</span>
-                <h2>我们的办公室</h2>
+                <span className="eyebrow">THE COMMON GROUND</span>
+                <h2>{viewNames[view]}</h2>
               </div>
-              <span className="tag">8 工位 · 1 会议室</span>
+              <span className="tag">数字办公室 <span>↗</span><small>{WORKSTATIONS.length} 个专属工位 / 共享会议室</small></span>
             </div>
             <div className="view-tabs">
               {(Object.keys(viewNames) as View[]).map((v) => (
                 <button
                   key={v}
                   className={view === v ? "selected" : ""}
-                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  onClick={() => chooseView(v)}
                 >
-                  {viewNames[v]}
+                  <span className="view-index">{String(Object.keys(viewNames).indexOf(v) + 1).padStart(2, "0")}</span>{viewNames[v]}
                 </button>
               ))}
             </div>
             <OfficeScene
+              mySeat={mySeat}
               people={office.people}
               myId={office.myId}
               previews={office.previews}
               motions={office.motions}
-              selected={selected}
               view={view}
+              focusSeat={focusSeat}
+              picking={showPicker}
+              onPick={(seat) => void pickSeat(seat)}
               onSelect={setSelected}
+              onFocusScreen={(seat) => { setRenderPaused(false); setSelected(seat); setFocusSeat({ seat, nonce: Date.now() }); }}
+              renderPaused={renderPaused}
+              onResumeRendering={() => setRenderPaused(false)}
               character={character}
               onMotion={office.reportMotion}
-              onCharacter={chooseCharacter}
+              onSit={office.sitSpot}
             />
             <div className="bottom-bar">
               <div className="identity">
-                <span className="avatar">我</span>
+                <span className="avatar">{account.name.slice(0, 1)}</span>
                 <div>
                   <strong>{me?.name || "正在进入空间"}</strong>
                   <small>
@@ -194,45 +242,29 @@ export default function App() {
                         : `${WORKSTATIONS[me.seat]?.label ?? ""} 工位`}
                   </small>
                 </div>
+                <button
+                  className="identity-rename"
+                  onClick={onLogout}
+                >
+                  退出登录
+                </button>
               </div>
               <div className="actions">
                 <button
-                  onClick={office.mute}
-                  disabled={!office.sessions.length && !me?.meeting}
-                >
-                  {office.muted ? "打开麦克风" : "麦克风"}
-                </button>
-                <button
-                  title="缩略图很小、看不清，只用来表示工位有人在共享；真正的画面需要对方同意"
+                  title="关闭后不再接收别人的工位预览，节省流量；仍显示自己并继续分享自己的小屏幕"
                   disabled={!office.connected}
                   onClick={() =>
-                    office.setPreviewAllowed(!me?.previewAllowed)
+                    office.setPreviewAllowed(!previewAllowed)
                   }
                 >
-                  {me?.previewAllowed ? "工位预览：开" : "工位预览：关"}
+                  <PreviewIcon />{previewAllowed ? "他人工位预览：开" : "他人工位预览：关"}
                 </button>
-                <button
-                  className={office.sharing ? "danger" : "primary"}
-                  // Sharing is workstation-centric: your share appears on the
-                  // screen of the desk you occupy, so a desk is required first.
-                  // It also needs a secure context to reach the capture API.
-                  disabled={
-                    !office.connected ||
-                    insecure ||
-                    me?.seat === null ||
-                    me?.seat === undefined
-                  }
-                  title={
-                    insecure
-                      ? "浏览器要求 HTTPS 才能采集屏幕，请改用 https 地址打开"
-                      : me?.seat === null || me?.seat === undefined
-                        ? "请先占用一个工位，你的共享画面会显示在该工位的屏幕上"
-                        : "选择要共享的窗口或整个屏幕"
-                  }
-                  onClick={() => void office.share()}
-                >
-                  {office.sharing ? "停止共享" : "↗ 共享屏幕"}
-                </button>
+                {!window.officeDesktop && !office.sharing && <button
+                  className="primary" disabled={!office.connected || insecure || mySeat === null}
+                  title="授权浏览器采集屏幕，用于自己的工位小预览"
+                  onClick={() => void office.share()}>
+                  <ScreenIcon />授权工位预览
+                </button>}
                 <button
                   className={me?.meeting ? "danger" : ""}
                   // Joining needs the microphone, which plain HTTP cannot get.
@@ -243,88 +275,59 @@ export default function App() {
                       : undefined
                   }
                   onClick={() => {
-                    setView("meeting");
-                    void office.meeting();
+                    chooseView("meeting");
+                    setMeetingOpen(true);
                   }}
                 >
-                  {me?.meeting ? "离开会议" : "加入会议"}
+                  <MembersIcon />{office.meetings.active ? "会议进行中" : "会议"}
                 </button>
               </div>
             </div>
           </section>
           <SidePanel
             people={office.people}
+            seats={office.seats}
             messages={office.messages}
             previews={office.previews}
             myId={office.myId}
+            accountId={account.id}
             mySeat={mySeat}
             selected={selected}
             tab={tab}
             panelOpen={panelOpen}
             connected={office.connected}
-            text={text}
+            contacts={office.contacts}
             onTab={setTab}
-            onSelect={setSelected}
-            onOpenDesks={() => setView("desks")}
+            onSelect={(seat) => { setRenderPaused(false); setSelected(seat); setFocusSeat({ seat, nonce: Date.now() }); }}
+            onOpenDesks={() => {}}
             onRequest={office.request}
-            onText={setText}
-            onSend={send}
+            onMessage={office.chat}
+            onFile={office.sendChatFile}
+            loadFile={office.loadChatFile}
           />
         </main>
         <footer role="status">
           {office.notice}
-          <span>白模交互阶段 · 材质稍后接入</span>
+          <span>A SPACE FOR PEOPLE. / OFFICE WORLD</span>
         </footer>
       </div>
-      {office.requests.map((r) => (
-        <div className="modal-backdrop" key={r.id}>
-          <section className="modal">
-            <h2>
-              {r.name} 想与你{r.kind === "voice" ? "语音交流" : "共享看屏幕"}
-            </h2>
-            <p>只有同意后才会建立连接。</p>
-            <div className="actions">
-              <button onClick={() => office.respond(r.id, false)}>
-                暂时不方便
-              </button>
-              <button
-                className="primary"
-                onClick={() => office.respond(r.id, true)}
-              >
-                同意
-              </button>
-            </div>
-          </section>
-        </div>
-      ))}
-      {(office.sessions.length > 0 || me?.meeting) && (
-        <div className="session-panel">
-          {me?.meeting && (
-            <div>
-              <span>
-                语音会议 · {office.people.filter((p) => p.meeting).length} 人在线
-              </span>
-              <button onClick={() => void office.meeting()}>离开</button>
-            </div>
-          )}
-          {office.sessions.map((s) => (
-            <div key={s.id}>
-              <span>
-                {s.kind === "screen" ? "屏幕连接" : "语音连接"} ·{" "}
-                {office.people.find((p) => p.id === s.peer)?.name}
-              </span>
-              {office.videos[s.id] && <Stream stream={office.videos[s.id]} />}
-              <button onClick={() => office.end(s.id)}>结束</button>
-            </div>
-          ))}
-        </div>
-      )}
+      <PrivateCallPanel office={office} />
+      <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} />
+      {office.videos['local-screen'] && Object.values(office.callStates).some(call => call.connected && call.sharing) &&
+        !meetingOpen && !office.meetings.sharing &&
+        <SharingPreview stream={office.videos['local-screen']} meeting={false} onStop={office.stopShare} />}
       {help && (
         <div className="modal-backdrop">
           <section className="modal">
-            <h2>欢迎来到 Office World</h2>
+            <h2>设置</h2>
+            <CharacterSetting value={character} onChange={chooseCharacter} />
+            <NotificationSetting />
+            <label className="settings-row">
+              <span>暂停三维画面（语音、共享和聊天继续）</span>
+              <input type="checkbox" checked={renderPaused} onChange={e => setRenderPaused(e.target.checked)} />
+            </label>
             <p>
-              中键拖动旋转，Shift＋中键平移，滚轮朝鼠标位置缩放。左键点击地面行走。
+              中键拖动旋转，Shift＋中键平移，滚轮朝鼠标位置缩放。点击地面或 WASD 行走，点击自己的椅子或屏幕回座。坐下后会自动随机切换坐姿。
             </p>
             <p>
               工位一旦选定就属于你，别人无法再占用，你的共享画面也会显示在那张桌子的屏幕上。
@@ -354,17 +357,24 @@ export default function App() {
       )}
       {showPicker && (
         <SeatPicker
-          people={office.people}
-          myId={office.myId}
           character={character}
           onCharacter={chooseCharacter}
-          onPick={(seat) => office.claimSeat(seat)}
+          failed={pickError}
           onDone={() => setRePicking(false)}
           // On a first visit there is nothing to go back to, so the picker
           // cannot be dismissed until a desk has been taken.
           dismissable={mySeat !== null}
         />
       )}
+      {adminOpen && (
+        <AdminDialog
+          seats={office.seats}
+          onKick={office.adminKick}
+          onClose={() => setAdminOpen(false)}
+        />
+      )}
     </div>
   );
 }
+
+

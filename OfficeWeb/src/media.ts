@@ -5,6 +5,10 @@
 import { Room, RoomEvent, Track } from "livekit-client";
 import type { Socket } from "socket.io-client";
 import type { Session } from "./types";
+import { MediaRooms } from "./mediaRooms";
+import { MediaAudioFocus } from "./mediaAudioFocus";
+import { MeetingScreenShare } from './meetingScreenShare';
+import { waitForScreenPermission } from './screenPermission';
 
 interface TokenReply {
   url?: string;
@@ -15,27 +19,45 @@ interface TokenReply {
 
 export class OfficeMedia {
   screen: MediaStream | null = null;
-  private micStream: MediaStream | null = null;
-  private muted = false;
   private disposed = false;
-  /** LiveKit room name -> connection. */
-  private rooms = new Map<string, Room>();
-  /** Rooms we are currently connecting to, so a re-render cannot join twice. */
-  private pending = new Map<string, Promise<Room | null>>();
-  /** Rooms we still want; a late connect for a dropped room gets closed. */
-  private wanted = new Set<string>();
+  private connections = new MediaRooms(name => this.token(name),
+    (room, name) => this.wire(room, name), message => this.onNotice(message));
+  private audioInitialized = new Set<string>();
+  private screenPublic = false;
+  private meetingMic = false;
+  private recovery?: ReturnType<typeof setTimeout>;
+  private screenGeneration = 0;
+  private meetingGeneration = 0;
   /** session id -> room name, so ending a session can release its room. */
   private sessionRoom = new Map<string, string>();
+  private voiceRooms = new Set<string>();
+  private privateSessions = new Map<string, Session>();
+  private privateRecovery = new Map<string, ReturnType<typeof setTimeout>>();
+  private audioFocus = new MediaAudioFocus(this.connections, name => {
+    for (const [key, element] of this.audio) element.muted = !name || !key.startsWith(`${name}:`);
+    if (this.meetingRoom && name !== this.meetingRoom) this.meetingMic = false;
+  }, message => this.onNotice(message));
   private audio = new Map<string, HTMLMediaElement>();
   private previewTimer?: ReturnType<typeof setInterval>;
   private previewVideo?: HTMLVideoElement;
+  private meetingRoom: string | null = null;
+  private meetingVideos = new Set<string>();
+  private meetingScreens: MeetingScreenShare;
 
   constructor(
     private socket: Socket,
     private onNotice: (message: string) => void,
     private onVideo: (id: string, stream: MediaStream | null) => void,
     private onSharing: (sharing: boolean) => void,
-  ) {}
+  ) {
+    this.meetingScreens = new MeetingScreenShare(this.socket, this.connections,
+      () => this.meetingRoom, text => this.onNotice(text));
+    document.addEventListener('pointerdown', this.resumeAudio);
+  }
+
+  private resumeAudio = () => {
+    for (const [, room] of this.connections.values()) void room.startAudio().catch(() => undefined);
+  };
 
   /** Ask the server for a room token. The server decides whether we may join. */
   private token(room: string) {
@@ -65,15 +87,35 @@ export class OfficeMedia {
 
   private wire(room: Room, roomName: string) {
     room
+      .on(RoomEvent.LocalTrackPublished, publication => {
+        if (!this.connections.current(roomName, room)) return;
+        if (!roomName.startsWith('meeting-') || publication.source !== Track.Source.ScreenShare) return;
+        const track = publication.track?.mediaStreamTrack;
+        if (track) {
+          const key = `${roomName}:local`;
+          this.meetingVideos.add(key);
+          this.onVideo(key, new MediaStream([track]));
+        }
+      })
+      .on(RoomEvent.LocalTrackUnpublished, publication => {
+        if (!this.connections.current(roomName, room)) return;
+        if (publication.source !== Track.Source.ScreenShare) return;
+        const key = `${roomName}:local`;
+        this.meetingVideos.delete(key); this.onVideo(key, null);
+      })
       .on(RoomEvent.TrackSubscribed, (track) => {
+        if (!this.connections.current(roomName, room)) return;
         const id = this.sessionOf(roomName);
         if (track.kind === Track.Kind.Video) {
-          this.onVideo(id, new MediaStream([track.mediaStreamTrack]));
+          const key = roomName.startsWith('meeting-') ? `${roomName}:${track.sid}` : id;
+          if (roomName.startsWith('meeting-')) this.meetingVideos.add(key);
+          this.onVideo(key, new MediaStream([track.mediaStreamTrack]));
           return;
         }
-        const key = `${id}:${track.sid}`;
+        const key = `${roomName}:${track.sid}`;
         const element = track.attach();
         element.autoplay = true;
+        element.muted = this.audioFocus.current !== roomName;
         document.body.appendChild(element);
         void element.play?.().catch(() => {
           this.onNotice("浏览器阻止自动播放，请点击恢复声音");
@@ -81,137 +123,203 @@ export class OfficeMedia {
         this.audio.set(key, element);
       })
       .on(RoomEvent.TrackUnsubscribed, (track) => {
+        if (!this.connections.current(roomName, room)) return;
         const id = this.sessionOf(roomName);
         if (track.kind === Track.Kind.Video) {
-          this.onVideo(id, null);
+          const key = roomName.startsWith('meeting-') ? `${roomName}:${track.sid}` : id;
+          this.meetingVideos.delete(key); this.onVideo(key, null);
           return;
         }
-        const key = `${id}:${track.sid}`;
+        const key = `${roomName}:${track.sid}`;
         const element = this.audio.get(key);
+        if (element) track.detach(element);
         element?.remove();
         this.audio.delete(key);
       })
       .on(RoomEvent.Disconnected, () => {
-        this.rooms.delete(roomName);
+        if (!this.connections.current(roomName, room)) return;
+        this.connections.close(roomName);
+        this.clearRoomAudio(roomName);
+        for (const key of this.meetingVideos) {
+          if (key.startsWith(`${roomName}:`)) {
+            this.onVideo(key, null); this.meetingVideos.delete(key);
+          }
+        }
+
         const id = this.sessionOf(roomName);
         if (id) this.onVideo(id, null);
+        const privateSession = [...this.privateSessions.values()].find(session => session.room === roomName);
+        if (!this.disposed && privateSession) {
+          this.onNotice('通话媒体中断，正在重连');
+          this.retryPrivate(privateSession);
+        }
+        if (!this.disposed && this.meetingRoom === roomName) {
+          this.meetingScreens.stop(roomName);
+          this.onNotice('会议媒体连接中断，正在重新连接；屏幕共享需重新选择');
+          clearTimeout(this.recovery);
+          this.recovery = setTimeout(() => {
+            if (this.meetingRoom === roomName) void this.joinMeeting(roomName, this.meetingMic);
+          }, 1500);
+        }
       });
   }
 
-  /**
-   * Connect to one LiveKit room. Repeated calls while a connection is still
-   * being established must share that attempt: two simultaneous connects would
-   * arrive with the same identity and the server would drop one of them.
-   */
-  private join(roomName: string) {
-    this.wanted.add(roomName);
-    const existing = this.rooms.get(roomName);
-    if (existing) return Promise.resolve<Room | null>(existing);
-    const inFlight = this.pending.get(roomName);
-    if (inFlight) return inFlight;
-    const attempt = this.connect(roomName).finally(() =>
-      this.pending.delete(roomName),
-    );
-    this.pending.set(roomName, attempt);
-    return attempt;
+  private clearRoomAudio(roomName: string) {
+    for (const [key, element] of this.audio) {
+      if (!key.startsWith(`${roomName}:`)) continue;
+      element.remove();
+      this.audio.delete(key);
+    }
   }
 
-  private async connect(roomName: string): Promise<Room | null> {
-    const reply = await this.token(roomName);
-    if (!reply.token || !reply.url) {
-      this.onNotice(reply.error || "无法加入媒体房间");
-      return null;
-    }
-    const room = new Room({ adaptiveStream: true, dynacast: true });
-    this.wire(room, roomName);
-    try {
-      await room.connect(reply.url, reply.token);
-    } catch {
-      room.disconnect();
-      this.onNotice("媒体连接失败，请检查服务器是否可达");
-      return null;
-    }
-    // The room may have been left while this connection was in flight.
-    if (this.disposed || !this.wanted.has(roomName)) {
-      room.disconnect();
-      return null;
-    }
-    this.rooms.set(roomName, room);
-    return room;
-  }
-
-  private async publishMic(room: Room) {
-    const stream = await this.prepareMic();
-    const track = stream.getAudioTracks()[0];
-    if (!track) return;
-    if (room.localParticipant.getTrackPublication(Track.Source.Microphone)) return;
-    await room.localParticipant.publishTrack(track, {
-      name: "microphone",
-      source: Track.Source.Microphone,
-    });
-  }
+  private join(roomName: string) { return this.connections.join(roomName); }
 
   private async publishScreen(room: Room) {
-    const track = this.screen?.getVideoTracks()[0];
-    if (!track) {
-      this.onNotice("屏幕共享已停止");
-      return;
-    }
-    if (room.localParticipant.getTrackPublication(Track.Source.ScreenShare)) return;
-    await room.localParticipant.publishTrack(track, {
-      name: "screen",
-      source: Track.Source.ScreenShare,
+    await this.connections.run(room.name, async current => {
+      const owns = () => [...this.privateSessions.values()].some(session => session.room === room.name &&
+        session.screenOwners?.includes(this.socket.id || ''));
+      if (!owns()) return;
+      const track = this.screen?.getVideoTracks()[0];
+      if (!track || track.readyState !== 'live') throw Error('屏幕共享已停止');
+      if (current.localParticipant.getTrackPublication(Track.Source.ScreenShare)) return;
+      await waitForScreenPermission(current, () => owns() && track.readyState === 'live');
+      await current.localParticipant.publishTrack(track.clone(), {
+        name: 'screen', source: Track.Source.ScreenShare,
+      });
     });
   }
 
-  /** Attach local media to an approved session. Public entry point. */
-  async start(session: Session) {
-    this.sessionRoom.set(session.id, session.room);
-    const room = await this.join(session.room);
-    if (!room) return;
-    try {
-      if (session.kind === "screen" && session.owner === this.socket.id) {
-        await this.publishScreen(room);
-      } else if (session.kind === "voice") {
-        await this.publishMic(room);
-      }
-    } catch (error) {
-      this.onNotice(error instanceof Error ? error.message : "媒体发布失败");
-    }
+  private retryPrivate(session: Session) {
+    clearTimeout(this.privateRecovery.get(session.id));
+    this.privateRecovery.set(session.id, setTimeout(() => {
+      this.privateRecovery.delete(session.id);
+      const current = this.privateSessions.get(session.id);
+      if (current && !this.disposed) void this.start(current);
+    }, 2500));
   }
 
-  /** Join or leave the shared meeting room. */
-  async joinMeeting() {
-    const room = await this.join("meeting");
-    if (!room) return;
-    try {
-      await this.publishMic(room);
-    } catch {
-      this.onNotice("麦克风不可用，无法发言");
+  /** Upgrade an existing pair in place; never duplicate its audio room. */
+  async start(session: Session) {
+    const previous = this.privateSessions.get(session.id);
+    this.privateSessions.set(session.id, session);
+    this.sessionRoom.set(session.id, session.room);
+    this.voiceRooms.add(session.room);
+    this.audioFocus.add(session.room);
+    const reconnecting = this.connections.get(session.room)?.state !== "connected";
+    const room = await this.join(session.room);
+    if (this.privateSessions.get(session.id) !== session) return true;
+    if (!room) {
+      this.connections.close(session.room);
+      this.retryPrivate(session); return true;
     }
+    const ownsScreen = session.screenOwners?.includes(this.socket.id || '') ??
+      (session.kind === 'screen' && session.owner === this.socket.id);
+    if (ownsScreen && this.screen?.active) {
+      try { await this.publishScreen(room); }
+      catch { this.onNotice('屏幕发布失败，语音通话保留，请重新共享'); }
+    } else if (!ownsScreen) {
+      await this.connections.run(session.room, async current => {
+        const publication = current.localParticipant.getTrackPublication(Track.Source.ScreenShare);
+        if (publication?.track) await current.localParticipant.unpublishTrack(publication.track, true);
+      }).catch(() => {});
+      if (previous?.screenOwners?.includes(this.socket.id || '')) {
+        if (session.screenOwners?.length) this.onNotice('对方已接替屏幕共享，语音通话保留');
+        if (!this.screenPublic && ![...this.privateSessions.values()].some(s =>
+            s.screenOwners?.includes(this.socket.id || ''))) this.stopScreen();
+      }
+    }
+    // Screen permission failures must not discard the other working medium.
+    if (!this.audioInitialized.has(session.room) || reconnecting && (!previous || this.audioFocus.current === session.room) &&
+        !room.localParticipant.isMicrophoneEnabled && this.audioFocus.intended(session.room)) {
+      this.audioInitialized.add(session.room);
+      try { await this.audioFocus.activate(session.room); }
+      catch { this.onNotice('麦克风未开启，画面仍可使用；请检查权限或设备后重试开麦'); }
+    }
+    return true;
+  }
+
+  /** Meeting audio belongs to this room, independent of private calls. */
+  async joinMeeting(name: string, microphone = false) {
+    if (this.disposed) return false;
+    if (this.meetingRoom && this.meetingRoom !== name) this.leaveMeeting();
+    this.meetingRoom = name;
+    this.meetingMic = microphone;
+    this.audioFocus.add(name);
+    const generation = this.meetingGeneration;
+    const room = await this.join(name);
+    if (this.meetingRoom !== name || generation !== this.meetingGeneration) return false;
+    if (!room) {
+      this.connections.close(name);
+      clearTimeout(this.recovery);
+      this.recovery = setTimeout(() => {
+        if (this.meetingRoom === name) void this.joinMeeting(name, this.meetingMic);
+      }, 5000);
+      return false;
+    }
+    try { await this.audioFocus.activate(name, microphone); }
+    catch { this.onNotice('麦克风不可用，请重新开启麦克风'); }
+    return true;
   }
 
   leaveMeeting() {
-    this.wanted.delete("meeting");
-    const room = this.rooms.get("meeting");
-    if (!room) return;
-    room.disconnect();
-    this.rooms.delete("meeting");
+    this.meetingGeneration++;
+    const name = this.meetingRoom;
+    if (name) this.meetingScreens.stop(name);
+    this.meetingRoom = null;
+    this.meetingMic = false;
+    clearTimeout(this.recovery);
+    if (!name) return;
+    this.audioFocus.remove(name);
+    this.connections.close(name);
+    this.clearRoomAudio(name);
+    for (const key of this.meetingVideos) this.onVideo(key, null);
+    this.meetingVideos.clear();
   }
 
-  async startScreen() {
+  async meetingMicrophone(enabled: boolean) {
+    const name = this.meetingRoom;
+    if (!name) throw Error('会议音频尚未连接');
+    if (enabled) await this.audioFocus.activate(name, true);
+    else await this.audioFocus.mute(name);
+    if (this.meetingRoom === name) this.meetingMic = enabled;
+  }
+  async meetingScreen(enabled: boolean) {
+    const name = this.meetingRoom;
+    if (!name) throw Error('会议尚未连接');
+    if (enabled) await this.meetingScreens.start(name);
+    else this.meetingScreens.stop(name);
+  }
+
+  meetingStatus() {
+    const room = this.meetingRoom ? this.connections.get(this.meetingRoom) : undefined;
+    return {
+      connected: room?.state === 'connected',
+      mic: !!room?.localParticipant.isMicrophoneEnabled &&
+        room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track?.mediaStreamTrack.readyState === 'live',
+      sharing: !!room?.localParticipant.isScreenShareEnabled,
+    };
+  }
+
+  async startScreen(publicPreview = true) {
     this.stopScreen();
+    const generation = this.screenGeneration;
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: { frameRate: { ideal: 15, max: 20 } },
       audio: false,
     });
+    if (this.disposed || generation !== this.screenGeneration) {
+      stream.getTracks().forEach(track => track.stop()); return;
+    }
     this.screen = stream;
-    stream.getVideoTracks()[0].onended = () => this.stopScreen();
+    this.screenPublic = publicPreview;
+    this.onVideo('local-screen', stream);
+    stream.getVideoTracks()[0].onended = () => { if (this.screen === stream) this.stopScreen(); };
     // Low-bandwidth seat-grid thumbnails; unrelated to the LiveKit video stream.
     const video = document.createElement("video");
     video.muted = true;
     video.srcObject = stream;
     await video.play();
+    if (this.screen !== stream) { video.srcObject = null; return; }
     this.previewVideo = video;
     this.socket.emit("sharing", true);
     this.onSharing(true);
@@ -221,32 +329,50 @@ export class OfficeMedia {
     const context = canvas.getContext("2d")!;
     this.previewTimer = setInterval(() => {
       if (video.readyState < 2) return;
-      context.fillStyle = "#101818";
-      context.fillRect(0, 0, 480, 270);
-      const scale = Math.min(480 / video.videoWidth, 270 / video.videoHeight);
-      const width = video.videoWidth * scale;
-      const height = video.videoHeight * scale;
-      context.drawImage(
-        video,
-        (480 - width) / 2,
-        (270 - height) / 2,
-        width,
-        height,
-      );
-      this.socket.emit("preview", canvas.toDataURL("image/jpeg", 0.55));
-    }, 700);
+      if (!video.videoWidth || !video.videoHeight) return;
+      const scale = Math.min(1, 480 / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (publicPreview) this.socket.emit("preview", canvas.toDataURL("image/jpeg", 0.55));
+    }, 3000);
     // Viewers approved before this point already sit in our screen room.
-    for (const [name, room] of this.rooms) {
-      if (name.startsWith("screen-")) {
-        await this.publishScreen(room).catch(() => undefined);
+    for (const [name, room] of this.connections.values()) {
+      if ([...this.privateSessions.values()].some(session => session.room === name &&
+          (session.screenOwners?.includes(this.socket.id || "") ?? session.owner === this.socket.id))) {
+        await this.publishScreen(room).catch(error => this.onNotice(String(error)));
       }
     }
   }
 
+  cancelScreenSelection() { this.stopScreen(); }
+
+  async shareInCall(id: string) {
+    const captured = !this.screen?.active;
+    try {
+      if (captured) await this.startScreen(false);
+      if (!this.screen?.active || !this.privateSessions.has(id)) throw Error('屏幕未选择或通话已结束');
+      const answer = await this.socket.timeout(10000).emitWithAck('private-screen', id);
+      if (!answer?.ok) throw Error(answer?.error || '屏幕切换失败');
+    } catch (error) {
+      if (captured) this.stopScreen();
+      throw error;
+    }
+  }
+
   stopScreen() {
+    this.screenGeneration++;
+    for (const [name] of this.connections.values()) {
+      if (!this.voiceRooms.has(name)) continue;
+      void this.connections.run(name, async room => {
+        const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
+        if (publication?.track) await room.localParticipant.unpublishTrack(publication.track, true);
+      }).catch(error => { if (!this.disposed) this.onNotice(String(error)); });
+    }
     clearInterval(this.previewTimer);
     this.screen?.getTracks().forEach((track) => track.stop());
     this.screen = null;
+    this.onVideo('local-screen', null);
     if (this.previewVideo) this.previewVideo.srcObject = null;
     if (!this.disposed) {
       this.socket.emit("sharing", false);
@@ -255,47 +381,74 @@ export class OfficeMedia {
   }
 
   async prepareMic() {
-    if (!this.micStream?.active) {
-      this.micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-      this.micStream
-        .getAudioTracks()
-        .forEach((track) => (track.enabled = !this.muted));
-    }
-    return this.micStream;
+    // Permission preflight only. Each LiveKit room owns its own microphone track.
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => track.stop());
   }
 
-  toggleMute(muted: boolean) {
-    this.muted = muted;
-    this.micStream?.getAudioTracks().forEach((track) => {
-      track.enabled = !muted;
-    });
+  async toggleMute(muted: boolean, sessionId?: string) {
+    const name = sessionId ? this.sessionRoom.get(sessionId) :
+      (this.audioFocus.current && this.voiceRooms.has(this.audioFocus.current) ? this.audioFocus.current : [...this.voiceRooms][0]);
+    if (!name) throw Error('尚未建立私聊');
+    if (muted) await this.audioFocus.mute(name);
+    else await this.audioFocus.activate(name, true);
+  }
+
+  privateVoiceStatus(sessionId?: string) {
+    const name = sessionId ? this.sessionRoom.get(sessionId) :
+      (this.audioFocus.current && this.voiceRooms.has(this.audioFocus.current) ? this.audioFocus.current : [...this.voiceRooms][0]);
+    if (!name) return '未通话';
+    const room = this.connections.get(name);
+    if (room?.state !== 'connected') return '连接中';
+    if (this.audioFocus.current !== name) return '声音已暂停';
+    const track = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track?.mediaStreamTrack;
+    if (room.localParticipant.isMicrophoneEnabled && track?.readyState === 'live') return '已开启';
+    return this.audioFocus.intended(name) ? '等待授权或开启失败' : '已静音';
+  }
+
+  callStatus(sessionId: string) {
+    const name = this.sessionRoom.get(sessionId);
+    const room = name ? this.connections.get(name) : undefined;
+    return { voice: this.privateVoiceStatus(sessionId), connected: room?.state === 'connected',
+      sharing: !!room?.localParticipant.isScreenShareEnabled };
   }
 
   /** Release one approved session; the room closes once nobody needs it. */
+  signalingDisconnected() {
+    this.stopScreen();
+    for (const id of [...this.sessionRoom.keys()]) this.end(id);
+  }
+
   end(sessionId: string) {
+    clearTimeout(this.privateRecovery.get(sessionId));
+    this.privateRecovery.delete(sessionId);
+    this.privateSessions.delete(sessionId);
     const roomName = this.sessionRoom.get(sessionId);
     this.sessionRoom.delete(sessionId);
     this.onVideo(sessionId, null);
     if (!roomName || this.roomStillNeeded(roomName)) return;
-    this.wanted.delete(roomName);
-    const room = this.rooms.get(roomName);
-    room?.disconnect();
-    this.rooms.delete(roomName);
+    this.audioInitialized.delete(roomName);
+    this.voiceRooms.delete(roomName);
+    this.audioFocus.remove(roomName);
+    this.connections.close(roomName);
+    this.clearRoomAudio(roomName);
+    if (!this.screenPublic && this.screen && ![...this.privateSessions.values()].some(s =>
+      s.screenOwners?.includes(this.socket.id || ""))) this.stopScreen();
   }
 
   dispose() {
     this.disposed = true;
+    this.meetingScreens.dispose();
+    this.leaveMeeting();
     this.stopScreen();
-    for (const room of this.rooms.values()) room.disconnect();
-    this.rooms.clear();
-    this.pending.clear();
-    this.wanted.clear();
+    document.removeEventListener('pointerdown', this.resumeAudio);
+    this.connections.dispose();
+    this.privateRecovery.forEach(timer => clearTimeout(timer));
+    this.privateRecovery.clear();
+    this.privateSessions.clear();
+    this.voiceRooms.clear();
     this.sessionRoom.clear();
-    this.audio.forEach((element) => element.remove());
+    this.audio.forEach(element => element.remove());
     this.audio.clear();
-    this.micStream?.getTracks().forEach((track) => track.stop());
-    this.micStream = null;
   }
 }

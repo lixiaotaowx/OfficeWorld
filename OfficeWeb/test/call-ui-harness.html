@@ -1,0 +1,9 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div><script type="module">
+import React from 'react'; import {createRoot} from 'react-dom/client';
+import PrivateCallPanel from '/src/PrivateCallPanel.tsx'; import MeetingCenter from '/src/MeetingCenter.tsx';
+import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/workspace-responsive.css';
+const noop=async()=>{};
+const office={requests:[],sessions:[{id:'call',peer:'peer',kind:'voice'}],outgoing:[],people:[{id:'peer',name:'林木'}],callStates:{call:{voice:'已开启',connected:true,sharing:false}},videos:{},mute:noop,end:noop,shareInCall:noop};
+const client={active:{id:'m',room:'meeting-m',title:'周一设计讨论',code:'418203',host:'self',members:[{id:'self',name:'小桃',status:'joined',online:true},{id:'peer',name:'林木',status:'joined',online:true}]},invitations:[],mic:true,sharing:false,status:'已连接会议',act:noop,toggleMic:noop,toggleShare:noop,stopShare:noop};
+createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).has('meeting')?React.createElement(MeetingCenter,{client,people:[],accountId:'self',open:true,onClose:noop,onOpen:noop,videos:{}}):React.createElement(PrivateCallPanel,{office}));
+</script></body></html>

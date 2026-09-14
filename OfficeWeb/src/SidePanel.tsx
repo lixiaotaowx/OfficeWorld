@@ -1,79 +1,100 @@
 // The right-hand sidebar: member seats, the selected desk's detail, and chat.
 //
 // Extracted from App.tsx, which was approaching the project's 500 line ceiling.
+import { useState } from "react";
+import type { ChatFileActions } from "./ChatPanel";
+import ChatInbox from "./ChatInbox";
 import { WORKSTATIONS } from "./seats";
-import type { Message, Person } from "./types";
+import type { Message, Person, SeatOwner, ChatContact } from "./types";
 
-interface Props {
+interface Props extends ChatFileActions {
   people: Person[];
+  /** Permanent ownership per seat, including owners who are offline. */
+  seats: (SeatOwner | null)[];
   messages: Message[];
   previews: Record<string, string>;
   myId: string;
+  accountId: string;
   mySeat: number | null;
   selected: number;
   tab: "people" | "chat";
   panelOpen: boolean;
   connected: boolean;
-  text: string;
+  contacts: ChatContact[];
+  onMessage: (text: string, recipientId?: string) => Promise<boolean>;
   onTab: (tab: "people" | "chat") => void;
   onSelect: (seat: number) => void;
   onOpenDesks: () => void;
-  onRequest: (target: string, kind: "screen" | "voice") => void;
-  onText: (text: string) => void;
-  onSend: (event: React.FormEvent) => void;
+  onRequest: (target: string, kind: "screen" | "voice", offer?: boolean) => void;
 }
 
 export default function SidePanel({
   people,
+  seats,
   messages,
   previews,
   myId,
+  accountId,
   mySeat,
   selected,
   tab,
   panelOpen,
   connected,
-  text,
+  contacts,
+  onMessage,
   onTab,
   onSelect,
   onOpenDesks,
   onRequest,
-  onText,
-  onSend,
+  onFile,
+  loadFile,
 }: Props) {
-  const person = people.find((p) => p.seat === selected);
+  const [unread, setUnread] = useState(0);
+  // The desk's permanent owner (may be offline), and its online person if any.
+  const onlinePerson = people.find((p) => p.seat === selected);
+  const owner = seats[selected] || (onlinePerson && { id: onlinePerson.clientId, name: onlinePerson.name, online: true });
   return (
     <aside id="office-side-panel" className="sidebar" hidden={!panelOpen}>
+      <div className="directory-heading">
+        <div><span className="eyebrow">IN GOOD COMPANY</span><h2>人与空间</h2></div>
+        <div className="directory-count"><strong>{String(people.length).padStart(2, "0")}</strong><small>当前在线</small></div>
+      </div>
       <div className="side-tabs">
         <button
           className={tab === "people" ? "selected" : ""}
+          aria-pressed={tab === "people"}
           onClick={() => onTab("people")}
         >
           空间成员 <span>{people.length}</span>
         </button>
         <button
           className={tab === "chat" ? "selected" : ""}
+          aria-pressed={tab === "chat"}
           onClick={() => onTab("chat")}
         >
-          聊天
+          聊天 {unread > 0 && <b className="chat-unread">{unread > 99 ? "99+" : unread}</b>}
         </button>
       </div>
       {tab === "people" ? (
         <>
           <div className="side-title">
-            <h3>开放工位</h3>
-            <span>每个人一个工位</span>
+            <h3>全部工位</h3>
+            <span>{WORKSTATIONS.filter(w => !seats[w.index] && !people.some(p => p.seat === w.index)).length} 个空闲</span>
           </div>
           <div className="seat-grid">
             {WORKSTATIONS.map((workstation) => {
               const i = workstation.index;
-              const occupant = people.find((x) => x.seat === i);
               const mine = mySeat === i;
+              const online = people.find((x) => x.seat === i);
+              const occupant = seats[i] || (online && { id: online.clientId, name: online.name, online: true });
+              const isOnline = !!online || occupant?.online === true;
               return (
                 <button
                   key={i}
+                  aria-pressed={i === selected}
                   className={
-                    "seat " +
+                    "seat " + (isOnline ? "is-online " : occupant ? "is-offline " : "") +
+                    (workstation.id === "Manager" ? "manager-seat " : "") +
                     (i === selected ? "chosen" : "") +
                     (mine ? " mine" : "")
                   }
@@ -82,18 +103,23 @@ export default function SidePanel({
                     onOpenDesks();
                   }}
                 >
-                  <span className="seat-num">{workstation.label}</span>
-                  <span className={"seat-state " + (occupant ? "occupied" : "")}>
-                    {occupant ? "●" : "○"}
+                  <span className="seat-num">{workstation.id === "Manager" ? "09" : workstation.label}</span>
+                  <span className="seat-state" aria-hidden="true">
+                    {isOnline ? "●" : "○"}
                   </span>
-                  <strong>{occupant?.name || "空闲工位"}</strong>
+                  <strong>{occupant?.name || (workstation.id === "Manager" ? "老板工位" : "空闲工位")}</strong>
                   <small>
+                    {occupant && <span className="presence-label">{isOnline ? "在线" : "离线"}</span>}
                     {mine
                       ? "这是我的工位"
-                      : occupant?.sharing
+                      : online?.sharing
                         ? "屏幕共享中"
+                        : online && previews[online.id]
+                          ? "工位预览中"
                         : occupant
-                          ? "在线 · 可交流"
+                          ? isOnline
+                            ? "可交流"
+                            : "工位已保留"
                           : "暂无人使用"}
                   </small>
                 </button>
@@ -104,7 +130,7 @@ export default function SidePanel({
             <div className="eyebrow">
               DESK {WORKSTATIONS[selected]?.label ?? selected + 1}
             </div>
-            <h3>{person?.name || "给灵感留一个位置"}</h3>
+            <h3>{owner?.name || "给灵感留一个位置"}</h3>
             {/* The primary action comes before the preview on purpose: on a
                 short laptop screen the preview would push it below the fold. */}
             <div className="detail-actions">
@@ -112,65 +138,48 @@ export default function SidePanel({
                   button and none to give it up either. Seat actions (return to
                   it, stand up) live with the avatar controls under the scene. */}
               <button
-                disabled={!person || person.id === myId || !person.sharing}
-                onClick={() => person && onRequest(person.id, "screen")}
+                disabled={
+                  !onlinePerson || onlinePerson.id === myId
+                }
+                onClick={() => onlinePerson && onRequest(onlinePerson.id, "screen")}
               >
-                请求看屏幕
+                请求观看对方屏幕
+              </button>
+              <button disabled={!onlinePerson || onlinePerson.id === myId}
+                onClick={() => onlinePerson && onRequest(onlinePerson.id, 'screen', true)}>
+                分享我的屏幕给对方
               </button>
               <button
-                disabled={!person || person.id === myId}
-                onClick={() => person && onRequest(person.id, "voice")}
+                disabled={!onlinePerson || onlinePerson.id === myId}
+                onClick={() => onlinePerson && onRequest(onlinePerson.id, "voice")}
               >
                 邀请语音
               </button>
             </div>
-            {person && previews[person.id] ? (
+            {onlinePerson && previews[onlinePerson.id] ? (
               <img
                 className="screen-preview"
-                src={previews[person.id]}
-                alt="对方主动共享的屏幕预览"
+                src={previews[onlinePerson.id]}
+                alt="工位屏幕的低清预览"
               />
             ) : (
               <div className="empty-screen">
                 <span>▱</span>
-                {person ? "尚未共享屏幕" : "这个工位暂时无人"}
+                {owner
+                  ? onlinePerson
+                    ? "尚未共享屏幕"
+                    : "对方离线，工位已保留"
+                  : "这个工位暂时无人"}
               </div>
             )}
           </div>
         </>
-      ) : (
-        <div className="chat">
-          <div className="messages">
-            {messages.length === 0 ? (
-              <div className="chat-empty">
-                让交流自然发生。
-                <small>消息会发送给当前连接的伙伴。</small>
-              </div>
-            ) : (
-              messages.map((m) => (
-                <article key={m.id}>
-                  <strong>{m.name}</strong>
-                  <p>{m.text}</p>
-                </article>
-              ))
-            )}
-          </div>
-          <form onSubmit={onSend}>
-            <input
-              value={text}
-              onChange={(e) => onText(e.target.value)}
-              placeholder="给伙伴留句话…"
-              maxLength={1000}
-              aria-label="聊天消息"
-            />
-            <button disabled={!connected || !text.trim()} type="submit">
-              发送
-            </button>
-          </form>
-        </div>
-      )}
+      ) : null}
+      <ChatInbox accountId={accountId} messages={messages} contacts={contacts} people={people}
+        connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
+        onFile={onFile} loadFile={loadFile} onUnread={setUnread} />
       <div className="side-foot">
-        <span className="dot" /> 一个可以一起专注的地方
+        <span className="dot" /> 各自专注，随时连接。
       </div>
     </aside>
   );

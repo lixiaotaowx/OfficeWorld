@@ -9,6 +9,23 @@ lines to evade it. Do not silently exempt generated text or reference copies.
 The preserved UE project and external original projects are not to be rewritten
 as part of applying this rule to the new web project.
 
+## OfficeWeb deployment target
+
+The authoritative user-facing website is https://115.159.43.237/.
+Read `OfficeWeb/AGENTS.md` and `Design/Deployment.md` before deployment work.
+Do not confuse this Ubuntu VPS with the separate Windows `iruler-test` machine.
+Do not assume the test-machine SSH key authenticates to the VPS.
+The verified VPS identity is `ubuntu@115.159.43.237` using
+`C:/Users/Administrator/.ssh/id_ed25519_aiwb` (login verified 2026-09-12).
+Explicitly select that key with `IdentitiesOnly=yes`; preserve host-key checking.
+Use the recorded configuration before asking for connection details again.
+Never read or print private-key contents. The `id_ed25519_irulerdream` key is
+for the separate Windows test machine and must not substitute for the VPS key.
+Local exports, builds and screenshots are not evidence of a live-site update.
+Report an update as deployed only after uploading the actual build/assets and
+verifying the new version at the authoritative website. If blocked, explicitly
+state that the website still has the previous version.
+
 Before changing office visuals, view the approved concept image at
 [Design/References/Approved_Natural_Office_Concept.png](Design/References/Approved_Natural_Office_Concept.png).
 This is the user's accepted design reference and must remain in the project.

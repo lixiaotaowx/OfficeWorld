@@ -1,0 +1,122 @@
+{
+  "checks": [
+    {
+      "name": "two authenticated clients joined VPS LiveKit"
+    },
+    {
+      "name": "bidirectional received audio energy and increasing bytes",
+      "detail": [
+        [
+          {
+            "kind": "audio",
+            "bytes": 3500,
+            "energy": 0.0033123047481213403
+          }
+        ],
+        [
+          {
+            "kind": "audio",
+            "bytes": 4693,
+            "energy": 0.006134631394472378
+          }
+        ]
+      ]
+    },
+    {
+      "name": "microphone off/on five cycles with receiver audio"
+    },
+    {
+      "name": "main toolbar microphone controls current meeting with panel collapsed"
+    },
+    {
+      "name": "screen start/stop/restart three cycles, remote decoded frames"
+    },
+    {
+      "name": "reverse sharing and system-ended cleanup"
+    },
+    {
+      "name": "leave/rejoin restores audio and screen publication"
+    },
+    {
+      "name": "network offline/online restores both audio directions and re-sharing"
+    },
+    {
+      "name": "no page errors or PC manager/publisher exceptions"
+    }
+  ],
+  "errors": [],
+  "samples": [
+    [
+      {
+        "kind": "audio",
+        "bytes": 51352,
+        "energy": 0.09063128062614784
+      },
+      {
+        "kind": "video",
+        "bytes": 3197,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 77534,
+        "energy": 0.1398975222130476
+      },
+      {
+        "kind": "video",
+        "bytes": 3109,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 103963,
+        "energy": 0.18917110011730948
+      },
+      {
+        "kind": "video",
+        "bytes": 2831,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 130705,
+        "energy": 0.24173729445188652
+      },
+      {
+        "kind": "video",
+        "bytes": 3665,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 13496,
+        "energy": 0.023152949659671608
+      },
+      {
+        "kind": "video",
+        "bytes": 3218,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 22643,
+        "energy": 0.0411655820686565
+      },
+      {
+        "kind": "video",
+        "bytes": 3162,
+        "frames": 7
+      }
+    ]
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "publicSeats": [
+    {
+      "id": "sofa-0",
+      "x": -7.65,
+      "z": 1.05,
+      "sitting": true,
+      "heading": 0.8663487826066671
+    },
+    {
+      "id": "sofa-1",
+      "x": -8,
+      "z": 2.35,
+      "sitting": true,
+      "heading": 1.6819692911722008
+    },
+    {
+      "id": "sofa-2",
+      "x": -7.65,
+      "z": 3.65,
+      "sitting": true,
+      "heading": 2.418369494267707
+    },
+    {
+      "id": "armchair-0",
+      "x": -6.692,
+      "z": 0.209,
+      "sitting": true,
+      "heading": 1.22
+    },
+    {
+      "id": "armchair-1",
+      "x": -5.692,
+      "z": 1.109,
+      "sitting": true,
+      "heading": 0.7709999999999999
+    },
+    {
+      "id": "coffee-0",
+      "x": -7.359,
+      "z": -2.377,
+      "sitting": true,
+      "heading": -1.5707963267948963
+    },
+    {
+      "id": "coffee-1",
+      "x": -7.359,
+      "z": -3.077,
+      "sitting": true,
+      "heading": -1.5707963267948963
+    },
+    {
+      "id": "stool-0",
+      "x": 8.12,
+      "z": 2,
+      "sitting": true,
+      "heading": -1.5707963267948963
+    },
+    {
+      "id": "stool-1",
+      "x": 6.44,
+      "z": 1.03005,
+      "sitting": true,
+      "heading": 0.5235987755982988
+    },
+    {
+      "id": "stool-2",
+      "x": 6.44,
+      "z": 2.96995,
+      "sitting": true,
+      "heading": 2.6179938779914944
+    },
+    {
+      "id": "meeting-north-0",
+      "x": 2.8,
+      "z": -6.8,
+      "sitting": true,
+      "heading": 0
+    },
+    {
+      "id": "meeting-south-0",
+      "x": 2.8,
+      "z": -5,
+      "sitting": true,
+      "heading": 3.141592653589793
+    },
+    {
+      "id": "meeting-north-1",
+      "x": 3.8,
+      "z": -6.8,
+      "sitting": true,
+      "heading": 0
+    },
+    {
+      "id": "meeting-south-1",
+      "x": 3.8,
+      "z": -5,
+      "sitting": true,
+      "heading": 3.141592653589793
+    },
+    {
+      "id": "meeting-north-2",
+      "x": 4.8,
+      "z": -6.8,
+      "sitting": true,
+      "heading": 0
+    },
+    {
+      "id": "meeting-south-2",
+      "x": 4.8,
+      "z": -5,
+      "sitting": true,
+      "heading": 3.141592653589793
+    },
+    {
+      "id": "visitor-0",
+      "x": 8,
+      "z": -4.95,
+      "sitting": true,
+      "heading": 3.141592653589793
+    },
+    {
+      "id": "visitor-1",
+      "x": 9.35,
+      "z": -4.95,
+      "sitting": true,
+      "heading": 3.141592653589793
+    }
+  ],
+  "concurrentRejection": true,
+  "remoteSofa": true,
+  "standRelease": true,
+  "cancelRelease": true,
+  "errors": []
+}

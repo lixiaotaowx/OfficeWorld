@@ -7,12 +7,17 @@
 // seated posing the locally controlled avatar uses.
 import * as THREE from "three";
 import {
-  applySitPose,
   loadCharacter,
   releaseCharacter,
-  type CharacterKind,
   type LoadedCharacter,
 } from "./characterModel";
+import type { CharacterId } from "./characters";
+import { applySitPose, SIT_POSES, type SitPoseId } from "./sitPoses";
+import { sittingSpot } from "./sittingSpots";
+import { SEAT_HEIGHT } from "./seats";
+import { groundSeatedFeet } from "./seatedFeet";
+import { placeSeatedHands } from "./seatedHands";
+import { snapStandingPose } from './standingPose';
 
 export interface RemoteState {
   x: number;
@@ -20,17 +25,21 @@ export interface RemoteState {
   rot: number;
   moving: boolean;
   sitting: boolean;
-  character: CharacterKind;
+  sittingSpot?: string | null;
+  character: CharacterId;
+  pose?: SitPoseId;
 }
 
 interface RemoteEntry {
   id: string;
-  kind: CharacterKind;
+  kind: CharacterId;
   root: THREE.Group;
   character?: LoadedCharacter;
   current?: THREE.AnimationAction;
   target: RemoteState;
   loading: boolean;
+  poseTime: number;
+  wasSeated: boolean;
 }
 
 /** Beyond this many metres a gap is treated as a jump, not as movement. */
@@ -57,6 +66,8 @@ export class RemoteAvatars {
           root,
           target: state,
           loading: false,
+          poseTime: 0,
+          wasSeated: false,
         };
         this.entries.set(id, entry);
         void this.loadModel(entry);
@@ -109,7 +120,7 @@ export class RemoteAvatars {
       const dx = target.x - entry.root.position.x;
       const dz = target.z - entry.root.position.z;
       const distance = Math.hypot(dx, dz);
-      if (distance > SNAP_DISTANCE) {
+      if ((entry.wasSeated && !target.sitting) || distance > SNAP_DISTANCE) {
         entry.root.position.set(target.x, 0, target.z);
       } else if (distance > 0.001) {
         const step = Math.min(1, dt * 8);
@@ -125,17 +136,45 @@ export class RemoteAvatars {
 
       const character = entry.character;
       if (!character) continue;
-      const action =
-        target.moving && !target.sitting ? character.walk : character.idle;
-      if (entry.current !== action) {
-        entry.current?.fadeOut(0.18);
-        action.reset().fadeIn(0.18).play();
-        entry.current = action;
+      if (target.sitting) {
+        entry.wasSeated = true;
+        // Stop any clip and let the shared seated pose own the bones, exactly
+        // like the local avatar, so colleagues sit identically.
+        if (entry.current) {
+          entry.current.stop();
+          entry.current = undefined;
+        }
+        const spot = sittingSpot(target.sittingSpot);
+        // Use the same seat heading as the local avatar; stale walking rotations
+        // must not leave a seated colleague sideways during interpolation.
+        if (spot) entry.root.rotation.set(0, spot.chair.angle, 0);
+        const pose = SIT_POSES[target.pose ?? "standard"];
+        applySitPose(
+          entry.root,
+          character.bones,
+          character.rest,
+          pose,
+          (entry.poseTime += dt),
+        );
+        character.model.position.y =
+          character.groundY +
+          ((spot?.height ?? SEAT_HEIGHT) + pose.hipDrop - character.restHipHeight);
+        groundSeatedFeet(entry.root, character, pose.id);
+        if (spot?.workstation !== undefined) placeSeatedHands(entry.root, character, pose.id);
+      } else {
+        if (entry.wasSeated) {
+          entry.current = snapStandingPose(character, target.moving);
+          entry.wasSeated = false;
+        }
+        const action = target.moving ? character.walk : character.idle;
+        if (entry.current !== action) {
+          entry.current?.fadeOut(0.18);
+          action.reset().fadeIn(0.18).play();
+          entry.current = action;
+        }
+        character.mixer.update(dt);
+        character.model.position.y = character.groundY;
       }
-      character.mixer.update(dt);
-      // Posing runs after the mixer, which keeps writing to the same bones.
-      if (target.sitting) applySitPose(entry.root, character.model, character.bones);
-      else if (character.model.position.y !== 0) character.model.position.y = 0;
     }
   }
 

@@ -1,0 +1,14 @@
+[
+  {
+    "path": "Build/OfficeDesktopRelease/OfficeWorld-0.1.3-Windows-x64.exe",
+    "bytes": 100364536,
+    "iconMatches": true,
+    "sha256": "08949f0021244535efe6d898ddabafcd188616ee2c546f2d703f63b857c89db9"
+  },
+  {
+    "path": "Build/OfficeDesktopRelease/win-unpacked/Office World.exe",
+    "bytes": 246124032,
+    "iconMatches": true,
+    "sha256": "325c61949181af7bd97f93f5abb14227e3ff0cf8513b568ebdb43553406127d9"
+  }
+]

@@ -1,5 +1,7 @@
 # Approved open-roof office — modelling checkpoint
 
+当前烘焙操作入口：[最新烘焙流程](烘焙流程.md)（2026-09-13）。下文早期建模记录保留作历史，不替代最新烘焙参数与工程路径。
+
 Reference: Concept_With_Manager_Approved.png. User approved this image on 2026-09-09 and requested live modelling in visible Blender 5.1, with user participation in rendering and lighting. Preserve eight shared workstations, separate glass meeting room, manager office, coffee bar and lounge. No roof slabs.
 
 Active saved file: ../../AssetSources/OfficeConcept/OfficeConcept_08Seats.blend

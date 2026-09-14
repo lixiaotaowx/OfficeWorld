@@ -236,18 +236,23 @@ try {
   check("起身后别人依然选不到这个工位", Boolean(viewerStillBlocked));
   await viewer.getByRole("button", { name: "先不选" }).click();
 
-  // The first-visit dialog also picks the avatar.
-  const characterButtons = await viewer
-    .locator('button[title="使用说明"]')
-    .count();
+  // The first-visit dialog also picks the avatar: gender first, then a grid.
   const pickerAgain = viewer.locator(".seat-picker");
   await viewer.locator('button[title="使用说明"]').click();
   await viewer.getByRole("button", { name: "重新选座" }).click();
   await pickerAgain.waitFor({ timeout: 15000 });
-  check("选座弹窗里同时能选角色", (await pickerAgain.locator(".character-picker button").count()) === 2);
+  check(
+    "选座弹窗里先选男女、再选外观",
+    (await pickerAgain.locator(".gender-tabs button").count()) === 2 &&
+      (await pickerAgain.locator(".character-grid button").count()) > 5,
+  );
   await pickerAgain.getByRole("button", { name: "男角色" }).click();
+  await pickerAgain
+    .locator(".character-grid button", { hasText: "宇航服" })
+    .click();
   const avatarSwitched = await waitFor(async () =>
-    (await viewer.locator("select[aria-label='选择角色']").inputValue()) === "man"
+    (await viewer.locator("select[aria-label='选择角色']").inputValue()) ===
+    "man_spacesuit"
       ? true
       : null,
   );

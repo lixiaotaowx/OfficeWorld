@@ -1,13 +1,28 @@
 import * as THREE from "three";
 import {
-  applySitPose,
   loadCharacter,
   releaseCharacter,
-  type CharacterKind,
   type LoadedCharacter,
 } from "./characterModel";
-import { findPath, walkable } from "./navigation";
-import { WORKSTATIONS } from "./seats";
+import type { CharacterId } from "./characters";
+import { AutoSitPose } from "./autoSitPose";
+import {
+  applySitPose,
+  blendPoses,
+  SIT_POSES,
+  STANDING_POSE,
+  type SitPoseId,
+} from "./sitPoses";
+import { findPath, segmentWalkable } from "./navigation";
+import { SEAT_HEIGHT } from "./seats";
+import { sittingSpot, type SittingSpot } from "./sittingSpots";
+import { groundSeatedFeet } from "./seatedFeet";
+import { placeSeatedHands } from "./seatedHands";
+import { snapStandingPose } from './standingPose';
+
+/** Seconds for sitting down. Standing up is an immediate pose change. */
+const SIT_TRANSITION = 0.9;
+
 export class OfficeAvatar {
   root = new THREE.Group();
   private model?: THREE.Group;
@@ -17,9 +32,6 @@ export class OfficeAvatar {
   private walk?: THREE.AnimationAction;
   private current?: THREE.AnimationAction;
   private path: THREE.Vector3[] = [];
-  private sitting = false;
-  private pendingSeat: number | null = null;
-  private seatedAt: number | null = null;
   private bones = new Map<string, THREE.Bone>();
   private keys = new Set<string>();
   private moving = false;
@@ -27,10 +39,24 @@ export class OfficeAvatar {
   private disposed = false;
   private clock = new THREE.Clock();
   private lastState = "";
+  // Sitting down blends toward 1; standing resets the pose directly to 0.
+  private sitBlend = 0;
+  private sitTarget = 0;
+  private sitting = false;
+  private seatedPose: SitPoseId = "standard";
+  private autoPose = new AutoSitPose();
+  private pendingSeat: SittingSpot | null = null;
+  private seatedAt: SittingSpot | null = null;
+  private sitRequest = 0;
+  private hasReservation = false;
+  private seatHeight = SEAT_HEIGHT;
+  private poseTime = 0;
+
   constructor(
     private world: THREE.Scene,
     private camera: THREE.Camera,
     private report: (text: string) => void,
+    private reserve: (id: string | null) => Promise<boolean>,
   ) {
     this.root.position.set(4, 0, 4);
     this.root.name = "Controlled avatar";
@@ -60,6 +86,7 @@ export class OfficeAvatar {
       ].includes(e.code)
     ) {
       e.preventDefault();
+      this.stand();
       this.keys.add(e.code);
     }
   };
@@ -67,11 +94,12 @@ export class OfficeAvatar {
     this.keys.delete(e.code);
   };
   private blur = () => this.keys.clear();
-  async load(kind: CharacterKind) {
+  async load(id: CharacterId) {
+    this.stand();
     const token = ++this.token;
     this.report("角色载入中…");
     try {
-      const loaded = await loadCharacter(kind);
+      const loaded = await loadCharacter(id);
       if (this.disposed || token !== this.token) {
         releaseCharacter(loaded);
         return;
@@ -88,11 +116,18 @@ export class OfficeAvatar {
       this.bones = loaded.bones;
       this.root.add(loaded.model);
       this.current = undefined;
+      this.sitBlend = 0;
+      this.sitTarget = 0;
+      this.sitting = false;
       this.play(false);
       this.report("已就绪 · 点击地面行走");
     } catch {
       this.report("角色加载失败，请刷新重试");
     }
+  }
+  /** Choose which seated pose to hold once sitting. */
+  setPose(pose: SitPoseId) {
+    this.seatedPose = pose;
   }
   private play(moving: boolean) {
     const next = moving ? this.walk : this.idle;
@@ -101,15 +136,31 @@ export class OfficeAvatar {
     next.reset().fadeIn(0.18).play();
     this.current = next;
   }
-  private stand() {
-    if (this.sitting && this.seatedAt !== null) {
-      const seat = WORKSTATIONS[this.seatedAt];
+  /** Stop the movement clips so the procedural seated pose owns the bones. */
+  private stopClips() {
+    this.current?.stop();
+    this.current = undefined;
+  }
+  private stand(release = true) {
+    const wasSeated = this.sitBlend > 0 || this.sitTarget > 0;
+    if (release) {
+      this.sitRequest++;
+      if (this.hasReservation) void this.reserve(null);
+      this.hasReservation = false;
+    }
+    // Switch straight to the chair's walkway position, clear of its geometry.
+    if (this.seatedAt !== null) {
+      const seat = this.seatedAt;
       this.root.position.set(seat.stand.x, 0, seat.stand.z);
     }
-    this.sitting = false;
+    this.path = [];
+    this.sitBlend = 0;
+    this.sitTarget = 0;
     this.seatedAt = null;
     this.pendingSeat = null;
-    if (this.model) this.model.position.y = 0;
+    this.sitting = false;
+    this.moving = false;
+    if (wasSeated && this.character) this.current = snapStandingPose(this.character);
   }
   moveTo(target: THREE.Vector3) {
     this.stand();
@@ -117,32 +168,72 @@ export class OfficeAvatar {
     if (!this.path.length) this.report("这里无法到达，请点击通道");
   }
   sit(seatIndex: number) {
-    if (!this.model) return;
-    this.stand();
-    const seat = WORKSTATIONS[seatIndex];
+    void this.sitAt(`desk-${seatIndex}`);
+  }
+  async sitAt(id: string) {
+    const seat = sittingSpot(id);
+    if (!this.model || !seat || this.disposed) return false;
+    const request = ++this.sitRequest;
+    this.hasReservation = true;
+    const accepted = await this.reserve(id);
+    if (request !== this.sitRequest || this.disposed || !accepted) return false;
+    this.stand(false);
     const target = new THREE.Vector3(seat.stand.x, 0, seat.stand.z);
     this.path = findPath(this.root.position, target);
-    if (this.path.length) {
-      this.pendingSeat = seatIndex;
-      this.report(`正在走向 ${seatIndex + 1} 号工位`);
-    } else this.report("无法到达这个工位，请先走到附近通道");
+    if (!this.path.length) {
+      this.stand();
+      this.report("无法到达这个座位，请先走到附近通道");
+      return false;
+    }
+    this.pendingSeat = seat;
+    this.seatedPose = seat.workstation === undefined ? 'relax' : 'standard';
+    this.report(`正在走向 ${seat.label}`);
+    return true;
   }
   standUp() {
     this.stand();
     this.path = [];
     this.report("已起身");
   }
-  private poseSit() {
-    if (!this.model) return;
-    // Same shared pose the remote avatars use, so a seated colleague looks
-    // identical from every client.
-    applySitPose(this.root, this.model, this.bones);
+  /** World Y to place the hips at for the current blend. */
+  private hipHeight(blend: number) {
+    const pose = blendPoses(STANDING_POSE, SIT_POSES[this.seatedPose], blend);
+    const eased = blend * blend * (3 - 2 * blend);
+    return (
+      (this.character?.restHipHeight ?? 0) +
+      (this.seatHeight - (this.character?.restHipHeight ?? 0)) * eased +
+      pose.hipDrop * eased
+    );
   }
-  update() {
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+  private poseSit(dt: number) {
+    if (!this.model || !this.character) return;
+    const pose = blendPoses(
+      STANDING_POSE,
+      SIT_POSES[this.seatedPose],
+      this.sitBlend,
+    );
+    applySitPose(
+      this.root,
+      this.bones,
+      this.character.rest,
+      pose,
+      (this.poseTime += dt),
+    );
+    const target = this.hipHeight(this.sitBlend);
+    this.model.position.y =
+      this.character.groundY + (target - this.character.restHipHeight);
+    if (this.sitBlend >= 0.999) groundSeatedFeet(this.root, this.character, this.seatedPose);
+    if (this.sitBlend >= 0.999 && this.seatedAt?.workstation !== undefined) placeSeatedHands(this.root, this.character, this.seatedPose);
+  }
+  update(elapsed?: number) {
+    const dt = Math.min(elapsed ?? this.clock.getDelta(), 0.1);
     let moving = false;
-    if (this.keys.size && this.model) {
-      this.stand();
+    // Blend only while sitting down; standing can move on its first frame.
+    if (this.sitBlend < this.sitTarget) {
+      const step = dt / SIT_TRANSITION;
+      this.sitBlend = Math.min(1, this.sitBlend + step);
+    }
+    if (!this.sitBlend && !this.sitTarget && this.keys.size && this.model) {
       this.path = [];
       const forward = new THREE.Vector3();
       this.camera.getWorldDirection(forward);
@@ -165,12 +256,12 @@ export class OfficeAvatar {
       const next = this.root.position
         .clone()
         .addScaledVector(direction, dt * 1.65);
-      if (walkable(next.x, next.z)) {
+      if (segmentWalkable(this.root.position.x, this.root.position.z, next.x, next.z)) {
         this.root.position.copy(next);
         moving = direction.lengthSq() > 0;
       }
-      if (moving) this.root.rotation.y = Math.atan2(direction.x, direction.z);
-    } else if (this.path.length && this.model) {
+      if (moving) this.root.rotation.set(0, Math.atan2(direction.x, direction.z), 0);
+    } else if (!this.sitBlend && !this.sitTarget && this.path.length && this.model) {
       let remaining = dt * 1.65;
       const frameStart = this.root.position.clone();
       while (this.path.length && remaining > 0) {
@@ -197,30 +288,47 @@ export class OfficeAvatar {
         this.root.quaternion.slerp(rotation, Math.min(1, dt * 12));
       }
       if (!this.path.length && this.pendingSeat !== null) {
-        const i = this.pendingSeat,
-          seat = WORKSTATIONS[i].chair;
+        const spot = this.pendingSeat, seat = spot.chair;
+        this.seatHeight = spot.height;
         this.root.position.set(seat.x, 0, seat.z);
-        this.root.rotation.y = seat.angle;
-        this.sitting = true;
-        this.seatedAt = i;
+        this.root.rotation.set(0, seat.angle, 0);
+        this.sitTarget = 1;
+        this.seatedAt = spot;
         this.pendingSeat = null;
       }
     }
     this.moving = moving;
-    this.play(moving);
-    this.mixer?.update(dt);
-    if (this.sitting) this.poseSit();
+    this.sitting = this.sitTarget === 1 && this.sitBlend >= 0.999;
+    const nextPose = this.autoPose.update(dt, this.sitting && this.seatedAt?.workstation !== undefined, this.seatedPose);
+    if (nextPose) this.setPose(nextPose);
+    const controlling = this.sitBlend > 0.001 || this.sitTarget === 1;
+    if (controlling && this.model) {
+      // While seated, furniture orientation owns the heading, not the walk-in path.
+      if (this.seatedAt) this.root.rotation.set(0, this.seatedAt.chair.angle, 0);
+      // The procedural seated pose is the sole bone writer while seated or
+      // tweening, so stop any movement clip before it can fight the pose.
+      if (this.current) this.stopClips();
+      this.poseSit(dt);
+    } else if (this.model) {
+      if (this.current === undefined) this.play(false);
+      this.play(moving);
+      this.mixer?.update(dt);
+      this.model.position.y = this.character?.groundY ?? 0;
+    }
     const state = this.sitting
-      ? `已坐在 ${this.seatedAt! + 1} 号工位`
-      : moving
-        ? "行走中"
-        : "待机 · 点击地面或 WASD 行走";
+      ? `已坐在 ${this.seatedAt?.label}`
+      : this.sitBlend > 0.001
+        ? "入座中…"
+        : moving
+          ? "行走中"
+          : "待机 · 点击地面或 WASD 行走";
     if (state !== this.lastState && this.model) {
       this.report(state);
       this.lastState = state;
     }
   }
   dispose() {
+    this.stand();
     this.disposed = true;
     this.token++;
     if (this.character) {
@@ -235,12 +343,17 @@ export class OfficeAvatar {
 
   /** Current motion state, broadcast so other players can see this avatar. */
   getState() {
+    const q = this.root.quaternion;
+    // XYZ Euler yaw folds past 90 degrees; relay the actual +Z heading.
+    const heading = Math.atan2(2 * (q.x * q.z + q.w * q.y), 1 - 2 * (q.x * q.x + q.y * q.y));
     return {
       x: this.root.position.x,
       z: this.root.position.z,
-      rot: this.root.rotation.y,
+      rot: heading,
       sitting: this.sitting,
+      sittingSpot: (this.seatedAt ?? this.pendingSeat)?.id ?? null,
       moving: this.moving,
+      pose: this.seatedPose,
     };
   }
 }

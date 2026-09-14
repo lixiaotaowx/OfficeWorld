@@ -1,0 +1,272 @@
+[
+  {
+    "id": "sofa-0",
+    "label": "公共区沙发 1",
+    "family": "sofa",
+    "chair": {
+      "x": -7.65,
+      "z": 1.05,
+      "angle": 0.8663487826066671
+    },
+    "stand": {
+      "x": -7.05,
+      "z": 0.65
+    },
+    "height": 0.344
+  },
+  {
+    "id": "sofa-1",
+    "label": "公共区沙发 2",
+    "family": "sofa",
+    "chair": {
+      "x": -8,
+      "z": 2.35,
+      "angle": 1.681969291172201
+    },
+    "stand": {
+      "x": -7.25,
+      "z": 2.35
+    },
+    "height": 0.344
+  },
+  {
+    "id": "sofa-2",
+    "label": "公共区沙发 3",
+    "family": "sofa",
+    "chair": {
+      "x": -7.65,
+      "z": 3.65,
+      "angle": 2.418369494267707
+    },
+    "stand": {
+      "x": -6.95,
+      "z": 3.95
+    },
+    "height": 0.344
+  },
+  {
+    "id": "armchair-0",
+    "label": "公共区单人沙发 1",
+    "family": "armchair",
+    "chair": {
+      "x": -6.692,
+      "z": 0.209,
+      "angle": 1.22
+    },
+    "stand": {
+      "x": -6,
+      "z": 0.43
+    },
+    "height": 0.308
+  },
+  {
+    "id": "armchair-1",
+    "label": "公共区单人沙发 2",
+    "family": "armchair",
+    "chair": {
+      "x": -5.692,
+      "z": 1.109,
+      "angle": 0.771
+    },
+    "stand": {
+      "x": -5.12,
+      "z": 1.57
+    },
+    "height": 0.308
+  },
+  {
+    "id": "coffee-0",
+    "label": "吧台凳 1",
+    "family": "coffee",
+    "chair": {
+      "x": -7.359,
+      "z": -2.377,
+      "angle": -1.5707963267948966
+    },
+    "stand": {
+      "x": -6.609,
+      "z": -2.377
+    },
+    "height": 0.705
+  },
+  {
+    "id": "coffee-1",
+    "label": "吧台凳 2",
+    "family": "coffee",
+    "chair": {
+      "x": -7.359,
+      "z": -3.077,
+      "angle": -1.5707963267948966
+    },
+    "stand": {
+      "x": -6.609,
+      "z": -3.077
+    },
+    "height": 0.705
+  },
+  {
+    "id": "stool-0",
+    "label": "圆桌板凳 1",
+    "family": "collaboration",
+    "chair": {
+      "x": 8.12,
+      "z": 2,
+      "angle": -1.5707963267948966
+    },
+    "stand": {
+      "x": 8.87,
+      "z": 2
+    },
+    "height": 0.535
+  },
+  {
+    "id": "stool-1",
+    "label": "圆桌板凳 2",
+    "family": "collaboration",
+    "chair": {
+      "x": 6.44,
+      "z": 1.03005,
+      "angle": 0.5235987755982988
+    },
+    "stand": {
+      "x": 6.065,
+      "z": 0.3805
+    },
+    "height": 0.535
+  },
+  {
+    "id": "stool-2",
+    "label": "圆桌板凳 3",
+    "family": "collaboration",
+    "chair": {
+      "x": 6.44,
+      "z": 2.96995,
+      "angle": 2.6179938779914944
+    },
+    "stand": {
+      "x": 6.065,
+      "z": 3.6195
+    },
+    "height": 0.535
+  },
+  {
+    "id": "meeting-north-0",
+    "label": "会议椅 1",
+    "family": "meeting-north",
+    "chair": {
+      "x": 2.8,
+      "z": -6.8,
+      "angle": 0
+    },
+    "stand": {
+      "x": 2.8,
+      "z": -7.55
+    },
+    "height": 0.58
+  },
+  {
+    "id": "meeting-south-0",
+    "label": "会议椅 4",
+    "family": "meeting-south",
+    "chair": {
+      "x": 2.8,
+      "z": -5,
+      "angle": 3.141592653589793
+    },
+    "stand": {
+      "x": 2.8,
+      "z": -4.25
+    },
+    "height": 0.58
+  },
+  {
+    "id": "meeting-north-1",
+    "label": "会议椅 2",
+    "family": "meeting-north",
+    "chair": {
+      "x": 3.8,
+      "z": -6.8,
+      "angle": 0
+    },
+    "stand": {
+      "x": 3.8,
+      "z": -7.55
+    },
+    "height": 0.58
+  },
+  {
+    "id": "meeting-south-1",
+    "label": "会议椅 5",
+    "family": "meeting-south",
+    "chair": {
+      "x": 3.8,
+      "z": -5,
+      "angle": 3.141592653589793
+    },
+    "stand": {
+      "x": 3.8,
+      "z": -4.25
+    },
+    "height": 0.58
+  },
+  {
+    "id": "meeting-north-2",
+    "label": "会议椅 3",
+    "family": "meeting-north",
+    "chair": {
+      "x": 4.8,
+      "z": -6.8,
+      "angle": 0
+    },
+    "stand": {
+      "x": 4.8,
+      "z": -7.55
+    },
+    "height": 0.58
+  },
+  {
+    "id": "meeting-south-2",
+    "label": "会议椅 6",
+    "family": "meeting-south",
+    "chair": {
+      "x": 4.8,
+      "z": -5,
+      "angle": 3.141592653589793
+    },
+    "stand": {
+      "x": 4.8,
+      "z": -4.25
+    },
+    "height": 0.58
+  },
+  {
+    "id": "visitor-0",
+    "label": "访客椅 1",
+    "family": "visitor",
+    "chair": {
+      "x": 8,
+      "z": -4.95,
+      "angle": 3.141592653589793
+    },
+    "stand": {
+      "x": 8,
+      "z": -4.2
+    },
+    "height": 0.58
+  },
+  {
+    "id": "visitor-1",
+    "label": "访客椅 2",
+    "family": "visitor",
+    "chair": {
+      "x": 9.35,
+      "z": -4.95,
+      "angle": 3.141592653589793
+    },
+    "stand": {
+      "x": 9.35,
+      "z": -4.2
+    },
+    "height": 0.58
+  }
+]

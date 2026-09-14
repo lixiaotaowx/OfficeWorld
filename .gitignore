@@ -15,9 +15,15 @@ Downloads/
 OfficeWeb/node_modules/
 OfficeWeb/dist/
 # Real LiveKit credentials stay local; .env.example is committed instead.
+# Cover every variant (.env.production/.env.staging/.env.*.local) so a live
+# secret cannot be committed by `git add -A`, then re-include the example.
 OfficeWeb/.env
-OfficeWeb/.env.local
-# Unused 17MB textured scene export; the app loads office-white.glb instead.
+OfficeWeb/.env.*
+!OfficeWeb/.env.example
+# Permanent seat roster is runtime state, regenerated as people claim desks.
+OfficeWeb/state.json
+# Unreferenced 17.9MB textured scene export (deleted from public/ on 2026-09-14,
+# kept here so a stray copy in a working tree can never be committed).
 OfficeWeb/public/assets/office.glb
 
 # ---- Unreal project: generated and large binary content ----
@@ -72,3 +78,7 @@ Design/Characters/FaceBuilderTrial/addons/
 
 # Scratch directory used by concurrent modelling work; keep it out of the repo.
 _bake_tmp/
+OfficeWeb/accounts.json*
+OfficeWeb/state.json*
+
+OfficeWeb/chat-data/

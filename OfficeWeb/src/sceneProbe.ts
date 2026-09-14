@@ -15,6 +15,7 @@ export interface SceneProbeOptions {
   avatar: OfficeAvatar;
   world: THREE.Scene;
   camera: THREE.Camera;
+  renderStats?: () => unknown;
 }
 
 /**
@@ -24,14 +25,19 @@ export interface SceneProbeOptions {
  */
 export function installSceneProbe(options: SceneProbeOptions) {
   const { monitors, remotes, avatar, world, camera } = options;
-  (window as unknown as { __officeDebug?: unknown }).__officeDebug = {
+  const debugWindow = window as unknown as { __officeDebug?: unknown };
+  const probe = {
+    get rendering() { return options.renderStats?.(); },
     get monitors() {
       return monitors();
     },
     remotes,
+    avatar,
     local: () => avatar.getState(),
     /** The whole scene, so a diagnostic can inspect what was actually built. */
     __scene: world,
+    /** Camera used by both member-list and physical-monitor focus checks. */
+    __camera: camera,
     probeMonitor: (seatIndex: number) => {
       const target = monitors()?.meshFor(seatIndex);
       const workstation = WORKSTATIONS[seatIndex];
@@ -67,4 +73,6 @@ export function installSceneProbe(options: SceneProbeOptions) {
       };
     },
   };
+  debugWindow.__officeDebug = probe;
+  return () => { if (debugWindow.__officeDebug === probe) delete debugWindow.__officeDebug; };
 }

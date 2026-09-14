@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><title>聊天附件验证</title>
+<body><main id="root"></main><script type="module">
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { io } from "socket.io-client";
+import { attachChatClient } from "/src/chatClient.ts";
+import ChatPanel from "/src/ChatPanel.tsx";
+const root = createRoot(document.getElementById("root"));
+window.startChat = account => {
+  window.rows = []; window.notices = [];
+  const socket = io({ autoConnect: false });
+  socket.on("connect", () => socket.emit("join", {}));
+  const render = () => root.render(React.createElement(ChatPanel, {
+    accountId: account, messages: window.rows, connected: true, text: "", onText() {}, onSend(e) { e.preventDefault(); },
+    onFile: window.chat.sendFile, loadFile: window.chat.loadFile,
+  }));
+  window.chat = attachChatClient(socket, account, update => {
+    window.rows = update(window.rows); render();
+  }, message => window.notices.push(message));
+  window.socket = socket; socket.connect(); render();
+};
+</script></body></html>

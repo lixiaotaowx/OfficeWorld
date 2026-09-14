@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><title>前景墙裁切对照</title>
+<style>body{margin:0;background:#cad0c5;font:16px sans-serif}main{display:flex}section{width:50vw}h2{text-align:center;font-size:18px}canvas{display:block}</style>
+<main><section><h2>原始墙面</h2><div id="before"></div></section><section><h2>自动裁切后</h2><div id="after"></div></section></main>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { bakedAwareMaterial } from "/src/bakedMaterials.ts";
+import { WallCutaway } from "/src/wallCutaway.ts";
+const decoder = new DRACOLoader().setDecoderPath("/assets/draco/");
+const loader = new GLTFLoader().setDRACOLoader(decoder);
+for (const id of ["before", "after"]) {
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(innerWidth / 2, innerHeight - 65);
+  renderer.setClearColor(0xc4ccc0); renderer.localClippingEnabled = true;
+  document.getElementById(id).appendChild(renderer.domElement);
+  const world = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(48, innerWidth / 2 / (innerHeight - 65), .1, 150);
+  const rear = new URLSearchParams(location.search).has("rear");
+  camera.position.set(...(rear ? [4, 4, -15] : [15, 4, -6]));
+  const target = new THREE.Vector3(...(rear ? [4, 1, 0] : [8, 1, -6]));
+  camera.lookAt(target);
+  const { scene } = await loader.loadAsync("/assets/office-baked.glb");
+  scene.traverse(o => {
+    if (!(o instanceof THREE.Mesh)) return;
+    o.material = bakedAwareMaterial(o.material);
+  });
+  world.add(scene); world.add(new THREE.HemisphereLight(0xffffff, 0x9ca797, 1.1));
+  if (id === "after") {
+    const cutaway = new WallCutaway(); cutaway.attach(scene); cutaway.update(camera, target, 2);
+  }
+  renderer.render(world, camera);
+}
+decoder.dispose();
+</script></html>

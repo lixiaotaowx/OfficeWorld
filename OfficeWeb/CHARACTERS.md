@@ -1,12 +1,11 @@
-# 网页角色原型
+# 网页角色
 
-- 使用已下载的 Quaternius Ultimate Modular Women/Casual 和 Men/Casual_2，CC0，原始来源与授权保留在 AssetSources/Characters/Quaternius。
-- 导出为二进制 GLB，女角色 1,410,820 字节，男角色 1,354,388 字节；公开 Walk、Idle、Idle_Neutral 动画。
+- 使用已下载的 Quaternius Ultimate Modular Women 与 Men 全套（21 个角色），CC0，原始来源与授权保留在 AssetSources/Characters/Quaternius。
+- 由 tools/export_web_characters.mjs 将每个角色导出为二进制 GLB（保留全部 24 段动画），存放于 public/assets/characters/{性别}_{id}.glb；catalog 在 src/characters.ts。
+- 缩略图由 tools/render_character_thumbnails.py 用 Blender 无头渲染，存放于 public/assets/characters/thumbnails/。
+- 选角界面两级：先选“男角色 / 女角色”，再在对应性别网格里挑具体外观（每人一张缩略图）。首次进入时在选座弹窗内完成，之后可在场景左上角“我的角色”下拉里更换。
+- 坐姿动作库（src/sitPoses.ts）：原包没有坐姿，采用程序化骨骼姿态，提供标准坐姿、放松后靠、前倾打字、仰靠小憩、翘二郎腿、坐着挥手六种，以及坐下 / 起身过渡；本机与远端角色共用同一套姿态。
 - 点击地面寻路；WASD / 方向键按当前相机方向移动；输入框内不响应移动按键。
-- 选择工位后点击“坐到 N 号工位”；“起身”返回椅后通道。
-- 原包没有坐姿：当前采用运行时骨骼坐姿，末段入座为位置对齐，尚非完整坐下/起身动画。
-- 当前只有本机控制角色；多人角色位置、占座同步尚未接入。
 - 导航使用本场景的简化家具阻挡范围；修改布局后需更新 navigation.ts。
-- 验证：类型检查、生产构建、浏览器男女入座和切换、八工位寻路、桌体阻挡、起点网格边缘回归。
-- 浏览器渲染截图：Design/OfficeConcept/Web_Avatar_Seated.png、Web_Avatar_Man.png。
+- 验证：类型检查、生产构建、浏览器男女入座和切换、角色网格与坐姿切换、八工位寻路、桌体阻挡、起点网格边缘回归（见 tools/smoke_character.mjs）。
 - Vite 缓存及构建输出位于 OfficeWeb 外，所有项目文本文件保持不超过 500 行。

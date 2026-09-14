@@ -1,6 +1,63 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 新域名 HTTPS
+
+- `iruler.online` 和 `www.iruler.online` 已解析到本 VPS；原警告原因是服务器仅提供 IP 证书，域名不匹配。
+- 已签发并安装 Let's Encrypt 域名证书，SAN 包含上述两个域名，到期 2026-12-13；路径 `/etc/letsencrypt/live/iruler.online/`。不得读取私钥内容。
+- 新增 `/etc/nginx/sites-available/officeweb-domain` 及 sites-enabled 链接，沿用现有应用/LiveKit 反代；域名 HTTP 自动跳转 HTTPS，保留 ACME 验证目录和原 IP 入口。
+- 原配置备份 `/home/ubuntu/officeweb/backups/domain-tls-20260914-161718/officeweb.nginx`；nginx 校验通过后平滑 reload，未重启应用或改动业务数据。
+- Python 默认 TLS 校验实测两个域名与原 IP 均 HTTP 200，首页 SHA256 一致：`806108981c8d0286788a13407ea3b2d327266a08294998ada6d82d58fe1e9e00`；两个域名 HTTP 跳转成功，nginx/officeweb 均 active。
+- 既有 officeweb-cert.timer 每天执行新版 certbot renew，成功后 reload nginx，覆盖新域名证书。此处为线上 TLS/HTTP 验证，未重新进行多人媒体验收。
+
+## 2026-09-14 预览接收、通话小窗与通知
+
+- 当前正式 B5mO1Nd3 / C7e3Smgy，来自 Build/OfficeWebPreviewReceiveRelease；HTTPS index/JS/CSS逐字节匹配，officeweb active。
+- JS SHA256 5951b8637360aa4cb5859b8142120998c942c3b56547ca022aff9ebb02a88a62；CSS 784bcbcb27bf704b68ab8063080f4243389f1e7c69c2c1a05156e7d3fb215572。
+- server.mjs SHA256 246a8885b1b7d8a202a09dc8ec15b766356cbbec834fc92c733ef2ce74fa5e2e，正式匹配。仅更新此后端，未覆盖业务数据/.env或重启LiveKit。
+- 备份 backups/preview-notifications-20260914。包含接收侧预览省流量、移除底栏暂停/麦克风、SVG通话小窗、通知，以及已独立验证的起立跳帧。
+- 84网页测试、13桌面测试、桌面完整UI与双客户端预览回归、真实SFU接替回归通过；正式站3人在线和新底栏已查看。
+- 桌面通知需新版0.1.4，保留0.1.3托盘功能；真实Windows通知show成功、短音AudioContext running，便携EXE隔离加载正式站通过。
+- 详情见 Preview_Notifications_20260914.md。
+
+
+## 2026-09-14 桌面自动预览统一发布
+
+- 当前正式B3RovUWT / DE_G6PVl，来自Build/OfficeWebDesktopAutoRelease；HTTPS哈希与本地一致，officeweb active。
+- JS f863377dc70a4d8acd5851ab524ef0ccafd6a3cd001519ab7b589fd08c4172fb；CSS 67686d80d6d44aa2e8cd697eeeb39cb88ae44bbaaf6255dc73f18eccb59f2c79。
+- server/accounts/privateSessions/meetings/livekit五后端上传且远端哈希匹配；备份backups/desktop-auto-20260914。
+- 包含EXE自动登录/3秒独立预览、本人屏幕右键切屏、工位相机和共享接替；82测试、桌面10测试与完整网页回归通过。
+- EXE 0.1.2已打包并隔离启动正式站点验证，需使用新版；详见Desktop_Auto_Preview_20260914.md。
+- 保留业务数据/.env与私聊隔离，未重启LiveKit。
+
 更新于 2026-09-10。**当前地址：https://115.159.43.237/**
+
+## 2026-09-13 当前账号发布
+
+- 已启用姓名密码注册、登录、退出；Socket 身份由服务端会话验证，不再依赖浏览器访客 ID。
+- 部署后首次使用须自行注册账号。密码只保存加盐 scrypt 哈希，cookie 为 Secure / HttpOnly / SameSite。
+- 账号与会话按用户存入 `/home/ubuntu/officeweb/accounts.json.d/`，兼容旧 `accounts.json`；不得随发布覆盖或放到 dist。
+- 工位保存在 `state.json`，绑定账号 UUID，原子写入，离线或重启仍保留。不得按同名自动合并旧访客身份。
+- 后端文件新增 `accounts.mjs`、`account-storage.mjs`；管理员未配置密码时关闭，不存在公共默认密码。
+- 发布备份 `/home/ubuntu/officeweb/backups/accounts-20260913/`；最新前端入口 `index-D5MYOdLk.js`。
+- 账号/工位服务器测试通过，线上登录页已查看，匿名 `/api/auth/me` 返回 401。真实跨网络音视频仍待验收。
+- 下文历史“无鉴权”“全部内存”“admin123”描述不再代表当前版本。
+
+### SSH 固定连接配置（2026-09-12 已验证）
+
+- 服务器：`115.159.43.237`；账号：`ubuntu`；端口：`22`。
+- 私钥路径：`C:/Users/Administrator/.ssh/id_ed25519_aiwb`。
+- 远端项目：`/home/ubuntu/officeweb`；静态目录：`/home/ubuntu/officeweb/dist`。
+- 使用 `IdentitiesOnly=yes`、`BatchMode=yes` 和 `StrictHostKeyChecking=yes`。
+- 已用此密钥实际登录并核对账号与工程目录；用户明确密钥未改变。
+- `id_ed25519_irulerdream` 属于另一台 Windows 测试机，不能用于本 VPS。
+- 此前认证失败是选错密钥，不能据此推断用户改了密钥或服务器离线。
+- 后续先使用下面的已验证命令，不重复询问服务器或枚举其他密钥。
+  只有这个明确配置本身失败时，才按实际错误诊断；不得关闭主机校验。
+- 文档只记录路径，不记录或输出私钥内容。
+
+```powershell
+ssh -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes ubuntu@115.159.43.237
+```
 
 **证书已是 Let's Encrypt 正式签发，浏览器不再有任何警告**，直接打开即可（无需点「继续访问」）。
 `http://115.159.43.237/` 同样可访问，但只能看和走，不能共享屏幕或语音。
@@ -54,13 +111,41 @@ sudo journalctl -u officeweb -f     # 日志
 
 ```powershell
 cd OfficeWeb
-npm run build
-Remove-Item dist\assets\office.glb      # 17.8MB 未使用的带材质场景，不必上传
-scp -i <key> -r dist server.mjs start.mjs static.mjs livekit.mjs package.json ubuntu@115.159.43.237:~/officeweb/
-ssh -i <key> ubuntu@115.159.43.237 "sudo -n systemctl restart officeweb"
+npm run build                       # 产物在 ..\Build\OfficeWeb，本地不存在 OfficeWeb\dist
+# 构建会把 public\ 全量拷进产物。两个零引用资源（office.glb 17.9MB、
+# office-white.glb 5.0MB）已于 2026-09-14 从 public\ 删除，新构建不再包含；
+# 若在历史构建目录里看到它们，照下面这行清理即可。
+Remove-Item ..\Build\OfficeWeb\assets\office.glb, ..\Build\OfficeWeb\assets\office-white.glb -Force -ErrorAction SilentlyContinue
+# 1) 前端：把构建产物【内容】传到远端 dist（不要传本地 dist，它根本不存在）
+scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes -r ..\Build\OfficeWeb\* ubuntu@115.159.43.237:~/officeweb/dist/
+# 2) 后端：全部运行时文件，缺一个服务就起不来（依赖关系见下表）
+scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes server.mjs start.mjs static.mjs livekit.mjs accounts.mjs account-storage.mjs chat-access.mjs chat-store.mjs chat-server.mjs chat-files.mjs meetings.mjs privateSessions.mjs sitting.mjs public-seats.json package.json ubuntu@115.159.43.237:~/officeweb/
+ssh -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes ubuntu@115.159.43.237 "sudo -n systemctl restart officeweb"
 ```
 
+后端运行时文件与依赖（2026-09-14 核对，`start.mjs` → `server.mjs` → 其余）：
+
+| 文件 | 作用 | 被谁引用 |
+|---|---|---|
+| `start.mjs` | systemd 入口，绑定端口 | 服务 |
+| `server.mjs` | 信令、工位、静态与路由 | `start.mjs` |
+| `livekit.mjs` | 令牌与房间授权 | `server.mjs`、`meetings.mjs` |
+| `static.mjs` | dist 静态托管（支持 Range） | `server.mjs` |
+| `accounts.mjs` + `account-storage.mjs` | 账号、会话、scrypt | `server.mjs` |
+| `chat-store.mjs` / `chat-files.mjs` / `chat-server.mjs` / `chat-access.mjs` | 聊天与附件 | `server.mjs` |
+| `meetings.mjs` / `privateSessions.mjs` | 会议与私聊会话 | `server.mjs` |
+| `sitting.mjs` | 公共座位仲裁 | `server.mjs` |
+| `public-seats.json` | 座位数据，`sitting.mjs` 在导入时读取 | `sitting.mjs` |
+
 依赖只在首次装：`cd ~/officeweb && npm install --omit=dev`。
+
+发布后核验（本地入口名必须与线上返回一致，否则就是没传上去）：
+
+```powershell
+$entry = [regex]::Match((Get-Content ..\Build\OfficeWeb\index.html -Raw -Encoding UTF8), 'index-[A-Za-z0-9_-]+\.js').Value
+$entry
+curl.exe -sS -k https://115.159.43.237/ | Select-String $entry   # 有输出才算这次构建真的上线
+```
 
 ## 已验证（2026-09-10）
 
@@ -134,3 +219,190 @@ TLS，同源反代：静态与 `/socket.io/` → `127.0.0.1:3108`，`/rtc`（Web
 - `livekit-server` 版本偏旧（protocol 15 / 客户端 17），靠回退到 `/rtc` 工作。
 - 只有本机与单机双客户端验证过，尚未在真正的两台不同网络机器之间验证。
 
+## 2026-09-11 更新：起名 + 永久工位 + 管理员踢出
+
+- **起名系统**：浏览器 `localStorage` 存 `office-id`（稳定身份）与 `office-name`（名字），跨会话、跨刷新保留；服务端 `rename` 同步到工位名册，别人能看到你的名字。
+- **工位永久**：`server.mjs` 把工位归属持久化到 `state.json`（与 `server.mjs` 同目录，即服务器 `/home/ubuntu/officeweb/state.json`）。断线、重启都不释放工位；换座会释放旧座，但本人不能自己放弃，只有管理员能踢出释放。
+- **管理员踢出**：密码由 `ADMIN_PASSWORD` 控制（读 `/home/ubuntu/officeweb/.env`），未设置时默认 **`admin123`**——部署后记得在服务器 `.env` 里改掉。前端左侧栏盾牌图标进入管理员面板，踢出后该工位立即空闲、在线的人收到提示。
+- 部署命令不变（见「重新部署」）；`state.json` 是运行时生成，**无需上传**；服务端无新增依赖。
+
+## 2026-09-13 密码规则调整
+- 用户要求密码允许 1–16 个字符，前后端已同步上线；入口 index-CYP1cPkf.js。
+- 34 项测试通过，包含 1 位和 16 位允许、空密码和 17 位拒绝；正式网站输入框已核验。
+
+## 2026-09-13 显示器重新烘焙
+- 九台显示器使用新独立 UV 与 256 采样降噪贴图，源材质简化为原理化 BSDF。
+- 线上入口 index-Dx0b4M-Y.js，模型版本 20260913-monitor，模型 SHA256 8f8484dcc0b2a06a5c124cae058a6f7903a0e9f4d7c27769ed92f36834925067。
+
+- 最终 UV 修复版本：index--LdtEyxY.js / 20260913-monitor-uv2；模型 4550076 字节，SHA256 75b0cf8311b72671c53ab86baf3a69c18dbd7ce3c627d900268f87ce2ed9886a。
+- 显示器图最终为 1K，引导降噪 256 采样；源工程已保存。
+
+## 2026-09-13 椅子交互简化
+- 已发布 index-C3AZUTMS.js / index-D4RxazWv.css；只更新前端。
+- 角色设置、椅后坐姿、本人椅子或屏幕回座；类型检查与构建通过，所有 OfficeWeb 文本文件不超过500行。
+- 线上已确认设置入口和椅后坐姿；当前会话验收途中失效，完整回座动作需补验。
+
+## 2026-09-13 聊天本地存档与七天补收
+- 已上线浏览器 IndexedDB 长期存档、按账号隔离、离线补收最近七天与服务端定时清理。
+- 后端新增 chat-store.mjs、chat-server.mjs；运行数据 chat-data/ 不得静态托管、覆盖部署或纳入长期备份。
+- 入口 index-C3AZUTMS.js；构建目录 Build/OfficeWebChatRelease，正式 HTTPS 返回及浏览器聊天说明已核验。
+- 37 项服务端测试与真实浏览器存档测试通过，完整规则和证据见 Chat_20260913.md。
+
+## 2026-09-13 UI 更新与老板工位
+- 已部署 index-BrCiUMPY.js / index-EOr5DQbs.css，暖白/橄榄 UI、登录页及第 9 个老板工位。
+- server.mjs 已更新为 SEAT_COUNT=9 并重启；原 8 个工位编号与归属保留，聊天模块哈希与此前发布一致。
+- 正式 HTTPS 返回和浏览器界面已核验；38 项测试通过，老板门口路径检查通过。
+- 备份目录 /home/ubuntu/officeweb/backups/ui-20260913-manager/；详细证据及会话限制见 UI-Refresh-20260913.md。
+
+## 2026-09-13 前景墙自动裁切
+- 入口 index-CEAhGu-1.js，样式 index-EOr5DQbs.css；独立构建目录 Build/OfficeWebWallRelease。
+- 新增 src/wallCutaway.ts，摄像机与焦点之间的遮挡墙平滑降为低墙，切回视角恢复；不修改 GLB 或源场景。
+- TypeScript 和两项裁切专项测试通过，实际模型对照截图检查确认墙后家具显露，正式网站实际资源已核验。
+- 旧入口备份 backups/wall-cutaway-20260913/index.html，带哈希的旧静态资源保留。
+
+## 2026-09-13 自动坐姿与回座修复
+- 最新前端 index-BiZ9_C7e.js / index-Dn4GrtvI.css 已上线并查看界面，移除坐姿控件。
+- 坐下后每45–90秒随机切换已有坐姿，不连续重复，行走暂停计时。
+- 本人工位通过账号永久归属判断，临时在线列表清空不再丢失回座判断；WASD可从坐姿起身。
+- 回座与定时暂停/不重复测试通过；多人动作同步需正常连接后再复核。
+- 发布期间另一并行更新将入口更新为 index-BiZ9_C7e.js；已检查该实际入口仍包含 front low wall 裁切模块及 localClippingEnabled 开关，保留较新发布，未回滚覆盖。
+
+## 2026-09-13 多层墙与梁柱裁切修正版
+- 修复单层墙裁切遗漏：包括独立内墙饰面、后侧窗体、玻璃立柱、顶梁横框、墙上黑板与显示板。
+- 入口 index-DtdMxDtL.js，样式 index-Dn4GrtvI.css；构建目录 Build/OfficeWebWallLayersRelease。
+- TypeScript、3 项裁切专项测试和真实 GLB 后侧裁切截图检查通过；正式 HTTPS 入口和脚本哈希已验证。
+- 旧入口备份 backups/wall-layers-20260913/index.html，保留旧资源及全部业务数据。
+
+## 2026-09-13 屏幕贴合修复
+- 已发布 index-DGgzX7FT.js / index-Dn4GrtvI.css；独立目录 Build/OfficeWebScreenFitRelease。
+- 九台画面改为贴合真实机身正面，修复底座包围盒导致约9.1cm悬空，保留1mm防闪烁间隙。
+- 模型未修改；三项专项测试、81点模型采样和正/侧面对比检查通过。详情 Screen-Fit-20260913.md。
+- 旧入口备份 backups/screen-fit-20260913/index.html；实际脚本上传哈希已核验。
+- 正式网站浏览器新入口与老板显示器近景已查看确认，画面贴合边框。
+
+## 2026-09-13 会议中心发布
+- index-C7AtdTyK.js / index-DURXtgs1.css；新增 meetings.mjs，更新 server.mjs 与 livekit.mjs。
+- 服务 active，正式浏览器已连接并打开会议中心，显示主题、邀请成员和创建按钮。
+- SHA256 15a671726209b2f047bf555e4d4dfb4ba76c8d80e25e514b2e16e8ac4d83563a；备份 backups/meetings-20260913/。
+- 验证与边界见 Meetings_20260913.md；真实跨网络音视频仍待验收。
+
+## 2026-09-13 自己的共享预览
+- 发布 index-DDwuszvT.js / index-OZQMCNrs.css；HTTPS 内容与本地哈希一致，仅前端更新。
+- 备份 backups/self-preview-20260913/index.html。动态本地视频、浮动预览、停止及系统结束清理测试通过；保留用户进行中的会议，不强制刷新。
+
+## 2026-09-13 会议远端共享修复
+- index-DKRgN7CO.js / index-OZQMCNrs.css，正式 HTTPS 与构建哈希一致。
+- 双账号经 LiveKit 验证接收画面连续播放，主界面共享已路由到当前会议，邀请入口整理。备份 backups/meeting-receiver-20260913/。
+
+- 会议邀请页简化：移除另建会议按钮，发布 index-MpP5jpT9.js，类型检查与构建通过，HTTPS入口已核验。
+
+## 2026-09-13 通信生命周期与兼容性修复
+- 已发布 index--R4vf-D0.js / index-OZQMCNrs.css，更新 meetings.mjs 并重启 officeweb；LiveKit 服务未重启。
+- 前端 SHA256 6976ef4cfacce1d573ad9f3837de24a64ca949f30690cf69f3e990accab7b63e，正式 HTTPS 实际返回匹配。
+- 固定 livekit-client 2.17.2；2.22.3 对旧 1.8.4 服务端的协商确认出现周期性超时，A/B 验证兼容版消除该问题。
+- 房间操作排队、旧连接隔离、采集取消、分房间麦克风、共享取消发布、重连与迟到移除保护。
+- 50 项自动测试通过，1 项因本地未配置密钥跳过；双浏览器真实 SFU 音频能量、视频解码帧及启停/重进/断网恢复已验证。
+- 业务测试账号隔离于 VPS media-qa-20260913；正式 HTTPS 前端复测通过，未写入正式名册。
+- 回滚：backups/media-20260913/，包含原 index.html、meetings.mjs、package.json；旧哈希资源保留。
+- 详细原因、验证边界和证据见 Media_20260913/README.md。真实跨网络双设备与物理设备人工验收仍待完成。
+
+
+## 2026-09-13 通话界面与定向共享
+- index-vh8dYLTa.js / index-COtConwn.css，后端server.mjs更新，HTTPS哈希与本地一致、服务active。
+- 常驻会议状态、空面板清理、私聊麦克风真实状态、双向屏幕邀请。详情 Call_UI_20260913.md。
+
+## 2026-09-13 Atelier UI 改版
+- 发布 index-DrSGSS_y.js / index-C2AWnaTD.css：纸色、墨绿、黄绿的新视觉，横向导航、深色工位名册、浮动协作控制台与海报式登录页。
+- 独立构建 Build/OfficeWebAtelierRelease；正式HTTPS入口、JS/CSS哈希及浏览器刷新后的主界面均已核验，服务active。
+- 备份 backups/atelier-20260913/index.html；只更新前端，保留最新通信和业务数据。
+- 桌面、手机与会议弹层检查通过；详情 UI-Atelier-20260913.md。
+
+## 2026-09-13 紧凑标题与两列成员面板
+- index-CdI-nBPx.js / index-JnwbRo91.css 已发布，CSS SHA256 ae4b6326719fabd5c1c6141b3c1f42373053497f6bc07c86a65a94bba43ea485 与正式HTTPS返回一致。
+- 标题区64px、导航64px；桌面成员面板360px，两列卡片，窄屏响应式，长姓名截断、操作按钮可换行。
+- 1440x900、1280x720、390x844检查无横向溢出；正式站截图已查看（3人在线），保留通信功能，仅CSS布局调整。
+- 截图 Build/layout-1440.png、layout-1280.png、layout-390.png；备份 backups/compact-layout-20260913/index.html。
+
+## 2026-09-13 单行顶部独立发布
+- 已发布 index-wzkgSXs2.js / index-D1fgA_EZ.css，来自 Build/OfficeWebCompactHeaderCheck 已验收隔离快照。
+- 与前正式CdI的JS差异仅顶部JSX，通信和三维代码逐字一致；未带正在开发的媒体及屏幕改动。
+- HTTPS JS SHA256 9f1f03fd6f93f71753fc6eeb117255f0e5809771aa96e7eec13892ed4cb96438；CSS 295553b9b57cdf171dfd42a32ee2f729788f1583e858e2687aa7cb3e9a1870bf，与本地一致。
+- 正式浏览器已查看单条56px导航、场景顶部64px、两列成员（3人在线），Good work已移除。
+- 只上传两个哈希资源及最后切换index；未覆盖public资产、后端或账号数据。入口备份 backups/single-header-20260913/index.html。
+
+## 2026-09-13 私聊音视频与实体薄边框集成发布
+- 正式 index-DNY_NLtw.js / index-B_t315Gb.css；构建目录 Build/OfficeWebIntegratedRelease。
+- HTTPS JS SHA256 6fd207fa6104feef0d39e8a4883725a15cd8493f87246fb53b8b7bc8d78bb06b；CSS 829b8926412f155dad523587db39933bf6edfd67d9e6532d40ce4333ec840711，与本地相同。
+- server.mjs / livekit.mjs / privateSessions.mjs 已上传且哈希一致，officeweb重启后active；未重启LiveKit，未改业务数据/.env。
+- 63项测试、类型检查、集成构建通过；正式浏览器恢复3人在线，A-3显示器近景确认薄边框与内屏贴合，保留单栏顶部和两列成员。
+- 薄边框为加载时克隆并调整真实几何，GLB文件不变，无需重新上传模型。显示器点击聚焦与比例证据见 OfficeConcept/Thin_Monitor_Bezel_20260913.md。
+- 私聊隔离SFU/权限竞态/断网等验证见 Private_Call_AV_20260913.md；真实跨网络硬件人工验收仍待完成。
+- 回滚备份 backups/private-av-bezel-20260913/ 保存旧index/server/livekit；旧哈希静态资源保留。新版新增privateSessions.mjs可保留但旧server不引用。
+- 发布后正式HTTPS产物复验通过：两方向屏幕+双向音频、挂断清理及零页面错误；采用隔离QA账号和真实SFU，证据Build/private-deployed-smoke-evidence.json，未扰动正式用户。
+
+## 2026-09-13 工位预览与高清自预览分离
+- 用户明确：低分辨率工位预览每3秒一帧，仅在场景显示器呈现，不弹个人共享浮窗。
+- App仅在实际已连接且发布屏幕的私聊显示自预览；会议原有预览保留。media工位JPEG间隔700ms改3000ms，最长边480和原比例不变。
+- 发布index-BWSZd6U3.js，沿用index-B_t315Gb.css；正式HTTPS SHA256 ce87242a14a8e2132288a165ae8311d4b4ff9f982abcbc46c25908e92b1ae963与本地一致。仅前端更新。
+- 独立完整UI合成采集测试：本人工位Canvas收到正确画面、无浮窗、无麦克风请求，间隔2969/2997ms，停止采集成功，零页面错误。证据Build/workstation-preview-evidence.json及workstation-preview-only.png。
+- 类型检查和构建通过；旧私聊UI测试同步取消普通预览必须出现浮窗的断言。备份backups/preview-only-20260913/index.html。
+
+## 2026-09-13 成员列表紧凑行高
+- 已发布index-BjC6acur.js / index-BTNZrnNF.css，保留3秒工位预览与私聊音视频。
+- CSS SHA256 c38b7ac85613a396c69becd5260945c3b696c63dff13dc75ffe0066c0823c631，正式HTTPS与本地一致。
+- 编号姓名同排、状态第二排，桌面46px/手机48px，保留360px两列；本地桌面列表250px，手机260px，类型检查/构建及交互验证由UI任务完成。
+- 仅前端发布，备份backups/member-density-20260913/index.html；正式浏览器最终视觉复核交UI任务执行。
+
+## 2026-09-13 三维节能与聊天附件统一发布
+- 已发布index-DeSGVqns.js / index-D4CzR1lM.css；HTTPS JS SHA256 5d9e6d801c1713ac3c9925200de024a06a9e874f88ed06462198a14c52dcbb55；CSS 1a5639a0d44268bd86bef12e44f2bc6c3e338f35ada7feb45aeb146df9fbfdb8，与Build/OfficeWebPowerRelease一致。
+- 67项测试、类型检查、构建通过。三维静止30fps，活动60fps，失焦15fps，隐藏/手动暂停零绘制；位置模拟与通信独立，详见Scene_Power_20260913.md。
+- 实际浏览器2秒60帧、暂停零帧而工位预览持续，恢复正常；正式站设置/暂停覆盖层/恢复均已操作查看，最终已恢复用户画面。没有测量用户设备GPU百分比。
+- 聊天附件同步发布server.mjs/chat-store.mjs/chat-files.mjs，SHA核验一致，officeweb active；匿名附件401、正式聊天旧文字和新附件入口由后端任务核验。
+- 未覆盖.env、账号、工位或聊天数据；未重启LiveKit。备份backups/scene-power-chat-20260913/，完整非敏感源码快照Build/SourceSnapshots/Power20260913供后续隔离发布。
+
+## 2026-09-13 发送方附件提示简化
+- 发布index-BPLCipbr.js，沿用D4CzR1lM.css；正式HTTPS SHA256 d8707b9770246f6f1f7fc89f5e4e74eb84cb0c211b9d1e1d62e41555aed8221c与隔离构建一致。
+- 按账号senderId区分本人附件，发送方隐藏本地保存成功提示，接收方保留；保存、错误提示及下载逻辑不变。
+- 类型检查与现有双浏览器附件回归通过，正式聊天3人在线及接收方附件正常。仅前端发布，无服务重启；备份backups/chat-sender-20260913/，源码快照Build/SourceSnapshots/ChatSender20260913。
+
+## 2026-09-13 静止10帧
+- 用户要求闲置三维10fps；active仍60，失焦也降10，隐藏/手动暂停仍零绘制。
+- 发布CKrJeP1Z / D4CzR1lM，保留发送方附件提示修复；HTTPS JS SHA256 60a05484f4d3c3142dd403174a97f13da2db65a4acab7ea59680d5bbd22e93a0与本地一致。
+- 调度单测/类型检查/构建通过；实际浏览器2秒19帧，暂停0、恢复正常，3秒预览继续。备份backups/idle10-20260913/index.html。
+
+## 2026-09-13 在线标识、老板房通行与单账号登录
+- 已发布index-wLvv2Asc.js / index-C0dEHtLO.css，来源Build/OfficeWebPresenceNavigationLoginRelease；HTTPS字节与本地相同。
+- JS SHA256 37b699e04982756c5b0e39ebdbdba1075a16b46f29974b4707710bda6398757b；CSS 064a54d76e2c29fa3e3dea05d10132908bfecea6f008df8b22f3dac5e709c554。
+- 在线成员亮绿色徽标/实心点/亮姓名，离线灰色徽标/空心点；正式3名在线成员界面已查看，手机离线对照使用隔离数据截图Build/presence-mobile.png。
+- 全部导航障碍矩形每边内收最多10cm，额外余量15cm减为2cm；缩小后的薄碰撞采用完整线段检查防止跳过。老板桌左侧旧20cm可通行宽度小于28cm网格，现已打通；墙体核心和楼外边界仍限制通行。
+- navigation回归验证门口、桌侧、椅后的双向完整路径；真实浏览器人物实际进入老板房、走到桌后并退出，零页面错误，截图Build/manager-room-arrival.png。
+- 新登录成功持久化后撤销同账号旧会话，立即通知并断开旧Socket；旧界面返回登录页，避免调用logout误注销同浏览器新会话。错误密码不顶人，旧登录刷新和服务重启后仍失效。
+- 69项单元/集成测试全部通过、tsc通过；test/browser/single-login.mjs双独立浏览器会话验证新旧登录、错误密码和重启恢复。
+- server.mjs SHA256 1e944792b007ff19280f189d22d81d0c3ad02cc34e3db62ed8e004410a754db2；accounts.mjs 0ab4de92459065a8cd266f59ede7c0ac5affb821da6d97e77fab894a5ce842e9；远端匹配，officeweb重启后active。
+- 未覆盖账号、工位、聊天数据或.env，未重启LiveKit；保留静止10fps及发送方提示修复。备份backups/presence-navigation-login-20260913/，源码快照Build/SourceSnapshots/PresenceNavigationLogin20260913。
+
+
+## 2026-09-13 公共区点击入座
+- 已发布 index-BOmtET0d.js / index-C0dEHtLO.css，正式 HTTPS JS SHA256 035be4aadbb2e6e49ae9adece7e543c07e678b71d5035ed897bdafddf886c8d1。
+- 后端新增 sitting.mjs、public-seats.json；server.mjs SHA256 f29682a63727634dbfddb65432cacf57a5854f15ee803f93494d6c0697caeaf2，服务 active，备份 backups/public-seating-20260913/。
+- 18个公共座位临时预约、防并发抢坐、离座释放；保留专属归属与所有已有通信/附件/节能功能。原项目独立构建同字节。
+- 73项测试通过、1项未配置LiveKit跳过；双浏览器和正式资源+隔离信令验收通过。完整记录 PublicSeating_20260913.md。
+
+
+## 2026-09-13 坐下朝向修正
+- [x] 长沙发三个位置朝向真实茶几中心，修复两端方向配反。
+- [x] 入座完整重置旋转并锁定座位方向，避免行走四元数转换为XYZ欧拉角后残留X/Z翻转；移动广播改用四元数计算真实朝向。远端坐姿采用同一座位角度。
+- [x] 正式HTTPS硬刷新、18个公共座位方向、8个可用工位朝向和双窗口残留旋转回归通过；业务API/Socket隔离，未写入正式名册。截图SeatedFacing_20260913/production-two-sofa.png。
+- [x] 已发布 index-b_gP7G1G.js / index-C0dEHtLO.css；JS SHA256 74af816f422c484200b8c53691c8753916a37978c3bd5addf2697057b66f7936，service active。73项测试通过、1项LiveKit配置相关跳过。
+- 原项目备份Build/BeforeSeatedFacing20260913，VPS备份backups/seated-facing-20260913；保留账号、工位和聊天数据，未改家具模型和既有延期事项。
+
+## 2026-09-13 内存清理与可选压缩对照
+- 发布 D0Zwm5NK/C0dEHtLO，正式HTTPS JS SHA256 ce2ff24fa048f087aef394980932070c061b54acc221efc36dccd23355adc2d8，与本地一致。
+- 默认保留原画质，修复人物/场景释放；?textures=compact加载独立KTX2对照版，纹理有损，因此未默认启用。
+- 75测试、类型检查、构建与预览/节能回归通过。旧入口备份backups/memory-20260913/index.html。
+- 仅前端和新增静态资源，未覆盖业务数据或重启LiveKit。详见Memory_Audit_20260913.md。
+
+## 2026-09-14 公共与个人聊天
+- 发布BNq8_jzk/Drf0iNJg；正式HTTPS与本地一致。JS SHA256 906a789fc14fe246c6f114338cd8bd513d4815603d5a75b431e5807bc4b32df7；CSS 037b4b4be3691c2864f7ed916298007b9321966b14210dcc7f8f7830c6b33d1f。
+- server/accounts/chat-server/chat-store/chat-files/chat-access六文件哈希匹配，officeweb active；76测试及三个隔离浏览器回归通过，正式列表/私聊进入/返回已查看。
+- 备份backups/chat-threads-20260914；未覆盖业务数据。产生私聊后不得回退旧版无隔离聊天后端。详见Chat_Threads_20260914.md。

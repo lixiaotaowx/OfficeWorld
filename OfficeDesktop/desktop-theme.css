@@ -1,0 +1,42 @@
+html.iruler-desktop { padding-top: 54px; background: #f4f2eb; overflow: hidden; }
+html.iruler-desktop body { height: calc(100dvh - 54px); overflow: auto; }
+html.iruler-desktop .app { height: calc(100dvh - 54px); min-height: 586px; padding: 0 20px; }
+html.iruler-desktop {
+  --bg: #f4f2eb; --night: #26322b; --acid: #f0d274; --mint: #8d9663;
+  --brand: #3d5141; --brand-soft: #edeedc; --line: #ddded3; --line-2: #e5e5dc;
+}
+html.iruler-desktop .rail { height: 64px; border-bottom-color: transparent; gap: 10px; }
+html.iruler-desktop .rail .brand { margin-right: auto; }
+html.iruler-desktop .brand-wordmark { font-size: 14px; letter-spacing: -.4px; text-transform: none; }
+html.iruler-desktop .brand-mark { width: 29px; height: 29px; background: var(--dream-icon) center/contain no-repeat; color: transparent !important; }
+html.iruler-desktop .brand-mark > span { visibility: hidden; }
+html.iruler-desktop .stage { border-radius: 20px; box-shadow: 0 3px 14px #23352809; }
+html.iruler-desktop .panel { border-radius: 20px; }
+html.iruler-desktop .view-tabs { box-shadow: 0 4px 18px #2030250c; }
+html.iruler-desktop .view-tabs button.selected { background: #273b2d; color: #fff9e9; }
+html.iruler-desktop .bottom-bar { background: #24382fed; border: 1px solid #ffffff1f; box-shadow: 0 10px 30px #15282015; }
+html.iruler-desktop .account-page { min-height: calc(100dvh - 54px); background: #f4f2eb; padding: 22px; gap: 20px; }
+html.iruler-desktop .account-intro { min-height: calc(100dvh - 98px); border-radius: 24px; background: #ede7d4; color: #2d3e32; }
+html.iruler-desktop .account-card { background: #fffef9; border: 1px solid #e7e4d8; border-radius: 24px; box-shadow: 0 12px 40px #31472b08; padding: 38px; }
+html.iruler-desktop .account-card h2 { color: #2d3e32; font-family: 'Segoe UI','Microsoft YaHei',sans-serif; font-weight: 600; font-size: 30px; }
+html.iruler-desktop .account-card label { color: #50604e; }
+html.iruler-desktop .account-card p, html.iruler-desktop .account-card small { color: #727e69; }
+html.iruler-desktop .account-card .account-error { color: #b35042; }
+html.iruler-desktop .account-manifesto em { color: #697c56; }
+html.iruler-desktop .account-tabs { background: #f2f0e8; border: 1px solid #e7e4d9; padding: 4px; border-radius: 11px; }
+html.iruler-desktop .account-tabs button[aria-pressed="true"] { background: #fffef9; color: #293d2e; box-shadow: 0 2px 6px #252a2110; border-radius: 7px; }
+html.iruler-desktop .account-card input { background: #f8f7f1; border: 1px solid #e1e3d7; border-radius: 10px; color: #2d3e32; }
+html.iruler-desktop .account-card input:focus { background: #fffef9; outline-color: #d2b65b; }
+html.iruler-desktop .account-card input::placeholder { color: #8b947f; }
+html.iruler-desktop .account-submit { background: #2d4434; color: #fffef2; border-radius: 11px; box-shadow: 0 5px 14px #293f3220; }
+html.iruler-desktop .account-submit:hover { background: #3a5743; }
+html.iruler-desktop .account-brand { letter-spacing: .4px; font-size: 16px; }
+html.iruler-desktop .account-brand small { font-size: 9px; letter-spacing: 2px; }
+html.iruler-desktop .account-brand .brand-mark { width: 38px; height: 38px; }
+@media(max-height: 800px) {
+  html.iruler-desktop .account-card { padding: 26px; gap: 12px; }
+  html.iruler-desktop .account-card h2 { margin-top: 8px; margin-bottom: 8px; }
+  html.iruler-desktop .account-intro { padding-top: 26px; padding-bottom: 24px; }
+  html.iruler-desktop .intro-copy { margin-top: 26px; }
+  html.iruler-desktop .account-manifesto { font-size: clamp(36px, 4vw, 62px); }
+}

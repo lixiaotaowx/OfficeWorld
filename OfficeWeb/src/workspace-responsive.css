@@ -1,0 +1,104 @@
+/* Workspace breakpoints: keep the space usable and every control reachable. */
+@media (max-width: 1200px) {
+  .app { padding: 0 18px; }
+  .workspace > main { --side-width: 340px; gap: 12px; }
+  .sidebar { width: 340px; }
+  .directory-heading { padding: 22px 20px 17px; }
+  .bottom-bar { left: 14px; right: 14px; padding: 11px; }
+  .bottom-bar .identity { display: none; }
+  .bottom-bar .actions { width: 100%; justify-content: center; flex-wrap: wrap; }
+  .bottom-bar .actions button { padding: 10px 12px; }
+  .tag { display: none; }
+  .session-panel { right: 380px; }
+}
+@media (max-height: 850px) and (min-width: 761px) {
+  .directory-heading { padding: 17px 22px 14px; }
+  .directory-heading h2 { font-size: 19px; margin-top: 5px; }
+  .directory-count strong { font-size: 34px; }
+  .directory-count small { font-size: 8px; margin-top: 3px; }
+  .side-tabs button { padding: 7px 0; }
+  .side-title { padding: 14px 22px 8px; }
+  .seat { min-height: 46px; padding: 6px 8px; }
+  .seat strong { font-size: 11px; line-height: 1.45; }
+  .seat small { font-size: 9px; line-height: 1.4; }
+  .seat-num { font-size: 12px; }
+  .manager-seat { margin-top: 0; }
+}
+@media (max-width: 1000px) {
+  .workspace > main { --side-width: 312px; }
+  .sidebar { width: 312px; }
+  .rail-icon { min-width: 72px; padding: 0 11px; }
+  .connection { font-size: 10px; }
+  .connection-label { display: none; }
+  .bottom-bar .actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .bottom-bar .actions button { padding: 8px 10px; font-size: 10px; }
+  .bottom-bar { bottom: 14px; }
+  .session-panel { right: 350px; }
+  .view-tabs { left: 18px; }
+  .view-tabs button { padding: 9px; font-size: 10px; }
+  .view-index { display: none; }
+}
+@media (max-width: 760px) {
+  .app { min-height: 100dvh; height: auto; padding: 0 12px; }
+  .rail { height: 56px; gap: 3px; }
+  .brand { gap: 6px; }
+  .brand > .brand-mark { width: 32px; height: 34px; font-size: 33px; }
+  .brand .brand-wordmark { font-size: 13px; letter-spacing: 1px; gap: 8px; }
+  .brand-wordmark > span { font-size: 10px; letter-spacing: 1px; padding-left: 8px; }
+  .rail > .rail-icon { min-width: 32px; width: 32px; height: 32px; padding: 0; }
+  .rail-label { display: none; }
+  .rail-bottom { gap: 0; margin-left: auto; }
+  .rail-bottom .rail-icon { min-width: 27px; width: 27px; }
+  .rail-bottom .avatar { margin-left: 4px; width: 28px; height: 28px; font-size: 11px; }
+  .workspace { padding: 0; }
+  .connection { display: none; }
+  .workspace > main { flex-direction: column; gap: 12px; }
+  .stage { height: 520px; flex: none; border-radius: 21px; }
+  .stage-heading { top: 23px; left: 18px; right: 18px; gap: 13px; }
+  .space-number { font-size: 47px; }
+  .stage-heading h2 { font-size: 18px; }
+  .stage-heading .eyebrow { font-size: 7px; letter-spacing: 1px; }
+  .view-tabs { left: 15px; right: 15px; top: 90px; }
+  .view-tabs button { flex: 1; padding: 8px 3px; font-size: 10px; }
+  .tag { display: none; }
+  .bottom-bar { left: 12px; right: 12px; bottom: 12px; padding: 10px; min-height: 0; }
+  .bottom-bar .actions { gap: 6px; }
+  .bottom-bar .actions button { padding: 10px 6px; font-size: 11px; }
+  .sidebar { width: 100%; max-height: 750px; min-height: 500px; border-radius: 21px; }
+  .sidebar[hidden] { display: none; }
+  .directory-heading { padding: 24px; }
+  .side-tabs { margin: 0 22px; }
+  .seat-grid { padding: 0 20px; }
+  .seat { min-height: 48px; }
+  .seat strong { max-width: none; }
+  .detail { margin: 20px 24px; }
+  .side-foot { padding: 16px 24px; }
+  .workspace > footer { min-height: 36px; height: auto; font-size: 9px; padding: 12px 2px; }
+  .workspace > footer span { display: none; }
+  .panel-seam-toggle { right: -6px; top: 250px; width: 16px; }
+  .seat-picker-hint { top: 185px; max-height: calc(100dvh - 205px); width: calc(100vw - 36px); }
+  .session-panel { left: 22px; right: 22px; bottom: 22px; width: auto; }
+  .sharing-preview { left: 22px; bottom: 22px; width: calc(100vw - 44px); }
+  .meeting-presence { top: 72px; left: 15px; right: 15px; }
+  .meeting-notification { left: 22px; right: 22px; bottom: 22px; width: auto; font-size: 12px; }
+  .modal { padding: 24px; max-height: 88dvh; overflow-y: auto; }
+  .modal .actions { display: flex; flex-wrap: wrap; }
+  .modal .actions button { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+@media (max-width: 350px) { .seat-grid { grid-template-columns: minmax(0, 1fr); } .detail-actions { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .rail .focus-switch { padding: 6px; min-width: 28px; }
+  .rail .focus-switch span { display: none; }
+  .rail .rail-bottom { margin-left: 0; }
+  .rail { justify-content: space-between; }
+}
+@media (max-width: 540px) {
+  .brand-wordmark > span { display: none; }
+}
+@media (max-width: 350px) {
+  .brand .brand-wordmark { display: none; }
+}

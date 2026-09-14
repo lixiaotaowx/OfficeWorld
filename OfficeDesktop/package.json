@@ -1,0 +1,44 @@
+{
+  "name": "office-world-desktop",
+  "version": "0.1.5",
+  "description": "iruler dream · 一起在场",
+  "author": "iruler dream",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "dist": "electron-builder --win portable --x64"
+  },
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.officeworld.desktop",
+    "productName": "iruler dream",
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "../Build/OfficeDesktopRelease"
+    },
+    "files": [
+      "*.cjs",
+      "picker.html",
+      "picker.js",
+      "picker.css",
+      "package.json",
+      "assets/icon.ico",
+      "chrome.html",
+      "chrome.css",
+      "desktop-theme.css"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.ico",
+      "signExecutable": false
+    },
+    "portable": {
+      "artifactName": "iruler-dream-${version}-Windows-x64.exe"
+    }
+  }
+}

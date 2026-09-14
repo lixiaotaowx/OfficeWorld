@@ -1,0 +1,117 @@
+{
+  "publicSeats": [
+    {
+      "id": "sofa-0",
+      "x": -7.65,
+      "z": 1.05,
+      "sitting": true
+    },
+    {
+      "id": "sofa-1",
+      "x": -8,
+      "z": 2.35,
+      "sitting": true
+    },
+    {
+      "id": "sofa-2",
+      "x": -7.65,
+      "z": 3.65,
+      "sitting": true
+    },
+    {
+      "id": "armchair-0",
+      "x": -6.692,
+      "z": 0.209,
+      "sitting": true
+    },
+    {
+      "id": "armchair-1",
+      "x": -5.692,
+      "z": 1.109,
+      "sitting": true
+    },
+    {
+      "id": "coffee-0",
+      "x": -7.359,
+      "z": -2.377,
+      "sitting": true
+    },
+    {
+      "id": "coffee-1",
+      "x": -7.359,
+      "z": -3.077,
+      "sitting": true
+    },
+    {
+      "id": "stool-0",
+      "x": 8.12,
+      "z": 2,
+      "sitting": true
+    },
+    {
+      "id": "stool-1",
+      "x": 6.44,
+      "z": 1.03005,
+      "sitting": true
+    },
+    {
+      "id": "stool-2",
+      "x": 6.44,
+      "z": 2.96995,
+      "sitting": true
+    },
+    {
+      "id": "meeting-north-0",
+      "x": 2.8,
+      "z": -6.8,
+      "sitting": true
+    },
+    {
+      "id": "meeting-south-0",
+      "x": 2.8,
+      "z": -5,
+      "sitting": true
+    },
+    {
+      "id": "meeting-north-1",
+      "x": 3.8,
+      "z": -6.8,
+      "sitting": true
+    },
+    {
+      "id": "meeting-south-1",
+      "x": 3.8,
+      "z": -5,
+      "sitting": true
+    },
+    {
+      "id": "meeting-north-2",
+      "x": 4.8,
+      "z": -6.8,
+      "sitting": true
+    },
+    {
+      "id": "meeting-south-2",
+      "x": 4.8,
+      "z": -5,
+      "sitting": true
+    },
+    {
+      "id": "visitor-0",
+      "x": 8,
+      "z": -4.95,
+      "sitting": true
+    },
+    {
+      "id": "visitor-1",
+      "x": 9.35,
+      "z": -4.95,
+      "sitting": true
+    }
+  ],
+  "concurrentRejection": true,
+  "remoteSofa": true,
+  "standRelease": true,
+  "cancelRelease": true,
+  "errors": []
+}

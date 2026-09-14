@@ -1,6 +1,12 @@
+import { attachSittingSpots } from "./sittingSpots";
+import { attachMonitorContext } from './monitorContext';
+import MonitorContextMenu from './MonitorContextMenu';
+import { disposeResources } from './disposeResources';
+import { WallCutaway } from "./wallCutaway";
+import { workstationView, updateWorkstationClip } from './workstationView';
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { loadOfficeAsset } from './officeAsset';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OfficeAvatar } from "./OfficeAvatar";
 import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
@@ -8,26 +14,37 @@ import { MonitorScreens } from "./monitorScreens";
 import { WORKSTATIONS } from "./seats";
 import { bakedAwareMaterial } from "./bakedMaterials";
 import { installSceneProbe } from "./sceneProbe";
+import { pickSceneSurface, SceneClickGesture } from "./scenePicking";
+import { SceneLoop, observeSceneVisibility } from "./sceneLoop";
 import "./avatar.css";
-import type { CharacterKind } from "./characterModel";
+import { type CharacterId } from "./characters";
 import type { Motion, Person } from "./types";
 
 export type View = "overview" | "desks" | "meeting" | "lounge";
 interface Props {
+  renderPaused?: boolean;
+  onResumeRendering?: () => void;
+  mySeat: number | null;
   people: Person[];
   /** Our own socket id: we never draw ourselves as a remote avatar. */
   myId: string;
   previews: Record<string, string>;
   /** Latest motion snapshot per player, relayed by the server. */
   motions: Record<string, Motion>;
-  selected: number;
   view: View;
+  focusSeat: { seat: number; nonce: number } | null;
   onSelect: (seat: number) => void;
+  /** Same camera-only action as selecting a member in the side panel. */
+  onFocusScreen: (seat: number) => void;
+  /** True while the seat picker is up, so clicking a chair claims it. */
+  picking: boolean;
+  /** Claim a chair by clicking it; only used while `picking` is true. */
+  onPick: (seat: number) => void;
   /** Which avatar we wear. Owned by the app so the picker can set it too. */
-  character: CharacterKind;
+  character: CharacterId;
   /** Publish our own motion so everybody else can draw us. */
   onMotion: (motion: Motion) => void;
-  onCharacter: (kind: CharacterKind) => void;
+  onSit: (spot: string | null) => Promise<boolean>;
 }
 
 /** Everyone except us is drawn from the last snapshot the server relayed. */
@@ -80,21 +97,33 @@ export default function OfficeScene(props: Props) {
   const latest = useRef(props);
   latest.current = props;
   const [status, setStatus] = useState("正在载入办公室");
+  const [screenMenu, setScreenMenu] = useState<{ x: number; y: number } | null>(null);
   const actor = useRef<OfficeAvatar>();
   const [actorState, setActorState] = useState("角色载入中…");
   const [stats, setStats] = useState("");
-  const api = useRef<{ focus: (v: View) => void }>();
+  const api = useRef<{ focus: (v: View) => void; screen: (seat: number) => void }>();
   const monitorsRef = useRef<MonitorScreens>();
   const remotesRef = useRef<RemoteAvatars>();
-  const mySeat =
-    props.people.find((p) => p.id === props.myId)?.seat ?? null;
+  const loopRef = useRef<SceneLoop>();
+  useEffect(() => { loopRef.current?.setPaused(!!props.renderPaused); }, [props.renderPaused]);
+  const mySeat = props.mySeat;
+  useEffect(() => {
+    if (!props.people.some(p => p.id === props.myId)) actor.current?.standUp();
+  }, [props.people, props.myId]);
   useEffect(() => {
     api.current?.focus(props.view);
   }, [props.view]);
+  useEffect(() => {
+    if (props.focusSeat) api.current?.screen(props.focusSeat.seat);
+  }, [props.focusSeat]);
   // The app owns the character choice (the first-visit dialog sets it too), so
   // the avatar simply follows it.
   useEffect(() => {
-    void actor.current?.load(props.character);
+    const avatar = actor.current;
+    void avatar?.load(props.character).then(() => {
+      const seat = latest.current.mySeat;
+      if (seat != null) avatar.sit(seat);
+    });
   }, [props.character]);
   // Push each occupant's broadcast thumbnail onto their own workstation screen.
   // The preview map is the ambient, unreadably small JPEG; nothing here grants
@@ -121,6 +150,7 @@ export default function OfficeScene(props: Props) {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setClearColor("#c4ccc0");
+    renderer.localClippingEnabled = true;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // AgX with a small exposure lift is what the bake was verified against in
@@ -129,23 +159,33 @@ export default function OfficeScene(props: Props) {
     renderer.toneMappingExposure = 1.11;
     el.appendChild(renderer.domElement);
     const world = new THREE.Scene();
+    const wallCutaway = new WallCutaway();
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
-    const avatar = new OfficeAvatar(world, camera, setActorState);
+    const avatar = new OfficeAvatar(world, camera, setActorState, id => latest.current.onSit(id));
     actor.current = avatar;
+    // Load the character here too: the `[props.character]` effect above runs
+    // before this mount effect, so on the first render `actor.current` was
+    // still empty and skipped the load. Loading now makes the avatar appear.
+    void avatar.load(latest.current.character).then(() => {
+      const seat = latest.current.mySeat;
+      if (seat != null) avatar.sit(seat);
+    });
     const remotes = new RemoteAvatars(world);
     remotesRef.current = remotes;
     // Diagnostic hook. Available while developing and on a deployed build only
     // when explicitly asked for with ?debug=1, so it is not exposed by default.
+    let removeProbe: (() => void) | undefined;
     if (
       import.meta.env.DEV ||
       new URLSearchParams(location.search).has("debug")
     ) {
-      installSceneProbe({
+      removeProbe = installSceneProbe({
         monitors: () => monitorsRef.current,
         remotes,
         avatar,
         world,
         camera,
+        renderStats: () => loopRef.current?.stats,
       });
     }
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -157,13 +197,24 @@ export default function OfficeScene(props: Props) {
     controls.zoomToCursor = true;
     controls.screenSpacePanning = true;
     controls.maxPolarAngle = Math.PI * 0.47;
-    controls.minDistance = 5;
+    controls.minDistance = 0.45;
     controls.maxDistance = 65;
     const goalPosition = new THREE.Vector3();
     const goalTarget = new THREE.Vector3();
     let traveling = true;
+    let focusedWorkstation = false;
     api.current = {
+      screen(index) {
+        const seat = WORKSTATIONS[index];
+        if (!seat) return;
+        const panel = monitorsRef.current?.meshFor(index);
+        goalTarget.copy(panel ? panel.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(seat.display.x, seat.display.y, seat.display.z));
+        goalPosition.copy(workstationView(seat, goalTarget, camera.aspect).position);
+        focusedWorkstation = true;
+        traveling = true;
+      },
       focus(view) {
+        focusedWorkstation = false;
         goalPosition.fromArray(views[view][0]);
         goalTarget.fromArray(views[view][1]);
         traveling = true;
@@ -216,17 +267,16 @@ export default function OfficeScene(props: Props) {
       emissiveIntensity: 0.12,
     });
     let stopped = false,
-      frame = 0,
       tick = 0,
       sinceReport = 0;
-    const clock = new THREE.Clock();
     const monitors = new MonitorScreens();
     monitorsRef.current = monitors;
-    new GLTFLoader().load(
-      "/assets/office-baked.glb",
+    const stopLoading = loadOfficeAsset(
+      renderer,
       (gltf) => {
-        if (stopped) return;
+        if (stopped) { disposeResources(gltf.scene); return; }
         gltf.scene.traverse((o) => {
+          if (typeof o.userData.seat_index === "number") o.userData.seat = o.userData.seat_index;
           if (!(o instanceof THREE.Mesh)) return;
           const name = o.name.toLowerCase();
           if (name.includes("glass") || name.includes("glazing")) {
@@ -245,6 +295,23 @@ export default function OfficeScene(props: Props) {
         // Hand every per-seat screen its own material so a thumbnail can be
         // painted on it without touching the other monitors.
         monitors.attach(gltf.scene, screenMat);
+        // Chairs carry their seat in their name ("Island_A_Seat_1 approved
+        // chair"), not in an extra, so tag the chair object with its seat index
+        // for the click-to-select/claim raycast below. A chair is a multi-
+        // primitive group in glTF, so tag the group itself, not just its Mesh
+        // children (which the raycast actually hits). The DISPLAY panel has the
+        // seat_id extra but is hidden and replaced by our own screen quad.
+        gltf.scene.traverse((o) => {
+          const match = /^(.+?)[ _]approved[ _](chair|monitor)$/.exec(o.name || "");
+          if (!match) return;
+          const seat = WORKSTATIONS.findIndex((w) => w.id === match[1]);
+          if (seat >= 0) {
+            o.userData.seat = seat;
+            if (match[2] === 'monitor') o.userData.monitorSeat = seat;
+          }
+        });
+        attachSittingSpots(gltf.scene);
+        wallCutaway.attach(gltf.scene);
         world.add(gltf.scene);
         // Thumbnails that arrived while the model was still loading.
         syncMonitors(monitors, latest.current);
@@ -254,51 +321,43 @@ export default function OfficeScene(props: Props) {
         if (p.total)
           setStatus(`正在载入 ${Math.round((p.loaded / p.total) * 100)}%`);
       },
-      () => setStatus("模型加载失败，请刷新重试"),
+      () => {
+        setStatus("模型加载失败，请刷新重试");
+      },
     );
-    const markers: THREE.Mesh[] = [];
-    WORKSTATIONS.forEach((workstation) => {
-      const i = workstation.index;
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.28, 0.045, 8, 32),
-        new THREE.MeshBasicMaterial({ color: 0x608673 }),
-      );
-      ring.rotation.x = -Math.PI / 2;
-      // Marker sits on the real chair, taken from the authored asset.
-      ring.position.set(workstation.chair.x, 0.83, workstation.chair.z);
-      ring.userData.seat = i;
-      world.add(ring);
-      markers.push(ring);
-    });
     const ray = new THREE.Raycaster(),
       pointer = new THREE.Vector2();
-    let down = [0, 0];
-    const start = (e: PointerEvent) => {
-      if (e.button !== 0) return;
-      down = [e.clientX, e.clientY];
-    };
+    const gesture = new SceneClickGesture();
+    const start = (e: PointerEvent) => { if (!latest.current.renderPaused) gesture.start(e); };
+    const move = (e: PointerEvent) => gesture.move(e);
+    const cancel = () => gesture.cancel();
     const end = (e: PointerEvent) => {
-      if (e.button !== 0) return;
-      if (Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+      if (latest.current.renderPaused || !gesture.end(e)) return;
       const r = el.getBoundingClientRect();
       pointer.set(
         ((e.clientX - r.left) / r.width) * 2 - 1,
         (-(e.clientY - r.top) / r.height) * 2 + 1,
       );
       ray.setFromCamera(pointer, camera);
+      ray.near = camera.near;
       const hits = ray.intersectObjects(world.children, true);
-      for (const hit of hits) {
-        if (hit.object.userData.seat !== undefined) {
-          latest.current.onSelect(hit.object.userData.seat);
+      const picked = pickSceneSurface(hits);
+      if (picked?.kind === 'monitor') {
+        latest.current.onFocusScreen(picked.seat);
+        return;
+      }
+      if (picked?.kind === 'public-seat') {
+        void avatar.sitAt(picked.spot);
+        return;
+      }
+      if (picked?.kind === 'seat') {
+          const seat = picked.seat;
+          if (latest.current.picking) latest.current.onPick(seat);
+          else {
+            avatar.sit(seat);
+            latest.current.onSelect(seat);
+          }
           return;
-        }
-        const id = hit.object.userData.seat_id as string | undefined;
-        if (id?.startsWith("Island")) {
-          latest.current.onSelect(
-            (id.includes("_B_") ? 4 : 0) + Number(id.slice(-1)) - 1,
-          );
-          return;
-        }
       }
       const point = new THREE.Vector3();
       if (
@@ -311,23 +370,35 @@ export default function OfficeScene(props: Props) {
       }
     };
     el.addEventListener("pointerdown", start);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointercancel", cancel);
     el.addEventListener("pointerup", end);
+    const stopContext = attachMonitorContext(el, camera, world,
+      () => latest.current.mySeat, setScreenMenu);
     const resize = new ResizeObserver(() => {
       renderer.setSize(el.clientWidth, el.clientHeight);
       camera.aspect = el.clientWidth / el.clientHeight;
       camera.updateProjectionMatrix();
     });
     resize.observe(el);
-    function animate() {
-      frame = requestAnimationFrame(animate);
-      const dt = Math.min(clock.getDelta(), 0.05);
+    const loop = new SceneLoop((dt) => {
+      avatar.update(dt);
+      sinceReport += dt;
+      if (sinceReport >= 0.07) {
+        sinceReport = 0;
+        latest.current.onMotion(avatar.getState());
+      }
+    }, (dt) => {
       if (traveling) {
-        camera.position.lerp(goalPosition, 0.075);
-        controls.target.lerp(goalTarget, 0.075);
+        const blend = 1 - Math.pow(1 - 0.075, dt * 60);
+        camera.position.lerp(goalPosition, blend);
+        controls.target.lerp(goalTarget, blend);
         if (camera.position.distanceTo(goalPosition) < 0.01) traveling = false;
       }
+      controls.dampingFactor = 1 - Math.pow(0.95, dt * 60);
       controls.update();
-      avatar.update();
+      updateWorkstationClip(camera, controls.target, focusedWorkstation);
+      wallCutaway.update(camera, controls.target, dt);
       // Draw the other players, then tell the server where we are. Reporting is
       // throttled: the server would reject a faster stream anyway.
       remotes.sync(
@@ -338,51 +409,37 @@ export default function OfficeScene(props: Props) {
         }),
       );
       remotes.update(dt);
-      sinceReport += dt;
-      if (sinceReport >= 0.07) {
-        sinceReport = 0;
-        const me = avatar.getState();
-        latest.current.onMotion({
-          x: me.x,
-          z: me.z,
-          rot: me.rot,
-          moving: me.moving,
-          sitting: me.sitting,
-        });
-      }
-      markers.forEach((m, i) => {
-        (m.material as THREE.MeshBasicMaterial).color.setHex(
-          i === latest.current.selected
-            ? 0xe3a760
-            : latest.current.people.some((p) => p.seat === i)
-              ? 0x397866
-              : 0xa1b4a7,
-        );
-        m.scale.setScalar(i === latest.current.selected ? 1.25 : 1);
-      });
       renderer.render(world, camera);
       if (++tick % 120 === 0) {
         setStats(`${renderer.info.render.triangles.toLocaleString()} 面`);
       }
-    }
-    animate();
+    }, () => traveling || avatar.getState().moving || latest.current.people.some(p =>
+      p.id !== latest.current.myId && latest.current.motions[p.id]?.moving));
+    loopRef.current = loop;
+    loop.setPaused(!!latest.current.renderPaused);
+    const stopObserving = observeSceneVisibility(el, loop);
     return () => {
+      stopLoading();
+      stopContext();
       stopped = true;
+      removeProbe?.();
       avatar.dispose();
       remotes.dispose();
       remotesRef.current = undefined;
-      cancelAnimationFrame(frame);
+      stopObserving();
+      loop.dispose();
+      loopRef.current = undefined;
       resize.disconnect();
       controls.dispose();
+      wallCutaway.dispose();
       monitors.dispose();
       monitorsRef.current = undefined;
       el.removeEventListener("pointerdown", start);
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointercancel", cancel);
       el.removeEventListener("pointerup", end);
-      world.traverse((o) => {
-        if (o instanceof THREE.Mesh) {
-          o.geometry.dispose();
-        }
-      });
+      disposeResources(world);
+      sun.shadow.dispose();
       glass.dispose();
       screenMat.dispose();
       renderer.dispose();
@@ -392,39 +449,12 @@ export default function OfficeScene(props: Props) {
   return (
     <div className="scene-shell">
       <div className="scene" ref={host} />
-      <div className="scene-status">
-        <span className="dot" />
-        {status}
-        <span>{stats}</span>
-      </div>
-      <div className="actor-controls">
-        <label>
-          我的角色{" "}
-          <select
-            aria-label="选择角色"
-            value={props.character}
-            onChange={(e) =>
-              latest.current.onCharacter(e.target.value as CharacterKind)
-            }
-          >
-            <option value="woman">女角色</option>
-            <option value="man">男角色</option>
-          </select>
-        </label>
-        {/* Deliberately no claim button here. A desk is taken in the picker and
-            then belongs to you, so the only seat actions are to return to it or
-            to stand up from it - standing up keeps it yours. */}
-        {mySeat !== null && (
-          <button onClick={() => actor.current?.sit(mySeat)}>
-            回到我的座位
-          </button>
-        )}
-        <button onClick={() => actor.current?.standUp()}>起身</button>
-        <span role="status">{actorState}</span>
-      </div>
-      <div className="scene-help">
-        左键 / WASD 行走 · 中键旋转 · 滚轮朝鼠标缩放 · Shift＋中键平移
-      </div>
+      {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
+      {props.renderPaused && <div className="scene-paused">
+        <p>三维画面已暂停，语音、共享和聊天继续</p>
+        <button onClick={props.onResumeRendering}>恢复三维画面</button>
+      </div>}
+      <div className="scene-corner-status" role="status">{status.includes('失败') ? status : /失败|无法/.test(actorState) ? actorState : ''}</div>
     </div>
   );
 }

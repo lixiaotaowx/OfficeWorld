@@ -14,13 +14,7 @@ import { RoomServiceClient } from "livekit-server-sdk";
 import { livekit } from "../../livekit.mjs";
 
 const require = createRequire(import.meta.url);
-let chromium;
-try {
-  chromium = require(process.env.APPDATA + "/npm/node_modules/playwright").chromium;
-} catch {
-  console.error("找不到全局 playwright，请先安装：npm i -g playwright && npx playwright install chromium");
-  process.exit(2);
-}
+const { chromium } = require("./playwright.cjs");
 
 const APP = process.env.OFFICE_APP_URL || "http://127.0.0.1:5188/";
 const SHOT = process.env.OFFICE_SHOT || "../Build/livekit-browser-meeting.png";

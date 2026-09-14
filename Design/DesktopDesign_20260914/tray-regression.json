@@ -1,0 +1,31 @@
+{
+  "checks": [
+    {
+      "closeHides": true,
+      "sameWebContents": true,
+      "before": {
+        "state": "connected",
+        "bytes": {
+          "audio": 5576,
+          "video": 4393
+        },
+        "ticks": 7
+      },
+      "after": {
+        "state": "connected",
+        "bytes": {
+          "audio": 17078,
+          "video": 14397
+        },
+        "ticks": 11
+      }
+    },
+    {
+      "trayClickRestores": true,
+      "menuRestores": true
+    },
+    {
+      "explicitQuitDestroysWindowAndTray": true
+    }
+  ]
+}

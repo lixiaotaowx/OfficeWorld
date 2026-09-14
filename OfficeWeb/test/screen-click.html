@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>真实场景显示器点击检查（隔离测试，无账号或媒体连接）</title>
+<style>
+body { margin:0; font:16px sans-serif; }
+nav { position:fixed; top:8px; left:8px; z-index:50; background:#fff; padding:8px; }
+button { padding:8px; margin:4px; }
+.scene { width:100vw; height:100vh; }
+</style>
+<div id="root"></div>
+<script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import * as THREE from 'three';
+import OfficeScene from '/src/OfficeScene.tsx';
+const audit = window.clickAudit = { calls:[], picks:[], selected:[], THREE };
+Object.defineProperty(audit,'camera',{get:()=>window.__officeDebug?.__camera});
+function Harness() {
+  const [focus,setFocus] = React.useState(null);
+  const [view,setView] = React.useState('desks');
+  const [picking,setPicking] = React.useState(false);
+  const focusScreen = seat => { audit.calls.push(seat);setFocus({seat,nonce:Date.now()}); };
+  const overview = () => {setFocus(null);setView(view==='overview'?'desks':'overview');};
+  return React.createElement(React.Fragment,null,
+    React.createElement('nav',null,
+      React.createElement('button',{id:'member',onClick:()=>focusScreen(0)},'成员列表 · A-1'),
+      React.createElement('button',{id:'overview',onClick:overview},'切换总览'),
+      React.createElement('button',{id:'picking',onClick:()=>setPicking(!picking)},'选座模式'),
+    ),
+    React.createElement(OfficeScene,{
+      mySeat:null, people:[], myId:'isolated', previews:{},motions:{},view,focusSeat:focus,
+      picking,onPick:seat=>audit.picks.push(seat),onSelect:seat=>audit.selected.push(seat),
+      onFocusScreen:focusScreen,character:'man_suit',onMotion:()=>{},
+    }),
+  );
+}
+createRoot(document.getElementById('root')).render(React.createElement(Harness));
+</script>
+</html>

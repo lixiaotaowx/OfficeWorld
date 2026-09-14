@@ -1,0 +1,1262 @@
+[
+  {
+    "id": "man_adventurer",
+    "pose": "standard",
+    "footY": 0.023920946623472217,
+    "drift": 0,
+    "error": 7.107839317122e-10,
+    "bend": 0.46835012359128647,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "man_adventurer",
+    "pose": "relax",
+    "footY": 0.023920946623472217,
+    "drift": 0,
+    "error": 7.317731420819484e-10,
+    "bend": 0.7203706505024523,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "man_adventurer",
+    "pose": "forward",
+    "footY": 0.023920946623472217,
+    "drift": 0,
+    "error": 7.047382122316037e-10,
+    "bend": 0.24861975237217462,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "man_adventurer",
+    "pose": "recline",
+    "footY": 0.02392094662347216,
+    "drift": 0,
+    "error": 6.982254219245476e-10,
+    "bend": 0.71778646019524,
+    "floorError": 1.0408340855860843e-17,
+    "ok": true
+  },
+  {
+    "id": "man_adventurer",
+    "pose": "crossLegs",
+    "footY": 0.023920946623472217,
+    "drift": 0,
+    "error": 7.274029156789652e-10,
+    "bend": 0.5466065407421412,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "man_adventurer",
+    "pose": "wave",
+    "footY": 0.023920946623472217,
+    "drift": 0,
+    "error": 7.107839317122e-10,
+    "bend": 0.46835012359128647,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "man_beach",
+    "pose": "standard",
+    "footY": 0.027131392242660424,
+    "drift": 0,
+    "error": 7.072925023443588e-10,
+    "bend": 0.4726808800571929,
+    "floorError": 0,
+    "ok": true
+  },
+  {
+    "id": "man_beach",
+    "pose": "relax",
+    "footY": 0.027131392242660424,
+    "drift": 0,
+    "error": 7.275509084081477e-10,
+    "bend": 0.7247014069622583,
+    "floorError": 0,
+    "ok": true
+  },
+  {
+    "id": "man_beach",
+    "pose": "forward",
+    "footY": 0.027131392242660424,
+    "drift": 0,
+    "error": 7.01539992764566e-10,
+    "bend": 0.25295050883934517,
+    "floorError": 0,
+    "ok": true
+  },
+  {
+    "id": "man_beach",
+    "pose": "recline",
+    "footY": 0.027131392242660424,
+    "drift": 0,
+    "error": 6.94043766902297e-10,
+    "bend": 0.7214723518719981,
+    "floorError": 0,
+    "ok": true
+  },
+  {
+    "id": "man_beach",
+    "pose": "crossLegs",
+    "footY": 0.027131392242660424,
+    "drift": 0,
+    "error": 7.236513610564543e-10,
+    "bend": 0.5509372972068908,
+    "floorError": 0,
+    "ok": true
+  },
+  {
+    "id": "man_beach",
+    "pose": "wave",
+    "footY": 0.027131392242660424,
+    "drift": 0,
+    "error": 7.072925023443588e-10,
+    "bend": 0.4726808800571929,
+    "floorError": 0,
+    "ok": true
+  },
+  {
+    "id": "man_casual_2",
+    "pose": "standard",
+    "footY": 0.022968793642166252,
+    "drift": 0,
+    "error": 7.120948275485262e-10,
+    "bend": 0.4690062270339798,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_casual_2",
+    "pose": "relax",
+    "footY": 0.022968793642166252,
+    "drift": 0,
+    "error": 7.330273610328675e-10,
+    "bend": 0.7210267539442297,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_casual_2",
+    "pose": "forward",
+    "footY": 0.022968793642166252,
+    "drift": 0,
+    "error": 7.060784734669312e-10,
+    "bend": 0.24927585581505712,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_casual_2",
+    "pose": "recline",
+    "footY": 0.022968793642166252,
+    "drift": 0,
+    "error": 6.994662626880199e-10,
+    "bend": 0.7185027133661998,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_casual_2",
+    "pose": "crossLegs",
+    "footY": 0.022968793642166252,
+    "drift": 0,
+    "error": 7.287173087178189e-10,
+    "bend": 0.5472626441846611,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_casual_2",
+    "pose": "wave",
+    "footY": 0.022968793642166252,
+    "drift": 0,
+    "error": 7.120948275485262e-10,
+    "bend": 0.4690062270339798,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_casual_hoodie",
+    "pose": "standard",
+    "footY": 0.025446573477817813,
+    "drift": 0,
+    "error": 7.094862475298669e-10,
+    "bend": 0.4729557771669284,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_casual_hoodie",
+    "pose": "relax",
+    "footY": 0.025446573477817813,
+    "drift": 0,
+    "error": 7.29767746232568e-10,
+    "bend": 0.724976304071604,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_casual_hoodie",
+    "pose": "forward",
+    "footY": 0.025446573477817813,
+    "drift": 0,
+    "error": 7.037331273274106e-10,
+    "bend": 0.253225405949163,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_casual_hoodie",
+    "pose": "recline",
+    "footY": 0.025446573477817924,
+    "drift": 0,
+    "error": 6.962376231101075e-10,
+    "bend": 0.7219155549515506,
+    "floorError": 1.249000902703301e-16,
+    "ok": true
+  },
+  {
+    "id": "man_casual_hoodie",
+    "pose": "crossLegs",
+    "footY": 0.025446573477817813,
+    "drift": 0,
+    "error": 7.258849077373952e-10,
+    "bend": 0.5512121943165537,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_casual_hoodie",
+    "pose": "wave",
+    "footY": 0.025446573477817813,
+    "drift": 0,
+    "error": 7.094862475298669e-10,
+    "bend": 0.4729557771669284,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_farmer",
+    "pose": "standard",
+    "footY": 0.02202103165258701,
+    "drift": 0,
+    "error": 7.13666570284488e-10,
+    "bend": 0.4715291491371957,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_farmer",
+    "pose": "relax",
+    "footY": 0.02202103165258701,
+    "drift": 0,
+    "error": 7.342765839801757e-10,
+    "bend": 0.7235496760438974,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_farmer",
+    "pose": "forward",
+    "footY": 0.02202103165258701,
+    "drift": 0,
+    "error": 7.077923247500451e-10,
+    "bend": 0.25179877791900884,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_farmer",
+    "pose": "recline",
+    "footY": 0.022021031652587064,
+    "drift": 0,
+    "error": 7.007004976244957e-10,
+    "bend": 0.7209605372227599,
+    "floorError": 5.898059818321144e-17,
+    "ok": true
+  },
+  {
+    "id": "man_farmer",
+    "pose": "crossLegs",
+    "footY": 0.02202103165258701,
+    "drift": 0,
+    "error": 7.302213278492786e-10,
+    "bend": 0.549785566287205,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_farmer",
+    "pose": "wave",
+    "footY": 0.02202103165258701,
+    "drift": 0,
+    "error": 7.13666570284488e-10,
+    "bend": 0.4715291491371957,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_king",
+    "pose": "standard",
+    "footY": 0.02349680071314339,
+    "drift": 0,
+    "error": 7.178700967003238e-10,
+    "bend": 0.5189873396209288,
+    "floorError": 2.42861286636753e-17,
+    "ok": true
+  },
+  {
+    "id": "man_king",
+    "pose": "relax",
+    "footY": 0.02349680071314339,
+    "drift": 0,
+    "error": 7.313449290613505e-10,
+    "bend": 0.7710078664519776,
+    "floorError": 2.42861286636753e-17,
+    "ok": true
+  },
+  {
+    "id": "man_king",
+    "pose": "forward",
+    "footY": 0.02349680071314339,
+    "drift": 0,
+    "error": 7.149150715868302e-10,
+    "bend": 0.2992569684192839,
+    "floorError": 2.42861286636753e-17,
+    "ok": true
+  },
+  {
+    "id": "man_king",
+    "pose": "recline",
+    "footY": 0.023496800713143418,
+    "drift": 0,
+    "error": 6.978814193203675e-10,
+    "bend": 0.7650802265024472,
+    "floorError": 3.469446951953614e-18,
+    "ok": true
+  },
+  {
+    "id": "man_king",
+    "pose": "crossLegs",
+    "footY": 0.02349680071314339,
+    "drift": 0,
+    "error": 7.325309803185576e-10,
+    "bend": 0.5972437567566625,
+    "floorError": 2.42861286636753e-17,
+    "ok": true
+  },
+  {
+    "id": "man_king",
+    "pose": "wave",
+    "footY": 0.02349680071314339,
+    "drift": 0,
+    "error": 7.178700967003238e-10,
+    "bend": 0.5189873396209288,
+    "floorError": 2.42861286636753e-17,
+    "ok": true
+  },
+  {
+    "id": "man_punk",
+    "pose": "standard",
+    "footY": 0.02412177455312997,
+    "drift": 0,
+    "error": 7.227615173022173e-10,
+    "bend": 0.5764049403747963,
+    "floorError": 4.5102810375396984e-17,
+    "ok": true
+  },
+  {
+    "id": "man_punk",
+    "pose": "relax",
+    "footY": 0.02412177455312997,
+    "drift": 0,
+    "error": 7.262767609539367e-10,
+    "bend": 0.8284254670851642,
+    "floorError": 4.5102810375396984e-17,
+    "ok": true
+  },
+  {
+    "id": "man_punk",
+    "pose": "forward",
+    "footY": 0.02412177455312997,
+    "drift": 0,
+    "error": 7.235253507431594e-10,
+    "bend": 0.35667456920087864,
+    "floorError": 4.5102810375396984e-17,
+    "ok": true
+  },
+  {
+    "id": "man_punk",
+    "pose": "recline",
+    "footY": 0.024121774553129915,
+    "drift": 0,
+    "error": 6.934166019156862e-10,
+    "bend": 0.8185723447278572,
+    "floorError": 1.0408340855860843e-17,
+    "ok": true
+  },
+  {
+    "id": "man_punk",
+    "pose": "crossLegs",
+    "footY": 0.02412177455312997,
+    "drift": 0,
+    "error": 7.350103858883017e-10,
+    "bend": 0.6546613574883996,
+    "floorError": 4.5102810375396984e-17,
+    "ok": true
+  },
+  {
+    "id": "man_punk",
+    "pose": "wave",
+    "footY": 0.02412177455312997,
+    "drift": 0,
+    "error": 7.227615173022173e-10,
+    "bend": 0.5764049403747963,
+    "floorError": 4.5102810375396984e-17,
+    "ok": true
+  },
+  {
+    "id": "man_spacesuit",
+    "pose": "standard",
+    "footY": 0.022353037667585174,
+    "drift": 0,
+    "error": 7.174549288002652e-10,
+    "bend": 0.5032034634411072,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_spacesuit",
+    "pose": "relax",
+    "footY": 0.022353037667585174,
+    "drift": 0,
+    "error": 7.334050033946937e-10,
+    "bend": 0.7552239902993341,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_spacesuit",
+    "pose": "forward",
+    "footY": 0.022353037667585174,
+    "drift": 0,
+    "error": 7.135129154178799e-10,
+    "bend": 0.28347309223337047,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_spacesuit",
+    "pose": "recline",
+    "footY": 0.022353037667585063,
+    "drift": 0,
+    "error": 6.998591151052835e-10,
+    "bend": 0.7504828738379593,
+    "floorError": 9.71445146547012e-17,
+    "ok": true
+  },
+  {
+    "id": "man_spacesuit",
+    "pose": "crossLegs",
+    "footY": 0.022353037667585174,
+    "drift": 0,
+    "error": 7.327728424044722e-10,
+    "bend": 0.5814598805819494,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_spacesuit",
+    "pose": "wave",
+    "footY": 0.022353037667585174,
+    "drift": 0,
+    "error": 7.174549288002652e-10,
+    "bend": 0.5032034634411072,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "man_suit",
+    "pose": "standard",
+    "footY": 0.022975347956610104,
+    "drift": 0,
+    "error": 7.121591649728032e-10,
+    "bend": 0.4695109572582272,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "man_suit",
+    "pose": "relax",
+    "footY": 0.022975347956610104,
+    "drift": 0,
+    "error": 7.330195894716951e-10,
+    "bend": 0.7215314841677702,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "man_suit",
+    "pose": "forward",
+    "footY": 0.022975347956610104,
+    "drift": 0,
+    "error": 7.061724538459657e-10,
+    "bend": 0.24978058603944947,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "man_suit",
+    "pose": "recline",
+    "footY": 0.022975347956610104,
+    "drift": 0,
+    "error": 6.994585466379988e-10,
+    "bend": 0.7189729937772822,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "man_suit",
+    "pose": "crossLegs",
+    "footY": 0.022975347956610104,
+    "drift": 0,
+    "error": 7.287619396834089e-10,
+    "bend": 0.5477673744087739,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "man_suit",
+    "pose": "wave",
+    "footY": 0.022975347956610104,
+    "drift": 0,
+    "error": 7.121591649728032e-10,
+    "bend": 0.4695109572582272,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "man_swat",
+    "pose": "standard",
+    "footY": 0.02300335026838518,
+    "drift": 5.551115123125783e-17,
+    "error": 7.114799860374887e-10,
+    "bend": 0.4650520710821698,
+    "floorError": 6.245004513516506e-17,
+    "ok": true
+  },
+  {
+    "id": "man_swat",
+    "pose": "relax",
+    "footY": 0.02300335026838518,
+    "drift": 0,
+    "error": 7.329679085898988e-10,
+    "bend": 0.7170725979978952,
+    "floorError": 6.245004513516506e-17,
+    "ok": true
+  },
+  {
+    "id": "man_swat",
+    "pose": "forward",
+    "footY": 0.02300335026838518,
+    "drift": 0,
+    "error": 7.052268768958925e-10,
+    "bend": 0.2453216998621225,
+    "floorError": 6.245004513516506e-17,
+    "ok": true
+  },
+  {
+    "id": "man_swat",
+    "pose": "recline",
+    "footY": 0.02300335026838518,
+    "drift": 0,
+    "error": 6.994132495385941e-10,
+    "bend": 0.7148090662528892,
+    "floorError": 6.245004513516506e-17,
+    "ok": true
+  },
+  {
+    "id": "man_swat",
+    "pose": "crossLegs",
+    "footY": 0.02300335026838518,
+    "drift": 0,
+    "error": 7.282518477147448e-10,
+    "bend": 0.5433084882338886,
+    "floorError": 6.245004513516506e-17,
+    "ok": true
+  },
+  {
+    "id": "man_swat",
+    "pose": "wave",
+    "footY": 0.02300335026838518,
+    "drift": 0,
+    "error": 7.114799860374887e-10,
+    "bend": 0.4650520710821698,
+    "floorError": 6.245004513516506e-17,
+    "ok": true
+  },
+  {
+    "id": "man_worker",
+    "pose": "standard",
+    "footY": 0.02504791971532322,
+    "drift": 0,
+    "error": 7.098857612852782e-10,
+    "bend": 0.4721694166639906,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "man_worker",
+    "pose": "relax",
+    "footY": 0.02504791971532322,
+    "drift": 0,
+    "error": 7.302934923458793e-10,
+    "bend": 0.7241899435697854,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "man_worker",
+    "pose": "forward",
+    "footY": 0.02504791971532322,
+    "drift": 0,
+    "error": 7.04081293267933e-10,
+    "bend": 0.2524390454459925,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "man_worker",
+    "pose": "recline",
+    "footY": 0.025047919715323164,
+    "drift": 0,
+    "error": 6.967576515748419e-10,
+    "bend": 0.7212259906262568,
+    "floorError": 1.734723475976807e-17,
+    "ok": true
+  },
+  {
+    "id": "man_worker",
+    "pose": "crossLegs",
+    "footY": 0.02504791971532322,
+    "drift": 0,
+    "error": 7.263259993450788e-10,
+    "bend": 0.550425833813827,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "man_worker",
+    "pose": "wave",
+    "footY": 0.02504791971532322,
+    "drift": 0,
+    "error": 7.098857612852782e-10,
+    "bend": 0.4721694166639906,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_adventurer",
+    "pose": "standard",
+    "footY": 0.023555561132595826,
+    "drift": 0,
+    "error": 1.4441581264179604e-10,
+    "bend": 0.2544657484473428,
+    "floorError": 9.020562075079397e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_adventurer",
+    "pose": "relax",
+    "footY": 0.023555561132595826,
+    "drift": 0,
+    "error": 3.851063912208019e-11,
+    "bend": 0.5038386925021594,
+    "floorError": 9.020562075079397e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_adventurer",
+    "pose": "forward",
+    "footY": 0.023555561132595826,
+    "drift": 0,
+    "error": 2.078820449114005e-10,
+    "bend": 0.034060242296175686,
+    "floorError": 9.020562075079397e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_adventurer",
+    "pose": "recline",
+    "footY": 0.02355556113259577,
+    "drift": 0,
+    "error": 5.4304005736582894e-11,
+    "bend": 0.5135732664000701,
+    "floorError": 3.469446951953614e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_adventurer",
+    "pose": "crossLegs",
+    "footY": 0.023555561132595826,
+    "drift": 0,
+    "error": 1.127533622025112e-10,
+    "bend": 0.33222331069142863,
+    "floorError": 9.020562075079397e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_adventurer",
+    "pose": "wave",
+    "footY": 0.023555561132595826,
+    "drift": 0,
+    "error": 1.4441581264179604e-10,
+    "bend": 0.2544657484473428,
+    "floorError": 9.020562075079397e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_casual",
+    "pose": "standard",
+    "footY": 0.02977634999994294,
+    "drift": 1.1188630228279524e-16,
+    "error": 1.415737527210581e-10,
+    "bend": 0.2554888347375961,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_casual",
+    "pose": "relax",
+    "footY": 0.02977634999994294,
+    "drift": 0,
+    "error": 3.6818770254853916e-11,
+    "bend": 0.5048617787930294,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_casual",
+    "pose": "forward",
+    "footY": 0.02977634999994294,
+    "drift": 0,
+    "error": 2.0444212989190191e-10,
+    "bend": 0.03508332858570842,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_casual",
+    "pose": "recline",
+    "footY": 0.029776349999942886,
+    "drift": 0,
+    "error": 5.314793050104072e-11,
+    "bend": 0.5139851972458774,
+    "floorError": 6.938893903907228e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_casual",
+    "pose": "crossLegs",
+    "footY": 0.02977634999994294,
+    "drift": 0,
+    "error": 1.1027589952306016e-10,
+    "bend": 0.3332463969819167,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_casual",
+    "pose": "wave",
+    "footY": 0.02977634999994294,
+    "drift": 0,
+    "error": 1.415737527210581e-10,
+    "bend": 0.2554888347375961,
+    "floorError": 1.3877787807814457e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_formal",
+    "pose": "standard",
+    "footY": 0.021838170492816666,
+    "drift": 1.3877787807814457e-17,
+    "error": 1.28164368007333e-10,
+    "bend": 0.26831153650333406,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_formal",
+    "pose": "relax",
+    "footY": 0.021838170492816666,
+    "drift": 0,
+    "error": 2.1451618259504812e-11,
+    "bend": 0.5176844805664321,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_formal",
+    "pose": "forward",
+    "footY": 0.021838170492816666,
+    "drift": 0,
+    "error": 1.933518900543163e-10,
+    "bend": 0.047906030342443146,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_formal",
+    "pose": "recline",
+    "footY": 0.021838170492816722,
+    "drift": 0,
+    "error": 3.769329293135115e-11,
+    "bend": 0.5266185295812343,
+    "floorError": 1.214306433183765e-16,
+    "ok": true
+  },
+  {
+    "id": "woman_formal",
+    "pose": "crossLegs",
+    "footY": 0.021838170492816666,
+    "drift": 0,
+    "error": 9.65471036451504e-11,
+    "bend": 0.3460690987505679,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_formal",
+    "pose": "wave",
+    "footY": 0.021838170492816666,
+    "drift": 0,
+    "error": 1.28164368007333e-10,
+    "bend": 0.26831153650333406,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_medieval",
+    "pose": "standard",
+    "footY": 0.023111246796117924,
+    "drift": 0,
+    "error": 9.821687907418664e-11,
+    "bend": 0.29366261757676204,
+    "floorError": 2.0816681711721685e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_medieval",
+    "pose": "relax",
+    "footY": 0.023111246796117924,
+    "drift": 0,
+    "error": 9.254930155577767e-12,
+    "bend": 0.5430355616546481,
+    "floorError": 2.0816681711721685e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_medieval",
+    "pose": "forward",
+    "footY": 0.023111246796117924,
+    "drift": 0,
+    "error": 1.6602330621395822e-10,
+    "bend": 0.07325711139819946,
+    "floorError": 2.0816681711721685e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_medieval",
+    "pose": "recline",
+    "footY": 0.023111246796117924,
+    "drift": 0,
+    "error": 8.1574746957358e-12,
+    "bend": 0.550119081611868,
+    "floorError": 2.0816681711721685e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_medieval",
+    "pose": "crossLegs",
+    "footY": 0.023111246796117924,
+    "drift": 0,
+    "error": 6.690870080205968e-11,
+    "bend": 0.3714201798296026,
+    "floorError": 2.0816681711721685e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_medieval",
+    "pose": "wave",
+    "footY": 0.023111246796117924,
+    "drift": 0,
+    "error": 9.821687907418664e-11,
+    "bend": 0.29366261757676204,
+    "floorError": 2.0816681711721685e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_punk",
+    "pose": "standard",
+    "footY": 0.02068650293687424,
+    "drift": 0,
+    "error": 1.8089252318276294e-11,
+    "bend": 0.3667367186311188,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_punk",
+    "pose": "relax",
+    "footY": 0.02068650293687424,
+    "drift": 0,
+    "error": 9.370926257190604e-11,
+    "bend": 0.6161096627487228,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_punk",
+    "pose": "forward",
+    "footY": 0.02068650293687424,
+    "drift": 0,
+    "error": 9.4106278325512e-11,
+    "bend": 0.1463312124025901,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_punk",
+    "pose": "recline",
+    "footY": 0.020686502936874185,
+    "drift": 0,
+    "error": 7.335615448411659e-11,
+    "bend": 0.6184146424058492,
+    "floorError": 1.734723475976807e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_punk",
+    "pose": "crossLegs",
+    "footY": 0.02068650293687424,
+    "drift": 0,
+    "error": 1.2845058350308136e-11,
+    "bend": 0.4444942808989011,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_punk",
+    "pose": "wave",
+    "footY": 0.02068650293687424,
+    "drift": 0,
+    "error": 1.8089252318276294e-11,
+    "bend": 0.3667367186311188,
+    "floorError": 3.8163916471489756e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_scifi",
+    "pose": "standard",
+    "footY": 0.023408102424714528,
+    "drift": 2.7755575615628914e-17,
+    "error": 1.2034018226358967e-10,
+    "bend": 0.27461033511176786,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_scifi",
+    "pose": "relax",
+    "footY": 0.023408102424714528,
+    "drift": 0,
+    "error": 1.3692935674214368e-11,
+    "bend": 0.523983279178587,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_scifi",
+    "pose": "forward",
+    "footY": 0.023408102424714528,
+    "drift": 0,
+    "error": 1.8603341089828973e-10,
+    "bend": 0.05420482894647036,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_scifi",
+    "pose": "recline",
+    "footY": 0.023408102424714472,
+    "drift": 0,
+    "error": 3.032574191763615e-11,
+    "bend": 0.5323479764416873,
+    "floorError": 6.938893903907228e-18,
+    "ok": true
+  },
+  {
+    "id": "woman_scifi",
+    "pose": "crossLegs",
+    "footY": 0.023408102424714528,
+    "drift": 0,
+    "error": 8.887346414354624e-11,
+    "bend": 0.35236789736041463,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_scifi",
+    "pose": "wave",
+    "footY": 0.023408102424714528,
+    "drift": 0,
+    "error": 1.2034018226358967e-10,
+    "bend": 0.27461033511176786,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_soldier",
+    "pose": "standard",
+    "footY": 0.02353963940752124,
+    "drift": 2.7755575615628914e-17,
+    "error": 1.4330181485888716e-10,
+    "bend": 0.2553870204130646,
+    "floorError": 1.2836953722228372e-16,
+    "ok": true
+  },
+  {
+    "id": "woman_soldier",
+    "pose": "relax",
+    "footY": 0.02353963940752124,
+    "drift": 0,
+    "error": 3.736255749231532e-11,
+    "bend": 0.5047599644684365,
+    "floorError": 1.2836953722228372e-16,
+    "ok": true
+  },
+  {
+    "id": "woman_soldier",
+    "pose": "forward",
+    "footY": 0.02353963940752124,
+    "drift": 0,
+    "error": 2.068711868474793e-10,
+    "bend": 0.034981514261248015,
+    "floorError": 1.2836953722228372e-16,
+    "ok": true
+  },
+  {
+    "id": "woman_soldier",
+    "pose": "recline",
+    "footY": 0.023539639407521185,
+    "drift": 0,
+    "error": 5.3193671689655275e-11,
+    "bend": 0.5144326751546807,
+    "floorError": 7.28583859910259e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_soldier",
+    "pose": "crossLegs",
+    "footY": 0.02353963940752124,
+    "drift": 0,
+    "error": 1.1164802415919439e-10,
+    "bend": 0.3331445826573614,
+    "floorError": 1.2836953722228372e-16,
+    "ok": true
+  },
+  {
+    "id": "woman_soldier",
+    "pose": "wave",
+    "footY": 0.02353963940752124,
+    "drift": 0,
+    "error": 1.4330181485888716e-10,
+    "bend": 0.2553870204130646,
+    "floorError": 1.2836953722228372e-16,
+    "ok": true
+  },
+  {
+    "id": "woman_suit",
+    "pose": "standard",
+    "footY": 0.02391875317431652,
+    "drift": 0,
+    "error": 1.3132805953830484e-10,
+    "bend": 0.2652563574981871,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_suit",
+    "pose": "relax",
+    "footY": 0.02391875317431652,
+    "drift": 0,
+    "error": 2.512245966812543e-11,
+    "bend": 0.5146293015594703,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_suit",
+    "pose": "forward",
+    "footY": 0.02391875317431652,
+    "drift": 0,
+    "error": 1.959375994786683e-10,
+    "bend": 0.04485085133943775,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_suit",
+    "pose": "recline",
+    "footY": 0.023918753174316465,
+    "drift": 0,
+    "error": 4.140066067748194e-11,
+    "bend": 0.5235914971827399,
+    "floorError": 1.0408340855860843e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_suit",
+    "pose": "crossLegs",
+    "footY": 0.02391875317431652,
+    "drift": 0,
+    "error": 9.979805870585778e-11,
+    "bend": 0.34301391974473094,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_suit",
+    "pose": "wave",
+    "footY": 0.02391875317431652,
+    "drift": 0,
+    "error": 1.3132805953830484e-10,
+    "bend": 0.2652563574981871,
+    "floorError": 6.591949208711867e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_witch",
+    "pose": "standard",
+    "footY": 0.021042006028832383,
+    "drift": 0,
+    "error": 5.961031668277883e-11,
+    "bend": 0.44328142369553203,
+    "floorError": 4.163336342344337e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_witch",
+    "pose": "relax",
+    "footY": 0.021042006028832383,
+    "drift": 0,
+    "error": 1.7718654321541294e-10,
+    "bend": 0.6926543678494608,
+    "floorError": 4.163336342344337e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_witch",
+    "pose": "forward",
+    "footY": 0.021042006028832383,
+    "drift": 0,
+    "error": 2.4597490710931424e-11,
+    "bend": 0.22287591741638157,
+    "floorError": 4.163336342344337e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_witch",
+    "pose": "recline",
+    "footY": 0.02104200602883244,
+    "drift": 0,
+    "error": 1.5326995228548412e-10,
+    "bend": 0.689680524684589,
+    "floorError": 9.71445146547012e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_witch",
+    "pose": "crossLegs",
+    "footY": 0.021042006028832383,
+    "drift": 0,
+    "error": 9.028872094418716e-11,
+    "bend": 0.5210389859768398,
+    "floorError": 4.163336342344337e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_witch",
+    "pose": "wave",
+    "footY": 0.021042006028832383,
+    "drift": 0,
+    "error": 5.961031668277883e-11,
+    "bend": 0.44328142369553203,
+    "floorError": 4.163336342344337e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_worker",
+    "pose": "standard",
+    "footY": 0.02368748426961309,
+    "drift": 0,
+    "error": 1.1448042513961809e-10,
+    "bend": 0.2795467837500232,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_worker",
+    "pose": "relax",
+    "footY": 0.02368748426961309,
+    "drift": 0,
+    "error": 7.696621118213898e-12,
+    "bend": 0.5289197278197371,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_worker",
+    "pose": "forward",
+    "footY": 0.02368748426961309,
+    "drift": 0,
+    "error": 1.8067924933973245e-10,
+    "bend": 0.05914127758128093,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_worker",
+    "pose": "recline",
+    "footY": 0.02368748426961309,
+    "drift": 0,
+    "error": 2.4559687616942938e-11,
+    "bend": 0.5369207117350522,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_worker",
+    "pose": "crossLegs",
+    "footY": 0.02368748426961309,
+    "drift": 0,
+    "error": 8.307632359816353e-11,
+    "bend": 0.35730434599976796,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  },
+  {
+    "id": "woman_worker",
+    "pose": "wave",
+    "footY": 0.02368748426961309,
+    "drift": 0,
+    "error": 1.1448042513961809e-10,
+    "bend": 0.2795467837500232,
+    "floorError": 4.85722573273506e-17,
+    "ok": true
+  }
+]

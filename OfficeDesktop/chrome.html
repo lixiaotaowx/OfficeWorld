@@ -1,0 +1,43 @@
+<header class="bar">
+  <div class="brand"><img alt="" /><strong>iruler <span>dream</span></strong></div>
+  <nav aria-label="应用菜单">
+    <div class="menu">
+      <button aria-haspopup="menu" aria-expanded="false">工作空间</button>
+      <div class="dropdown" role="menu" hidden>
+        <small>YOUR WORKSPACE</small>
+        <button role="menuitem" data-action="reload"><span>重新连接</span><kbd>Ctrl R</kbd></button>
+        <button role="menuitem" data-action="browser">在浏览器打开 <span>↗</span></button>
+        <hr /><button role="menuitem" data-action="quit">退出 iruler dream</button>
+      </div>
+    </div>
+    <div class="menu">
+      <button aria-haspopup="menu" aria-expanded="false">视图</button>
+      <div class="dropdown" role="menu" hidden>
+        <small>MAKE YOURSELF AT HOME</small>
+        <button role="menuitem" data-action="zoomIn">放大 <kbd>Ctrl +</kbd></button>
+        <button role="menuitem" data-action="zoomOut">缩小 <kbd>Ctrl −</kbd></button>
+        <button role="menuitem" data-action="zoomReset">实际大小 <kbd>Ctrl 0</kbd></button>
+        <hr /><button role="menuitem" data-action="fullscreen">切换全屏 <kbd>F11</kbd></button>
+      </div>
+    </div>
+    <div class="menu">
+      <button aria-haspopup="menu" aria-expanded="false">声音与共享</button>
+      <div class="dropdown sound" role="menu" hidden>
+        <small>SOUND & SHARING</small>
+        <button class="device" role="menuitem" data-action="devices">
+          <span class="device-icon">♫</span><span><b>设备管理</b><em>选择扬声器与麦克风</em></span><span>↗</span>
+        </button>
+        <button role="menuitem" data-action="microphone">麦克风隐私设置 <span>↗</span></button>
+        <hr /><button role="menuitem" data-action="permissions">声音与共享说明</button>
+        <p>关闭窗口后，仍可在托盘找到我们。</p>
+      </div>
+    </div>
+  </nav>
+  <span class="caption">A little closer. A little brighter.</span>
+  <div class="window-controls">
+    <button data-action="minimize" aria-label="最小化" title="最小化">─</button>
+    <button data-action="maximize" aria-label="最大化或还原" title="最大化或还原">□</button>
+    <button data-action="close" aria-label="关闭到托盘" title="关闭到托盘">×</button>
+  </div>
+</header>
+<div class="toast" role="status" hidden></div>

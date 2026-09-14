@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><title>Chat archive integration test</title>
+<body><main id="messages"></main><script type="module">
+import { io } from "socket.io-client";
+import { attachChatClient } from "/src/chatClient.ts";
+window.startChat = (account) => {
+  window.rows = [];
+  window.notices = [];
+  const socket = io({ autoConnect: false });
+  socket.on("connect", () => socket.emit("join", { id: account, name: account }));
+  const client = attachChatClient(socket, account, update => {
+    window.rows = update(window.rows);
+    document.querySelector("main").textContent = window.rows.map(m => m.text).join("\n");
+  }, message => window.notices.push(message));
+  window.chat = client;
+  window.socket = socket;
+  socket.connect();
+};
+</script></body></html>

@@ -1,0 +1,78 @@
+const { contextBridge, ipcRenderer } = require('electron');
+contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
+  focusWindow: () => ipcRenderer.invoke('office:focus'),
+  displays: () => ipcRenderer.invoke('office:displays'),
+  selectDisplay: id => ipcRenderer.invoke('office:display-select', id),
+  previewFrame: () => ipcRenderer.invoke('office:preview-frame'),
+  saveLogin: value => ipcRenderer.invoke('office:login-save', value),
+  readLogin: () => ipcRenderer.invoke('office:login-read'),
+  clearLogin: () => ipcRenderer.invoke('office:login-clear'),
+}));
+
+// Desktop-only chrome; the website remains isolated from Electron APIs.
+window.addEventListener('DOMContentLoaded', async () => {
+  if (location.origin !== 'https://115.159.43.237' || window.top !== window) return;
+  try {
+    const resources = await ipcRenderer.invoke('dream:resources');
+    const style = document.createElement('style');
+    style.textContent = resources.theme;
+    document.head.append(style);
+    document.documentElement.classList.add('iruler-desktop');
+    document.documentElement.style.setProperty('--dream-icon', `url("${resources.icon}")`);
+    const host = document.createElement('div');
+    host.id = 'iruler-desktop-chrome';
+    const root = host.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${resources.css}</style>${resources.html}`;
+    root.querySelector('.brand img').src = resources.icon;
+    document.body.append(host);
+    const triggers = [...root.querySelectorAll('[aria-haspopup]')];
+    const closeMenus = () => triggers.forEach(button => {
+      button.setAttribute('aria-expanded', 'false');
+      button.nextElementSibling.hidden = true;
+    });
+    triggers.forEach(button => button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      closeMenus();
+      button.setAttribute('aria-expanded', String(open));
+      button.nextElementSibling.hidden = !open;
+    }));
+    root.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', async () => {
+      closeMenus();
+      try { await ipcRenderer.invoke('dream:action', button.dataset.action); }
+      catch {
+        const toast = root.querySelector('.toast');
+        toast.textContent = '暂时无法完成操作，请稍后重试。'; toast.hidden = false;
+        setTimeout(() => { toast.hidden = true; }, 3500);
+      }
+    }));
+    document.addEventListener('pointerdown', event => {
+      if (!event.composedPath().includes(host)) closeMenus();
+    });
+    root.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { closeMenus(); return; }
+      if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+      event.preventDefault();
+      const trigger = event.target.closest('.menu')?.querySelector('[aria-haspopup]');
+      if (!trigger) return;
+      trigger.setAttribute('aria-expanded', 'true'); trigger.nextElementSibling.hidden = false;
+      const items = [...trigger.nextElementSibling.querySelectorAll('button')];
+      const current = items.indexOf(event.target);
+      items[(current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+    });
+    root.querySelector('.bar').addEventListener('dblclick', event => {
+      if (!event.target.closest('button,nav')) void ipcRenderer.invoke('dream:action', 'maximize');
+    });
+    const brand = () => {
+      for (const element of document.querySelectorAll('.brand-wordmark, .account-brand > span:last-child')) {
+        for (const node of element.childNodes) {
+          if (node.nodeType === Node.TEXT_NODE && /OFFICE/.test(node.textContent)) node.textContent = 'iruler dream';
+        }
+      }
+      const footer = document.querySelector('.workspace > footer > span');
+      if (footer && /OFFICE WORLD/.test(footer.textContent)) footer.textContent = footer.textContent.replace('OFFICE WORLD', 'iruler dream');
+    };
+    brand();
+    const observer = new MutationObserver(brand);
+    observer.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
+  } catch { /* An old desktop-bridge fixture does not expose application chrome. */ }
+});

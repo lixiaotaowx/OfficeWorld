@@ -1,0 +1,51 @@
+{
+  "checks": [
+    {
+      "name": "workstation consent, remote video and stop/restart three cycles"
+    },
+    {
+      "name": "private voice both directions and mute/unmute three cycles"
+    },
+    {
+      "name": "private session cleanup without page errors"
+    }
+  ],
+  "errors": [],
+  "samples": [
+    [
+      {
+        "kind": "video",
+        "bytes": 9770,
+        "frames": 6
+      }
+    ],
+    [
+      {
+        "kind": "video",
+        "bytes": 5291,
+        "frames": 5
+      }
+    ],
+    [
+      {
+        "kind": "video",
+        "bytes": 3662,
+        "frames": 4
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 2717,
+        "energy": 0.002692401117186262
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 2014,
+        "energy": 0.0012808565338449048
+      }
+    ]
+  ]
+}

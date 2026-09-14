@@ -1,0 +1,5169 @@
+[
+  {
+    "name": "Meeting interior color panel",
+    "dimensions": [
+      5.349999904632568,
+      0.03500000014901161,
+      3.1500000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Meeting olive plaster.001"
+    ]
+  },
+  {
+    "name": "Manager interior color panel",
+    "dimensions": [
+      4.099999904632568,
+      0.03500000014901161,
+      3.1500000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Manager deep sage plaster.002"
+    ]
+  },
+  {
+    "name": "Meeting floor tone",
+    "dimensions": [
+      5.349999904632568,
+      4.28000020980835,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Meeting floor warm beige.001"
+    ]
+  },
+  {
+    "name": "Island_A felt panel 0",
+    "dimensions": [
+      1.6399999856948853,
+      0.026000000536441803,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.004"
+    ]
+  },
+  {
+    "name": "Island_A panel horizontal trim",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.005"
+    ]
+  },
+  {
+    "name": "Island_A panel horizontal trim.001",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.006"
+    ]
+  },
+  {
+    "name": "Island_A panel vertical trim",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.009"
+    ]
+  },
+  {
+    "name": "Island_A panel vertical trim.001",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.010"
+    ]
+  },
+  {
+    "name": "Island_A divider clip",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.001"
+    ]
+  },
+  {
+    "name": "Island_A divider clip.001",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.002"
+    ]
+  },
+  {
+    "name": "Island_A felt panel 1",
+    "dimensions": [
+      1.6399999856948853,
+      0.026000000536441803,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.005"
+    ]
+  },
+  {
+    "name": "Island_A panel horizontal trim.002",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.007"
+    ]
+  },
+  {
+    "name": "Island_A panel horizontal trim.003",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.008"
+    ]
+  },
+  {
+    "name": "Island_A panel vertical trim.002",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.011"
+    ]
+  },
+  {
+    "name": "Island_A panel vertical trim.003",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.012"
+    ]
+  },
+  {
+    "name": "Island_A divider clip.002",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.003"
+    ]
+  },
+  {
+    "name": "Island_A divider clip.003",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.004"
+    ]
+  },
+  {
+    "name": "Island_B felt panel 0",
+    "dimensions": [
+      1.6399999856948853,
+      0.026000000536441803,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.006"
+    ]
+  },
+  {
+    "name": "Island_B panel horizontal trim",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.017"
+    ]
+  },
+  {
+    "name": "Island_B panel horizontal trim.001",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.018"
+    ]
+  },
+  {
+    "name": "Island_B panel vertical trim",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.021"
+    ]
+  },
+  {
+    "name": "Island_B panel vertical trim.001",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.022"
+    ]
+  },
+  {
+    "name": "Island_B divider clip",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.013"
+    ]
+  },
+  {
+    "name": "Island_B divider clip.001",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.014"
+    ]
+  },
+  {
+    "name": "Island_B felt panel 1",
+    "dimensions": [
+      1.6399999856948853,
+      0.026000000536441803,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.007"
+    ]
+  },
+  {
+    "name": "Island_B panel horizontal trim.002",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.019"
+    ]
+  },
+  {
+    "name": "Island_B panel horizontal trim.003",
+    "dimensions": [
+      1.6399999856948853,
+      0.03099999949336052,
+      0.012000000104308128
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.020"
+    ]
+  },
+  {
+    "name": "Island_B panel vertical trim.002",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.023"
+    ]
+  },
+  {
+    "name": "Island_B panel vertical trim.003",
+    "dimensions": [
+      0.012000000104308128,
+      0.03099999949336052,
+      0.3199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.024"
+    ]
+  },
+  {
+    "name": "Island_B divider clip.002",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.015"
+    ]
+  },
+  {
+    "name": "Island_B divider clip.003",
+    "dimensions": [
+      0.054999999701976776,
+      0.08500000089406967,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail trim - linen ivory.016"
+    ]
+  },
+  {
+    "name": "Meeting / oval table",
+    "dimensions": [
+      3.0999999046325684,
+      1.25,
+      0.09000000357627869
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.070"
+    ]
+  },
+  {
+    "name": "Island_A desktop plant 1",
+    "dimensions": [
+      0.22115692496299744,
+      0.18845002353191376,
+      0.23000000417232513
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.009"
+    ]
+  },
+  {
+    "name": "Island_A desktop plant 2",
+    "dimensions": [
+      0.08703264594078064,
+      0.09668008983135223,
+      0.23000001907348633
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.010"
+    ]
+  },
+  {
+    "name": "Island_A desktop plant 3",
+    "dimensions": [
+      0.22115692496299744,
+      0.18845002353191376,
+      0.23000000417232513
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.011"
+    ]
+  },
+  {
+    "name": "Island_A desktop plant 4",
+    "dimensions": [
+      0.08703264594078064,
+      0.09668008983135223,
+      0.23000001907348633
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.012"
+    ]
+  },
+  {
+    "name": "Island_B desktop plant 1",
+    "dimensions": [
+      0.08703264594078064,
+      0.09668008983135223,
+      0.23000001907348633
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.013"
+    ]
+  },
+  {
+    "name": "Island_B desktop plant 2",
+    "dimensions": [
+      0.22115692496299744,
+      0.18845002353191376,
+      0.23000000417232513
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.014"
+    ]
+  },
+  {
+    "name": "Island_B desktop plant 3",
+    "dimensions": [
+      0.08703264594078064,
+      0.09668008983135223,
+      0.23000001907348633
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.015"
+    ]
+  },
+  {
+    "name": "Island_B desktop plant 4",
+    "dimensions": [
+      0.22115692496299744,
+      0.18845002353191376,
+      0.23000000417232513
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.016"
+    ]
+  },
+  {
+    "name": "Coffee abstract print frame",
+    "dimensions": [
+      0.699999988079071,
+      0.04500000178813934,
+      0.029999999329447746
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.006"
+    ]
+  },
+  {
+    "name": "Coffee abstract print frame.001",
+    "dimensions": [
+      0.699999988079071,
+      0.04500000178813934,
+      0.029999999329447746
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.007"
+    ]
+  },
+  {
+    "name": "Coffee abstract print frame.002",
+    "dimensions": [
+      0.029999999329447746,
+      0.04500000178813934,
+      0.8600000143051147
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.008"
+    ]
+  },
+  {
+    "name": "Coffee abstract print frame.003",
+    "dimensions": [
+      0.029999999329447746,
+      0.04500000178813934,
+      0.8600000143051147
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.009"
+    ]
+  },
+  {
+    "name": "Coffee abstract print print",
+    "dimensions": [
+      0.6399999856948853,
+      0.0,
+      0.8600000143051147
+    ],
+    "hidden": false,
+    "materials": [
+      "Original generated abstract art.001"
+    ]
+  },
+  {
+    "name": "Manager abstract print frame",
+    "dimensions": [
+      0.8399999737739563,
+      0.04500000178813934,
+      0.029999999329447746
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.010"
+    ]
+  },
+  {
+    "name": "Manager abstract print frame.001",
+    "dimensions": [
+      0.8399999737739563,
+      0.04500000178813934,
+      0.029999999329447746
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.011"
+    ]
+  },
+  {
+    "name": "Manager abstract print frame.002",
+    "dimensions": [
+      0.029999999329447746,
+      0.04500000178813934,
+      1.0399999618530273
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.012"
+    ]
+  },
+  {
+    "name": "Manager abstract print frame.003",
+    "dimensions": [
+      0.029999999329447746,
+      0.04500000178813934,
+      1.0399999618530273
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.013"
+    ]
+  },
+  {
+    "name": "Manager abstract print print",
+    "dimensions": [
+      0.7799999713897705,
+      0.0,
+      1.0399999618530273
+    ],
+    "hidden": false,
+    "materials": [
+      "Original generated abstract art.002"
+    ]
+  },
+  {
+    "name": "Front collaboration blackboard",
+    "dimensions": [
+      1.7999999523162842,
+      0.04500000178813934,
+      0.9399999976158142
+    ],
+    "hidden": false,
+    "materials": [
+      "Blackboard - charcoal green.001"
+    ]
+  },
+  {
+    "name": "Blackboard timber horizontal frame",
+    "dimensions": [
+      1.8600000143051147,
+      0.07000000029802322,
+      0.03500000014901161
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.002"
+    ]
+  },
+  {
+    "name": "Blackboard timber horizontal frame.001",
+    "dimensions": [
+      1.8600000143051147,
+      0.07000000029802322,
+      0.03500000014901161
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.003"
+    ]
+  },
+  {
+    "name": "Blackboard timber side frame",
+    "dimensions": [
+      0.03500000014901161,
+      0.07000000029802322,
+      0.9599999785423279
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.004"
+    ]
+  },
+  {
+    "name": "Blackboard timber side frame.001",
+    "dimensions": [
+      0.03500000014901161,
+      0.07000000029802322,
+      0.9599999785423279
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.005"
+    ]
+  },
+  {
+    "name": "Blackboard chalk ledge",
+    "dimensions": [
+      1.840000033378601,
+      0.15000000596046448,
+      0.03500000014901161
+    ],
+    "hidden": false,
+    "materials": [
+      "Detail frames - honey oak.001"
+    ]
+  },
+  {
+    "name": "Architecture / ivory floor",
+    "dimensions": [
+      21.0,
+      14.700000762939453,
+      0.23999999463558197
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Floor - warm limestone 120cm.001"
+    ]
+  },
+  {
+    "name": "Architecture / rear room wall",
+    "dimensions": [
+      10.0,
+      0.15000000596046448,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.001"
+    ]
+  },
+  {
+    "name": "Architecture / manager side wall",
+    "dimensions": [
+      0.15000000596046448,
+      4.599999904632568,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Manager deep sage plaster.001"
+    ]
+  },
+  {
+    "name": "Architecture / room divider",
+    "dimensions": [
+      0.15000000596046448,
+      4.349999904632568,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.001"
+    ]
+  },
+  {
+    "name": "Window vertical frame",
+    "dimensions": [
+      0.06499999761581421,
+      0.06499999761581421,
+      3.5999999046325684
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.024"
+    ]
+  },
+  {
+    "name": "Window vertical frame.001",
+    "dimensions": [
+      0.06499999761581421,
+      0.06499999761581421,
+      3.5999999046325684
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.025"
+    ]
+  },
+  {
+    "name": "Window vertical frame.002",
+    "dimensions": [
+      0.06499999761581421,
+      0.06499999761581421,
+      3.5999999046325684
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.026"
+    ]
+  },
+  {
+    "name": "Window vertical frame.003",
+    "dimensions": [
+      0.06499999761581421,
+      0.06499999761581421,
+      3.5999999046325684
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.027"
+    ]
+  },
+  {
+    "name": "Window vertical frame.004",
+    "dimensions": [
+      0.06499999761581421,
+      0.06499999761581421,
+      3.5999999046325684
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.028"
+    ]
+  },
+  {
+    "name": "Window upper beam",
+    "dimensions": [
+      11.0,
+      0.18000000715255737,
+      0.20000000298023224
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.023"
+    ]
+  },
+  {
+    "name": "Window lower sill",
+    "dimensions": [
+      11.0,
+      0.2199999988079071,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.077"
+    ]
+  },
+  {
+    "name": "Window continuous glass",
+    "dimensions": [
+      10.899999618530273,
+      0.012000000104308128,
+      3.3499999046325684
+    ],
+    "hidden": false,
+    "materials": [
+      "Clear glass.006"
+    ]
+  },
+  {
+    "name": "Open top room beam",
+    "dimensions": [
+      0.1599999964237213,
+      4.5,
+      0.1599999964237213
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.073"
+    ]
+  },
+  {
+    "name": "Open top room beam.001",
+    "dimensions": [
+      0.1599999964237213,
+      4.5,
+      0.1599999964237213
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.074"
+    ]
+  },
+  {
+    "name": "Open top room beam.002",
+    "dimensions": [
+      0.1599999964237213,
+      4.5,
+      0.1599999964237213
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.075"
+    ]
+  },
+  {
+    "name": "Rear open top beam",
+    "dimensions": [
+      10.0,
+      0.18000000715255737,
+      0.1599999964237213
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.076"
+    ]
+  },
+  {
+    "name": "Front cutaway base",
+    "dimensions": [
+      21.0,
+      0.11999999731779099,
+      0.550000011920929
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.004"
+    ]
+  },
+  {
+    "name": "Front oak slat",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.014"
+    ]
+  },
+  {
+    "name": "Front oak slat.001",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.015"
+    ]
+  },
+  {
+    "name": "Front oak slat.002",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.016"
+    ]
+  },
+  {
+    "name": "Front oak slat.003",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.017"
+    ]
+  },
+  {
+    "name": "Front oak slat.004",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.018"
+    ]
+  },
+  {
+    "name": "Front oak slat.005",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.019"
+    ]
+  },
+  {
+    "name": "Front oak slat.006",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.020"
+    ]
+  },
+  {
+    "name": "Front oak slat.007",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.021"
+    ]
+  },
+  {
+    "name": "Front oak slat.008",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.022"
+    ]
+  },
+  {
+    "name": "Front oak slat.009",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.023"
+    ]
+  },
+  {
+    "name": "Front oak slat.010",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.024"
+    ]
+  },
+  {
+    "name": "Front oak slat.011",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.025"
+    ]
+  },
+  {
+    "name": "Front oak slat.012",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.026"
+    ]
+  },
+  {
+    "name": "Front oak slat.013",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.027"
+    ]
+  },
+  {
+    "name": "Front oak slat.014",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.028"
+    ]
+  },
+  {
+    "name": "Front oak slat.015",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.029"
+    ]
+  },
+  {
+    "name": "Front oak slat.016",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.030"
+    ]
+  },
+  {
+    "name": "Front oak slat.017",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.031"
+    ]
+  },
+  {
+    "name": "Front oak slat.018",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.032"
+    ]
+  },
+  {
+    "name": "Front oak slat.019",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.033"
+    ]
+  },
+  {
+    "name": "Front oak slat.020",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.034"
+    ]
+  },
+  {
+    "name": "Front oak slat.021",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.035"
+    ]
+  },
+  {
+    "name": "Front oak slat.022",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.036"
+    ]
+  },
+  {
+    "name": "Front oak slat.023",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.037"
+    ]
+  },
+  {
+    "name": "Front oak slat.024",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.038"
+    ]
+  },
+  {
+    "name": "Front oak slat.025",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.039"
+    ]
+  },
+  {
+    "name": "Front oak slat.026",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.040"
+    ]
+  },
+  {
+    "name": "Front oak slat.027",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.041"
+    ]
+  },
+  {
+    "name": "Front oak slat.028",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.042"
+    ]
+  },
+  {
+    "name": "Front oak slat.029",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.043"
+    ]
+  },
+  {
+    "name": "Front oak slat.030",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.044"
+    ]
+  },
+  {
+    "name": "Front oak slat.031",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.045"
+    ]
+  },
+  {
+    "name": "Front oak slat.032",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.046"
+    ]
+  },
+  {
+    "name": "Front oak slat.033",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.047"
+    ]
+  },
+  {
+    "name": "Front oak slat.034",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.048"
+    ]
+  },
+  {
+    "name": "Front oak slat.035",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.049"
+    ]
+  },
+  {
+    "name": "Front oak slat.036",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.050"
+    ]
+  },
+  {
+    "name": "Front oak slat.037",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.051"
+    ]
+  },
+  {
+    "name": "Front oak slat.038",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.052"
+    ]
+  },
+  {
+    "name": "Front oak slat.039",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.053"
+    ]
+  },
+  {
+    "name": "Front oak slat.040",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.054"
+    ]
+  },
+  {
+    "name": "Front oak slat.041",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.055"
+    ]
+  },
+  {
+    "name": "Front oak slat.042",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.056"
+    ]
+  },
+  {
+    "name": "Front oak slat.043",
+    "dimensions": [
+      0.06499999761581421,
+      0.10000000149011612,
+      1.100000023841858
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.057"
+    ]
+  },
+  {
+    "name": "Entry step 0",
+    "dimensions": [
+      2.5,
+      0.36000001430511475,
+      0.18000000715255737
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.011"
+    ]
+  },
+  {
+    "name": "Entry step 1",
+    "dimensions": [
+      2.5,
+      0.36000001430511475,
+      0.18000000715255737
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.012"
+    ]
+  },
+  {
+    "name": "Entry step 2",
+    "dimensions": [
+      2.5,
+      0.36000001430511475,
+      0.18000000715255737
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.013"
+    ]
+  },
+  {
+    "name": "Meeting room mullion",
+    "dimensions": [
+      0.04500000178813934,
+      0.054999999701976776,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.086"
+    ]
+  },
+  {
+    "name": "Meeting room mullion.001",
+    "dimensions": [
+      0.04500000178813934,
+      0.054999999701976776,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.087"
+    ]
+  },
+  {
+    "name": "Meeting room mullion.002",
+    "dimensions": [
+      0.04500000178813934,
+      0.054999999701976776,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.088"
+    ]
+  },
+  {
+    "name": "Meeting room top rail",
+    "dimensions": [
+      5.5,
+      0.054999999701976776,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Warm graphite.002"
+    ]
+  },
+  {
+    "name": "Meeting room bottom rail",
+    "dimensions": [
+      5.5,
+      0.054999999701976776,
+      0.03999999910593033
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.084"
+    ]
+  },
+  {
+    "name": "Meeting room glazing",
+    "dimensions": [
+      4.300000190734863,
+      0.017999999225139618,
+      3.1500000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Clear glass.004"
+    ]
+  },
+  {
+    "name": "Meeting room open glass door",
+    "dimensions": [
+      1.0800000429153442,
+      0.017999999225139618,
+      3.1500000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Clear glass.005"
+    ]
+  },
+  {
+    "name": "Meeting room door handle",
+    "dimensions": [
+      0.033174701035022736,
+      0.033174701035022736,
+      0.3299999237060547
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.085"
+    ]
+  },
+  {
+    "name": "Meeting left glass",
+    "dimensions": [
+      0.017999999225139618,
+      4.400000095367432,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Clear glass.003"
+    ]
+  },
+  {
+    "name": "Meeting side frame",
+    "dimensions": [
+      0.054999999701976776,
+      0.04500000178813934,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Warm graphite.001"
+    ]
+  },
+  {
+    "name": "Meeting side frame.001",
+    "dimensions": [
+      0.054999999701976776,
+      0.04500000178813934,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Warm graphite.002"
+    ]
+  },
+  {
+    "name": "Meeting side frame.002",
+    "dimensions": [
+      0.054999999701976776,
+      0.04500000178813934,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Warm graphite.003"
+    ]
+  },
+  {
+    "name": "Meeting / pedestal",
+    "dimensions": [
+      0.36000001430511475,
+      0.36000001430511475,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.071"
+    ]
+  },
+  {
+    "name": "Meeting / pedestal.001",
+    "dimensions": [
+      0.36000001430511475,
+      0.36000001430511475,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.072"
+    ]
+  },
+  {
+    "name": "Meeting chair north cushion",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.015"
+    ]
+  },
+  {
+    "name": "Meeting chair north back",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.012"
+    ]
+  },
+  {
+    "name": "Meeting chair north stem",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.057"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm support",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.036"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.011"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm support.001",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.037"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm.001",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.012"
+    ]
+  },
+  {
+    "name": "Meeting chair north base",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.042"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.011"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.001",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.043"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.001",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.012"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.002",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.044"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.002",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.013"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.003",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.045"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.003",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.014"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.004",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.046"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.004",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.015"
+    ]
+  },
+  {
+    "name": "Meeting chair south cushion",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.021"
+    ]
+  },
+  {
+    "name": "Meeting chair south back",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.018"
+    ]
+  },
+  {
+    "name": "Meeting chair south stem",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.081"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm support",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.060"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.017"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm support.001",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.061"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm.001",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.018"
+    ]
+  },
+  {
+    "name": "Meeting chair south base",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.066"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.026"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.001",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.067"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.001",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.027"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.002",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.068"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.002",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.028"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.003",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.069"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.003",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.029"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.004",
+    "dimensions": [
+      0.040546853095293045,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.070"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.004",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.030"
+    ]
+  },
+  {
+    "name": "Meeting chair north cushion.001",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.016"
+    ]
+  },
+  {
+    "name": "Meeting chair north back.001",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.013"
+    ]
+  },
+  {
+    "name": "Meeting chair north stem.001",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.058"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm support.002",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.038"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm.002",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.013"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm support.003",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.039"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm.003",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.014"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.005",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.047"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.005",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.016"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.006",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.048"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.006",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.017"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.007",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.049"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.007",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.018"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.008",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.050"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.008",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.019"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.009",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.051"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.009",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.020"
+    ]
+  },
+  {
+    "name": "Meeting chair south cushion.001",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.022"
+    ]
+  },
+  {
+    "name": "Meeting chair south back.001",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.019"
+    ]
+  },
+  {
+    "name": "Meeting chair south stem.001",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.082"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm support.002",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.062"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm.002",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.019"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm support.003",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.063"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm.003",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.020"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.005",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.071"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.005",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.031"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.006",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.072"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.006",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.032"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.007",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.073"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.007",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.033"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.008",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.074"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.008",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.034"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.009",
+    "dimensions": [
+      0.040546853095293045,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.075"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.009",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.035"
+    ]
+  },
+  {
+    "name": "Meeting chair north cushion.002",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.017"
+    ]
+  },
+  {
+    "name": "Meeting chair north back.002",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.014"
+    ]
+  },
+  {
+    "name": "Meeting chair north stem.002",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.059"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm support.004",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.040"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm.004",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.015"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm support.005",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.041"
+    ]
+  },
+  {
+    "name": "Meeting chair north arm.005",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.016"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.010",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.052"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.010",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.021"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.011",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.053"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.011",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.022"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.012",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.054"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.012",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.023"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.013",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.055"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.013",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.024"
+    ]
+  },
+  {
+    "name": "Meeting chair north base.014",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.056"
+    ]
+  },
+  {
+    "name": "Meeting chair north caster.014",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.025"
+    ]
+  },
+  {
+    "name": "Meeting chair south cushion.002",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.023"
+    ]
+  },
+  {
+    "name": "Meeting chair south back.002",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.020"
+    ]
+  },
+  {
+    "name": "Meeting chair south stem.002",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.083"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm support.004",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.064"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm.004",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.021"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm support.005",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.065"
+    ]
+  },
+  {
+    "name": "Meeting chair south arm.005",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.022"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.010",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.076"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.010",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.036"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.011",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.077"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.011",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.037"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.012",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.078"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.012",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.038"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.013",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.079"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.013",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.039"
+    ]
+  },
+  {
+    "name": "Meeting chair south base.014",
+    "dimensions": [
+      0.040546853095293045,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.080"
+    ]
+  },
+  {
+    "name": "Meeting chair south caster.014",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.040"
+    ]
+  },
+  {
+    "name": "Meeting / presentation display",
+    "dimensions": [
+      2.049999952316284,
+      0.07000000029802322,
+      1.0499999523162842
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.035"
+    ]
+  },
+  {
+    "name": "Meeting / display surface",
+    "dimensions": [
+      1.9500000476837158,
+      0.014000000432133675,
+      0.949999988079071
+    ],
+    "hidden": false,
+    "materials": [
+      "Display background.002"
+    ]
+  },
+  {
+    "name": "Meeting / credenza",
+    "dimensions": [
+      1.850000023841858,
+      0.6000000238418579,
+      0.8399999737739563
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.069"
+    ]
+  },
+  {
+    "name": "Meeting / pendant diffuser",
+    "dimensions": [
+      1.75,
+      0.23999999463558197,
+      0.07500000298023224
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.010"
+    ]
+  },
+  {
+    "name": "Meeting / pendant cable",
+    "dimensions": [
+      0.014000000432133675,
+      0.014000000432133675,
+      0.7099997997283936
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.033"
+    ]
+  },
+  {
+    "name": "Meeting / pendant cable.001",
+    "dimensions": [
+      0.014000000432133675,
+      0.014000000432133675,
+      0.7099997997283936
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.034"
+    ]
+  },
+  {
+    "name": "Manager office mullion",
+    "dimensions": [
+      0.04500000178813934,
+      0.054999999701976776,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.014"
+    ]
+  },
+  {
+    "name": "Manager office mullion.001",
+    "dimensions": [
+      0.04500000178813934,
+      0.054999999701976776,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.015"
+    ]
+  },
+  {
+    "name": "Manager office mullion.002",
+    "dimensions": [
+      0.04500000178813934,
+      0.054999999701976776,
+      3.200000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.016"
+    ]
+  },
+  {
+    "name": "Manager office top rail",
+    "dimensions": [
+      4.25,
+      0.054999999701976776,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Warm graphite.001"
+    ]
+  },
+  {
+    "name": "Manager office bottom rail",
+    "dimensions": [
+      4.25,
+      0.054999999701976776,
+      0.03999999910593033
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.012"
+    ]
+  },
+  {
+    "name": "Manager office glazing",
+    "dimensions": [
+      3.049999952316284,
+      0.017999999225139618,
+      3.1500000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Clear glass.001"
+    ]
+  },
+  {
+    "name": "Manager office open glass door",
+    "dimensions": [
+      1.0800000429153442,
+      0.017999999225139618,
+      3.1500000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Clear glass.002"
+    ]
+  },
+  {
+    "name": "Manager office door handle",
+    "dimensions": [
+      0.033174701035022736,
+      0.033174701035022736,
+      0.3299999237060547
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.013"
+    ]
+  },
+  {
+    "name": "Manager / desk",
+    "dimensions": [
+      2.25,
+      0.949999988079071,
+      0.09000000357627869
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.065"
+    ]
+  },
+  {
+    "name": "Manager / desk support",
+    "dimensions": [
+      0.11999999731779099,
+      0.8500000238418579,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.066"
+    ]
+  },
+  {
+    "name": "Manager / desk support.001",
+    "dimensions": [
+      0.11999999731779099,
+      0.8500000238418579,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.067"
+    ]
+  },
+  {
+    "name": "Manager DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Manager DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Manager visitor chair cushion",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.010"
+    ]
+  },
+  {
+    "name": "Manager visitor chair back",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.008"
+    ]
+  },
+  {
+    "name": "Manager visitor chair stem",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.031"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm support",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.017"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.006"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm support.001",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.018"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm.001",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.007"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.021"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.001"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.001",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.022"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.001",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.002"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.002",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.023"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.002",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.003"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.003",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.024"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.003",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.004"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.004",
+    "dimensions": [
+      0.040546853095293045,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.025"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.004",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.005"
+    ]
+  },
+  {
+    "name": "Manager visitor chair cushion.001",
+    "dimensions": [
+      0.49000000953674316,
+      0.47999998927116394,
+      0.11999999731779099
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.011"
+    ]
+  },
+  {
+    "name": "Manager visitor chair back.001",
+    "dimensions": [
+      0.5,
+      0.10000000149011612,
+      0.49000000953674316
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.009"
+    ]
+  },
+  {
+    "name": "Manager visitor chair stem.001",
+    "dimensions": [
+      0.07000000029802322,
+      0.07000000029802322,
+      0.4000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.032"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm support.002",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.019"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm.002",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.008"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm support.003",
+    "dimensions": [
+      0.035999998450279236,
+      0.035999998450279236,
+      0.20000001788139343
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.020"
+    ]
+  },
+  {
+    "name": "Manager visitor chair arm.003",
+    "dimensions": [
+      0.07000000029802322,
+      0.3499999940395355,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.009"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.005",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.026"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.005",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.006"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.006",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.027"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.006",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.007"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.007",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411346912384
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.028"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.007",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.008"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.008",
+    "dimensions": [
+      0.040546856820583344,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.029"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.008",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.009"
+    ]
+  },
+  {
+    "name": "Manager visitor chair base.009",
+    "dimensions": [
+      0.040546853095293045,
+      0.040546856820583344,
+      0.3059411644935608
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.030"
+    ]
+  },
+  {
+    "name": "Manager visitor chair caster.009",
+    "dimensions": [
+      0.10999999940395355,
+      0.07000000029802322,
+      0.10999999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Graphite rubber.010"
+    ]
+  },
+  {
+    "name": "Manager / rug",
+    "dimensions": [
+      3.6500000953674316,
+      3.25,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Manager warm grey woven rug.001"
+    ]
+  },
+  {
+    "name": "Manager / low cabinet",
+    "dimensions": [
+      1.7999999523162842,
+      0.6499999761581421,
+      0.8399999737739563
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.068"
+    ]
+  },
+  {
+    "name": "Island_A top",
+    "dimensions": [
+      3.5999999046325684,
+      1.7000000476837158,
+      0.08500000089406967
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.060"
+    ]
+  },
+  {
+    "name": "Island_A oak end",
+    "dimensions": [
+      0.11999999731779099,
+      1.6100000143051147,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.058"
+    ]
+  },
+  {
+    "name": "Island_A oak end.001",
+    "dimensions": [
+      0.11999999731779099,
+      1.6100000143051147,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.059"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_A_Seat_1 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_2 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_A_Seat_2 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_3 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_A_Seat_3 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_4 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_A_Seat_4 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_B top",
+    "dimensions": [
+      3.5999999046325684,
+      1.7000000476837158,
+      0.08500000089406967
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.063"
+    ]
+  },
+  {
+    "name": "Island_B oak end",
+    "dimensions": [
+      0.11999999731779099,
+      1.6100000143051147,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.061"
+    ]
+  },
+  {
+    "name": "Island_B oak end.001",
+    "dimensions": [
+      0.11999999731779099,
+      1.6100000143051147,
+      0.7200000286102295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.062"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_1 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_B_Seat_1 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_2 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_B_Seat_2 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_3 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_B_Seat_3 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_4 DISPLAY",
+    "dimensions": [
+      0.6000000238418579,
+      0.006000000052154064,
+      0.35499998927116394
+    ],
+    "hidden": false,
+    "materials": [
+      "Screen - soft daylight Island_B_Seat_4 DISPLAY.001"
+    ]
+  },
+  {
+    "name": "Coffee / cabinets",
+    "dimensions": [
+      3.799999952316284,
+      0.75,
+      0.9200000166893005
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.001"
+    ]
+  },
+  {
+    "name": "Coffee / countertop",
+    "dimensions": [
+      3.9000000953674316,
+      0.8399999737739563,
+      0.054999999701976776
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.002"
+    ]
+  },
+  {
+    "name": "Coffee / peninsula",
+    "dimensions": [
+      1.7000000476837158,
+      0.7200000286102295,
+      0.10000000149011612
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.008"
+    ]
+  },
+  {
+    "name": "Coffee / peninsula support",
+    "dimensions": [
+      0.10999999940395355,
+      0.6499999761581421,
+      0.8500000238418579
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.009"
+    ]
+  },
+  {
+    "name": "Coffee / stool cushion",
+    "dimensions": [
+      0.4399999976158142,
+      0.4399999976158142,
+      0.07000000029802322
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.002"
+    ]
+  },
+  {
+    "name": "Coffee / stool leg",
+    "dimensions": [
+      0.03999999910593033,
+      0.03999999910593033,
+      0.5416308045387268
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.007"
+    ]
+  },
+  {
+    "name": "Coffee / stool leg.001",
+    "dimensions": [
+      0.03999999910593033,
+      0.03999999910593033,
+      0.5416308045387268
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.008"
+    ]
+  },
+  {
+    "name": "Coffee / stool cushion.001",
+    "dimensions": [
+      0.4399999976158142,
+      0.4399999976158142,
+      0.07000000029802322
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Muted sage upholstery.003"
+    ]
+  },
+  {
+    "name": "Coffee / stool leg.002",
+    "dimensions": [
+      0.03999999910593033,
+      0.03999999910593033,
+      0.5416308045387268
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.009"
+    ]
+  },
+  {
+    "name": "Coffee / stool leg.003",
+    "dimensions": [
+      0.03999999910593033,
+      0.03999999910593033,
+      0.5416308045387268
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.010"
+    ]
+  },
+  {
+    "name": "Coffee machine",
+    "dimensions": [
+      0.5199999809265137,
+      0.47999998927116394,
+      0.5400000214576721
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.011"
+    ]
+  },
+  {
+    "name": "Coffee machine panel",
+    "dimensions": [
+      0.2800000011920929,
+      0.014000000432133675,
+      0.14000000059604645
+    ],
+    "hidden": false,
+    "materials": [
+      "Display background.001"
+    ]
+  },
+  {
+    "name": "Coffee cup",
+    "dimensions": [
+      0.10000000149011612,
+      0.10000000149011612,
+      0.09000000357627869
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.003"
+    ]
+  },
+  {
+    "name": "Coffee / wall shelf",
+    "dimensions": [
+      3.5999999046325684,
+      0.3400000035762787,
+      0.05000000074505806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.010"
+    ]
+  },
+  {
+    "name": "Coffee / door panel 0",
+    "dimensions": [
+      0.6029999852180481,
+      0.02199999988079071,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.002"
+    ]
+  },
+  {
+    "name": "Coffee / drawer pull 0",
+    "dimensions": [
+      0.18000000715255737,
+      0.017999999225139618,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.001"
+    ]
+  },
+  {
+    "name": "Coffee / door panel 1",
+    "dimensions": [
+      0.6029999852180481,
+      0.02199999988079071,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.003"
+    ]
+  },
+  {
+    "name": "Coffee / drawer pull 1",
+    "dimensions": [
+      0.18000000715255737,
+      0.017999999225139618,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.002"
+    ]
+  },
+  {
+    "name": "Coffee / door panel 2",
+    "dimensions": [
+      0.6029999852180481,
+      0.02199999988079071,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.004"
+    ]
+  },
+  {
+    "name": "Coffee / drawer pull 2",
+    "dimensions": [
+      0.18000000715255737,
+      0.017999999225139618,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.003"
+    ]
+  },
+  {
+    "name": "Coffee / door panel 3",
+    "dimensions": [
+      0.6029999852180481,
+      0.02199999988079071,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.005"
+    ]
+  },
+  {
+    "name": "Coffee / drawer pull 3",
+    "dimensions": [
+      0.18000000715255737,
+      0.017999999225139618,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.004"
+    ]
+  },
+  {
+    "name": "Coffee / door panel 4",
+    "dimensions": [
+      0.6029999852180481,
+      0.02199999988079071,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.006"
+    ]
+  },
+  {
+    "name": "Coffee / drawer pull 4",
+    "dimensions": [
+      0.18000000715255737,
+      0.017999999225139618,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.005"
+    ]
+  },
+  {
+    "name": "Coffee / door panel 5",
+    "dimensions": [
+      0.6029999852180481,
+      0.02199999988079071,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.007"
+    ]
+  },
+  {
+    "name": "Coffee / drawer pull 5",
+    "dimensions": [
+      0.18000000715255737,
+      0.017999999225139618,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Warm graphite.006"
+    ]
+  },
+  {
+    "name": "Lounge / rug",
+    "dimensions": [
+      4.849999904632568,
+      3.5,
+      0.026000000536441803
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas rug / Sage woven rug.001"
+    ]
+  },
+  {
+    "name": "Lounge / seat",
+    "dimensions": [
+      0.7400000095367432,
+      0.7300000190734863,
+      0.25
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.007"
+    ]
+  },
+  {
+    "name": "Lounge / back",
+    "dimensions": [
+      0.7599999904632568,
+      0.1899999976158142,
+      0.6700000166893005
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.001"
+    ]
+  },
+  {
+    "name": "Lounge / left arm",
+    "dimensions": [
+      0.17000000178813934,
+      0.7699999809265137,
+      0.3499999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.003"
+    ]
+  },
+  {
+    "name": "Lounge / right arm",
+    "dimensions": [
+      0.17000000178813934,
+      0.7699999809265137,
+      0.3499999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.005"
+    ]
+  },
+  {
+    "name": "Lounge / seat.001",
+    "dimensions": [
+      0.7400000095367432,
+      0.7300000190734863,
+      0.25
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.008"
+    ]
+  },
+  {
+    "name": "Lounge / back.001",
+    "dimensions": [
+      0.7599999904632568,
+      0.1899999976158142,
+      0.6700000166893005
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.002"
+    ]
+  },
+  {
+    "name": "Lounge / left arm.001",
+    "dimensions": [
+      0.17000000178813934,
+      0.7699999809265137,
+      0.3499999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.004"
+    ]
+  },
+  {
+    "name": "Lounge / right arm.001",
+    "dimensions": [
+      0.17000000178813934,
+      0.7699999809265137,
+      0.3499999940395355
+    ],
+    "hidden": false,
+    "materials": [
+      "Muted terracotta.006"
+    ]
+  },
+  {
+    "name": "Lounge / coffee tabletop",
+    "dimensions": [
+      1.2400000095367432,
+      1.2400000095367432,
+      0.07000000029802322
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Pale natural oak.064"
+    ]
+  },
+  {
+    "name": "Lounge / coffee table base",
+    "dimensions": [
+      0.7200000286102295,
+      0.7200000286102295,
+      0.38999998569488525
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Ivory porcelain.005"
+    ]
+  },
+  {
+    "name": "Lounge / continuous curved seat",
+    "dimensions": [
+      3.6855173110961914,
+      1.2615820169448853,
+      0.26999998092651367
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Ivory porcelain.002"
+    ]
+  },
+  {
+    "name": "Lounge / continuous curved back",
+    "dimensions": [
+      3.914341449737549,
+      1.1457196474075317,
+      0.7199999094009399
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Ivory porcelain.001"
+    ]
+  },
+  {
+    "name": "Manager approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.042"
+    ]
+  },
+  {
+    "name": "Manager approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.039",
+      "Keyboard recesses - soft grey.009",
+      "Keyboard keys - pearl.009",
+      "Keyboard lettering - grey.009"
+    ]
+  },
+  {
+    "name": "Manager approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.043",
+      "Device shells - warm ivory.044"
+    ]
+  },
+  {
+    "name": "Manager approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.009"
+    ]
+  },
+  {
+    "name": "Manager approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Manager upholstery - muted clay.001",
+      "Atlas stone / Chair frame - warm ivory.009"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.005"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.004",
+      "Keyboard recesses - soft grey.001",
+      "Keyboard keys - pearl.001",
+      "Keyboard lettering - grey.001"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.006",
+      "Device shells - warm ivory.007"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.001"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.001",
+      "Atlas stone / Chair frame - warm ivory.001"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_2 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.009"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_2 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.008",
+      "Keyboard recesses - soft grey.002",
+      "Keyboard keys - pearl.002",
+      "Keyboard lettering - grey.002"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_2 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.010",
+      "Device shells - warm ivory.011"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_2 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.002"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_2 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.003",
+      "Atlas stone / Chair frame - warm ivory.003"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_3 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.013"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_3 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.012",
+      "Keyboard recesses - soft grey.003",
+      "Keyboard keys - pearl.003",
+      "Keyboard lettering - grey.003"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_3 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.014",
+      "Device shells - warm ivory.015"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_3 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.003"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_4 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.017"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_4 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.016",
+      "Keyboard recesses - soft grey.004",
+      "Keyboard keys - pearl.004",
+      "Keyboard lettering - grey.004"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_4 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.018",
+      "Device shells - warm ivory.019"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_4 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.004"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_4 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.004",
+      "Atlas stone / Chair frame - warm ivory.004"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_1 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.024"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_1 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.023",
+      "Keyboard recesses - soft grey.005",
+      "Keyboard keys - pearl.005",
+      "Keyboard lettering - grey.005"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_1 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.025",
+      "Device shells - warm ivory.026"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_1 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.005"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_1 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.005",
+      "Atlas stone / Chair frame - warm ivory.005"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_2 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.028"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_2 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.027",
+      "Keyboard recesses - soft grey.006",
+      "Keyboard keys - pearl.006",
+      "Keyboard lettering - grey.006"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_2 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.029",
+      "Device shells - warm ivory.030"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_2 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.006"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_2 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.006",
+      "Atlas stone / Chair frame - warm ivory.006"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_3 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.032"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_3 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.031",
+      "Keyboard recesses - soft grey.007",
+      "Keyboard keys - pearl.007",
+      "Keyboard lettering - grey.007"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_3 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.033",
+      "Device shells - warm ivory.034"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_3 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.007"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_3 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.007",
+      "Atlas stone / Chair frame - warm ivory.007"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_4 approved monitor",
+    "dimensions": [
+      0.168412983417511,
+      0.6656566858291626,
+      0.4967600405216217
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.036"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_4 approved keyboard",
+    "dimensions": [
+      0.19526071846485138,
+      0.429038405418396,
+      0.022995920851826668
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.035",
+      "Keyboard recesses - soft grey.008",
+      "Keyboard keys - pearl.008",
+      "Keyboard lettering - grey.008"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_4 approved mouse",
+    "dimensions": [
+      0.10162417590618134,
+      0.05524107813835144,
+      0.02969237230718136
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.037",
+      "Device shells - warm ivory.038"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_4 approved mug",
+    "dimensions": [
+      0.08743421733379364,
+      0.11628822982311249,
+      0.08542608469724655
+    ],
+    "hidden": false,
+    "materials": [
+      "Cups - warm porcelain.008"
+    ]
+  },
+  {
+    "name": "Island_B_Seat_4 approved chair",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.008",
+      "Atlas stone / Chair frame - warm ivory.008"
+    ]
+  },
+  {
+    "name": "Island_A approved task lamp",
+    "dimensions": [
+      0.20107051730155945,
+      0.4282550513744354,
+      0.4981314241886139
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.002",
+      "YellowBulb.001",
+      "Device shells - warm ivory.003"
+    ]
+  },
+  {
+    "name": "Island_A approved books",
+    "dimensions": [
+      0.25576090812683105,
+      0.16064999997615814,
+      0.17663384974002838
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas rug / carpetDarker.001",
+      "Atlas rug / carpetWhite.001",
+      "_BAKE_TMP.001",
+      "_BAKE_TMP.002"
+    ]
+  },
+  {
+    "name": "Island_A approved pen cup",
+    "dimensions": [
+      0.12001185119152069,
+      0.12001185119152069,
+      0.11170478910207748
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.001"
+    ]
+  },
+  {
+    "name": "Island_B approved task lamp",
+    "dimensions": [
+      0.20107051730155945,
+      0.4282550513744354,
+      0.4981314241886139
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.021",
+      "YellowBulb.002",
+      "Device shells - warm ivory.022"
+    ]
+  },
+  {
+    "name": "Island_B approved books",
+    "dimensions": [
+      0.25576090812683105,
+      0.16064999997615814,
+      0.17663384974002838
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas rug / carpetDarker.002",
+      "Atlas rug / carpetWhite.002",
+      "_BAKE_TMP.003",
+      "_BAKE_TMP.004"
+    ]
+  },
+  {
+    "name": "Island_B approved pen cup",
+    "dimensions": [
+      0.12001185119152069,
+      0.12001185119152069,
+      0.11170478910207748
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.020"
+    ]
+  },
+  {
+    "name": "Approved floor plant - lounge",
+    "dimensions": [
+      1.153400182723999,
+      1.267564058303833,
+      1.1619129180908203
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.002",
+      "Approved pots - warm stone.001"
+    ]
+  },
+  {
+    "name": "Approved floor plant - meeting",
+    "dimensions": [
+      0.5999982953071594,
+      0.6847179532051086,
+      1.3455003499984741
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.007",
+      "Approved pots - warm stone.003"
+    ]
+  },
+  {
+    "name": "Approved floor plant - manager",
+    "dimensions": [
+      1.1129299402236938,
+      1.2230881452560425,
+      1.12114417552948
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.006",
+      "Approved pots - warm stone.002"
+    ]
+  },
+  {
+    "name": "Manager approved books",
+    "dimensions": [
+      0.2708056569099426,
+      0.17009998857975006,
+      0.1870240569114685
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas rug / carpetDarker.003",
+      "Atlas rug / carpetWhite.003",
+      "_BAKE_TMP.005",
+      "_BAKE_TMP.006"
+    ]
+  },
+  {
+    "name": "Manager approved lamp",
+    "dimensions": [
+      0.22533763945102692,
+      0.4799409806728363,
+      0.5582507252693176
+    ],
+    "hidden": false,
+    "materials": [
+      "Device shells - warm ivory.040",
+      "YellowBulb.003",
+      "Device shells - warm ivory.041"
+    ]
+  },
+  {
+    "name": "Island_A_Seat_1 approved chair.001",
+    "dimensions": [
+      0.6891734600067139,
+      0.6436008810997009,
+      1.2074267864227295
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas fabric / Chair upholstery - sage.002",
+      "Atlas stone / Chair frame - warm ivory.002"
+    ]
+  },
+  {
+    "name": "Collaboration zone rug",
+    "dimensions": [
+      3.799999952316284,
+      3.799999952316284,
+      0.017999999225139618
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas rug / Collaboration rug - woven sage.001"
+    ]
+  },
+  {
+    "name": "Collaboration round table",
+    "dimensions": [
+      1.3499999046325684,
+      1.5588457584381104,
+      0.7146021127700806
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / wood.001"
+    ]
+  },
+  {
+    "name": "Collaboration stool 0",
+    "dimensions": [
+      0.4399999976158142,
+      0.3810512125492096,
+      0.45960211753845215
+    ],
+    "hidden": false,
+    "materials": [
+      "Bake source neutral",
+      "Atlas rug / carpet.003"
+    ]
+  },
+  {
+    "name": "Collaboration stool 1",
+    "dimensions": [
+      0.440000057220459,
+      0.381051242351532,
+      0.45960211753845215
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / wood.005",
+      "Atlas rug / carpet.004"
+    ]
+  },
+  {
+    "name": "Collaboration stool 2",
+    "dimensions": [
+      0.4399999976158142,
+      0.3810512125492096,
+      0.45960211753845215
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / wood.006",
+      "Atlas rug / carpet.005"
+    ]
+  },
+  {
+    "name": "Window low storage",
+    "dimensions": [
+      2.200000047683716,
+      0.41999998688697815,
+      0.8199999928474426
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / wood.007"
+    ]
+  },
+  {
+    "name": "Window storage books",
+    "dimensions": [
+      0.3799999952316284,
+      0.23868775367736816,
+      0.2624359428882599
+    ],
+    "hidden": false,
+    "materials": [
+      "Desk accents - soft sage.007",
+      "Cups - warm porcelain.012",
+      "Desk accents - soft sage.008",
+      "Desk accents - soft sage.009"
+    ]
+  },
+  {
+    "name": "Collaboration table plant",
+    "dimensions": [
+      0.1556217223405838,
+      0.11703458428382874,
+      0.23023654520511627
+    ],
+    "hidden": false,
+    "materials": [
+      "tiny_treats_1.008",
+      "Approved pots - warm stone.004"
+    ]
+  },
+  {
+    "name": "Window shelf book group 0",
+    "dimensions": [
+      0.4179999828338623,
+      0.2625565230846405,
+      0.2886795401573181
+    ],
+    "hidden": false,
+    "materials": [
+      "Desk accents - soft sage.001",
+      "Cups - warm porcelain.010",
+      "Desk accents - soft sage.002",
+      "Desk accents - soft sage.003"
+    ]
+  },
+  {
+    "name": "Window shelf book group 1",
+    "dimensions": [
+      0.30400002002716064,
+      0.1909502148628235,
+      0.20994877815246582
+    ],
+    "hidden": false,
+    "materials": [
+      "Desk accents - soft sage.004",
+      "Cups - warm porcelain.011",
+      "Desk accents - soft sage.005",
+      "Desk accents - soft sage.006"
+    ]
+  },
+  {
+    "name": "Left window sill wall",
+    "dimensions": [
+      0.18000000715255737,
+      14.699999809265137,
+      0.5
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Perimeter warm plaster.005"
+    ]
+  },
+  {
+    "name": "Left window head",
+    "dimensions": [
+      0.20000000298023224,
+      14.699999809265137,
+      0.25
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Perimeter warm plaster.004"
+    ]
+  },
+  {
+    "name": "Left window upright",
+    "dimensions": [
+      0.1599999964237213,
+      0.11999999731779099,
+      3.0
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Perimeter pale oak trim.001"
+    ]
+  },
+  {
+    "name": "Left window upright.001",
+    "dimensions": [
+      0.1599999964237213,
+      0.11999999731779099,
+      3.0
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Perimeter pale oak trim.002"
+    ]
+  },
+  {
+    "name": "Left window upright.002",
+    "dimensions": [
+      0.1599999964237213,
+      0.11999999731779099,
+      3.0
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Perimeter pale oak trim.003"
+    ]
+  },
+  {
+    "name": "Left window upright.003",
+    "dimensions": [
+      0.1599999964237213,
+      0.11999999731779099,
+      3.0
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Perimeter pale oak trim.004"
+    ]
+  },
+  {
+    "name": "Left window upright.004",
+    "dimensions": [
+      0.1599999964237213,
+      0.11999999731779099,
+      3.0
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Perimeter pale oak trim.005"
+    ]
+  },
+  {
+    "name": "Left window upright.005",
+    "dimensions": [
+      0.1599999964237213,
+      0.11999999731779099,
+      3.0
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas wood / Perimeter pale oak trim.006"
+    ]
+  },
+  {
+    "name": "Coffee backing wall",
+    "dimensions": [
+      0.20000000298023224,
+      4.300000190734863,
+      2.950000047683716
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Perimeter warm plaster.001"
+    ]
+  },
+  {
+    "name": "Right cutaway perimeter",
+    "dimensions": [
+      0.18000000715255737,
+      10.199999809265137,
+      0.699999988079071
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Perimeter warm plaster.006"
+    ]
+  },
+  {
+    "name": "Front low wall left",
+    "dimensions": [
+      0.699999988079071,
+      0.18000000715255737,
+      0.699999988079071
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Perimeter warm plaster.002"
+    ]
+  },
+  {
+    "name": "Front low wall main",
+    "dimensions": [
+      19.100000381469727,
+      0.18000000715255737,
+      0.699999988079071
+    ],
+    "hidden": false,
+    "materials": [
+      "Atlas stone / Perimeter warm plaster.003"
+    ]
+  },
+  {
+    "name": "Erce exterior broad 1",
+    "dimensions": [
+      5.001909255981445,
+      4.41981840133667,
+      5.300000190734863
+    ],
+    "hidden": false,
+    "materials": [
+      "T_Leaf.001",
+      "T_Trunk.001"
+    ]
+  },
+  {
+    "name": "Erce exterior slender 1",
+    "dimensions": [
+      3.743582248687744,
+      3.2095272541046143,
+      5.099999904632568
+    ],
+    "hidden": false,
+    "materials": [
+      "T_Trunk.002",
+      "T_Leaf.002"
+    ]
+  },
+  {
+    "name": "Erce exterior slender 3",
+    "dimensions": [
+      3.816985607147217,
+      3.272459030151367,
+      5.199999809265137
+    ],
+    "hidden": false,
+    "materials": [
+      "T_Trunk.003",
+      "T_Leaf.003"
+    ]
+  }
+]

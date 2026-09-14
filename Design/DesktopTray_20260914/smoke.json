@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "url": "https://115.159.43.237/",
+  "title": "Office · 一起在场",
+  "electron": "44.3.0",
+  "webPreferences": {
+    "sandbox": true,
+    "contextIsolation": true,
+    "nodeIntegration": false
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "samples": 256,
+  "denoise": "Compositor Denoise High / Accurate with albedo and object-normal guides",
+  "total": 9,
+  "done": [
+    {
+      "object": "Island_A_Seat_1 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\133.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_A_Seat_2 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\139.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_A_Seat_3 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\144.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_A_Seat_4 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\150.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_B_Seat_1 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\180.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_B_Seat_2 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\186.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_B_Seat_3 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\192.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Island_B_Seat_4 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\198.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    },
+    {
+      "object": "Manager approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\Monitors_20260913\\237.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap",
+      "previous_size": 256,
+      "mode": "baked",
+      "samples": 256,
+      "denoised": true
+    }
+  ],
+  "errors": [],
+  "current": "Manager approved monitor",
+  "finished": true
+}

@@ -113,10 +113,14 @@ test("未进入空间的连接不能广播移动", async () => {
 
 test("角色选择会随 people 广播出去", async () => {
   await withServer(async ({ connect, peopleOf }) => {
-    const a = await connect("甲", { character: "man" });
-    assert.equal(peopleOf(a)[0].character, "man");
-    a.emit("character", "woman");
+    const a = await connect("甲", { character: "man_casual_2" });
+    assert.equal(peopleOf(a)[0].character, "man_casual_2");
+    a.emit("character", "woman_casual");
     await wait(150);
-    assert.equal(peopleOf(a)[0].character, "woman");
+    assert.equal(peopleOf(a)[0].character, "woman_casual");
+    // Unknown ids are sanitised back to the default rather than relayed.
+    a.emit("character", "bogus-id");
+    await wait(150);
+    assert.equal(peopleOf(a)[0].character, "woman_casual");
   });
 });

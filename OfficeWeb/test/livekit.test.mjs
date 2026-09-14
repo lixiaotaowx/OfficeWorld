@@ -28,8 +28,10 @@ test("会议室：未加入者拿不到 token", () => {
 });
 
 test("会议室：加入后放行", () => {
-  const people = new Map([["a", person("a", true)]]);
-  assert.equal(grant("a", MEETING_ROOM, people), MEETING_ROOM);
+  const people = new Map([["a", { ...person("a", true), meetingRoom: 'meeting-private' }]]);
+  assert.equal(grant("a", 'meeting-private', people), 'meeting-private');
+  assert.equal(grant("a", 'meeting-other', people), null);
+  assert.equal(grant("a", MEETING_ROOM, people), null);
 });
 
 test("屏幕房间：分享者本人可进入", () => {
@@ -97,7 +99,7 @@ test("端到端：同意后才签发，结束后收回", async (t) => {
     t.skip("未配置 LiveKit（缺少 OfficeWeb/.env）");
     return;
   }
-  const { http } = createOfficeServer();
+  const { http } = createOfficeServer({ authentication: false });
   await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
   const port = http.address().port;
   const connect = (name) =>
@@ -127,7 +129,7 @@ test("端到端：同意后才签发，结束后收回", async (t) => {
     b.emit("respond", { id: invite.id, accept: true });
     const session = await accepted;
 
-    assert.equal(session.room, screenRoom(b.id));
+    assert.equal(session.room, `call-${session.id}`);
     const granted = await a.emitWithAck("livekit-token", session.room);
     assert.ok(granted.token, "同意后应签发 token");
     assert.equal(granted.room, session.room);

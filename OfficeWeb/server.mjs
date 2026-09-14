@@ -1,29 +1,147 @@
+import { createSitting } from "./sitting.mjs";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash, timingSafeEqual } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { readFileSync, writeFileSync, renameSync } from "node:fs";
 import {
   grantRoom,
   livekit,
   mintToken,
-  screenRoom,
-  voiceRoom,
+  updatePrivatePermissions,
+  privateSources,
+  screenSources,
 } from "./livekit.mjs";
 import { serveStatic } from "./static.mjs";
+import { dirname, join } from "node:path";
+import { createChatStore } from "./chat-store.mjs";
+import { attachChat } from "./chat-server.mjs";
+import { createChatFiles } from "./chat-files.mjs";
+import { createAccounts } from "./accounts.mjs";
+import { createPrivateSessions } from "./privateSessions.mjs";
+import { createMeetings } from "./meetings.mjs";
+import { removeMeetingMedia } from "./livekit.mjs";
+
+// Load the sibling .env when present (LiveKit keys and the admin password).
+try {
+  process.loadEnvFile(fileURLToPath(new URL("./.env", import.meta.url)));
+} catch {
+  // No .env file: process.env is used as-is.
+}
 
 /** Built frontend, served by this same process when it exists. */
 const DIST = fileURLToPath(new URL("./dist/", import.meta.url));
 
 /** Must match the number of workstations in src/seats.ts; a test asserts this. */
-export const SEAT_COUNT = 8;
+export const SEAT_COUNT = 9;
+
+/**
+ * Administrator password for the kick feature. Override with ADMIN_PASSWORD in
+ * .env or the environment; administration stays disabled without a password.
+ */
+export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+
+/** Permanent seat roster on disk, so claimed desks survive restarts. */
+const DEFAULT_STATE_PATH = fileURLToPath(new URL("./state.json", import.meta.url));
 
 /** Players cannot be relayed outside the building, whatever a client claims. */
 export const MOTION_BOUNDS = { minX: -11, maxX: 12, minZ: -9, maxZ: 7 };
 /** Ceiling on motion relays per client, in milliseconds between updates. */
 export const MOTION_INTERVAL_MS = 60;
 
-export function createOfficeServer() {
+/** Valid bundled character ids, kept in sync with src/characters.ts. */
+const CHARACTER_IDS = new Set([
+  "man_adventurer",
+  "man_beach",
+  "man_casual_2",
+  "man_casual_hoodie",
+  "man_farmer",
+  "man_king",
+  "man_punk",
+  "man_spacesuit",
+  "man_suit",
+  "man_swat",
+  "man_worker",
+  "woman_adventurer",
+  "woman_casual",
+  "woman_formal",
+  "woman_medieval",
+  "woman_punk",
+  "woman_scifi",
+  "woman_soldier",
+  "woman_suit",
+  "woman_witch",
+  "woman_worker",
+]);
+const DEFAULT_CHARACTER = "woman_casual";
+const SIT_POSES = new Set([
+  "standard",
+  "relax",
+  "forward",
+  "recline",
+  "crossLegs",
+  "wave",
+]);
+const sanitizeCharacter = (id) =>
+  CHARACTER_IDS.has(id) ? id : DEFAULT_CHARACTER;
+
+/** Read the permanent roster from disk, tolerating a missing or corrupt file. */
+function loadRoster(statePath) {
+  try {
+    const data = JSON.parse(readFileSync(statePath, "utf8"));
+    if (!data || typeof data.seats !== "object" || data.seats === null)
+      return {};
+    const seats = {};
+    for (const [key, owner] of Object.entries(data.seats)) {
+      const seat = Number(key);
+      if (
+        Number.isInteger(seat) &&
+        seat >= 0 &&
+        seat < SEAT_COUNT &&
+        owner &&
+        typeof owner.id === "string" &&
+        owner.id
+      ) {
+        seats[seat] = { id: owner.id, name: String(owner.name || "同事") };
+      }
+    }
+    return seats;
+  } catch {
+    return {};
+  }
+}
+
+/** Persist the roster; a failed write only logs so it never breaks the room. */
+function saveRoster(statePath, roster) {
+  try {
+    writeFileSync(statePath + ".next", JSON.stringify({ seats: roster }, null, 2) + "\n");
+    renameSync(statePath + ".next", statePath);
+    return true;
+  } catch (error) {
+    console.error("OfficeWeb: 保存工位失败", error);
+    return false;
+  }
+}
+
+export function createOfficeServer(options = {}) {
+  const adminPassword = options.adminPassword ?? ADMIN_PASSWORD;
+  const statePath = options.statePath || DEFAULT_STATE_PATH;
+  const chatStore = createChatStore(options.chatPath || join(dirname(statePath), "chat-data"));
+  const chatFiles = createChatFiles(join(options.chatPath || join(dirname(statePath), "chat-data"), "files"), chatStore);
+  const accounts = options.authentication === false ? null : createAccounts(
+    options.accountsPath || fileURLToPath(new URL("./accounts.json", import.meta.url)),
+    { secure: options.secureCookies !== false, onLogin: (accountId) => {
+      for (const socket of io.sockets.sockets.values()) {
+        if (socket.data.account?.id === accountId && !accounts.authenticate(socket.request)) {
+          socket.emit("session-replaced", "账号已在其他地方登录，请重新登录");
+          socket.disconnect(true);
+        }
+      }
+    } },
+  );
   const http = createServer(async (req, res) => {
+    if (accounts && await accounts.handle(req, res)) return;
+    if (chatFiles.handle(req, res, accounts)) return;
     // The app is served from here in production; in development Vite serves it
     // and this falls through to the status document below.
     if (await serveStatic(DIST, req, res)) return;
@@ -37,17 +155,77 @@ export function createOfficeServer() {
     );
   });
   const io = new Server(http, { maxHttpBufferSize: 300000 });
+  const cleanup = setInterval(() => {
+    try { chatStore.prune(); chatFiles.prune(); } catch (error) { console.error("聊天过期清理失败", error); }
+  }, 60000);
+  cleanup.unref();
+  http.on("close", () => clearInterval(cleanup));
+  if (accounts) io.use((socket, next) => {
+    const user = accounts.authenticate(socket.request);
+    const sameOrigin = accounts.originAllowed(socket.request) ||
+      (!socket.request.headers.origin && socket.request.headers["sec-fetch-site"] === "same-origin");
+    if (!user || !sameOrigin) return next(Error("请先登录"));
+    socket.data.account = user;
+    next();
+  });
   const people = new Map(),
     invites = new Map(),
     sessions = new Map();
-  const publish = () => io.emit("people", [...people.values()]);
+  /** Permanent seat ownership: seat index -> { id, name }. */
+  const roster = loadRoster(statePath);
+  const save = () => saveRoster(statePath, roster);
+  /** One shared admin secret, so wrong guesses are throttled per socket. */
+  const adminFails = new Map();
+  const ADMIN_MAX_FAILS = 5;
+  const ADMIN_WINDOW_MS = 10 * 60000;
+  const adminBlocked = (socketId) => {
+    const now = Date.now();
+    for (const [id, entry] of adminFails) if (entry.until < now) adminFails.delete(id);
+    return (adminFails.get(socketId)?.count || 0) >= ADMIN_MAX_FAILS;
+  };
+  const recordAdminFail = (socketId) => {
+    const entry = adminFails.get(socketId) || { count: 0, until: Date.now() + ADMIN_WINDOW_MS };
+    entry.count++;
+    adminFails.set(socketId, entry);
+  };
+  // Hash both sides so the comparison neither leaks length nor short-circuits.
+  const adminSecretMatches = (given) => timingSafeEqual(
+    createHash("sha256").update(String(given)).digest(),
+    createHash("sha256").update(adminPassword).digest(),
+  );
+  /** Seat view for clients: who holds each desk and whether they are online. */
+  const seatsView = () =>
+    Array.from({ length: SEAT_COUNT }, (_, seat) => {
+      const owner = roster[seat];
+      if (!owner) return null;
+      const online = [...people.values()].some((p) => p.clientId === owner.id);
+      return { id: owner.id, name: owner.name, online };
+    });
+  const publish = () => {
+    io.emit("people", [...people.values()]);
+    io.emit("seats", seatsView());
+  };
+  const sitting = createSitting(people, roster, publish, SEAT_COUNT);
+  const meetings = createMeetings(io, people, publish, removeMeetingMedia,
+    options.meetingPermissions || updatePrivatePermissions);
   const end = (id) => {
     const c = sessions.get(id);
     if (!c) return;
     for (const p of c.peers) io.to(p).emit("session-end", id);
     sessions.delete(id);
+    if (c.room.startsWith("call-")) void (options.closePrivateMedia || removeMeetingMedia)(c.room).catch(error => {
+      if (error?.status !== 404) console.error("私聊媒体清理失败", error);
+    });
   };
+  const privateCalls = createPrivateSessions(io, people, sessions, invites, end, options.privatePermissions || updatePrivatePermissions);
   io.on("connection", (s) => {
+    if (accounts) s.use((_packet, next) => {
+      if (!accounts.authenticate(s.request)) {
+        s.emit("session-replaced", "登录已失效，请重新登录");
+        s.disconnect(true); return;
+      }
+      next();
+    });
     // Media access: a token is minted only when this socket is already
     // authorised for the requested room, so consent is enforced server-side.
     s.on("livekit-token", async (requested, reply) => {
@@ -68,6 +246,8 @@ export function createOfficeServer() {
           identity: s.id,
           name: person.name,
           room,
+          sources: privateSources(room, s.id, sessions) ??
+            (room.startsWith('meeting-') ? screenSources(s.id, [meetings.screenOwner(room)]) : undefined),
         });
         reply({ url: livekit.url, token, room });
       } catch (error) {
@@ -76,23 +256,36 @@ export function createOfficeServer() {
     });
     s.on("join", (data) => {
       if (people.has(s.id)) return;
+      // The client sends a stable id so the name and seat persist across visits.
+      const clientId = s.data.account?.id || String(data?.id || s.id).slice(0, 64) || s.id;
+      const name =
+        s.data.account?.name || String(data?.name || "同事").trim().slice(0, 24) || "同事";
+      for (const [id, p] of people) {
+        if (p.clientId === clientId) {
+          const previous = io.sockets.sockets.get(id);
+          previous?.emit("session-replaced", "账号已在其他窗口登录，请在新窗口继续使用");
+          previous?.disconnect(true);
+        }
+      }
+      // Restore the permanent desk this identity already owns, if any.
+      let seat = null;
+      for (const [seatKey, owner] of Object.entries(roster)) {
+        if (owner.id === clientId) seat = Number(seatKey);
+      }
       people.set(s.id, {
         id: s.id,
-        name:
-          String(data?.name || "同事")
-            .trim()
-            .slice(0, 24) || "同事",
-        // Seats are chosen by the player, never auto-assigned.
-        seat: null,
+        clientId,
+        name,
+        seat,
         // Which bundled avatar this player wears, so colleagues render it.
-        character: data?.character === "man" ? "man" : "woman",
+        character: sanitizeCharacter(s.data.account?.character || data?.character),
         // The tiny ambient thumbnail may be shown on the workstation screen.
         // It is deliberately unreadable, and the sharer can turn it off.
         previewAllowed: true,
         sharing: false,
         meeting: false,
       });
-      publish();
+      meetings.sync();
     });
     // Seat arbitration. Two players clicking the same workstation must not both
     // win, and this handler runs synchronously on the event loop, so the
@@ -105,34 +298,115 @@ export function createOfficeServer() {
       if (typeof reply !== "function") return;
       const person = people.get(s.id);
       if (!person) return reply({ ok: false, error: "请先进入空间" });
-      if (requested === null) {
-        person.seat = null;
-        publish();
-        return reply({ ok: true, seat: null });
-      }
+      // Seats are permanent: nobody gives one up on their own; only the
+      // administrator frees a desk (see the "admin" handler below).
+      if (requested === null)
+        return reply({
+          ok: false,
+          error: "工位一旦占用就是永久的，如需释放请联系管理员",
+        });
       if (!Number.isInteger(requested) || requested < 0 || requested >= SEAT_COUNT)
         return reply({ ok: false, error: "无效的工位" });
-      const holder = [...people.values()].find(
-        (x) => x.seat === requested && x.id !== s.id,
-      );
-      if (holder) return reply({ ok: false, error: `${holder.name} 已在这个工位` });
+      const blocked = sitting.blocked(`desk-${requested}`, person);
+      if (blocked) return reply({ ok: false, error: blocked });
+      const owner = roster[requested];
+      if (owner && owner.id !== person.clientId)
+        return reply({ ok: false, error: `${owner.name} 已在这个工位` });
+      const previousRoster = { ...roster }, previousSeat = person.seat;
+      // One desk per person: moving releases the previous desk. Reclaiming the
+      // same desk is a harmless no-op that also refreshes the stored name.
+      for (const [seatKey, held] of Object.entries(roster)) {
+        if (held.id === person.clientId && Number(seatKey) !== requested)
+          delete roster[seatKey];
+      }
+      roster[requested] = { id: person.clientId, name: person.name };
       person.seat = requested;
+      if (!save()) {
+        for (const key of Object.keys(roster)) delete roster[key];
+        Object.assign(roster, previousRoster); person.seat = previousSeat;
+        return reply({ ok: false, error: "工位未保存成功，请稍后重试" });
+      }
       publish();
       reply({ ok: true, seat: requested });
     });
+    function sendPreview(image) {
+      for (const person of people.values()) {
+        if (person.id === s.id || person.previewAllowed)
+          io.to(person.id).emit("preview", { id: s.id, image });
+      }
+    }
     s.on("preview-allowed", (allowed) => {
       const p = people.get(s.id);
       if (!p) return;
       p.previewAllowed = allowed === true;
-      // Clear the thumbnail already pushed to everyone if the sharer opts out.
-      if (!p.previewAllowed) io.emit("preview", { id: s.id, image: null });
+      // This preference controls receiving other workstations, never publishing.
       publish();
     });
-    s.on("character", (kind) => {
+    s.on("character", (id) => {
       const p = people.get(s.id);
       if (!p) return;
-      p.character = kind === "man" ? "man" : "woman";
+      p.character = sanitizeCharacter(id);
+      accounts?.setCharacter(p.clientId, p.character);
       publish();
+    });
+    // Permanent naming: a player can (re)name themselves at any time.
+    s.on("rename", (name, reply) => {
+      if (accounts) return typeof reply === "function" && reply({ ok: false, error: "账号姓名作为登录名，不支持在空间内修改" });
+      const p = people.get(s.id);
+      if (!p) return;
+      const clean = String(name || "").trim().slice(0, 24);
+      if (!clean) {
+        if (typeof reply === "function")
+          reply({ ok: false, error: "名字不能为空" });
+        return;
+      }
+      p.name = clean;
+      // Keep the permanent roster's display name in sync with this identity.
+      for (const owner of Object.values(roster)) {
+        if (owner.id === p.clientId) owner.name = clean;
+      }
+      save();
+      publish();
+      if (typeof reply === "function") reply({ ok: true, name: clean });
+    });
+    // Administrator: free a permanently held desk. The password is checked per
+    // request, so an authenticated admin panel simply repeats the same secret.
+    s.on("admin", (data, reply) => {
+      if (typeof reply !== "function") return;
+      if (!adminPassword)
+        return reply({ ok: false, error: "服务器尚未配置管理员密码" });
+      if (adminBlocked(s.id))
+        return reply({ ok: false, error: "管理员密码尝试过于频繁，请十分钟后再试" });
+      if (!adminSecretMatches(data?.password)) {
+        recordAdminFail(s.id);
+        return reply({ ok: false, error: "管理员密码不正确" });
+      }
+      const seat = Number(data?.seat);
+      if (!Number.isInteger(seat) || seat < 0 || seat >= SEAT_COUNT)
+        return reply({ ok: false, error: "无效的工位" });
+      const owner = roster[seat];
+      if (!owner) return reply({ ok: false, error: "这个工位本来就是空的" });
+      // Persist before telling anybody, so a failed write cannot free a desk
+      // that comes straight back on the next restart (the user claim path does
+      // the same rollback).
+      const previousRoster = { ...roster };
+      const online = [...people.values()].filter((p) => p.clientId === owner.id);
+      delete roster[seat];
+      if (!save()) {
+        for (const key of Object.keys(roster)) delete roster[key];
+        Object.assign(roster, previousRoster);
+        return reply({ ok: false, error: "工位未保存成功，请稍后重试" });
+      }
+      adminFails.delete(s.id);
+      // If the owner is online right now, take the desk away from them.
+      for (const person of online) person.seat = null;
+      publish();
+      for (const person of online)
+        io.to(person.id).emit("kicked", {
+          seat,
+          message: "你被管理员请出了工位",
+        });
+      reply({ ok: true, seat, name: owner.name });
     });
     // Motion relay. Throttled so one client cannot flood the room, and clamped
     // so a bogus position cannot place an avatar outside the building.
@@ -156,7 +430,9 @@ export function createOfficeServer() {
         z: Math.min(MOTION_BOUNDS.maxZ, Math.max(MOTION_BOUNDS.minZ, m.z)),
         rot: m.rot,
         moving: m.moving === true,
-        sitting: m.sitting === true,
+        sitting: m.sitting === true && !!p.sittingSpot && m.sittingSpot === p.sittingSpot,
+        sittingSpot: p.sittingSpot ?? null,
+        pose: SIT_POSES.has(m.pose) ? m.pose : "standard",
       });
     });
     s.on("sharing", (v) => {
@@ -164,19 +440,22 @@ export function createOfficeServer() {
       if (!p) return;
       p.sharing = v === true;
       if (!p.sharing) {
-        io.emit("preview", { id: s.id, image: null });
-        for (const [id, c] of sessions)
-          if (c.kind === "screen" && c.owner === s.id) end(id);
+        if (!p.previewSharing) sendPreview(null);
+        privateCalls.screenStopped(s.id);
       }
       publish();
+    });
+    s.on("ambient-sharing", value => {
+      const p = people.get(s.id);
+      if (!p) return;
+      p.previewSharing = value === true && p.seat != null;
+      if (!p.previewSharing) sendPreview(null);
     });
     let lastFrame = 0;
     s.on("preview", (image) => {
       const p = people.get(s.id);
       if (
-        !p?.sharing ||
-        // The sharer can opt out of the ambient workstation thumbnail.
-        !p.previewAllowed ||
+        !(p?.sharing || p?.previewSharing) ||
         typeof image !== "string" ||
         image.length > 250000 ||
         !image.startsWith("data:image/jpeg;base64,") ||
@@ -186,90 +465,27 @@ export function createOfficeServer() {
       lastFrame = Date.now();
       // Everyone, including the sharer: their own workstation monitor should
       // show their own screen, exactly like standing at a real desk.
-      io.emit("preview", { id: s.id, image });
+      sendPreview(image);
     });
-    s.on("chat", (text) => {
-      const p = people.get(s.id);
-      if (!p || typeof text !== "string" || !text.trim()) return;
-      io.emit("chat", {
-        id: randomUUID(),
-        name: p.name,
-        text: text.trim().slice(0, 1000),
-        time: Date.now(),
-      });
+    sitting.attach(s);
+    attachChat(io, s, people, chatStore, accounts?.listContacts);
+    s.on('private-screen', async (id, reply) => {
+      if (typeof reply !== 'function') return;
+      try { reply({ ok: true, session: await privateCalls.claim(s, id) }); }
+      catch (error) { reply({ ok: false, error: error.message }); }
     });
-    s.on("request", (d) => {
-      if (
-        !people.has(s.id) ||
-        !people.has(d?.target) ||
-        d.target === s.id ||
-        !["screen", "voice"].includes(d.kind)
-      )
-        return;
-      if (d.kind === "screen" && !people.get(d.target).sharing)
-        return s.emit("notice", "对方尚未开启共享");
-      if (
-        [...invites.values()].some(
-          (i) => i.from === s.id && i.target === d.target && i.kind === d.kind,
-        )
-      )
-        return;
-      const id = randomUUID();
-      const invite = {
-        id,
-        from: s.id,
-        target: d.target,
-        kind: d.kind,
-        name: people.get(s.id).name,
-      };
-      invites.set(id, invite);
-      io.to(d.target).emit("request", invite);
-      s.emit("notice", "请求已发送，等待对方同意");
-      setTimeout(() => {
-        if (invites.delete(id)) {
-          io.to(d.target).emit("request-expired", id);
-          io.to(s.id).emit("notice", "请求已过期");
-        }
-      }, 45000).unref();
-    });
-    s.on("respond", (d) => {
-      const i = invites.get(d?.id);
-      if (!i || i.target !== s.id) return;
-      invites.delete(i.id);
-      if (!d.accept) {
-        io.to(i.from).emit("notice", "对方婉拒了请求");
-        return;
-      }
-      if (!people.has(i.from)) return;
-      const c = {
-        id: i.id,
-        peers: [i.target, i.from],
-        kind: i.kind,
-        owner: i.target,
-        // Screen viewers share one room per sharer; voice is 1:1 per session.
-        room: i.kind === "screen" ? screenRoom(i.target) : voiceRoom(i.id),
-      };
-      sessions.set(c.id, c);
-      io.to(i.target).emit("session", { ...c, peer: i.from, initiator: true });
-      io.to(i.from).emit("session", { ...c, peer: i.target, initiator: false });
-    });
-    s.on("end", (id) => {
-      if (sessions.get(id)?.peers.includes(s.id)) end(id);
-    });
-    // Meeting audio uses one shared LiveKit room; the flag alone drives it.
-    s.on("meeting", (join) => {
-      const p = people.get(s.id);
-      if (!p) return;
-      p.meeting = join === true;
-      publish();
-    });
+    chatFiles.attach(io, s, people, accounts?.listContacts);
+    privateCalls.attach(s);
+    meetings.attach(s);
     s.on("disconnect", () => {
       people.delete(s.id);
+      adminFails.delete(s.id);
       for (const [id, c] of sessions) if (c.peers.includes(s.id)) end(id);
       for (const [id, i] of invites)
         if (i.from === s.id || i.target === s.id) {
           invites.delete(id);
           io.to(i.target).emit("request-expired", id);
+          io.to(i.from).emit('request-expired', id);
         }
       publish();
     });

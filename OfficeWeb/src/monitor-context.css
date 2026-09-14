@@ -1,0 +1,32 @@
+.monitor-context {
+  position: fixed;
+  z-index: 1000;
+  width: 252px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid #c7c9b9;
+  border-radius: 12px;
+  background: #f5f3eb;
+  color: #303f30;
+  box-shadow: 0 12px 36px #1a271a30;
+}
+.monitor-context > strong { display: block; font-size: 13px; }
+.monitor-context small { display: block; color: #747b6b; font-size: 11px; margin-top: 4px; }
+.monitor-context button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.monitor-context button:hover, .monitor-context button[aria-checked="true"] { background: #e1e7d3; }
+.monitor-context button:focus-visible { outline: 2px solid #536d43; }
+.monitor-context p { font-size: 12px; }

@@ -1,0 +1,145 @@
+{
+  "checks": [
+    {
+      "name": "formal HTTPS frontend loaded; test business accounts routed to isolated VPS service"
+    },
+    {
+      "name": "two authenticated clients joined VPS LiveKit"
+    },
+    {
+      "name": "bidirectional received audio energy and increasing bytes",
+      "detail": [
+        [
+          {
+            "kind": "audio",
+            "bytes": 3528,
+            "energy": 0.0041764291117729994
+          }
+        ],
+        [
+          {
+            "kind": "audio",
+            "bytes": 4978,
+            "energy": 0.005814595948481452
+          }
+        ]
+      ]
+    },
+    {
+      "name": "microphone off/on five cycles with receiver audio"
+    },
+    {
+      "name": "screen start/stop/restart three cycles, remote decoded frames"
+    },
+    {
+      "name": "reverse sharing and system-ended cleanup"
+    },
+    {
+      "name": "leave/rejoin restores audio and screen publication"
+    },
+    {
+      "name": "network offline/online restores both audio directions and re-sharing"
+    }
+  ],
+  "errors": [
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state.",
+    "WebSocket is already in CLOSING or CLOSED state."
+  ],
+  "samples": [
+    [
+      {
+        "kind": "audio",
+        "bytes": 43984,
+        "energy": 0.07681324735858057
+      },
+      {
+        "kind": "video",
+        "bytes": 3122,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 70413,
+        "energy": 0.12664987286498583
+      },
+      {
+        "kind": "video",
+        "bytes": 3011,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 96348,
+        "energy": 0.1762605548421496
+      },
+      {
+        "kind": "video",
+        "bytes": 2916,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 122829,
+        "energy": 0.22781775011332187
+      },
+      {
+        "kind": "video",
+        "bytes": 3653,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 13747,
+        "energy": 0.02360298511723955
+      },
+      {
+        "kind": "video",
+        "bytes": 3089,
+        "frames": 7
+      }
+    ],
+    [
+      {
+        "kind": "audio",
+        "bytes": 14488,
+        "energy": 0.030708506304734123
+      },
+      {
+        "kind": "audio",
+        "bytes": 28767,
+        "energy": 0.07073144868527492
+      },
+      {
+        "kind": "video",
+        "bytes": 3045,
+        "frames": 7
+      }
+    ]
+  ]
+}

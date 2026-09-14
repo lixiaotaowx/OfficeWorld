@@ -1,0 +1,16 @@
+<!doctype html><html><meta charset="utf-8"><body><div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import SidePanel from '/src/SidePanel.tsx';
+import '/src/styles.css';
+import '/src/workspace-ui.css';
+import '/src/directory-ui.css';
+import '/src/workspace-responsive.css';
+const noop=()=>{};
+createRoot(document.getElementById('root')).render(React.createElement(SidePanel,{
+ people:[{id:'socket',clientId:'online',name:'在线同事',seat:0,sharing:false}],
+ seats:[{id:'online',name:'在线同事',online:true},{id:'offline',name:'离线同事',online:false},null],
+ messages:[],previews:{},myId:'socket',accountId:'online',mySeat:0,selected:1,tab:'people',panelOpen:true,connected:true,text:'',
+ onTab:noop,onSelect:noop,onOpenDesks:noop,onRequest:noop,onText:noop,onSend:noop,onFile:async()=>true,loadFile:async()=>new Blob()
+}));
+</script></body></html>

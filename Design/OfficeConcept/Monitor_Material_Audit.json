@@ -1,0 +1,368 @@
+{
+  "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\\u5907\u4efd_\u72ec\u7acbUV\u70d8\u7119_20260912.blend",
+  "running": false,
+  "objects": [
+    {
+      "name": "Manager approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.042",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_A_Seat_1 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.005",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_A_Seat_2 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.009",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_A_Seat_3 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.013",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_A_Seat_4 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.017",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_B_Seat_1 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.024",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_B_Seat_2 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.028",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_B_Seat_3 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.032",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Island_B_Seat_4 approved monitor",
+      "materials": [
+        {
+          "name": "Device shells - warm ivory.036",
+          "nodes": [
+            {
+              "name": "\u539f\u7406\u5316 BSDF",
+              "type": "BSDF_PRINCIPLED"
+            },
+            {
+              "name": "\u6750\u8d28\u8f93\u51fa",
+              "type": "OUTPUT_MATERIAL"
+            },
+            {
+              "name": "UV \u8d34\u56fe",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKE_OUTPUT_UNCONNECTED",
+              "type": "TEX_IMAGE"
+            },
+            {
+              "name": "UV \u8d34\u56fe.001",
+              "type": "UVMAP"
+            },
+            {
+              "name": "BAKED_CAMERA_SURFACE",
+              "type": "EMISSION"
+            },
+            {
+              "name": "\u5149\u7a0b",
+              "type": "LIGHT_PATH"
+            },
+            {
+              "name": "BAKED_PREVIEW_SOURCE_BOUNCE",
+              "type": "MIX_SHADER"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

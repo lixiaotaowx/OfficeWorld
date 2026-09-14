@@ -1,0 +1,30 @@
+.chat-inbox[hidden] { display: none; }
+.chat-inbox { min-width: 0; min-height: 0; display: flex; flex: 1; flex-direction: column; padding: 0 18px 14px; }
+.conversation-list { overflow-y: auto; min-height: 0; max-height: 540px; }
+.conversation-list-heading, .conversation-heading { padding: 16px 0; }
+.conversation-list-heading h3, .conversation-heading h3 { margin: 0 0 5px; font-size: 17px; }
+.conversation-list-heading small, .conversation-heading small { color: #849387; font-size: 11px; }
+.conversation-search { width: 100%; box-sizing: border-box; margin-bottom: 12px; padding: 11px 13px; border: 1px solid #70836d44; border-radius: 10px; background: #ffffff0a; color: inherit; }
+.conversation-row { display: flex; align-items: center; gap: 11px; width: 100%; padding: 13px 4px; text-align: left; border: 0; border-bottom: 1px solid #82967a20; border-radius: 0; background: transparent; color: inherit; cursor: pointer; }
+.conversation-row:hover { background: #d4e9b10d; }
+.conversation-avatar { position: relative; display: grid; place-items: center; flex: 0 0 40px; height: 40px; background: #5c715b; color: #f4f2e4; border-radius: 12px; font-size: 16px; }
+.conversation-avatar.public { color: #263b31; background: #d8e9b4; }
+.conversation-avatar i { position: absolute; right: -2px; bottom: -2px; width: 9px; height: 9px; border-radius: 50%; background: #9fe2a1; border: 2px solid #26382d; }
+.conversation-copy { flex: 1; min-width: 0; display: grid; gap: 5px; }
+.conversation-copy strong { font-size: 13px; }
+.conversation-copy small { font-size: 11px; color: #92a08e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-meta { display: grid; justify-items: end; gap: 5px; }
+.conversation-meta time { font-size: 10px; color: #899984; }
+.conversation-meta b, .chat-unread { background: #d18d68; color: white; border-radius: 12px; padding: 2px 6px; font-size: 10px; }
+.conversation-heading { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #82967a30; margin-bottom: 10px; }
+.conversation-heading button { border: 0; background: transparent; color: #d9e8bd; cursor: pointer; padding: 8px 0; white-space: nowrap; }
+.conversation-heading h3 { overflow-wrap: anywhere; }
+.conversation-empty { color: #92a08e; font-size: 13px; padding: 22px 0; }
+.chat-inbox .chat { padding-top: 0; }
+.chat-inbox .messages { padding: 14px 0; max-height: 360px; }
+.chat-inbox .messages article { max-width: 90%; border-radius: 12px; padding: 10px; background: #ffffff09; }
+.chat-inbox .messages article.message-own { margin-left: auto; background: #d9e8b316; }
+.chat-inbox .messages article p { overflow-wrap: anywhere; border: 0; background: none; padding: 0; margin: 4px 0 0; }
+.chat-inbox .chat form { margin: 8px 0 0; }
+.chat-inbox .chat-file-tools { padding-left: 0; padding-right: 0; }
+.chat-inbox .chat-retention { padding-left: 0; padding-right: 0; }

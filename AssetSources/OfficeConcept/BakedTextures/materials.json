@@ -1,0 +1,921 @@
+{
+  "textures": [
+    "Office_Baked_Fabric_Albedo.png",
+    "Office_Baked_Fabric_Architecture___rear_room_wall_Albedo.png",
+    "Office_Baked_Floor.png",
+    "Office_Baked_Floor_Meeting.png",
+    "Office_Baked_Rug_Albedo.png",
+    "Office_Baked_Stone_Albedo.png",
+    "Office_Baked_Stone_Front_cutaway_base_Albedo.png",
+    "Office_Baked_Stone_Front_low_wall_main_Albedo.png",
+    "Office_Baked_Stone_Left_window_head_Albedo.png",
+    "Office_Baked_Stone_Left_window_sill_wall_Albedo.png",
+    "Office_Baked_Stone_Right_cutaway_perimeter_Albedo.png",
+    "Office_Baked_Stone_Window_upper_beam_Albedo.png",
+    "Office_Baked_Trim_Albedo.png",
+    "Office_Baked_Wall_Manager.png",
+    "Office_Baked_Wall_Meeting.png",
+    "Office_Baked_Wood_Albedo.png",
+    "Office_Baked_Wood_Rear_open_top_beam_Albedo.png",
+    "Office_Baked_Wood_Window_lower_sill_Albedo.png"
+  ],
+  "materials": [
+    {
+      "material": "Warm graphite",
+      "texture": null,
+      "objects": 88,
+      "roughness": 0.4,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Wood",
+      "texture": "Office_Baked_Wood_Albedo.png",
+      "objects": 85,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Fabric",
+      "texture": "Office_Baked_Fabric_Albedo.png",
+      "objects": 51,
+      "roughness": 0.86,
+      "metallic": 0.0
+    },
+    {
+      "material": "Device shells - warm ivory",
+      "texture": null,
+      "objects": 44,
+      "roughness": 0.42,
+      "metallic": 0.0
+    },
+    {
+      "material": "Graphite rubber",
+      "texture": null,
+      "objects": 40,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone",
+      "texture": "Office_Baked_Stone_Albedo.png",
+      "objects": 31,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Trim",
+      "texture": "Office_Baked_Trim_Albedo.png",
+      "objects": 24,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Rug",
+      "texture": "Office_Baked_Rug_Albedo.png",
+      "objects": 20,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Detail frames - honey oak",
+      "texture": null,
+      "objects": 13,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Cups - warm porcelain",
+      "texture": null,
+      "objects": 12,
+      "roughness": 0.3,
+      "metallic": 0.0
+    },
+    {
+      "material": "Desk accents - soft sage",
+      "texture": null,
+      "objects": 9,
+      "roughness": 0.65,
+      "metallic": 0.0
+    },
+    {
+      "material": "Keyboard keys - pearl",
+      "texture": null,
+      "objects": 9,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Keyboard lettering - grey",
+      "texture": null,
+      "objects": 9,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "Keyboard recesses - soft grey",
+      "texture": null,
+      "objects": 9,
+      "roughness": 0.7,
+      "metallic": 0.0
+    },
+    {
+      "material": "Muted terracotta",
+      "texture": null,
+      "objects": 8,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Clear glass",
+      "texture": null,
+      "objects": 6,
+      "roughness": 0.2,
+      "metallic": 0.0
+    },
+    {
+      "material": "Honey oak",
+      "texture": null,
+      "objects": 6,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Approved pots - warm stone",
+      "texture": null,
+      "objects": 4,
+      "roughness": 0.75,
+      "metallic": 0.0
+    },
+    {
+      "material": "tiny_treats_1",
+      "texture": "tiny_treats_texture_1.png",
+      "objects": 4,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "tiny_treats_1.001",
+      "texture": "tiny_treats_texture_1.png",
+      "objects": 4,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "T_Leaf",
+      "texture": null,
+      "objects": 3,
+      "roughness": 0.83,
+      "metallic": 0.0
+    },
+    {
+      "material": "T_Trunk",
+      "texture": null,
+      "objects": 3,
+      "roughness": 0.83,
+      "metallic": 0.0
+    },
+    {
+      "material": "YellowBulb",
+      "texture": null,
+      "objects": 3,
+      "roughness": 1.0,
+      "metallic": 1.0
+    },
+    {
+      "material": "Baked surface / Manager wall",
+      "texture": "Office_Baked_Wall_Manager.png",
+      "objects": 2,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "Display background",
+      "texture": null,
+      "objects": 2,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Original generated abstract art",
+      "texture": "Office_Abstract_Prints.png",
+      "objects": 2,
+      "roughness": 0.85,
+      "metallic": 0.0
+    },
+    {
+      "material": "Sage green",
+      "texture": null,
+      "objects": 2,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "tiny_treats_1.005",
+      "texture": "tiny_treats_texture_1.png",
+      "objects": 2,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Fabric / Architecture / rear room",
+      "texture": "Office_Baked_Fabric_Architecture___rear_room_wall_Albedo.png",
+      "objects": 1,
+      "roughness": 0.86,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Floor",
+      "texture": "Office_Baked_Floor.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Meeting floor",
+      "texture": "Office_Baked_Floor_Meeting.png",
+      "objects": 1,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Meeting wall",
+      "texture": "Office_Baked_Wall_Meeting.png",
+      "objects": 1,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone / Front cutaway base",
+      "texture": "Office_Baked_Stone_Front_cutaway_base_Albedo.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone / Front low wall main",
+      "texture": "Office_Baked_Stone_Front_low_wall_main_Albedo.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone / Left window head",
+      "texture": "Office_Baked_Stone_Left_window_head_Albedo.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone / Left window sill wall",
+      "texture": "Office_Baked_Stone_Left_window_sill_wall_Albedo.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone / Right cutaway perimeter",
+      "texture": "Office_Baked_Stone_Right_cutaway_perimeter_Albedo.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Stone / Window upper beam",
+      "texture": "Office_Baked_Stone_Window_upper_beam_Albedo.png",
+      "objects": 1,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Wood / Rear open top beam",
+      "texture": "Office_Baked_Wood_Rear_open_top_beam_Albedo.png",
+      "objects": 1,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Baked surface / Wood / Window lower sill",
+      "texture": "Office_Baked_Wood_Window_lower_sill_Albedo.png",
+      "objects": 1,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Blackboard - charcoal green",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Manager warm grey woven rug",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 1,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Material",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_A_Seat_1 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_A_Seat_2 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_A_Seat_3 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_A_Seat_4 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_B_Seat_1 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_B_Seat_2 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_B_Seat_3 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Island_B_Seat_4 DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "Screen - soft daylight Manager DISPLAY",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.36,
+      "metallic": 0.0
+    },
+    {
+      "material": "tiny_treats_1.003",
+      "texture": "tiny_treats_texture_1.png",
+      "objects": 1,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "tiny_treats_1.004",
+      "texture": "tiny_treats_texture_1.png",
+      "objects": 1,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Warm ivory.001",
+      "texture": null,
+      "objects": 1,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "_defaultMat",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 1.0
+    },
+    {
+      "material": "Atlas fabric / Chair upholstery - sage",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.86,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas fabric / Ivory porcelain",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.86,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas fabric / Manager upholstery - muted clay",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.86,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas fabric / Muted sage upholstery",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.86,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / carpet",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / carpet.001",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / carpet.002",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / carpetDarker",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / carpetWhite",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / Collaboration rug - woven sage",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas rug / Sage woven rug",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas stone / Chair frame - warm ivory",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas stone / Floor - warm limestone 120cm",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas stone / Ivory porcelain",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas stone / Perimeter warm plaster",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas stone / Warm graphite",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.63,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / Pale natural oak",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / Perimeter pale oak trim",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / Warm graphite",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / wood",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / wood.002",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / wood.003",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Atlas wood / wood.004",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.5,
+      "metallic": 0.0
+    },
+    {
+      "material": "Black",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.689,
+      "metallic": 0.0
+    },
+    {
+      "material": "Black.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.689,
+      "metallic": 0.0
+    },
+    {
+      "material": "Black.002",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.689,
+      "metallic": 0.0
+    },
+    {
+      "material": "Black.004",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.689,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpet",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpet.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpet.002",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpetDarker",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpetDarker.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpetWhite",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "carpetWhite.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "Collaboration rug - woven sage",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.93,
+      "metallic": 0.0
+    },
+    {
+      "material": "Detail trim - linen ivory",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Exterior grass - quiet olive",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "Floor - warm limestone 120cm",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Grey",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.757,
+      "metallic": 0.223
+    },
+    {
+      "material": "Grey.002",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.757,
+      "metallic": 0.223
+    },
+    {
+      "material": "GreyLight",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.757,
+      "metallic": 0.223
+    },
+    {
+      "material": "GreyLight.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.757,
+      "metallic": 0.223
+    },
+    {
+      "material": "GreyLight.003",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.757,
+      "metallic": 0.223
+    },
+    {
+      "material": "GreyMetal",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.511,
+      "metallic": 0.72
+    },
+    {
+      "material": "Ivory porcelain",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "leafsGreen",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 1.0
+    },
+    {
+      "material": "leafsGreen.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 1.0
+    },
+    {
+      "material": "Manager deep sage plaster",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "Meeting floor warm beige",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "Meeting olive plaster",
+      "texture": "Office_Materials_Atlas.png",
+      "objects": 0,
+      "roughness": 0.8,
+      "metallic": 0.0
+    },
+    {
+      "material": "metal",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "metal.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "Muted sage upholstery",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Pale natural oak",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.55,
+      "metallic": 0.0
+    },
+    {
+      "material": "Park panorama - camera backdrop",
+      "texture": "Park_City_Panorama.png",
+      "objects": 0,
+      "roughness": null,
+      "metallic": null
+    },
+    {
+      "material": "Perimeter pale oak trim",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.6,
+      "metallic": 0.0
+    },
+    {
+      "material": "Perimeter warm plaster",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.85,
+      "metallic": 0.0
+    },
+    {
+      "material": "plant",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "plant.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "Rubber",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.809,
+      "metallic": 0.0
+    },
+    {
+      "material": "Sage woven rug",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.95,
+      "metallic": 0.0
+    },
+    {
+      "material": "T_Leaf_02",
+      "texture": "t_leafcard3.png",
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "White",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.694,
+      "metallic": 0.0
+    },
+    {
+      "material": "White.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.694,
+      "metallic": 0.0
+    },
+    {
+      "material": "White.002",
+      "texture": null,
+      "objects": 0,
+      "roughness": 0.694,
+      "metallic": 0.0
+    },
+    {
+      "material": "wood",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "wood.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "wood.002",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "wood.003",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "wood.004",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 0.0
+    },
+    {
+      "material": "woodBark",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 1.0
+    },
+    {
+      "material": "woodBark.001",
+      "texture": null,
+      "objects": 0,
+      "roughness": 1.0,
+      "metallic": 1.0
+    }
+  ],
+  "total_bytes": 17732780
+}

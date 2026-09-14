@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>起立跳帧检查</title>
+<style>body{margin:0}canvas{display:block}</style>
+<script type="module">
+import * as THREE from 'three';
+import { OfficeAvatar } from '/src/OfficeAvatar.ts';
+import { RemoteAvatars } from '/src/RemoteAvatars.ts';
+import { sittingSpot } from '/src/sittingSpots.ts';
+const world=new THREE.Scene();world.background=new THREE.Color('#ccd3c9');
+world.add(new THREE.HemisphereLight(0xffffff,0x62665a,2));
+const camera=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.01,100);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);document.body.appendChild(renderer.domElement);
+const reservations=[],reports=[];
+const avatar=new OfficeAvatar(world,camera,text=>reports.push(text),async id=>{reservations.push(id);return true;});
+await avatar.load('man_suit');
+const spot=sittingSpot('desk-0');
+const seated=async()=>{
+ avatar.root.position.set(spot.stand.x,0,spot.stand.z);
+ await avatar.sitAt('desk-0');
+ for(let i=0;i<30;i++)avatar.update(.1);
+};
+function draw(){camera.position.set(spot.stand.x+2.5,1.5,spot.stand.z+3);camera.lookAt(spot.stand.x,.85,spot.stand.z);renderer.render(world,camera);}
+const snapshot=()=>({state:avatar.getState(),blend:avatar.sitBlend,target:avatar.sitTarget,
+ y:avatar.character.model.position.y,ground:avatar.character.groundY,weight:avatar.current?.getEffectiveWeight(),
+ legs:['UpperLegL','UpperLegR','LowerLegL','LowerLegR'].map(name=>avatar.bones.get(name)?.quaternion.toArray())});
+await seated();draw();
+window.standAudit={avatar,world,camera,spot,seated,snapshot,draw,reservations,reports,RemoteAvatars,THREE};
+</script>
+</html>

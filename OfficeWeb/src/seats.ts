@@ -37,6 +37,7 @@ const SEAT_ROWS: Array<{
   x: number;
   chairZ: number;
   displayZ: number;
+  angle?: number;
 }> = [
   // Island A: even seats face -z, odd seats face +z (across the desk).
   { id: "Island_A_Seat_1", label: "A-1", x: 0.267, chairZ: 4.98, displayZ: 4.01 },
@@ -48,9 +49,14 @@ const SEAT_ROWS: Array<{
   { id: "Island_B_Seat_2", label: "B-2", x: -0.06, chairZ: -2.18, displayZ: -1.21 },
   { id: "Island_B_Seat_3", label: "B-3", x: 1.66, chairZ: 0.18, displayZ: -0.79 },
   { id: "Island_B_Seat_4", label: "B-4", x: 1.66, chairZ: -2.18, displayZ: -1.21 },
+  // Keep the eight existing indices stable; manager faces +z toward the desk.
+  { id: "Manager", label: "老板工位", x: 8.65, chairZ: -6.88, displayZ: -5.91, angle: 0 },
 ];
 
 const DISPLAY_Y = 1.093;
+
+/** Chair seat height in metres, used to lower the avatar's hips when seated. */
+export const SEAT_HEIGHT = 0.58;
 
 export const WORKSTATIONS: Workstation[] = SEAT_ROWS.map((row, index) => ({
   index,
@@ -60,16 +66,16 @@ export const WORKSTATIONS: Workstation[] = SEAT_ROWS.map((row, index) => ({
     x: row.x,
     z: row.chairZ,
     // Even seats look back across the desk, odd ones look the other way.
-    angle: index % 2 === 0 ? Math.PI : 0,
+    angle: row.angle ?? (index % 2 === 0 ? Math.PI : 0),
   },
   stand: {
     x: row.x,
-    z: row.chairZ + (index % 2 === 0 ? 0.8 : -0.8),
+    z: row.chairZ - Math.cos(row.angle ?? (index % 2 === 0 ? Math.PI : 0)) * 0.8,
   },
   display: { x: row.x, y: DISPLAY_Y, z: row.displayZ },
 }));
 
-/** The manager office has a screen but is not claimable yet. */
+/** Manager display kept as an alias for existing consumers. */
 export const MANAGER_DISPLAY: XYZ = {
   x: 8.65,
   y: DISPLAY_Y,

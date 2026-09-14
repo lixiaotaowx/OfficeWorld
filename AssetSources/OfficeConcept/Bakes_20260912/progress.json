@@ -1,0 +1,2977 @@
+{
+  "total": 424,
+  "done": [
+    {
+      "object": "Collaboration round table",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\001.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Approved floor plant - lounge",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\002.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Approved floor plant - manager",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\003.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Approved floor plant - meeting",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\004.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Architecture / ivory floor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\005.png",
+      "size": 4096,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Architecture / manager side wall",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\006.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Architecture / rear room wall",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\007.png",
+      "size": 2048,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Architecture / room divider",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\008.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Blackboard chalk ledge",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\009.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Blackboard timber horizontal frame",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\010.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Blackboard timber horizontal frame.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\011.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Blackboard timber side frame",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\012.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Blackboard timber side frame.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\013.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / cabinets",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\014.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / countertop",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\015.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / door panel 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\016.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / door panel 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\017.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / door panel 2",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\018.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / door panel 3",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\019.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / door panel 4",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\020.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / door panel 5",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\021.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / drawer pull 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\022.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / drawer pull 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\023.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / drawer pull 2",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\024.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / drawer pull 3",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\025.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / drawer pull 4",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\026.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / drawer pull 5",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\027.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / peninsula",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\028.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / peninsula support",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\029.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / stool cushion",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\030.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / stool cushion.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\031.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee / stool leg",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\032.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / stool leg.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\033.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / stool leg.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\034.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / stool leg.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\035.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee / wall shelf",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\036.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee abstract print frame",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\037.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee abstract print frame.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\038.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee abstract print frame.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\039.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee abstract print frame.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\040.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee abstract print print",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\041.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Coffee backing wall",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\042.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee cup",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\043.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Coffee machine",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\044.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Coffee machine panel",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\045.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Collaboration stool 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\046.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Collaboration stool 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\047.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Collaboration stool 2",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\048.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Collaboration table plant",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\049.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Collaboration zone rug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\050.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Entry step 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\051.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Entry step 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\052.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Entry step 2",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\053.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Erce exterior broad 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\054.png",
+      "size": 2048,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Erce exterior slender 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\055.png",
+      "size": 2048,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Erce exterior slender 3",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\056.png",
+      "size": 2048,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Front collaboration blackboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\057.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Front cutaway base",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\058.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front low wall left",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\059.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front low wall main",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\060.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\061.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\062.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\063.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\064.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\065.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\066.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\067.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\068.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\069.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\070.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.010",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\071.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.011",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\072.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.012",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\073.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.013",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\074.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.014",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\075.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.015",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\076.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.016",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\077.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.017",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\078.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.018",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\079.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.019",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\080.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.020",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\081.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.021",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\082.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.022",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\083.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.023",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\084.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.024",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\085.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.025",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\086.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.026",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\087.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.027",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\088.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.028",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\089.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.029",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\090.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.030",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\091.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.031",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\092.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.032",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\093.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.033",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\094.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.034",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\095.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.035",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\096.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.036",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\097.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.037",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\098.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.038",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\099.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.039",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\100.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.040",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\101.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.041",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\102.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.042",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\103.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Front oak slat.043",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\104.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A approved books",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\105.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A approved pen cup",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\106.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A approved task lamp",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\107.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A desktop plant 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\108.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A desktop plant 2",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\109.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A desktop plant 3",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\110.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A desktop plant 4",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\111.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A divider clip",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\112.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A divider clip.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\113.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A divider clip.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\114.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A divider clip.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\115.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A felt panel 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\116.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A felt panel 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\117.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A oak end",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\118.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A oak end.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\119.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel horizontal trim",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\120.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel horizontal trim.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\121.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel horizontal trim.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\122.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel horizontal trim.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\123.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel vertical trim",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\124.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel vertical trim.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\125.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel vertical trim.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\126.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A panel vertical trim.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\127.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A top",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\128.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A_Seat_1 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\129.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_A_Seat_1 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\130.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A_Seat_1 approved chair.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\131.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A_Seat_1 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\132.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_1 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\133.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_1 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\134.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_1 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\135.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_2 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\136.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_A_Seat_2 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\137.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A_Seat_2 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\138.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_2 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\139.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_2 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\140.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_2 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\141.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_3 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\142.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_A_Seat_3 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\143.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_3 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\144.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_3 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\145.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_3 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\146.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_4 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\147.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_A_Seat_4 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\148.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_A_Seat_4 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\149.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_4 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\150.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_4 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\151.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_A_Seat_4 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\152.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B approved books",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\153.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B approved pen cup",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\154.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B approved task lamp",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\155.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B desktop plant 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\156.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B desktop plant 2",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\157.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B desktop plant 3",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\158.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B desktop plant 4",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\159.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B divider clip",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\160.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B divider clip.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\161.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B divider clip.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\162.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B divider clip.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\163.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B felt panel 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\164.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B felt panel 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\165.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B oak end",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\166.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B oak end.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\167.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel horizontal trim",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\168.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel horizontal trim.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\169.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel horizontal trim.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\170.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel horizontal trim.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\171.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel vertical trim",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\172.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel vertical trim.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\173.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel vertical trim.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\174.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B panel vertical trim.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\175.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B top",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\176.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B_Seat_1 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\177.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_B_Seat_1 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\178.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B_Seat_1 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\179.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_1 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\180.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_1 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\181.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_1 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\182.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_2 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\183.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_B_Seat_2 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\184.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B_Seat_2 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\185.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_2 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\186.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_2 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\187.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_2 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\188.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_3 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\189.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_B_Seat_3 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\190.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B_Seat_3 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\191.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_3 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\192.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_3 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\193.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_3 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\194.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_4 DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\195.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Island_B_Seat_4 approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\196.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Island_B_Seat_4 approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\197.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_4 approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\198.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_4 approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\199.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Island_B_Seat_4 approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\200.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Left window head",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\201.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window sill wall",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\202.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window upright",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\203.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window upright.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\204.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window upright.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\205.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window upright.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\206.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window upright.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\207.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Left window upright.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\208.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Lounge / back",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\209.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / back.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\210.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / coffee table base",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\211.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Lounge / coffee tabletop",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\212.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Lounge / continuous curved back",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\213.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Lounge / continuous curved seat",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\214.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Lounge / left arm",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\215.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / left arm.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\216.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / right arm",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\217.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / right arm.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\218.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / rug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\219.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Lounge / seat",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\220.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Lounge / seat.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\221.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager / desk",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\222.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager / desk support",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\223.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager / desk support.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\224.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager / low cabinet",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\225.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager / rug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\226.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager DISPLAY",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\227.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager abstract print frame",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\228.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager abstract print frame.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\229.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager abstract print frame.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\230.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager abstract print frame.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\231.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager abstract print print",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\232.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Manager approved books",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\233.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager approved chair",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\234.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager approved keyboard",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\235.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Manager approved lamp",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\236.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Manager approved monitor",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\237.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Manager approved mouse",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\238.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Manager approved mug",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\239.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Manager interior color panel",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\240.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager office bottom rail",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\241.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office door handle",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\242.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office glazing",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\243.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office mullion",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\244.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office mullion.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\245.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office mullion.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\246.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office open glass door",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\247.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager office top rail",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\248.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair arm",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\249.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair arm support",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\250.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair arm support.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\251.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair arm support.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\252.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair arm support.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\253.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair arm.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\254.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair arm.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\255.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair arm.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\256.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair back",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\257.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair back.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\258.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair base",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\259.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\260.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\261.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\262.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\263.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\264.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\265.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\266.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\267.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair base.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\268.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\269.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\270.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\271.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\272.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\273.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\274.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\275.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\276.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\277.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair caster.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\278.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair cushion",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\279.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair cushion.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\280.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Manager visitor chair stem",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\281.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Manager visitor chair stem.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\282.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting / credenza",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\283.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting / display surface",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\284.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting / oval table",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\285.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting / pedestal",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\286.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting / pedestal.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\287.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting / pendant cable",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\288.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting / pendant cable.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\289.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting / pendant diffuser",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\290.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting / presentation display",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\291.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\292.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north arm support",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\293.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm support.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\294.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm support.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\295.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm support.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\296.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm support.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\297.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm support.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\298.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north arm.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\299.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north arm.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\300.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north arm.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\301.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north arm.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\302.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north arm.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\303.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north back",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\304.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north back.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\305.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north back.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\306.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north base",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\307.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\308.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\309.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\310.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\311.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\312.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\313.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\314.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\315.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\316.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.010",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\317.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.011",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\318.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.012",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\319.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.013",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\320.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north base.014",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\321.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\322.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\323.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\324.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\325.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\326.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\327.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\328.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\329.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\330.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\331.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.010",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\332.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.011",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\333.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.012",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\334.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.013",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\335.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north caster.014",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\336.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north cushion",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\337.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north cushion.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\338.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north cushion.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\339.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair north stem",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\340.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north stem.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\341.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair north stem.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\342.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\343.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south arm support",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\344.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm support.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\345.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm support.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\346.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm support.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\347.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm support.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\348.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm support.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\349.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south arm.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\350.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south arm.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\351.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south arm.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\352.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south arm.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\353.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south arm.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\354.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south back",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\355.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south back.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\356.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south back.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\357.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south base",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\358.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\359.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\360.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\361.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\362.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\363.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\364.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\365.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\366.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\367.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.010",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\368.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.011",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\369.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.012",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\370.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.013",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\371.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south base.014",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\372.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\373.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\374.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\375.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\376.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\377.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.005",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\378.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.006",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\379.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.007",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\380.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.008",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\381.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.009",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\382.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.010",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\383.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.011",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\384.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.012",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\385.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.013",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\386.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south caster.014",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\387.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south cushion",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\388.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south cushion.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\389.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south cushion.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\390.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting chair south stem",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\391.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south stem.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\392.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting chair south stem.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\393.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting floor tone",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\394.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting interior color panel",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\395.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting left glass",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\396.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room bottom rail",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\397.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room door handle",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\398.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room glazing",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\399.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room mullion",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\400.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room mullion.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\401.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room mullion.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\402.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room open glass door",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\403.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Meeting room top rail",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\404.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting side frame",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\405.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting side frame.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\406.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Meeting side frame.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\407.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Open top room beam",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\408.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Open top room beam.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\409.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Open top room beam.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\410.png",
+      "size": 256,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Rear open top beam",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\411.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Right cutaway perimeter",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\412.png",
+      "size": 1024,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window continuous glass",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\413.png",
+      "size": 2048,
+      "uv": "Bake_UV",
+      "source_uv": "UV贴图"
+    },
+    {
+      "object": "Window low storage",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\414.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window lower sill",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\415.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window shelf book group 0",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\416.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Window shelf book group 1",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\417.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Window storage books",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\418.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "UVMap"
+    },
+    {
+      "object": "Window upper beam",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\419.png",
+      "size": 512,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window vertical frame",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\420.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window vertical frame.001",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\421.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window vertical frame.002",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\422.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window vertical frame.003",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\423.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    },
+    {
+      "object": "Window vertical frame.004",
+      "file": "G:\\C\\wendang\\ChatGPT\\youxi\\AssetSources\\OfficeConcept\\Bakes_20260912\\424.png",
+      "size": 128,
+      "uv": "Bake_UV",
+      "source_uv": "_BAKE_UV"
+    }
+  ],
+  "errors": [],
+  "started": 1789217483.042447,
+  "current": "Window vertical frame.004",
+  "finished": true
+}

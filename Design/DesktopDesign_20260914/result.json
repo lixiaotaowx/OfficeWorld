@@ -1,0 +1,19 @@
+{
+  "status": {
+    "chrome": true,
+    "theme": true,
+    "accountBrand": "o·iruler dream一起在场",
+    "bounds": {
+      "width": 1440,
+      "height": 940,
+      "scroll": 1440
+    }
+  },
+  "calls": [
+    "ms-settings:sound"
+  ],
+  "compact": {
+    "width": 900,
+    "scroll": 900
+  }
+}

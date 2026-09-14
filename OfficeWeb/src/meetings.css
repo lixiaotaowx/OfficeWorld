@@ -1,0 +1,46 @@
+.meeting-center { width: min(680px, 94vw); max-height: 88vh; overflow: auto; }
+.meeting-heading { display: flex; justify-content: space-between; align-items: center; }
+.meeting-heading small { color: var(--sage); letter-spacing: .16em; }
+.meeting-heading h2 { margin: 8px 0; }
+.meeting-meta { color: var(--ink-3); font-size: 12px; line-height: 1.6; }
+.meeting-title { display: grid; gap: 8px; margin: 20px 0; }
+.meeting-title input { padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.meeting-invite-picker { border: 1px solid var(--line); border-radius: 12px; margin: 16px 0; padding: 14px; }
+.meeting-invite-picker label { display: inline-flex; align-items: center; gap: 8px; margin: 8px 16px 8px 0; }
+.meeting-mic { display: flex; align-items: center; gap: 8px; }
+.meeting-controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.meeting-member-list { background: #f2f4ed; border-radius: 12px; padding: 8px 14px; }
+.meeting-member-list > div { display: flex; gap: 12px; align-items: center; padding: 10px 0; }
+.meeting-member-list small { margin-left: auto; color: var(--ink-3); }
+.meeting-invitations article { border-top: 1px solid var(--line); padding: 16px 0; }
+.meeting-invitations button { margin-right: 8px; }
+.meeting-error, .meeting-confirm { background: #f8eae3; padding: 12px; border-radius: 10px; }
+.meeting-confirm button { margin-right: 8px; }
+.meeting-notification { position: fixed; bottom: 30px; right: 30px; z-index: 20; background: #315b45; color: white; padding: 16px 22px; box-shadow: var(--shadow-md); }
+.meeting-streams video { width: 100%; max-height: 380px; background: #17251e; border-radius: 10px; }
+.meeting-presence { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 40px); padding: 12px 16px; background: #264b38; color: #fff; border: 1px solid #8cac7a; border-radius: 14px; box-shadow: 0 8px 24px #14241d30; }
+.meeting-presence div { display: grid; gap: 4px; }
+.meeting-presence strong { font-size: 15px; }
+.meeting-presence small { font-size: 11px; opacity: .85; }
+.meeting-presence span { font-size: 12px; }
+.meeting-presence button { padding: 8px 10px; background: #fff; color: #264b38; white-space: nowrap; }
+@media (max-width: 700px) {
+  .meeting-presence { top: 76px; left: 70px; right: 10px; width: auto; max-width: none; transform: none; flex-wrap: wrap; gap: 8px; padding: 10px; }
+  .meeting-presence div { width: 100%; }
+  .meeting-presence span { width: 100%; }
+  .meeting-presence button { flex: 1; }
+}
+
+.modal.meeting-center { border-radius: 24px; background: #fafbf7; padding: 26px; border: 1px solid #d8e1d2; box-shadow: 0 24px 90px #172b2833; }
+.meeting-center .meeting-heading { padding-bottom: 16px; border-bottom: 1px solid #e1e7da; }
+.meeting-center .meeting-heading small { font-size: 10px; color: #76896a; }
+.meeting-center .meeting-heading h2 { font-size: 23px; color: #294634; }
+.meeting-center button, .meeting-presence button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 11px; }
+.meeting-center .meeting-controls { padding-top: 16px; border-top: 1px solid #e1e7da; }
+.meeting-center .meeting-controls button { padding: 11px 14px; }
+.meeting-center .meeting-member-list { background: #eef2e8; padding: 8px 16px; }
+.meeting-center .meeting-member-list > div + div { border-top: 1px solid #dfe7d8; }
+.meeting-presence { border-radius: 18px; background: #f9fbf5; color: #2c4937; border-color: #d7e2ce; }
+.meeting-presence strong { display: flex; align-items: center; gap: 7px; }
+.meeting-presence button { background: #e8efdf; }
+@media (max-width: 700px) { .modal.meeting-center { padding: 20px; } }

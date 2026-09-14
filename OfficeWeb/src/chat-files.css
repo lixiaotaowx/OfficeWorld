@@ -1,0 +1,15 @@
+.chat-retention { padding: 8px 12px; }
+.chat-attachment { display: grid; gap: 6px; min-width: 0; }
+.chat-filename, .chat-file-selection span { overflow-wrap: anywhere; }
+.chat-attachment small { opacity: .75; font-size: 11px; }
+.chat-attachment a { color: #d9eba6; font-size: 12px; text-underline-offset: 3px; }
+.chat-image { padding: 0; border: 0; background: none; cursor: zoom-in; }
+.chat-image img { display: block; max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px; }
+.chat-file-tools { padding: 8px 12px; border-top: 1px solid #d4d9ca; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chat-file-tools small { font-size: 10px; opacity: .7; }
+.chat-file-tools button { font-size: 11px; padding: 6px 8px; }
+.chat-file-selection { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; font-size: 12px; }
+.chat-file-selection span { flex-basis: 100%; }
+.chat-image-dialog { max-width: 94vw; max-height: 92vh; padding: 12px; border: 0; border-radius: 8px; }
+.chat-image-dialog img { display: block; max-width: 88vw; max-height: 80vh; object-fit: contain; }
+.chat-image-dialog::backdrop { background: #000b; }

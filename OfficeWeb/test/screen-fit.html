@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>显示器贴合检查</title>
+<style>
+body { margin: 0; background: #e8e9e2; color: #253d30; font: 14px sans-serif; }
+nav { display: flex; gap: 10px; padding: 12px; }
+button { padding: 8px 14px; }
+#views { display: flex; }
+section { width: 50%; }
+h2 { margin: 12px; font-size: 17px; }
+canvas { display: block; }
+pre { white-space: pre-wrap; padding: 16px; font-size: 12px; }
+</style>
+<nav><button id="a">A-1</button><button id="b">A-2</button><button id="manager">老板工位</button><button id="front">正面</button><button id="side">侧面</button><button id="wide">16:9共享画面</button><button id="classic">4:3共享画面</button><button id="portrait">竖屏共享画面</button></nav>
+<div id="views"><section><h2>修复前（旧占位尺寸）</h2><div id="before"></div></section><section><h2>修复后（真实内屏尺寸）</h2><div id="after"></div></section></div>
+<pre id="report">正在检查模型…</pre>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { MonitorScreens } from '/src/monitorScreens.ts';
+import { bakedAwareMaterial } from '/src/bakedMaterials.ts';
+import { WORKSTATIONS } from '/src/seats.ts';
+const decoder = new DRACOLoader().setDecoderPath('/assets/draco/');
+const {scene: asset} = await new GLTFLoader().setDRACOLoader(decoder).loadAsync('/assets/office-baked.glb');
+decoder.dispose();
+asset.updateMatrixWorld(true);
+window.screenFitAudit = { THREE, asset };
+const shells = new Map();
+const panels = new Map();
+asset.traverse(o => {
+  const match = /^(.+?)[ _]approved[ _]monitor$/.exec(o.name);
+  if (match) shells.set(match[1], o);
+  if (o.userData.role === 'shared_screen') panels.set(o.userData.seat_id, o);
+});
+const monitors = new MonitorScreens();
+monitors.attach(asset, new THREE.MeshStandardMaterial());
+window.screenFitAudit.monitors = monitors;
+const audit = WORKSTATIONS.map(seat => {
+  const shell = shells.get(seat.id);
+  const screen = monitors.meshFor(seat.index);
+  const box = new THREE.Box3().setFromObject(shell);
+  const center = screen.getWorldPosition(new THREE.Vector3());
+  const toward = new THREE.Vector3(seat.chair.x - center.x,0,seat.chair.z - center.z).normalize();
+  const origin = center.clone().addScaledVector(toward, 1);
+  const hits = new THREE.Raycaster(origin,toward.clone().negate()).intersectObject(shell,true);
+  return {seat:seat.id,screen:center.toArray(),oldSize:new THREE.Box3().setFromObject(panels.get(seat.id)).getSize(new THREE.Vector3()).toArray(),newSize:[screen.geometry.parameters.width,screen.geometry.parameters.height],shellMin:box.min.toArray(),shellMax:box.max.toArray(),hits:hits.slice(0,4).map(h=>({point:h.point.toArray(),normal:h.face.normal.toArray(),distance:h.distance})),gap:hits[0]?.distance-1, samples: [-.45,0,.45].flatMap(x=>[-.45,0,.45].map(y=>{
+    const p=screen.localToWorld(new THREE.Vector3(screen.geometry.parameters.width*x,screen.geometry.parameters.height*y,0));
+    const hit=new THREE.Raycaster(p.clone().addScaledVector(toward,1),toward.clone().negate()).intersectObject(shell,true)[0];
+    return hit ? hit.distance-1 : null;
+  }))};
+});
+document.getElementById('report').textContent = JSON.stringify(audit,null,2);
+const views = [];
+for(const id of ['before','after']) {
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(innerWidth/2,440);
+  renderer.setClearColor(0xcbd0c5);
+  document.getElementById(id).appendChild(renderer.domElement);
+  const world = new THREE.Scene();
+  world.add(new THREE.HemisphereLight(0xffffff,0x71846b,1.5));
+  const camera = new THREE.PerspectiveCamera(38,innerWidth/2/440,.01,30);
+  views.push({id,renderer,world,camera,group:null});
+}
+let selected = 0, frontal = false;
+let sourceImage = null;
+function draw() {
+  const seat=WORKSTATIONS[selected], normal=new THREE.Vector3(0,0,seat.chair.z>seat.display.z?1:-1);
+  for(const view of views) {
+    if(view.group)view.world.remove(view.group);
+    const group=new THREE.Group();
+    const shell=shells.get(seat.id).clone(true);
+    shell.traverse(o=>{if(o instanceof THREE.Mesh)o.material=bakedAwareMaterial(o.material);});
+    const screen=monitors.meshFor(selected).clone();
+    group.add(shell,screen);
+    view.world.add(group);view.group=group;
+    if (view.id === "before") {
+      const oldBox = new THREE.Box3().setFromObject(panels.get(seat.id));
+      const size = oldBox.getSize(new THREE.Vector3());
+      const center = oldBox.getCenter(new THREE.Vector3());
+      screen.geometry = new THREE.PlaneGeometry(Math.max(size.x,size.z),size.y);
+      screen.position.x = center.x;
+      screen.position.y = center.y;
+      const canvas = document.createElement('canvas'); canvas.width=480; canvas.height=270;
+      const context=canvas.getContext('2d'); context.fillStyle='#0f1a16';context.fillRect(0,0,480,270);
+      if(sourceImage) {
+        const scale=Math.min(480/sourceImage.width,270/sourceImage.height);
+        const w=sourceImage.width*scale,h=sourceImage.height*scale;
+        context.drawImage(sourceImage,(480-w)/2,(270-h)/2,w,h);
+      } else {
+        context.fillStyle='#4d8a70';context.textAlign='center';context.font='40px sans-serif';context.fillText(seat.label,240,135);
+      }
+      screen.material=screen.material.clone();
+      const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+      screen.material.map=texture;screen.material.emissiveMap=texture;
+    }
+    const center=screen.getWorldPosition(new THREE.Vector3());
+    view.camera.position.copy(center).add(new THREE.Vector3(frontal?0:.95,.22,normal.z*(frontal?1.6:1.1)));
+    view.camera.lookAt(center.x,center.y-.08,center.z);
+    view.renderer.render(view.world,view.camera);
+  }
+}
+for(const [id,index] of [['a',0],['b',1],['manager',8]]) document.getElementById(id).onclick=()=>{selected=index;draw();};
+document.getElementById('front').onclick=()=>{frontal=true;draw();};
+document.getElementById('side').onclick=()=>{frontal=false;draw();};
+async function preview(width,height) {
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const context=canvas.getContext('2d');context.fillStyle='#d9e8e0';context.fillRect(0,0,width,height);
+  context.strokeStyle='#245740';context.lineWidth=6;context.strokeRect(3,3,width-6,height-6);
+  context.strokeStyle='#638d78';context.lineWidth=2;
+  for(let x=0;x<width;x+=80){context.beginPath();context.moveTo(x,0);context.lineTo(x,height);context.stroke();}
+  for(let y=0;y<height;y+=80){context.beginPath();context.moveTo(0,y);context.lineTo(width,y);context.stroke();}
+  context.fillStyle='#152c20';context.font='bold 32px sans-serif';context.fillText(`${width} × ${height}  ABC 123`,20,45);
+  context.beginPath();context.arc(width/2,height/2,Math.min(width,height)/4,0,Math.PI*2);context.strokeStyle='#d14c34';context.lineWidth=5;context.stroke();
+  sourceImage=canvas;
+  for(const seat of WORKSTATIONS)monitors.setPreview(seat.index,canvas.toDataURL());
+  await new Promise(resolve=>setTimeout(resolve,100));draw();
+}
+document.getElementById('wide').onclick=()=>preview(960,540);
+document.getElementById('classic').onclick=()=>preview(800,600);
+document.getElementById('portrait').onclick=()=>preview(540,960);
+window.screenFitAudit.preview=preview;
+window.screenFitAudit.draw=draw;
+draw();
+</script>
+</html>
+

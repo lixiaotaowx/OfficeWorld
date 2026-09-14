@@ -1,0 +1,83 @@
+/* A typographic entrance: bright botanical paper against dark ink. */
+.account-page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(370px, .85fr);
+  gap: 0;
+  padding: 20px;
+  background: #26312b;
+  color: #eff4df;
+}
+.account-intro {
+  position: relative;
+  min-height: calc(100dvh - 40px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 42px 7%;
+  border-radius: 25px;
+  background: #d7ed9d;
+  color: #2a3b27;
+}
+.account-brand { display: flex; align-items: center; gap: 14px; font-size: 11px; font-weight: 650; letter-spacing: 1.8px; }
+.account-brand .brand-mark { font-size: 42px; color: #2a3b27; }
+.account-brand .brand-mark > span { color: #2a3b27; }
+.account-brand small { display: block; font-size: 8px; letter-spacing: 3px; margin-top: 4px; font-weight: 400; }
+.intro-copy { position: relative; z-index: 1; margin-top: 56px; }
+.account-intro .eyebrow { font-size: 8px; color: #6c814b; letter-spacing: 1.7px; }
+.account-manifesto { font: clamp(37px, 5vw, 77px)/.98 Georgia, serif; letter-spacing: -3px; margin: 20px 0 30px; color: #2b3f27; }
+.account-manifesto em { font-weight: 400; }
+.account-intro h1 { font-family: 'Noto Serif CJK SC', 'Songti SC', 'SimSun', serif; font-size: 32px; font-weight: 400; line-height: 1.45; letter-spacing: 1px; color: #38502c; margin: 0 0 20px; }
+.account-intro p { font-size: 11px; line-height: 2; color: #5a7042; }
+.space-artwork {
+  position: absolute;
+  width: 62%;
+  right: -12%;
+  bottom: 95px;
+  opacity: .33;
+  filter: brightness(.4) saturate(.6);
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.account-space { position: relative; z-index: 1; display: grid; gap: 10px; padding-top: 25px; margin-top: auto; border-top: 1px solid #78934d50; }
+.account-space > span { font-size: 8px; letter-spacing: 1.8px; color: #6b814b; }
+.account-space strong { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 450; letter-spacing: .1em; }
+.account-space strong > span { font-size: 32px; font-weight: 300; }
+.account-space small { color: #6d804f; font-size: 9px; letter-spacing: 1px; }
+.account-card { align-self: center; justify-self: center; width: min(100%, 420px); padding: 42px 32px; background: transparent; }
+.account-card > .eyebrow { font-size: 8px; color: #98ab84; letter-spacing: 1.6px; }
+.account-card h2 { font-family: 'Noto Serif CJK SC', 'Songti SC', 'SimSun', serif; font-size: 39px; font-weight: 400; margin: 18px 0 12px; text-shadow: none; color: #e5efd2; }
+.account-card p, .account-card small { color: #95a886; font-size: 11px; line-height: 1.9; }
+.account-tabs { display: flex; padding: 0; gap: 0; border-radius: 0; border-bottom: 1px solid #667b4e60; background: transparent; margin: 34px 0 28px; }
+.account-tabs button { flex: 1; border: none; background: transparent; border-radius: 0; font-size: 12px; padding: 13px; color: #7e9569; }
+.account-tabs button[aria-pressed=true] { color: #d7ed9d; background: transparent; box-shadow: inset 0 -2px #d7ed9d; }
+.account-tabs button:hover:not(:disabled) { color: #e8f6cc; background: #34462d; }
+.account-card label { display: grid; gap: 10px; font-size: 11px; color: #c3d3ae; margin: 23px 0; }
+.account-card input { width: 100%; padding: 15px; border: 1px solid #586e465c; border-radius: 9px; background: #31402d; color: #e9f2dc; font: inherit; font-size: 12px; }
+.account-card input::placeholder { color: #81986c; }
+.account-card input:focus { outline: 2px solid #c1db8e; outline-offset: 3px; background: #364932; }
+.account-card .account-error { min-height: 22px; color: #efad8f; }
+.account-submit { width: 100%; padding: 16px; margin: 4px 0 26px; border-radius: 9px; font-size: 12px; letter-spacing: .08em; background: #d7ed9d; color: #293b25; border: 0; box-shadow: none; }
+.account-submit:hover:not(:disabled) { background: #e4f6bc; color: #263b22; }
+.account-card > small { display: block; border-top: 1px solid #667b4e40; padding-top: 21px; font-size: 9px; }
+@media (min-width: 1000px) and (max-height: 850px) {
+  .account-intro { padding-top: 30px; padding-bottom: 30px; }
+  .intro-copy { margin-top: 35px; }
+  .account-manifesto { font-size: 58px; margin: 16px 0 25px; }
+  .account-intro h1 { font-size: 27px; }
+  .account-space { padding-top: 16px; }
+}
+@media (max-width: 760px) {
+  .account-page { grid-template-columns: 1fr; padding: 12px; }
+  .account-intro { min-height: 0; padding: 28px; border-radius: 20px; }
+  .account-brand { font-size: 9px; }
+  .account-brand small { display: none; }
+  .intro-copy { margin-top: 34px; }
+  .account-manifesto { font-size: 45px; margin: 18px 0 24px; letter-spacing: -2px; }
+  .account-intro h1 { font-size: 24px; line-height: 1.5; }
+  .account-intro p { font-size: 10px; }
+  .space-artwork { width: 270px; right: -100px; bottom: -10px; opacity: .18; }
+  .account-space { display: none; }
+  .account-card { padding: 38px 18px; max-width: 460px; }
+  .account-card h2 { font-size: 34px; }
+}

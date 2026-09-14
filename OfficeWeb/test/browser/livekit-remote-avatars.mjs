@@ -64,14 +64,18 @@ try {
   );
 
   // Default character matches what the other client joined with.
-  check("远端角色性别跟随对方选择", seen?.[0]?.kind === "woman", seen?.[0]?.kind);
+  check(
+    "远端角色外观跟随对方选择",
+    seen?.[0]?.kind === "woman_casual",
+    seen?.[0]?.kind,
+  );
 
-  // Switch A to the male avatar and confirm B renders that change.
+  // Switch A to a male avatar and confirm B renders that change.
   const before = (await avatarIds(b))?.[0];
-  await a.selectOption("select[aria-label='选择角色']", "man");
+  await a.selectOption("select[aria-label='选择角色']", "man_casual_2");
   const switched = await waitFor(async () => {
     const list = await avatarIds(b);
-    return list?.[0]?.kind === "man" ? list[0] : null;
+    return list?.[0]?.kind === "man_casual_2" ? list[0] : null;
   }, 15000);
   check("对方切换角色后我这边也跟着换", Boolean(switched), switched?.kind);
 
