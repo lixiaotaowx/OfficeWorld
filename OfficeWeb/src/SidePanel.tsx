@@ -182,7 +182,7 @@ export default function SidePanel({
         </>
       ) : null}
       <ChatInbox accountId={accountId} messages={messages} contacts={contacts} people={people}
-        connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
+        seats={seats} connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
         visitor={visitor} hidden={hiddenContacts}
         onFile={onFile} loadFile={loadFile} onUnread={setUnread} />
       <div className="side-foot">

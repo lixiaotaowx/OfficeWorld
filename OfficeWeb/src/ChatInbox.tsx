@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import ChatPanel, { type ChatFileActions } from './ChatPanel';
-import type { ChatContact, Message, Person } from './types';
+import type { ChatContact, Message, Person, SeatOwner } from './types';
 import './chat-inbox.css';
 
 interface Props extends ChatFileActions {
   contacts: ChatContact[];
   people: Person[];
+  /** Permanent desk owners, including the ones who are offline right now. */
+  seats: (SeatOwner | null)[];
   accountId: string;
   messages: Message[];
   connected: boolean;
@@ -21,7 +23,7 @@ export const conversationKey = (message: Message, accountId: string) =>
   !message.recipientId ? 'public' : message.senderId === accountId ? message.recipientId : message.senderId || '';
 
 export default function ChatInbox(props: Props) {
-  const { accountId, messages, contacts, people, visible, visitor, hidden } = props;
+  const { accountId, messages, contacts, people, seats, visible, visitor, hidden } = props;
   const [active, setActive] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -34,11 +36,13 @@ export default function ChatInbox(props: Props) {
     catch { return {}; }
   });
   const threads = useMemo(() => {
-    // Only people who are here now, plus colleagues this device really has a
-    // conversation with. The account roster lists everybody who ever registered,
-    // which used to fill the list with names from months ago (user, 2026-09-15).
+    // Who is offered a conversation: the people in the space right now, the holders of
+    // a permanent desk (even while they are offline - a desk means "part of the
+    // office"), and anyone this device already has a conversation with. The account
+    // roster alone used to fill the list with names from months ago (user, 2026-09-15).
     const directory = new Map<string, string>();
     for (const person of people) if (person.clientId !== accountId) directory.set(person.clientId, person.name);
+    for (const owner of seats) if (owner && owner.id !== accountId) directory.set(owner.id, owner.name);
     for (const m of messages) {
       const key = conversationKey(m, accountId);
       if (key === 'public' || directory.has(key)) continue;
@@ -57,7 +61,7 @@ export default function ChatInbox(props: Props) {
         unread: history.filter(m => m.senderId !== accountId && m.id > (read[row.id] || '')).length };
     }).sort((a, b) => a.id === 'public' ? -1 : b.id === 'public' ? 1 :
       (b.last?.time || 0) - (a.last?.time || 0) || a.name.localeCompare(b.name, 'zh-CN'));
-  }, [contacts, people, messages, accountId, read, visitor, hidden]);
+  }, [contacts, people, seats, messages, accountId, read, visitor, hidden]);
   const current = threads.find(t => t.id === active);
   const last = current?.last?.id;
   useEffect(() => {

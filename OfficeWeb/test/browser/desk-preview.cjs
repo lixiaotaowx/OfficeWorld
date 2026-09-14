@@ -45,6 +45,22 @@ async function join(base, name, role) {
   return cookie;
 }
 
+/** Register an account, take a permanent desk, then leave it behind offline. */
+async function claimDeskAndLeave(base, name, seat) {
+  const cookie = await join(base, name, "employee");
+  const socket = connect(base, { transports: ["websocket"], reconnection: false,
+    extraHeaders: { Cookie: cookie, Origin: base } });
+  await new Promise((resolve, reject) => {
+    socket.once("connect", resolve); socket.once("connect_error", reject);
+  });
+  socket.emit("join", { name });
+  await new Promise(resolve => socket.once("people", resolve));
+  const claimed = await socket.emitWithAck("seat", seat);
+  assert.equal(claimed.ok, true, name + " 应该能认领工位");
+  socket.disconnect();
+  return cookie;
+}
+
 async function openPage(browser, base, build, cookie) {
   const context = await browser.newContext({ viewport: { width: 1360, height: 960 } });
   if (cookie) {
@@ -110,9 +126,10 @@ const readSeat = (page, seat) => page.evaluate(index => {
     report.bossRoster = roster.seats[BOSS_SEAT]?.name || null;
 
     // 2) A plain visiting client holds a sofa, must never capture, yet still sees the
-    //    manager's screen. An account that registered long ago and never came back
-    //    must not clutter the conversation list.
+    //    manager's screen. Who is offered a conversation matters here: an account from
+    //    long ago must be gone, a desk holder who stepped out must still be listed.
     await join(base, "老同事", "employee");
+    await claimDeskAndLeave(base, "离线同事", 2);
     const guestCookie = await join(base, "客户乙", "visitor");
     const guest = await openPage(browser, base, build, guestCookie);
     await guest.page.waitForFunction(index => window.__officeDebug.monitors.slots.get(index)?.shown,
@@ -169,6 +186,8 @@ const readSeat = (page, seat) => page.evaluate(index => {
       "访客的会话列表里不应出现公共聊天");
     assert.equal(report.guestChatRows.some((row) => row.includes("老同事")), false,
       "从没聊过、也不在空间的旧账号不该占一行");
+    assert.equal(report.guestChatRows.some((row) => row.includes("离线同事")), true,
+      "工位主人即使离线也要留在会话列表里");
     assert.equal(report.guestChatRows.some((row) => row.includes("李文杰测试")), true,
       "在空间里的同事要出现");
     assert.equal(report.chatBefore.some((row) => row.includes("李文杰测试")), true,
