@@ -52,7 +52,7 @@ test("访客身份落库，进空间就坐沙发，且不广播低清预览", as
     assert.equal(chosen.status, 200);
     assert.equal(chosen.data.user.role, "visitor");
     const bad = await post("role", { role: "老板" }, guest.cookie);
-    assert.equal(bad.status, 400, "只允许员工或访客");
+    assert.equal(bad.status, 400, "只允许成员或访客");
     // 身份会持久化：重新登录仍是访客。
     const again = await post("login", { name: "客户甲", password: "1" });
     assert.equal(again.data.user.role, "visitor");

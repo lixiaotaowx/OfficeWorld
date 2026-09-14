@@ -16,10 +16,10 @@ function RoleChoice({ busy, error, choose }: {
     <section className="role-card">
       <span className="eyebrow">WHO IS COMING IN</span>
       <h2>你是哪一位？</h2>
-      <p>员工进工位办公；访客直接到公共区就坐。两种身份都能开会、私聊、语音与共享屏幕。</p>
+      <p>成员进工位办公；访客直接到公共区就坐。两种身份都能开会、私聊、语音与共享屏幕。</p>
       <div className="role-options">
         <button type="button" className="role-option" disabled={busy} onClick={() => choose("employee")}>
-          <strong>iruler 员工</strong>
+          <strong>iruler 成员</strong>
           <small>使用自己的专属工位，并广播工位小屏幕预览</small>
         </button>
         <button type="button" className="role-option" onClick={() => choose("visitor")} disabled={busy}>

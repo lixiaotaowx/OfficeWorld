@@ -42,12 +42,12 @@ export default function AdminDialog({ seats, onKick, onClose }: Props) {
         <h2>管理员</h2>
         <p>输入管理员密码后，可以把工位上的人「踢出」。踢出后该工位立即变成空闲。</p>
         <label className="admin-password">
-          <span>管理员密码</span>
+          <span>管理员密码（iruler 成员通用密码）</span>
           <input
             type="password"
             value={password}
             placeholder="请输入密码"
-            aria-label="管理员密码"
+            aria-label="管理员密码（iruler 成员通用密码）"
             autoFocus
             onChange={(e) => {
               setPassword(e.target.value);

@@ -95,7 +95,7 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
       if (!user) { reply(res, 401, { error: "请先登录" }); return true; }
       try {
         const body = await bodyOf(req);
-        if (!ROLES.has(body?.role)) { reply(res, 400, { error: "身份只能是员工或访客" }); return true; }
+        if (!ROLES.has(body?.role)) { reply(res, 400, { error: "身份只能是成员或访客" }); return true; }
         user.role = body.role;
         commit();
         reply(res, 200, { user: publicUser(user) });
