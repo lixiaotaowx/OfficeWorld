@@ -16,6 +16,8 @@ declare global {
       displays(): Promise<DesktopDisplay[]>;
       selectDisplay(id: string): Promise<boolean>;
       previewFrame(): Promise<string>;
+      /** false releases the capture stream while nobody can receive the preview. */
+      setPreviewActive?(active: boolean): Promise<boolean>;
       saveLogin(value: { name: string; password: string }): Promise<boolean>;
       readLogin(): Promise<{ name: string; password: string } | null>;
       clearLogin(): Promise<boolean>;

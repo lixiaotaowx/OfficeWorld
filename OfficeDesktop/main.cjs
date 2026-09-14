@@ -10,6 +10,7 @@ const { installChrome } = require('./chrome.cjs');
 const { applyWindowIcon } = require('./window-icon.cjs');
 const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 const { createDisplayStore } = require('./display-store.cjs');
+const { createPreviewCapture } = require('./preview-capture.cjs');
 
 // Requested short notification tone must also play while hidden in the tray.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -42,6 +43,8 @@ function createWindow() {
   const annotationLayer = createAnnotationLayer();
   // Preview and screen sharing both follow this one display selection.
   const displays = createDisplayStore(path.join(profilePath, 'preview-display.json'));
+  // One long-lived small capture stream for the workstation preview.
+  const previewCapture = createPreviewCapture();
   if (smoke) officeSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   else configurePermissions(officeSession, () => mainWindow, {
     displays,
@@ -56,6 +59,9 @@ function createWindow() {
     title: 'iruler dream', transparent: true, backgroundColor: '#00000000', show: !smoke, icon: iconPath,
     frame: false,
     webPreferences: { session: officeSession, nodeIntegration: false, contextIsolation: true, sandbox: true,
+      // A tray-hidden window must keep its socket, timers and audio live: call,
+      // voice and meeting alerts arrive while the renderer is not visible.
+      backgroundThrottling: false,
       preload: path.join(__dirname, 'desktop-preload.cjs') },
   });
   const contents = mainWindow.webContents;
@@ -68,7 +74,7 @@ function createWindow() {
       dialog.showErrorBox('托盘不可用', `关闭窗口将退出应用。\n${error.message}`);
     }
   }
-  if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer, displays });
+  if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer, displays, previewCapture });
   contents.setWindowOpenHandler(({ url }) => {
     if (trusted(url)) void contents.loadURL(url);
     else if (/^https?:/.test(url)) void shell.openExternal(url);
@@ -77,6 +83,8 @@ function createWindow() {
   contents.on('will-navigate', (event, url) => { if (!trusted(url)) event.preventDefault(); });
   contents.on('will-redirect', (event, url) => { if (!trusted(url)) event.preventDefault(); });
   contents.on('will-attach-webview', event => event.preventDefault());
+  // The taskbar flash is only a prompt; it ends the moment the window is focused.
+  mainWindow.on('focus', () => { mainWindow?.flashFrame(false); });
   mainWindow.on('closed', () => { mainWindow = undefined; });
   Menu.setApplicationMenu(null);
   if (smoke) {

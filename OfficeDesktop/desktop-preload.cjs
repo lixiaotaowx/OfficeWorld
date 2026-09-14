@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
   displays: () => ipcRenderer.invoke('office:displays'),
   selectDisplay: id => ipcRenderer.invoke('office:display-select', id),
   previewFrame: () => ipcRenderer.invoke('office:preview-frame'),
+  /** false releases the capture stream while nobody can receive the preview. */
+  setPreviewActive: active => ipcRenderer.invoke('office:preview-active', active === true),
   saveLogin: value => ipcRenderer.invoke('office:login-save', value),
   readLogin: () => ipcRenderer.invoke('office:login-read'),
   clearLogin: () => ipcRenderer.invoke('office:login-clear'),

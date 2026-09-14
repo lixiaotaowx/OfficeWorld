@@ -87,8 +87,9 @@ test('自动低清只枚举屏幕、维持比例，双屏切换与断开回退',
   assert.equal((await f.call('displays')).length, 2);
   await f.call('preview-frame');
   assert.equal(f.calls.at(-1).id, '11');
-  assert.equal(f.calls.at(-1).size.width, 480);
-  assert.equal(f.calls.at(-1).size.height, 270);
+  // 300px on the long edge (user, 2026-09-14), keeping the screen's aspect ratio.
+  assert.equal(f.calls.at(-1).size.width, 300);
+  assert.equal(f.calls.at(-1).size.height, 169);
   await f.call('display-select', '22');
   await f.call('preview-frame');
   assert.equal(f.calls.at(-1).id, '22');

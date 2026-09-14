@@ -1,15 +1,35 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { Person } from './types';
+import { shouldPreview } from './previewGate';
 
 export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   connected: boolean, person: Person | undefined, notice: (text: string) => void) {
   const [active, setActive] = useState(false);
-  const eligible = !!window.officeDesktop && connected && person?.seat != null;
+  // The server says whether anybody else has previews enabled. Default to true so a
+  // freshly loaded page never shows the preview as off while the answer is in flight.
+  const [wanted, setWanted] = useState(true);
+  const desktop = !!window.officeDesktop;
+  const eligible = shouldPreview({ desktop, connected, seated: person?.seat != null, wanted });
+
+  useEffect(() => {
+    const channel = socket.current;
+    if (!channel) return;
+    const onAmbient = (message: { wanted?: boolean }) => setWanted(message?.wanted !== false);
+    channel.on('ambient', onAmbient);
+    return () => { channel.off('ambient', onAmbient); };
+  }, [connected]);
+
   useEffect(() => {
     const bridge = window.officeDesktop;
     const channel = socket.current;
-    if (!eligible || !bridge || !channel) { setActive(false); return; }
+    if (!eligible || !bridge || !channel) {
+      setActive(false);
+      // Nobody can receive it (or we hold no desk): release the capture stream
+      // instead of leaving a screen capture running for nothing.
+      void bridge?.setPreviewActive?.(false).catch(() => undefined);
+      return;
+    }
     let stopped = false, busy = false, warned = false;
     let timer: ReturnType<typeof setTimeout>;
     async function frame() {
@@ -32,7 +52,9 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
         }
       } finally {
         busy = false;
-        if (!stopped) timer = setTimeout(frame, 3000);
+        // 6s / 300px (user, 2026-09-14): the capture itself is long-lived and cheap,
+        // so the interval is about bandwidth and how often the screen is captured.
+        if (!stopped) timer = setTimeout(frame, 6000);
       }
     }
     void frame();
@@ -45,5 +67,5 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
       setActive(false);
     };
   }, [eligible, connected, person?.id]);
-  return { active };
+  return { active, wanted };
 }

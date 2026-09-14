@@ -186,6 +186,13 @@ export function createOfficeServer(options = {}) {
   const publish = () => {
     io.emit("people", [...people.values()]);
     io.emit("seats", seatsView());
+    // Tell each client whether anybody else could receive its workstation preview,
+    // so a machine nobody is watching does not keep capturing the screen at all.
+    // Sent per socket because "somebody else" differs per recipient.
+    for (const person of people.values()) {
+      const wanted = [...people.values()].some((other) => other.id !== person.id && other.previewAllowed);
+      io.to(person.id).emit("ambient", { wanted });
+    }
   };
   const admin = createAdmin({
     io, people, roster, save, publish, adminPassword, seatCount: SEAT_COUNT,

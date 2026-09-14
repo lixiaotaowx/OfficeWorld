@@ -341,18 +341,20 @@ export class OfficeMedia {
     this.socket.emit("sharing", true);
     this.onSharing(true);
     const canvas = document.createElement("canvas");
-    canvas.width = 480;
-    canvas.height = 270;
+    // 300px / 6s (user, 2026-09-14): the ambient thumbnail is deliberately tiny and
+    // slow; the readable stream still needs an approved request and goes over LiveKit.
+    canvas.width = 300;
+    canvas.height = 169;
     const context = canvas.getContext("2d")!;
     this.previewTimer = setInterval(() => {
       if (video.readyState < 2) return;
       if (!video.videoWidth || !video.videoHeight) return;
-      const scale = Math.min(1, 480 / Math.max(video.videoWidth, video.videoHeight));
+      const scale = Math.min(1, 300 / Math.max(video.videoWidth, video.videoHeight));
       canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
       canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (publicPreview) this.socket.emit("preview", canvas.toDataURL("image/jpeg", 0.55));
-    }, 3000);
+    }, 6000);
     // Viewers approved before this point already sit in our screen room.
     for (const [name, room] of this.connections.values()) {
       if ([...this.privateSessions.values()].some(session => session.room === name &&

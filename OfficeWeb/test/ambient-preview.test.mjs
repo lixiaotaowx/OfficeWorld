@@ -26,6 +26,35 @@ test('原生预览需要工位，广播给自己；高清停止不清空原生�
   assert.equal(remote.at(-1).image, image);
 }));
 
+test('没有别人能接收时服务端直接说“不用采集”', () => withServer(async ({ connect }) => {
+  const a = await connect('甲'), b = await connect('乙');
+  const wanted = [], forB = [];
+  a.on('ambient', value => wanted.push(value.wanted));
+  b.on('ambient', value => forB.push(value.wanted));
+  // A seat claim publishes, which is when the answer is sent.
+  await a.emitWithAck('seat', 0);
+  await wait(60);
+  assert.equal(wanted.at(-1), true, '有人能接收时应继续采集');
+  // B stops receiving: nobody can watch A, so A may stop capturing.
+  b.emit('preview-allowed', false);
+  await wait(60);
+  assert.equal(wanted.at(-1), false, '没有人在接收就该停下来');
+  // B turns it back on: capture resumes.
+  b.emit('preview-allowed', true);
+  await wait(60);
+  assert.equal(wanted.at(-1), true);
+  // A switching its OWN reception off must not stop A's upload while B watches.
+  a.emit('preview-allowed', false);
+  await wait(60);
+  assert.equal(wanted.at(-1), true, '只要还有别人能看，A 仍要上传');
+  assert.equal(forB.at(-1), false, 'B 侧此时无人可看');
+  // Nobody receives anything: both stop capturing.
+  b.emit('preview-allowed', false);
+  await wait(60);
+  assert.equal(wanted.at(-1), false);
+  assert.equal(forB.at(-1), false);
+}));
+
 test('关闭接收仍上传和看自己，恢复后接收下一帧', () => withServer(async ({ connect }) => {
   const a = await connect('甲'), b = await connect('乙');
   await a.emitWithAck('seat', 0);

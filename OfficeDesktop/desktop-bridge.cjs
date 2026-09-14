@@ -7,7 +7,11 @@ const { setWindowFullscreen } = require('./fullscreen.cjs');
 function installDesktopBridge(getWindow, dependencies = {}) {
   const annotationLayer = dependencies.annotationLayer;
   const displays = dependencies.displays;
+  const previewCapture = dependencies.previewCapture;
   const credentials = path.join(app.getPath('userData'), 'login.enc');
+  /** Preview edge and JPEG quality; the stream is configured with these once. */
+  const PREVIEW_MAX_EDGE = 300;
+  const PREVIEW_QUALITY = 55;
   let pending;
   const allow = event => {
     const window = getWindow();
@@ -28,15 +32,39 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     const source = rows.find((row) => row.id === id);
     if (!source) throw Error('屏幕已断开，请重新选择');
     displays.select(source.id);
+    // The preview follows the selection, so drop the running stream; the next frame
+    // re-attaches it to the newly chosen display.
+    await previewCapture?.stop().catch(() => {});
     return true;
   });
-  handle('office:preview-frame', () => {
+  handle('office:preview-active', active => {
+    // The page reports whether anybody could receive its preview; when nobody can,
+    // the capture stream is released instead of quietly running forever.
+    if (active === false) void previewCapture?.stop().catch(() => {});
+    return Boolean(previewCapture?.attachedTo());
+  });
+  handle('office:preview-frame', async () => {
+    // Preferred path: one long-lived small capture stream, so a frame costs a few
+    // milliseconds instead of re-capturing every display (~552ms measured).
+    if (previewCapture?.isSupported()) {
+      try {
+        if (!previewCapture.attachedTo()) {
+          const { chosen } = await sources();
+          if (!chosen) throw Error('暂时无法读取屏幕');
+          await previewCapture.start(chosen.id);
+        }
+        const image = await previewCapture.frame();
+        if (image) return image;
+      } catch { /* fall through to the legacy path so previews never stop working */ }
+    }
     if (pending) return pending;
     pending = sources().then(({ chosen }) => {
       if (!chosen || chosen.thumbnail.isEmpty()) throw Error('暂时无法读取屏幕');
-      const size = chosen.thumbnail.getSize(), scale = Math.min(1, 480 / Math.max(size.width, size.height));
-      const thumb = chosen.thumbnail.resize({ width: Math.max(1, Math.round(size.width * scale)), height: Math.max(1, Math.round(size.height * scale)) });
-      return 'data:image/jpeg;base64,' + thumb.toJPEG(55).toString('base64');
+      const size = chosen.thumbnail.getSize();
+      const scale = Math.min(1, PREVIEW_MAX_EDGE / Math.max(size.width, size.height));
+      const thumb = chosen.thumbnail.resize({ width: Math.max(1, Math.round(size.width * scale)),
+        height: Math.max(1, Math.round(size.height * scale)) });
+      return 'data:image/jpeg;base64,' + thumb.toJPEG(PREVIEW_QUALITY).toString('base64');
     }).finally(() => { pending = undefined; });
     return pending;
   });

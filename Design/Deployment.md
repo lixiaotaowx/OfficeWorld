@@ -1,5 +1,26 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 23:05 工位预览改为常驻低频采集（EXE 0.1.10，300px / 6 秒）
+
+- 用户决定：采用 B 方案，并把分辨率改为 **300px**、间隔改为 **6 秒**（原 480px / 3 秒作废）。
+- 实测旧做法：`desktopCapturer.getSources()` 单次 **552ms**（JPEG 仅 0.8ms），每 3 秒一次且在主进程 ≈ 持续 18% 的一个核心，并周期性阻塞主线程——与用户反馈的"鼠标断跳"吻合（现场采样单进程 17.4%）。
+- 新做法 `OfficeDesktop/preview-capture.cjs`：一个**隐藏窗口**持有常驻采集流（`getUserMedia` + `chromeMediaSource:'desktop'`，采集时就设好 `maxWidth/maxHeight=300`、`maxFrameRate=2`），主进程每帧只取最新画面。实测：取源 **590ms 仅一次**，之后每帧 **2.5–3.7ms**、JPEG 12KB。旧的一次性枚举保留为回退路径。
+- 安全与行为不变：隐藏窗口 `show:false`、禁用 Node、独立 session 且只允许它自己申请媒体权限；仍是低清静态 JPEG、不弹选择器、不自预览、不传视频；换屏时自动重启采集。
+- 网页侧同口径：`useDesktopPreview.ts` 6 秒；浏览器共享缩略图 `media.ts` 300px / 6 秒。
+- 测试：桌面 30/30（新增 4 项常驻采集断言）；网页 111/111（新增 3 项：门控条件、"释放采集"调用、服务端 `ambient` 语义）。
+- **同时实现了 A**：服务端 `publish()` 逐个 socket 下发 `ambient { wanted }`（含义"除你之外还有没有人开着接收"）；为 false 时客户端停止取帧并调用 `officeDesktop.setPreviewActive(false)` 释放常驻流，恢复后自动重启。关闭自己的接收**不会**停止自己的上传——只有确实无人可看时才停。
+- **待人工确认**：常驻采集期间 Windows 是否持续显示"正在截屏"提示图标（我无法自动观测系统托盘提示）。若一直亮着，就在"无人接收"之外再退回一次性取源。
+
+## 2026-09-14 22:51 默认视角改为开放工位；移除本地运行方式（前端 `index-BZwjPWbv.js`）
+
+- 需求（用户）：相机默认用开放工位视野；127.x 那套本地运行方式基本不用，有就去掉。
+- 默认视角：`src/App.tsx` 初始 `view` 由 `overview` 改为 `desks`，相机预设从 `[19,23,29]` 换成开放工位的 `[8,12,15] → [0.6,0.5,1.8]`；空间总览仍在导航/页签里一键可达，其余三个视角不变。
+- 移除本地运行方式：`package.json` 删除 `dev`（Vite `127.0.0.1:5188`）与 `server`（本地 `start.mjs` `127.0.0.1:3108`）两个脚本；`vite.config.ts` 删除仅供开发服务器使用的 `/socket.io`、`/api` 代理。`start.mjs`/`server.mjs` 是 systemd 线上入口，保留；Vite 仍用于 `vite build` 与测试内建服务器（`createServer({ configFile:false })`），依赖未动。
+- **保留**明文 HTTP 提示横幅（`App.tsx` 的 `insecure`）：`Design/Deployment.md` 已记录 `http://115.159.43.237/` 仍可访问且确实不能采集屏幕/语音，它不只是本地专用。
+- 验证：`tsc --noEmit` 与 `vite build` 通过，网页单测 **108/108**；线上入口 `index-BZwjPWbv.js`（此前 `index-CdsicpxU.js`），线上 JS SHA256 `f115d614d311d9c9713527c2e08406f026675361408595ec899ea61f684c4f66`、1,447,859 字节，与本地 `Build/OfficeWeb` 逐字节一致。
+- 新增 `test/browser/default-view.cjs`（真实浏览器 + 隔离服务器跑构建产物）：断言默认选中页签为 `02开放工位`、相机落在 `[8,12,15]`、切到空间总览与切回都到达预设；截图 `Build/default-view-open-desks.png`，证据 `Build/default-view-evidence.json`。
+- 生效范围：纯前端。`static.mjs` 每次请求 `stat`/读盘、`index.html` 为 `no-cache`，因此**没有重启 `officeweb`**，线上会话未中断。
+
 ## 2026-09-14 22:40 降 CPU/流量：压缩、条件缓存、减少重渲染（前端 `index-CdsicpxU.js`）
 
 - **压缩**（`static.mjs`）：文本类型按 `Accept-Encoding` 用 brotli/gzip 传输并带 `Vary`，压缩结果按 文件+大小+mtime 缓存（上限 32MB）。实测线上 JS **1,447,862 → 374,363 字节（-74%）**；已压缩格式（.glb/.png）不重复压缩；Range 与压缩不混用。
