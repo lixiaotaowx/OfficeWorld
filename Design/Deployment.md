@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 00:20 身份改名：员工 → 成员（前端 `index-CvfrhYs1.js` + `index-C5yNhsdZ.css`）
+
+- 需求（用户）：把界面上的「iruler 员工」改成「iruler 成员」，只改称呼。
+- 改动：`src/AccountGate.tsx` 身份卡与说明文案、`src/AdminDialog.tsx` 管理员密码提示、`accounts.mjs` 校验提示「身份只能是成员或访客」；**协议与存储取值仍是 `employee` / `visitor`**（改了就丢已有身份），已在 `OfficeWeb/AGENTS.md` 写明。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` 118/118 通过；构建产物 `../Build/OfficeWeb`。
+- 发布：上传 `index.html`、`assets/index-CvfrhYs1.js`、`assets/index-C5yNhsdZ.css`（逐个文件，不用 `-r`）；线上入口已是 `index-CvfrhYs1.js`，JS SHA256 `c35a6ee7bf13586766bdfa0a417bfa3f5dd7b032c03b9e2055e587ccd1ad80c9` 与本地一致。
+- 线上核验：`https://115.159.43.237/` 返回新入口，线上 JS 内含「iruler 成员」且「员工」出现 0 次；`characters/`、`basis/`、`draco/` 与四个 `.glb` 的远端大小与本地逐一相同，无缺失资源。未改后端数据，未重启服务。
+
 ## 2026-09-14 23:50 身份选择：员工 / 访客（前端 `index-D-FK-i7S.js`）
 
 - 需求（用户）：进软件先选身份——**iruler 员工**或**访问人（客户）**；访客直接坐公共区沙发、**不广播低清屏幕预览**，但会议/私聊/语音/高清共享照旧；**名字含「文杰」直接进老板工位**。
