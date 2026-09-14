@@ -9,6 +9,14 @@
 - 波及的测试已同步：`permissions.test.cjs`（改为断言"直接给已选屏、不存在第二次交互"）、`desktop-bridge.test.cjs`（改用真实 display store + 临时文件）、新增 `display-store.test.cjs`（默认主屏/选择生效/重启恢复/断屏回退/无屏返回 undefined）、`capture-integration.cjs` 与 `capture-trace.cjs`（真实 Electron 采集改为无选择窗路径：三种约束直接采集、无可用显示器时拒绝、摄像头仍拒绝）。
 - 桌面测试 22/22 通过。新产物 `Build/OfficeDesktopRelease/iruler-dream-0.1.8-Windows-x64.exe`。
 
+### 2026-09-14 21:48 标注功能上线（前端 `index-BUZKbHTL.js`）
+
+- 前端入口 `index-BUZKbHTL.js`，线上 JS SHA256 `7c7bfaec03c3e7d445988cd4f8b7ecc496817e9eb7c5aba38698d838cec3e6f5` 与本地 `Build/OfficeWeb` 逐字节一致。
+- 后端新增 `collab-annotations.mjs` 并已上传（远端 mtime 21:48），`officeweb` 服务 active、近 2 分钟无 error。
+- 远端备份 `backups/pre-annotation-20260914-2148`（旧 dist + 全部后端）。
+- 线上包里已确认含标注 UI（"标注中…"、"抢占共享"、"静音对方"、`annotate` 事件）。
+- **未完成**：两客户端真实联机标注会话尚未人工跑通；中继行为由自动化测试覆盖（私聊/会议授权、越权拒绝、限频、清理）。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。
@@ -146,7 +154,7 @@ Remove-Item ..\Build\OfficeWeb\assets\office.glb, ..\Build\OfficeWeb\assets\offi
 # 1) 前端：把构建产物【内容】传到远端 dist（不要传本地 dist，它根本不存在）
 scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes -r ..\Build\OfficeWeb\* ubuntu@115.159.43.237:~/officeweb/dist/
 # 2) 后端：全部运行时文件，缺一个服务就起不来（依赖关系见下表）
-scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes server.mjs start.mjs static.mjs livekit.mjs admin.mjs accounts.mjs account-storage.mjs chat-access.mjs chat-store.mjs chat-server.mjs chat-files.mjs meetings.mjs privateSessions.mjs sitting.mjs public-seats.json package.json ubuntu@115.159.43.237:~/officeweb/
+scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes server.mjs start.mjs static.mjs livekit.mjs admin.mjs collab-annotations.mjs accounts.mjs account-storage.mjs chat-access.mjs chat-store.mjs chat-server.mjs chat-files.mjs meetings.mjs privateSessions.mjs sitting.mjs public-seats.json package.json ubuntu@115.159.43.237:~/officeweb/
 ssh -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes ubuntu@115.159.43.237 "sudo -n systemctl restart officeweb"
 ```
 
@@ -159,6 +167,7 @@ ssh -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes ubuntu@
 | `livekit.mjs` | 令牌与房间授权 | `server.mjs`、`meetings.mjs` |
 | `static.mjs` | dist 静态托管（支持 Range） | `server.mjs` |
 | `admin.mjs` | 管理员释放工位、密码限流与恒定时间比较 | `server.mjs` |
+| `collab-annotations.mjs` | 共享屏标注中继（同通话/同会议可见） | `server.mjs` |
 | `accounts.mjs` + `account-storage.mjs` | 账号、会话、scrypt | `server.mjs` |
 | `chat-store.mjs` / `chat-files.mjs` / `chat-server.mjs` / `chat-access.mjs` | 聊天与附件 | `server.mjs` |
 | `meetings.mjs` / `privateSessions.mjs` | 会议与私聊会话 | `server.mjs` |
