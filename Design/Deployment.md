@@ -50,6 +50,15 @@
 - 未解之谜（如实记录）：用 CDP 附加探针时，桌面的 chrome 注入（`iruler-desktop` 类与标题栏元素）在这台机器上**任何版本都不发生**（0.1.8 同样），而用户正常启动时标题栏是存在的；因此"全屏时隐藏标题栏"这条我无法在探针里观测，需要在真实使用中确认。
 - 测试：桌面 24/24；网页单测 104/104；两个浏览器 harness（独立舞台 + 真实私聊面板）全过。EXE 0.1.9 已构建（`Build/OfficeDesktopRelease/iruler-dream-0.1.9-Windows-x64.exe`，同时保留 `Build/OfficeDesktopRelease019/` 一份）。
 
+### 2026-09-14 22:30 后台/托盘的来电与消息通知（前端 `index-BElqbAGe.js` + EXE 0.1.9 重打包）
+
+- 用户反馈：窗口关到托盘后**有提示音但看不到任何弹窗**，来电/聊天/语音/会议都收不到可见提示。
+- 根因：通知走渲染进程的 HTML5 `Notification`，窗口 `hide()` 后 Chromium 视其为隐藏页，Windows 会丢弃；`webPreferences` 又缺 `backgroundThrottling:false`；且没有任何代码会主动把窗口弹到前台（只有点通知才 `focusWindow()`，而通知根本看不到）。
+- 做法：`desktop-bridge.cjs` 新增 `office:alert`，由**主进程原生 `Notification`** 发通知；紧急事件（来电/语音/会议）调用 `attention()` = restore→show→moveTop→focus + `flashFrame(true)` + 1.2 秒置顶脉冲，点击弹窗经 `office:alert-open` 回到渲染进程。`main.cjs` 加 `backgroundThrottling:false` 并在聚焦时停闪烁。网页侧 `officeNotifications.ts` 把来电/会议标为 `urgent`（铃声 2 秒×15，接听/点击/过期即停），聊天只弹通知不抢窗口；**桥接不可用时回退网页通知**，避免 preload 有方法、主进程无处理器时静默丢弃。
+- 上线核验：本地入口 `index-BElqbAGe.js`（CSS 沿用 `index-Dx7H4GVR.css`），线上 `https://115.159.43.237/assets/index-BElqbAGe.js` SHA256 `22c6443fce0b0eeb4a8c175c859433bf597602fa97891bf6c7631c65f633c5f0` 与本地逐字节一致，`officeweb` active、无 error。备份 `backups/notifications-20260914/`。**只改前端，未重启服务，线上用户未掉线**（上次入口 `index-vJVhJjFz.js` 保留在盘上）。
+- 测试：桌面 24/24（含新增 alert 用例）、网页 106/106（含新增 3 条通知用例）、`tsc --noEmit` 通过。EXE 于 22:22:17 重新打包，并在 `win-unpacked/resources/app.asar` 实测到 `office:alert`、`office:alert-open`、`backgroundThrottling`、`flashFrame`、`setAlwaysOnTop`、`onAlertOpen`。
+- 注意：本次前端构建快照同时包含 22:25 那条「最大化/全屏」改动（同一 `src/` 树）。**未验收**：真实 Windows 上「关窗到托盘 → 另一客户端来电/会议」的弹屏与响铃尚需人工双端实测。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。

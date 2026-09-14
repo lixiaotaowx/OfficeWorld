@@ -97,6 +97,63 @@ test("不可满足的 Range 返回 416，HEAD 不带正文", async () => {
   }
 });
 
+test("文本资源按 Accept-Encoding 压缩，已压缩格式不重复压缩", async () => {
+  const root = fixture();
+  const source = "const a = 1;\n".repeat(400);
+  writeFileSync(join(root, "index-ABC123xy.js"), source);
+  try {
+    await withServer(root, async (url) => {
+      // fetch decodes transparently, so the declared length is the evidence.
+      const br = await fetch(`${url}/index-ABC123xy.js`, { headers: { "Accept-Encoding": "br" } });
+      assert.equal(br.headers.get("content-encoding"), "br");
+      assert.ok(Number(br.headers.get("content-length")) < source.length * 0.6, "压缩后应明显更小");
+      assert.equal(br.headers.get("vary"), "Accept-Encoding");
+      assert.equal(await br.text(), source);
+      const gzip = await fetch(`${url}/index-ABC123xy.js`, { headers: { "Accept-Encoding": "gzip" } });
+      assert.equal(gzip.headers.get("content-encoding"), "gzip");
+      const none = await fetch(`${url}/index-ABC123xy.js`, { headers: { "Accept-Encoding": "" } });
+      assert.equal(none.headers.get("content-encoding"), null);
+      assert.equal(Number(none.headers.get("content-length")), source.length);
+      // Already-compressed assets are served as they are.
+      const binary = await fetch(`${url}/data.bin`, { headers: { "Accept-Encoding": "br" } });
+      assert.equal(binary.headers.get("content-encoding"), null);
+      assert.equal(Number(binary.headers.get("content-length")), BODY.length);
+      // Ranges and compression never combine.
+      const ranged = await fetch(`${url}/index-ABC123xy.js`, { headers: { "Accept-Encoding": "br", Range: "bytes=0-9" } });
+      assert.equal(ranged.status, 206);
+      assert.equal(ranged.headers.get("content-encoding"), null);
+      assert.equal(await ranged.text(), source.slice(0, 10));
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("带内容哈希的文件长期缓存，其它资源用条件请求换 304", async () => {
+  const root = fixture();
+  writeFileSync(join(root, "app-DEADBEEF.css"), "body{color:#123}\n");
+  try {
+    await withServer(root, async (url) => {
+      const hashed = await fetch(`${url}/app-DEADBEEF.css`);
+      assert.equal(hashed.headers.get("cache-control"), "public, max-age=31536000, immutable");
+      assert.ok(hashed.headers.get("etag"), "必须带 ETag，否则过期后只能重传整份");
+      // An expired model must come back as a 304, not as the whole body.
+      const model = await fetch(`${url}/data.bin`);
+      assert.equal(model.headers.get("cache-control"), "public, max-age=3600", "没有名字哈希的资源仍按小时过期");
+      const again = await fetch(`${url}/data.bin`, { headers: { "If-None-Match": model.headers.get("etag") } });
+      assert.equal(again.status, 304);
+      assert.equal(await again.text(), "");
+      const miss = await fetch(`${url}/data.bin`, { headers: { "If-None-Match": 'W/"nope"' } });
+      assert.equal(miss.status, 200);
+      // A validator from a different file must not match.
+      const crossed = await fetch(`${url}/data.bin`, { headers: { "If-None-Match": hashed.headers.get("etag") } });
+      assert.equal(crossed.status, 200);
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("编码的路径穿越与未知路径都不会被本模块接管", async () => {
   const root = fixture();
   try {

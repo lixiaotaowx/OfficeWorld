@@ -269,6 +269,9 @@ export default function OfficeScene(props: Props) {
     let stopped = false,
       tick = 0,
       sinceReport = 0;
+    /** Cached remote-avatar map, keyed by the snapshot identities it was built from. */
+    let remoteCache: { people: Props['people']; motions: Props['motions']; myId: string;
+      states: Map<string, RemoteState> } | null = null;
     const monitors = new MonitorScreens();
     monitorsRef.current = monitors;
     const stopLoading = loadOfficeAsset(
@@ -401,13 +404,16 @@ export default function OfficeScene(props: Props) {
       wallCutaway.update(camera, controls.target, dt);
       // Draw the other players, then tell the server where we are. Reporting is
       // throttled: the server would reject a faster stream anyway.
-      remotes.sync(
-        remoteStates({
-          people: latest.current.people,
-          motions: latest.current.motions,
-          myId: latest.current.myId,
-        }),
-      );
+      // The map is rebuilt only when the snapshots change: doing it every frame
+      // allocated a map plus one object per colleague, sixty times a second.
+      const people = latest.current.people;
+      const motions = latest.current.motions;
+      const myId = latest.current.myId;
+      if (!remoteCache || remoteCache.people !== people || remoteCache.motions !== motions ||
+          remoteCache.myId !== myId) {
+        remoteCache = { people, motions, myId, states: remoteStates({ people, motions, myId }) };
+      }
+      remotes.sync(remoteCache.states);
       remotes.update(dt);
       renderer.render(world, camera);
       if (++tick % 120 === 0) {

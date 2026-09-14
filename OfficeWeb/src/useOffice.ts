@@ -20,6 +20,24 @@ import type {
 
 import type { Account } from "./AccountGate";
 
+/** Cheap equality for the 500ms call-status snapshot, so identity can be kept. */
+function sameCallStates(
+  a: Record<string, { voice: string; connected: boolean; sharing: boolean }>,
+  b: Record<string, { voice: string; connected: boolean; sharing: boolean }>,
+) {
+  const keys = Object.keys(b);
+  if (keys.length !== Object.keys(a).length) return false;
+  return keys.every((key) => {
+    const left = a[key], right = b[key];
+    return left && left.voice === right.voice && left.connected === right.connected &&
+      left.sharing === right.sharing;
+  });
+}
+
+/** How often relayed positions and thumbnails are folded into React state. */
+const MOTION_FLUSH_MS = 100;
+const PREVIEW_FLUSH_MS = 500;
+
 export function useOffice(account: Account) {
   const [people, setPeople] = useState<Person[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -62,10 +80,20 @@ export function useOffice(account: Account) {
   const [callStates, setCallStates] = useState<Record<string, ReturnType<OfficeMedia['callStatus']>>>({});
   const muteBusy = useRef(false);
   useEffect(() => {
+    // No call, no polling: this used to rebuild the status object twice a second
+    // even when nobody was on a call, re-rendering the whole app for nothing.
+    if (!sessions.length) {
+      setCallStates((old) => (Object.keys(old).length ? {} : old));
+      return;
+    }
     const timer = setInterval(() => {
       setVoiceStatus(media.current?.privateVoiceStatus() || '未通话');
-      setCallStates(Object.fromEntries(sessions.map(s => [s.id, media.current?.callStatus(s.id) ||
-        { voice: '连接中', connected: false, sharing: false }])));
+      const next: Record<string, ReturnType<OfficeMedia['callStatus']>> = Object.fromEntries(
+        sessions.map(s => [s.id, media.current?.callStatus(s.id) ||
+          { voice: '连接中', connected: false, sharing: false }]));
+      // Keep the previous object when nothing changed: a new identity would
+      // re-render every consumer twice a second.
+      setCallStates((old) => sameCallStates(old, next) ? old : next);
     }, 500);
     return () => clearInterval(timer);
   }, [sessions]);
@@ -134,23 +162,48 @@ export function useOffice(account: Account) {
     });
     s.on("seats", setSeats);
     // Motion snapshots are keyed by player; anybody absent is simply not drawn.
-    s.on("motion", (motion: Motion & { id: string }) =>
-      setMotions((old) => ({ ...old, [motion.id]: motion })),
-    );
+    // They are batched: one moving colleague used to be one React render each, and
+    // a busy room reached well over a hundred renders per second. The scene already
+    // interpolates between snapshots, so 10 updates a second look identical.
+    const pendingMotions: Record<string, Motion> = {};
+    let motionTimer: ReturnType<typeof setTimeout> | undefined;
+    s.on("motion", (motion: Motion & { id: string }) => {
+      pendingMotions[motion.id] = motion;
+      if (motionTimer) return;
+      motionTimer = setTimeout(() => {
+        motionTimer = undefined;
+        const batch = { ...pendingMotions };
+        for (const key of Object.keys(pendingMotions)) delete pendingMotions[key];
+        setMotions((old) => ({ ...old, ...batch }));
+      }, MOTION_FLUSH_MS);
+    });
     s.on("notice", setNotice);
     s.on("kicked", (info: { message?: string }) =>
       setNotice(info?.message || "你被管理员请出了工位"),
     );
     const chat = attachChatClient(s, account.id, setMessages, setNotice, setContacts);
     chatClient.current = chat;
-    s.on("preview", ({ id, image }) =>
+    // Thumbnails are batched for the same reason as motion: several people sharing
+    // used to mean a render per JPEG, and the 3D scene only needs the newest frame.
+    const pendingPreviews: Record<string, string | null> = {};
+    let previewTimer: ReturnType<typeof setTimeout> | undefined;
+    const flushPreviews = () => {
+      previewTimer = undefined;
+      const batch = { ...pendingPreviews };
+      for (const key of Object.keys(pendingPreviews)) delete pendingPreviews[key];
       setPreviews((old) => {
         const next = { ...old };
-        if (image && (id === s.id || receivePreviews.current)) next[id] = image;
-        else delete next[id];
+        for (const [key, value] of Object.entries(batch)) {
+          if (value !== null && (key === s.id || receivePreviews.current)) next[key] = value;
+          else delete next[key];
+        }
         return next;
-      }),
-    );
+      });
+    };
+    s.on("preview", ({ id, image }) => {
+      pendingPreviews[id] = image ? String(image) : null;
+      previewTimer ??= setTimeout(flushPreviews, PREVIEW_FLUSH_MS);
+    });
     s.on("request", (r: Request) => {
       invitationIds.current.add(r.id); setRequests((old) => [...old, r]);
     });
@@ -193,6 +246,8 @@ export function useOffice(account: Account) {
     });
     s.connect();
     return () => {
+      clearTimeout(motionTimer);
+      clearTimeout(previewTimer);
       disposeNotifications();
       chat.dispose();
       m.dispose();
