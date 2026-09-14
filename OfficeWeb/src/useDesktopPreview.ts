@@ -1,8 +1,7 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { Person } from './types';
-import { mayBroadcastPreview, previewReason, shouldPreview } from './previewGate';
-import { BOSS_SEAT } from './seats';
+import { previewIntervalMs, previewReason, shouldPreview } from './previewGate';
 
 export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   connected: boolean, person: Person | undefined, notice: (text: string) => void) {
@@ -14,7 +13,7 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   const [watched, setWatched] = useState(true);
   const desktop = !!window.officeDesktop;
   const seated = person?.seat != null;
-  const mayBroadcast = mayBroadcastPreview(person?.role, person?.seat, BOSS_SEAT);
+  const mayBroadcast = person?.role !== 'visitor';
   const eligible = shouldPreview({ desktop, connected, seated, mayBroadcast });
 
   useEffect(() => {
@@ -59,17 +58,24 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
         }
       } finally {
         busy = false;
-        // 6s / 300px (user, 2026-09-14): the capture itself is long-lived and cheap,
-        // so the interval is about bandwidth and how often the screen is captured.
-        if (!stopped) timer = setTimeout(frame, 6000);
+        // 6s in focus / 12s out of focus (user, 2026-09-15), 300px since 2026-09-14:
+        // the capture itself is long-lived and cheap, so the interval is about
+        // bandwidth and how often the screen is captured.
+        if (!stopped) timer = setTimeout(frame, previewDelay());
       }
     }
+    // Refocusing asks for a fresh picture straight away instead of waiting out the
+    // slower out-of-focus interval.
+    const previewDelay = () =>
+      previewIntervalMs(document.hasFocus(), document.visibilityState !== 'hidden');
     void frame();
     window.addEventListener('office-display-changed', frame);
+    window.addEventListener('focus', frame);
     return () => {
       stopped = true;
       clearTimeout(timer);
       window.removeEventListener('office-display-changed', frame);
+      window.removeEventListener('focus', frame);
       if (channel.connected) channel.emit('ambient-sharing', false);
       setActive(false);
     };

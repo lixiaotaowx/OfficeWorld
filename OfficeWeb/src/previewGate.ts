@@ -17,12 +17,11 @@ export function shouldPreview(input: {
   return input.desktop && input.connected && input.seated;
 }
 
-/** Who is allowed to broadcast the low-resolution preview: every member, plus the
- *  boss even when they came in as a visitor (user, 2026-09-15). The server applies
- *  the same rule in `preview-policy.mjs`; keep the two in step. */
-export function mayBroadcastPreview(role: string | undefined, seat: number | null | undefined,
-  bossSeat: number) {
-  return role !== 'visitor' || seat === bossSeat;
+/** How often the desk preview is refreshed: 6s with the window in focus, 12s when it
+ *  is not (user, 2026-09-15). Nobody is looking at the office then, so half the
+ *  frames are enough while staying warm for whoever watches. */
+export function previewIntervalMs(focused: boolean, visible: boolean) {
+  return focused && visible ? 6000 : 12000;
 }
 
 /** One short line for the UI: why this machine is, or is not, on its desk screen.

@@ -1,5 +1,4 @@
 import { createSitting } from "./sitting.mjs";
-import { broadcastsPreview } from "./preview-policy.mjs";
 import { createAdmin } from "./admin.mjs";
 import { createCollabAnnotations } from "./collab-annotations.mjs";
 import { createServer } from "node:http";
@@ -436,17 +435,19 @@ export function createOfficeServer(options = {}) {
     s.on("ambient-sharing", value => {
       const p = people.get(s.id);
       if (!p) return;
-      // A visiting client never broadcasts a low-resolution screen preview; the boss
-      // chair is the exception. The client does not even capture one otherwise.
-      p.previewSharing = value === true && p.seat != null && broadcastsPreview(p, BOSS_SEAT);
+      // A visiting client never broadcasts a low-resolution screen preview. The
+      // client does not even capture one; this is the server-side backstop.
+      p.previewSharing = value === true && p.seat != null && p.role !== "visitor";
       if (!p.previewSharing) sendPreview(null);
     });
     let lastFrame = 0;
     s.on("preview", (image) => {
       const p = people.get(s.id);
-      if (!p || !broadcastsPreview(p, BOSS_SEAT)) return;
+      // Visitors never broadcast the low-resolution preview, even while sharing in
+      // high definition: that is the one part of the office they opt out of.
+      if (p?.role === "visitor") return;
       if (
-        !(p.sharing || p.previewSharing) ||
+        !(p?.sharing || p?.previewSharing) ||
         typeof image !== "string" ||
         image.length > 250000 ||
         !image.startsWith("data:image/jpeg;base64,") ||

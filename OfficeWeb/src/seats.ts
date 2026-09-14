@@ -84,10 +84,6 @@ export const MANAGER_DISPLAY: XYZ = {
 
 export const SEAT_COUNT = WORKSTATIONS.length;
 
-/** The manager's chair (id `Manager`, 老板工位). The server keeps the same index
- *  in `BOSS_SEAT` and seats a name containing 文杰 straight into it. */
-export const BOSS_SEAT = WORKSTATIONS.findIndex((seat) => seat.id === "Manager");
-
 /** Chair transform in the shape the avatar code already expected. */
 export const chairSeats = WORKSTATIONS.map((s) => ({
   x: s.chair.x,

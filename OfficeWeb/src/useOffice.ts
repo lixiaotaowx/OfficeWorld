@@ -388,7 +388,10 @@ export function useOffice(account: Account) {
     motions,
     videos,
     connected,
-    sharing: window.officeDesktop ? desktopPreview.active : sharing,
+    // Only a real screen share keeps the 3D scene drawing while the window is out of
+    // focus. The ambient desk preview does not: it refreshes on its own slower
+    // out-of-focus interval, and the scene stays frozen (user, 2026-09-14/15).
+    sharing,
     // In a browser the low-resolution preview comes from an authorised screen share
     // (media.ts), so the status line has to speak about that path instead.
     previewReason: window.officeDesktop || !sharing

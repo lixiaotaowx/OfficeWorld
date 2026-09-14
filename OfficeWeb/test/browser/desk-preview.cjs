@@ -1,11 +1,11 @@
-// Does the manager's desk really show the low-resolution preview of whoever sits
-// there - in particular a boss who came in as a visiting client?
+// Does the desk preview really appear, including on the manager's desk and while
+// the person holding the desk is the only one online?
 //
 // Runs the built app against an isolated server with a stubbed desktop bridge, so
 // the "screen capture" is a canvas and no real screen or account is touched. The
 // manager monitor is inspected through window.__officeDebug (?debug=1).
 //
-//   node test/browser/boss-preview.cjs
+//   node test/browser/desk-preview.cjs
 const { launch } = require("./playwright.cjs");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -16,7 +16,7 @@ const BOSS_SEAT = 8;
 
 async function startServer() {
   const { createOfficeServer } = await import(pathToFileURL(path.resolve("OfficeWeb/server.mjs")));
-  const dir = fs.mkdtempSync(path.resolve("Build/boss-preview-qa-"));
+  const dir = fs.mkdtempSync(path.resolve("Build/desk-preview-qa-"));
   const server = createOfficeServer({
     statePath: dir + "/state.json",
     accountsPath: dir + "/accounts.json",
@@ -95,9 +95,9 @@ const readSeat = (page, seat) => page.evaluate(index => {
   const browser = await launch();
   const report = {};
   try {
-    // 1) The boss, who chose the visiting-client identity, still owns the chair and
-    //    must keep broadcasting: their own monitor shows their own frame.
-    const bossCookie = await join(base, "李文杰测试", "visitor");
+    // 1) The manager's desk, held by a member, alone in the office: their own monitor
+    //    must show their own screen without waiting for a colleague to log in.
+    const bossCookie = await join(base, "李文杰测试", "employee");
     const boss = await openPage(browser, base, build, bossCookie);
     await boss.page.waitForFunction(index => window.__officeDebug.monitors.slots.get(index)?.shown,
       BOSS_SEAT, { timeout: 20000 }).catch(() => {});
@@ -105,19 +105,14 @@ const readSeat = (page, seat) => page.evaluate(index => {
     report.bossErrors = boss.errors;
     const roster = JSON.parse(fs.readFileSync(path.join(dir, "state.json"), "utf8"));
     report.bossRoster = roster.seats[BOSS_SEAT]?.name || null;
-    report.bossNotice = await boss.page.locator(".notice, .toast, [role='alert']").allTextContents();
 
     // 2) A plain visiting client holds a sofa, must never capture, yet still sees the
-    //    boss's frame on the manager monitor. The boss is still the only sender here.
+    //    manager's screen.
     const guestCookie = await join(base, "客户乙", "visitor");
     const guest = await openPage(browser, base, build, guestCookie);
     await guest.page.waitForFunction(index => window.__officeDebug.monitors.slots.get(index)?.shown,
       BOSS_SEAT, { timeout: 20000 }).catch(() => {});
     report.guest = await readSeat(guest.page, BOSS_SEAT);
-    report.guestOwnSeat = await guest.page.evaluate(() => {
-      const rows = [...document.querySelectorAll(".seat-grid .seat")];
-      return rows.map(row => row.getAttribute("aria-label") || row.textContent.trim()).slice(0, 12);
-    });
     report.guestErrors = guest.errors;
     report.bossAfterGuest = await readSeat(boss.page, BOSS_SEAT);
 
@@ -125,16 +120,16 @@ const readSeat = (page, seat) => page.evaluate(index => {
     assert.equal(report.boss.hasScreen, true, "老板工位必须有一块可显示的屏幕");
     assert.equal(report.bossRoster, "李文杰测试", "名字含文杰应坐进老板工位");
     assert.match(report.boss.shown || "", /^data:image\/jpeg/,
-      "一个人的时候，老板自己的低清画面也必须出现在老板屏幕上");
-    assert.ok(report.boss.frames >= 1, "老板的客户端必须真的采集了一帧");
+      "一个人的时候，自己的低清画面也必须出现在自己的屏幕上");
+    assert.ok(report.boss.frames >= 1, "客户端必须真的采集了一帧");
     assert.match(report.guest.shown || "", /^data:image\/jpeg/, "访客也要能看到老板工位的画面");
     assert.equal(report.guest.frames, 0, "普通访客不得采集屏幕");
     assert.deepEqual(report.bossErrors, []);
     assert.deepEqual(report.guestErrors, []);
-    console.log("PASS boss preview on seat " + BOSS_SEAT + " while alone, visitor captures nothing");
+    console.log("PASS desk preview on seat " + BOSS_SEAT + " while alone, visitor captures nothing");
     await boss.context.close(); await guest.context.close();
   } finally {
-    fs.writeFileSync(path.resolve("Build/boss-preview-browser.json"), JSON.stringify(report, null, 2));
+    fs.writeFileSync(path.resolve("Build/desk-preview-browser.json"), JSON.stringify(report, null, 2));
     await browser.close();
     await new Promise(resolve => server.io.close(resolve));
     fs.rmSync(dir, { recursive: true, force: true });

@@ -107,13 +107,13 @@ test("访客不能占工位，员工可以；名字含文杰直接进老板工�
   });
 });
 
-test("老板工位的人即使是访客身份，也照常共享低清预览", async () => {
+test("身份不改变预览规则：成员照常广播，坐进老板工位也一样", async () => {
   await withAuthServer(async ({ post, enter }) => {
     const boss = await post("register", { name: "李文杰", password: "1" });
-    await post("role", { role: "visitor" }, boss.cookie);
+    await post("role", { role: "employee" }, boss.cookie);
     const { socket, me } = await enter(boss.cookie, "李文杰");
-    assert.equal(me().role, "visitor");
-    assert.equal(me().seat, BOSS_SEAT, "名字含文杰照样坐进老板工位");
+    assert.equal(me().role, "employee");
+    assert.equal(me().seat, BOSS_SEAT, "名字含文杰坐进老板工位");
 
     const colleague = await post("register", { name: "同事丁", password: "1" });
     await post("role", { role: "employee" }, colleague.cookie);
@@ -125,7 +125,7 @@ test("老板工位的人即使是访客身份，也照常共享低清预览", as
     socket.emit("preview", FRAME);
     await new Promise((resolve) => setTimeout(resolve, 150));
     assert.deepEqual(frames.filter((value) => value.image).map((value) => value.image), [FRAME],
-      "同事应收到老板的低清画面");
-    assert.equal(frames.some((value) => value.image === null), false, "不得把老板的画面清掉");
+      "同事应收到老板工位的低清画面");
+    assert.equal(frames.some((value) => value.image === null), false, "不得把画面清掉");
   });
 });

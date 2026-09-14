@@ -1,5 +1,15 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 02:00 去掉老板例外；预览间隔改为焦点内 6 秒 / 焦点外 12 秒（前端 `index-CJYubbjI.js`，后端 `server.mjs`）
+
+- 需求（用户）：「别什么都老板例外搞得太复杂，即便是没有人也可以看到自己的屏幕低分辨率就好了 只是此时更新时间换成焦点内6秒 焦点外12秒」。
+- 改动：
+  - **删除老板例外**：删除 `preview-policy.mjs`，`server.mjs` 恢复为 `p.previewSharing = value === true && p.seat != null && p.role !== "visitor"` 与 `preview` 事件里 `if (p?.role === "visitor") return;` 两处兜底（线上 `server.mjs` SHA256 `72fb9d75d890174c482941c2eb31d021c8a512a4ea7190ae60a69de59e38c261`，与本地一致；远端已删除 `preview-policy.mjs`）。客户端删掉 `mayBroadcastPreview`/`BOSS_SEAT` 引用，改为 `person?.role !== 'visitor'`；`src/seats.ts` 不再导出 `BOSS_SEAT`。「文杰 → 老板工位」仍是**座位规则**，与预览无关。
+  - **刷新间隔**：新增 `previewIntervalMs(focused, visible)` = 焦点内（且窗口可见）**6000ms**，焦点外或隐藏 **12000ms**；回到焦点立刻补一帧（`window.addEventListener('focus', frame)`）。300px / JPEG 55 不变。
+  - **顺带修正**：`office.sharing` 不再等于 `desktopPreview.active`——只有真正的高清共享才让三维场景持续出帧，工位低清预览不再把"焦点外不刷新三维场景"这条规则冲掉。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **123/123**（含"刷新间隔：焦点内 6 秒，焦点外 12 秒"、"访客一律不广播，没有老板例外"）；浏览器端到端 `test/browser/desk-preview.cjs` PASS——老板工位（成员）独自在线时自己的屏幕就有画面（`frames>=1`），访客 `frames=0` 仍能看到老板工位的画面。
+- 发布：上传 `index.html` + `assets/index-CJYubbjI.js`（CSS 未变，仍是 `index-BVSyMKpz.css`）与 `server.mjs`，`systemctl restart officeweb` → active。线上入口 `index-CJYubbjI.js`，JS SHA256 `b18c6a90d222c27314f2e558878bffece5acee43ed5e4c0d81065ab5dc0c3e9e` 与本地一致；线上包里可见 `function(i,e){return i&&e?6e3:12e3}`、`oO(document.hasFocus(),document.visibilityState!=="hidden")`、`desktop&&…connected&&…seated` 三条件判定与状态行文案。备份 `backups/boss-preview-20260915/`。
+
 ## 2026-09-15 01:20 修「还是没有出现屏幕预览」：有工位就一直采集（前端 `index-Dzq7sHO6.js` + `index-BVSyMKpz.css`）
 
 - 现象（用户）：「还是没有出现屏幕预览」。用真实浏览器端到端复现（新增 `OfficeWeb/test/browser/boss-preview.cjs`，隔离服务端 + 桩 `officeDesktop`）：老板工位**屏幕存在、工位认领正常，但客户端一帧都没采集**（`frames: 0`）——因为 2026-09-14 的规则「除你之外没人开着接收就不采集」，一个人办公时 `wanted=false`，于是自己的显示器一片空白；等第二个人进来后画面立刻出现。这正是"没有预览"的原因。
