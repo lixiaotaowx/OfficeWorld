@@ -19,6 +19,8 @@ interface TokenReply {
 
 export class OfficeMedia {
   screen: MediaStream | null = null;
+  /** Called whenever our own screen share ends, whatever ended it. */
+  onScreenStopped?: () => void;
   private disposed = false;
   private connections = new MediaRooms(name => this.token(name),
     (room, name) => this.wire(room, name), message => this.onNotice(message));
@@ -55,6 +57,9 @@ export class OfficeMedia {
   ) {
     this.meetingScreens = new MeetingScreenShare(this.socket, this.connections,
       () => this.meetingRoom, text => this.onNotice(text));
+    // A meeting share ending (stop, takeover, leave) needs the same cleanup as a
+    // private one; both funnel into the single onScreenStopped callback.
+    this.meetingScreens.onStopped = () => this.onScreenStopped?.();
     document.addEventListener('pointerdown', this.resumeAudio);
   }
 
@@ -388,6 +393,7 @@ export class OfficeMedia {
         if (publication?.track) await room.localParticipant.unpublishTrack(publication.track, true);
       }).catch(error => { if (!this.disposed) this.onNotice(String(error)); });
     }
+    const hadScreen = Boolean(this.screen);
     clearInterval(this.previewTimer);
     this.screen?.getTracks().forEach((track) => track.stop());
     this.screen = null;
@@ -397,6 +403,10 @@ export class OfficeMedia {
       this.socket.emit("sharing", false);
       this.onSharing(false);
     }
+    // Every way our own screen can end - explicit stop, being taken over, the call
+    // ending, leaving a meeting, losing the session - funnels through here, so this
+    // is where the annotation marks and the desktop layer are cleaned up.
+    if (hadScreen) this.onScreenStopped?.();
   }
 
   async prepareMic() {

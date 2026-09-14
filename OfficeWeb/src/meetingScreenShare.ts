@@ -9,6 +9,8 @@ type Capture = { lease: string; tracks: LocalTrack[]; cancelled: boolean };
 export class MeetingScreenShare {
   private captures = new Map<string, Capture>();
   private generations = new Map<string, number>();
+  /** Called when our own meeting screen share really ends (stop, takeover, leave). */
+  onStopped?: () => void;
   constructor(private socket: Socket, private rooms: MediaRooms,
     private currentRoom: () => string | null, private notice: (text: string) => void) {
     socket.on('meeting-screen-replaced', this.replaced);
@@ -36,6 +38,9 @@ export class MeetingScreenShare {
       const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
       if (publication?.track) await room.localParticipant.unpublishTrack(publication.track, true);
     }).catch(() => {});
+    // Only a share that was actually running counts as "ended": releasing an
+    // already-free room must not wipe marks that belong to somebody else's screen.
+    if (capture) this.onStopped?.();
   }
   async start(name: string) {
     const room = this.rooms.get(name);
