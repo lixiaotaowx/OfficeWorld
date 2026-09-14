@@ -115,6 +115,18 @@ const readSeat = (page, seat) => page.evaluate(index => {
     report.guest = await readSeat(guest.page, BOSS_SEAT);
     report.guestErrors = guest.errors;
     report.bossAfterGuest = await readSeat(boss.page, BOSS_SEAT);
+    // A visitor is seated on a sofa by the server and must never be asked to click a
+    // chair (user, 2026-09-15); the bottom bar should say where they are sitting.
+    report.guestPicker = await guest.page.locator(".seat-picker-hint").count();
+    report.guestIdentity = await guest.page.locator(".bottom-bar .identity small").textContent();
+
+    // 3) A member without a desk still gets the picker, so the hint is only gone for
+    //    the people it does not apply to.
+    const memberCookie = await join(base, "成员丙", "employee");
+    const member = await openPage(browser, base, build, memberCookie);
+    await member.page.waitForTimeout(1500);
+    report.memberPicker = await member.page.locator(".seat-picker-hint").count();
+    report.memberErrors = member.errors;
 
     console.log(JSON.stringify(report, null, 2));
     assert.equal(report.boss.hasScreen, true, "老板工位必须有一块可显示的屏幕");
@@ -124,10 +136,14 @@ const readSeat = (page, seat) => page.evaluate(index => {
     assert.ok(report.boss.frames >= 1, "客户端必须真的采集了一帧");
     assert.match(report.guest.shown || "", /^data:image\/jpeg/, "访客也要能看到老板工位的画面");
     assert.equal(report.guest.frames, 0, "普通访客不得采集屏幕");
+    assert.equal(report.guestPicker, 0, "访客不该再看到“点击场景里你想坐的椅子”");
+    assert.match(report.guestIdentity || "", /沙发/, "访客的身份栏应写明坐在公共区沙发");
+    assert.equal(report.memberPicker, 1, "没有工位的成员仍然要能选座");
     assert.deepEqual(report.bossErrors, []);
     assert.deepEqual(report.guestErrors, []);
-    console.log("PASS desk preview on seat " + BOSS_SEAT + " while alone, visitor captures nothing");
-    await boss.context.close(); await guest.context.close();
+    assert.deepEqual(report.memberErrors, []);
+    console.log("PASS desk preview on seat " + BOSS_SEAT + " while alone, visitor captures nothing, visitor has no seat picker");
+    await boss.context.close(); await guest.context.close(); await member.context.close();
   } finally {
     fs.writeFileSync(path.resolve("Build/desk-preview-browser.json"), JSON.stringify(report, null, 2));
     await browser.close();

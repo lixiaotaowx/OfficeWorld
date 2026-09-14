@@ -70,12 +70,15 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const previewAllowed = me?.previewAllowed ?? true;
   const ownedSeat = office.seats.findIndex(owner => owner?.id === account.id);
   const mySeat = me?.seat ?? (ownedSeat >= 0 ? ownedSeat : null);
+  // A visiting client is seated on a sofa by the server and never takes a desk, so
+  // the seat picker must not ask them to click a chair (user, 2026-09-15).
+  const isVisitor = me?.role === 'visitor';
   // A first-time visitor must name themselves before doing anything else.
   const needsName = false;
-  // A visitor with no desk sees the picker until they take one. Derived from
+  // A member with no desk sees the picker until they take one. Derived from
   // server state rather than stored, so it cannot drift.
   const showPicker =
-    !needsName && (rePicking || (Boolean(me) && mySeat === null));
+    !needsName && !isVisitor && (rePicking || (Boolean(me) && mySeat === null));
   function chooseCharacter(id: CharacterId) {
     setCharacter(id);
     office.setCharacter(id);
@@ -244,9 +247,11 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
                   <small>
                     {me?.meeting
                       ? "在会议室"
-                      : me?.seat === null || me?.seat === undefined
-                        ? "还没选工位"
-                        : `${WORKSTATIONS[me.seat]?.label ?? ""} 工位`}
+                      : isVisitor
+                        ? "公共区沙发"
+                        : me?.seat === null || me?.seat === undefined
+                          ? "还没选工位"
+                          : `${WORKSTATIONS[me.seat]?.label ?? ""} 工位`}
                   </small>
                 </div>
                 <button
@@ -341,24 +346,28 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               中键拖动旋转，Shift＋中键平移，滚轮朝鼠标位置缩放。点击地面或 WASD 行走，点击自己的椅子或屏幕回座。坐下后会自动随机切换坐姿。
             </p>
             <p>
-              工位一旦选定就属于你，别人无法再占用，你的共享画面也会显示在那张桌子的屏幕上。
+              {isVisitor
+                ? "访客在公共区沙发就坐，不占用同事工位，会议、私聊、语音和共享屏幕都不受影响。"
+                : "工位一旦选定就属于你，别人无法再占用，你的共享画面也会显示在那张桌子的屏幕上。"}
             </p>
             <div className="settings-row">
               <span>
-                我的工位：
+                {isVisitor ? "我的座位：" : "我的工位："}
                 <strong>
-                  {mySeat === null ? "还没选" : WORKSTATIONS[mySeat]?.label}
+                  {isVisitor ? "公共区沙发" : mySeat === null ? "还没选" : WORKSTATIONS[mySeat]?.label}
                 </strong>
               </span>
-              <button
-                className="primary"
-                onClick={() => {
-                  setHelp(false);
-                  setRePicking(true);
-                }}
-              >
-                {mySeat === null ? "去选工位" : "重新选座"}
-              </button>
+              {!isVisitor && (
+                <button
+                  className="primary"
+                  onClick={() => {
+                    setHelp(false);
+                    setRePicking(true);
+                  }}
+                >
+                  {mySeat === null ? "去选工位" : "重新选座"}
+                </button>
+              )}
             </div>
             <div className="actions">
               <button onClick={() => setHelp(false)}>关闭</button>
