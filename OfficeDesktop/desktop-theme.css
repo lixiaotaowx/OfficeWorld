@@ -16,6 +16,11 @@ html.iruler-desktop .account-page {
 }
 html.iruler-desktop.iruler-maximized .app,
 html.iruler-desktop.iruler-maximized .account-page { border-radius: 0; box-shadow: none; }
+/* Whole-screen mode: the shell's title bar steps aside and gives its 54px back. */
+html.iruler-desktop.iruler-fullscreen { padding-top: 0; }
+html.iruler-desktop.iruler-fullscreen #iruler-desktop-chrome { display: none; }
+html.iruler-desktop.iruler-fullscreen body { height: 100dvh; }
+html.iruler-desktop.iruler-fullscreen .app { height: 100dvh; }
 html.iruler-desktop {
   --bg: #f4f2eb; --night: #26322b; --acid: #f0d274; --mint: #8d9663;
   --brand: #3d5141; --brand-soft: #edeedc; --line: #ddded3; --line-2: #e5e5dc;

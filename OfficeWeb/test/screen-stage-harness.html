@@ -1,4 +1,17 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div><script type="module">
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div>
+<script>
+// ?desktop=1 mimics the Electron bridge: whole-screen mode is a native window call
+// that reports back through an event, because the DOM API does nothing there.
+if (new URLSearchParams(location.search).has('desktop')) {
+  const listeners = new Set();
+  window.__calls = [];
+  window.officeDesktop = {
+    setFullscreen(value) { window.__calls.push(value); listeners.forEach((fn) => fn(value)); return Promise.resolve(value); },
+    onFullscreenChange(callback) { listeners.add(callback); return () => listeners.delete(callback); },
+  };
+}
+</script>
+<script type="module">
 import React from 'react'; import {createRoot} from 'react-dom/client';
 import ScreenStage from '/src/ScreenStage.tsx';
 import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/screen-stage.css';

@@ -1,7 +1,8 @@
-const { ipcMain, desktopCapturer, screen, safeStorage, app } = require('electron');
+const { ipcMain, desktopCapturer, screen, safeStorage, app, Notification } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { trusted } = require('./policy.cjs');
+const { setWindowFullscreen } = require('./fullscreen.cjs');
 
 function installDesktopBridge(getWindow, dependencies = {}) {
   const annotationLayer = dependencies.annotationLayer;
@@ -54,7 +55,47 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     if (window.isMinimized()) window.restore();
     window.show(); window.focus(); return true;
   });
+  // Incoming call / voice / meeting alerts. A renderer HTML5 Notification is not
+  // dependable once the window is hidden in the tray, so the alert is raised from
+  // the main process: a native toast, plus a real window raise and taskbar flash
+  // for the ring-type events. Ordinary chat only gets the toast and a flash.
+  const attention = () => {
+    const window = getWindow();
+    if (!window || window.isDestroyed()) return;
+    if (window.isMinimized()) window.restore();
+    window.show(); window.moveTop(); window.focus();
+    window.flashFrame(true);
+    // A short top-most pulse is what actually lifts the window above a maximized
+    // or fullscreen app on Windows; it is released again so stacking stays normal.
+    window.setAlwaysOnTop(true);
+    setTimeout(() => { if (!window.isDestroyed()) window.setAlwaysOnTop(false); }, 1200);
+  };
+  handle('office:alert', payload => {
+    const window = getWindow();
+    if (!window || window.isDestroyed()) return false;
+    const text = value => (typeof value === 'string' ? value : '');
+    const title = text(payload?.title).slice(0, 80);
+    const body = text(payload?.body).slice(0, 220);
+    const section = text(payload?.section).slice(0, 32);
+    const urgent = payload?.urgent === true;
+    if (Notification.isSupported()) {
+      const toast = new Notification({ title: title || 'iruler dream', body, silent: true });
+      toast.on('click', () => {
+        const current = getWindow();
+        if (current && !current.isDestroyed()) current.webContents.send('office:alert-open', section);
+        attention();
+      });
+      toast.show();
+    }
+    if (urgent) attention();
+    else if (window.isVisible() && !window.isFocused()) window.flashFrame(true);
+    return true;
+  });
   handle('office:login-clear', () => { fs.rmSync(credentials, { force: true }); return true; });
+  // Native full screen. The DOM Fullscreen API is a no-op inside this window
+  // (frameless + transparent), and its enter/leave events do not fire either, so the
+  // requested state is applied and reported here rather than awaited from the window.
+  handle('office:fullscreen', value => setWindowFullscreen(getWindow(), value === true));
   // Annotation layer over the shared display. "attach" only succeeds for a
   // display share; a window share has no place on the desktop to draw on.
   handle('office:annotation-layer', enabled => {

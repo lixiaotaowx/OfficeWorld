@@ -48,7 +48,13 @@ export default function ScreenStage(props: ScreenStageProps) {
   useEffect(() => {
     const change = () => setFullscreen(document.fullscreenElement === host.current);
     document.addEventListener('fullscreenchange', change);
-    return () => document.removeEventListener('fullscreenchange', change);
+    // In the desktop app the DOM Fullscreen API is a no-op (frameless + transparent
+    // window), so whole-screen mode goes through Electron and reports back here.
+    const unsubscribe = window.officeDesktop?.onFullscreenChange?.((value) => setFullscreen(value));
+    return () => {
+      document.removeEventListener('fullscreenchange', change);
+      unsubscribe?.();
+    };
   }, []);
 
   const paint = useCallback(() => {
@@ -158,8 +164,21 @@ export default function ScreenStage(props: ScreenStageProps) {
   const toggleFullscreen = () => {
     const element = host.current;
     if (!element) return;
+    // Whole screen: native window full screen in the desktop app, DOM full screen in
+    // a browser. "Maximise" is the separate app-level mode that only fills the window.
+    const bridge = window.officeDesktop;
+    if (bridge?.setFullscreen) {
+      void bridge.setFullscreen(!fullscreen).then((value) => setFullscreen(value === true))
+        .catch(() => undefined);
+      return;
+    }
     if (document.fullscreenElement === element) void document.exitFullscreen().catch(() => undefined);
     else void element.requestFullscreen().catch(() => undefined);
+  };
+
+  const enlarge = () => {
+    if (fullscreen) toggleFullscreen();
+    setMaximized(true);
   };
 
   const enlarged = maximized || fullscreen;
@@ -170,11 +189,13 @@ export default function ScreenStage(props: ScreenStageProps) {
     <canvas ref={board} className="screen-stage-board" aria-hidden="true" />
     <div className="screen-stage-draw" onPointerDown={start} onPointerMove={move}
       onPointerUp={finish} onPointerCancel={finish} />
-    {/* Inline, the stage shows a single control only: a row of buttons in a narrow
-        panel overlapped the picture and buried the screen itself. */}
+    {/* Inline the stage keeps two compact controls only: a row of buttons in a
+        narrow panel overlapped the picture and buried the screen itself. */}
     {!enlarged && <div className="screen-stage-bar minimal">
+      <button type="button" className="screen-stage-expand" onClick={enlarge}
+        title="在软件窗口内占满"><ScreenIcon />最大化</button>
       <button type="button" className="screen-stage-expand" onClick={toggleFullscreen}
-        title="全屏观看这块屏幕"><ScreenIcon />全屏</button>
+        title="占满整个屏幕"><ScreenIcon />全屏</button>
     </div>}
     {enlarged && <div className="screen-stage-bar">
       <span className="screen-stage-name"><ScreenIcon />{props.label}</span>
@@ -184,13 +205,15 @@ export default function ScreenStage(props: ScreenStageProps) {
         <button type="button" title="撤销我画的上一条" onClick={() => props.onUndo(scope)}>撤销</button>
         <button type="button" title="清空所有人的标注" onClick={() => props.onClear(scope)}>清空</button>
       </>}
-      <button type="button" onClick={() => setMaximized(!maximized)}
-        title={maximized ? '退出窗口内放大' : '在窗口内放大'}>
-        {maximized ? '还原' : '放大'}</button>
-      <button type="button" onClick={toggleFullscreen} title="切换全屏">{fullscreen ? '退出全屏' : '全屏'}</button>
+      <button type="button" onClick={() => (maximized ? setMaximized(false) : enlarge())}
+        title={maximized ? '退出窗口内占满' : '在软件窗口内占满'}>
+        {maximized ? '还原窗口' : '最大化'}</button>
+      <button type="button" onClick={toggleFullscreen} aria-pressed={fullscreen}
+        title="占满整个屏幕">{fullscreen ? '退出全屏' : '全屏'}</button>
       {props.actions}
       <button type="button" className="screen-stage-close" onClick={() => {
-        if (document.fullscreenElement === host.current) void document.exitFullscreen().catch(() => undefined);
+        if (fullscreen && window.officeDesktop?.setFullscreen) void window.officeDesktop.setFullscreen(false);
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
         setMaximized(false);
       }} aria-label="关闭放大视图"><CloseIcon /></button>
     </div>}

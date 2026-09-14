@@ -18,7 +18,9 @@ function fixture() {
   const module = { exports: {} };
   vm.runInNewContext(fs.readFileSync(require.resolve('../chrome.cjs'), 'utf8'), {
     module, __dirname: __dirname,
-    require: id => id === 'electron' ? electron : id === './policy.cjs' ? require('../policy.cjs') : require(id),
+    require: id => id === 'electron' ? electron
+      : id === './policy.cjs' ? require('../policy.cjs')
+        : id === './fullscreen.cjs' ? require('../fullscreen.cjs') : require(id),
   });
   module.exports.installChrome(window);
   return { handlers, opened, window, closed: () => closed,

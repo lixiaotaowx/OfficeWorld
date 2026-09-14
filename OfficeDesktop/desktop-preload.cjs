@@ -1,12 +1,27 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
   focusWindow: () => ipcRenderer.invoke('office:focus'),
+  // Native call / message / meeting alert raised by the main process, which can
+  // also raise the window and flash the taskbar when the event is a ring-type one.
+  alert: payload => ipcRenderer.invoke('office:alert', payload),
+  onAlertOpen: callback => {
+    const listener = (_event, section) => callback(typeof section === 'string' ? section : '');
+    ipcRenderer.on('office:alert-open', listener);
+    return () => ipcRenderer.removeListener('office:alert-open', listener);
+  },
   displays: () => ipcRenderer.invoke('office:displays'),
   selectDisplay: id => ipcRenderer.invoke('office:display-select', id),
   previewFrame: () => ipcRenderer.invoke('office:preview-frame'),
   saveLogin: value => ipcRenderer.invoke('office:login-save', value),
   readLogin: () => ipcRenderer.invoke('office:login-read'),
   clearLogin: () => ipcRenderer.invoke('office:login-clear'),
+  /** Whole-screen mode; the DOM Fullscreen API does nothing in this window. */
+  setFullscreen: value => ipcRenderer.invoke('office:fullscreen', value === true),
+  onFullscreenChange(callback) {
+    const listener = (_event, value) => callback(value === true);
+    ipcRenderer.on('office:fullscreen-changed', listener);
+    return () => ipcRenderer.removeListener('office:fullscreen-changed', listener);
+  },
   // Annotation layer over the display this client is sharing.
   annotations: {
     attach: () => ipcRenderer.invoke('office:annotation-layer', true),

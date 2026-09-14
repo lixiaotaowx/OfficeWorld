@@ -41,6 +41,15 @@
 - 新增断言写入 `test/browser/private-call-stage.cjs`（居中 ±4px、单行、无重叠、间距 3–24px、不拉满、在下方）。
 - 线上入口 `index-B-vtqV4X.js` + `index-Dx7H4GVR.css`；CSS SHA256 `a0e5bb9d255ce3d9…` 线上与本地一致，并已从线上 CSS 抽出该规则逐字核对（压缩后为 `translate(-50%)`，不是 `translateX(-50%)`）。
 
+### 2026-09-14 22:25 拆成「最大化 / 全屏」两个按钮（前端 `index-vJVhJjFz.js` + EXE 0.1.9）
+
+- 用户反馈：客户端点全屏没效果。**实测确认**：在打包好的窗口里 `requestFullscreen()` 完全无效——没有报错、`document.fullscreenElement` 仍为 false、窗口尺寸不变（1440×940，屏幕 1920×1080）。原因是 0.1.7 为圆角把窗口改成 `transparent: true`，Windows 上透明窗口进不了 HTML 全屏。
+- 拆成两个按钮：**最大化**=软件窗口内占满（纯 CSS，一直可用）；**全屏**=占满整个屏幕（客户端走 Electron 原生 `win.setFullScreen()`，浏览器走 DOM 全屏）。小窗两个都是紧凑药丸按钮，完整按钮条仍在最大化/全屏后出现。
+- 又一个实测发现：透明无边框窗口**不会触发 `enter-full-screen`/`leave-full-screen`**，所以状态不能等事件。新增 `OfficeDesktop/fullscreen.cjs`：谁改全屏谁负责给页面加类并通知渲染进程（`office:fullscreen-changed`）；`chrome.cjs`（含 F11）与 `desktop-bridge.cjs` 共用它。
+- 实测（打包 0.1.9，独立 profile）：IPC 返回 `true`、窗口 1440×940 → **1920×1080**、退出后复原 1440×940。桌面路径的网页侧行为（调原生接口、不碰 DOM 全屏、按钮文案随事件翻转）在 `test/browser/screen-stage.cjs?desktop=1` 用可控假桥断言。
+- 未解之谜（如实记录）：用 CDP 附加探针时，桌面的 chrome 注入（`iruler-desktop` 类与标题栏元素）在这台机器上**任何版本都不发生**（0.1.8 同样），而用户正常启动时标题栏是存在的；因此"全屏时隐藏标题栏"这条我无法在探针里观测，需要在真实使用中确认。
+- 测试：桌面 24/24；网页单测 104/104；两个浏览器 harness（独立舞台 + 真实私聊面板）全过。EXE 0.1.9 已构建（`Build/OfficeDesktopRelease/iruler-dream-0.1.9-Windows-x64.exe`，同时保留 `Build/OfficeDesktopRelease019/` 一份）。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。

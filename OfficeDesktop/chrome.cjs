@@ -2,6 +2,7 @@ const { ipcMain, shell, dialog, nativeImage, app } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { trusted, OFFICE_URL } = require('./policy.cjs');
+const { applyFullscreenState, setWindowFullscreen } = require('./fullscreen.cjs');
 
 function installChrome(window) {
   const actions = {
@@ -16,7 +17,7 @@ function installChrome(window) {
     zoomIn: () => window.webContents.setZoomLevel(Math.min(3, window.webContents.getZoomLevel() + .5)),
     zoomOut: () => window.webContents.setZoomLevel(Math.max(-2, window.webContents.getZoomLevel() - .5)),
     zoomReset: () => window.webContents.setZoomLevel(0),
-    fullscreen: () => window.setFullScreen(!window.isFullScreen()),
+    fullscreen: () => setWindowFullscreen(window, !window.isFullScreen()),
     permissions: () => dialog.showMessageBox(window, {
       title: 'iruler dream · 声音与共享', message: '让协作自然发生',
       detail: '设备管理可选择 Windows 扬声器与麦克风。\n开麦后才采集声音；高清共享仍需选择窗口或屏幕。\n关闭窗口会留在托盘，通话和共享继续；选择“退出”才结束程序。',
@@ -41,8 +42,10 @@ function installChrome(window) {
     return actions[action]();
   });
   window.on('page-title-updated', event => { event.preventDefault(); window.setTitle('iruler dream'); });
-  // The window is rounded by CSS, so a maximized/full-screen window must drop the
-  // radius to fill the work area. The page gets a class; chrome.css reacts to it.
+  // A maximised or full-screen window must drop the rounded corners, and in
+  // whole-screen mode the title bar steps aside so the picture covers everything.
+  // The enter/leave events are unreliable for this transparent window, so F11 goes
+  // through the shared helper and these listeners only catch other sources.
   const setMaximized = value => {
     if (window.isDestroyed() || window.webContents.isDestroyed()) return;
     void window.webContents
@@ -51,8 +54,8 @@ function installChrome(window) {
   };
   window.on('maximize', () => setMaximized(true));
   window.on('unmaximize', () => setMaximized(false));
-  window.on('enter-full-screen', () => setMaximized(true));
-  window.on('leave-full-screen', () => setMaximized(false));
+  window.on('enter-full-screen', () => applyFullscreenState(window, true));
+  window.on('leave-full-screen', () => applyFullscreenState(window, false));
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     let action;
