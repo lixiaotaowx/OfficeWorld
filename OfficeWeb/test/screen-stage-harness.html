@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div><script type="module">
+import React from 'react'; import {createRoot} from 'react-dom/client';
+import ScreenStage from '/src/ScreenStage.tsx';
+import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/screen-stage.css';
+// Synthetic "shared screen": a canvas capture, no real desktop involved.
+const canvas=document.createElement('canvas'); canvas.width=1280; canvas.height=720;
+const ctx=canvas.getContext('2d');
+ctx.fillStyle='#20406a'; ctx.fillRect(0,0,1280,720);
+ctx.fillStyle='#fff'; ctx.font='48px sans-serif'; ctx.fillText('SHARED SCREEN',80,140);
+const stream=canvas.captureStream(5);
+createRoot(document.getElementById('root')).render(React.createElement(ScreenStage,{
+  stream, scope:'call-harness', label:'对方共享屏幕', strokes:[], myClientId:'me',
+  onDraw:()=>{}, onClear:()=>{}, onUndo:()=>{},
+  hint:'可点「标注」在画面上画线，所有人都能看到',
+  actions:React.createElement(React.Fragment,null,
+    React.createElement('button',{type:'button'},'静音我'),
+    React.createElement('button',{type:'button'},'静音对方'),
+    React.createElement('button',{type:'button'},'抢占共享'),
+    React.createElement('button',{type:'button',className:'call-hangup'},'挂断')),
+}));
+window.__stageReady=true;
+</script></body></html>

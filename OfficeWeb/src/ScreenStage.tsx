@@ -162,13 +162,21 @@ export default function ScreenStage(props: ScreenStageProps) {
     else void element.requestFullscreen().catch(() => undefined);
   };
 
+  const enlarged = maximized || fullscreen;
+
   return <div ref={host}
     className={`screen-stage${maximized ? ' maximized' : ''}${annotating ? ' annotating' : ''}`}>
     <video ref={video} autoPlay muted playsInline aria-label={props.label} />
     <canvas ref={board} className="screen-stage-board" aria-hidden="true" />
     <div className="screen-stage-draw" onPointerDown={start} onPointerMove={move}
       onPointerUp={finish} onPointerCancel={finish} />
-    <div className="screen-stage-bar">
+    {/* Inline, the stage shows a single control only: a row of buttons in a narrow
+        panel overlapped the picture and buried the screen itself. */}
+    {!enlarged && <div className="screen-stage-bar minimal">
+      <button type="button" className="screen-stage-expand" onClick={toggleFullscreen}
+        title="全屏观看这块屏幕"><ScreenIcon />全屏</button>
+    </div>}
+    {enlarged && <div className="screen-stage-bar">
       <span className="screen-stage-name"><ScreenIcon />{props.label}</span>
       <button type="button" aria-pressed={annotating} title="在画面上标注，别人也能看到"
         onClick={() => { setAnnotating(!annotating); local.current = null; }}>标注</button>
@@ -177,14 +185,16 @@ export default function ScreenStage(props: ScreenStageProps) {
         <button type="button" title="清空所有人的标注" onClick={() => props.onClear(scope)}>清空</button>
       </>}
       <button type="button" onClick={() => setMaximized(!maximized)}
-        title={maximized ? '退出最大化' : '最大化'}>
-        {maximized ? '还原' : '最大化'}</button>
-      <button type="button" onClick={toggleFullscreen} title="全屏观看">{fullscreen ? '退出全屏' : '全屏'}</button>
+        title={maximized ? '退出窗口内放大' : '在窗口内放大'}>
+        {maximized ? '还原' : '放大'}</button>
+      <button type="button" onClick={toggleFullscreen} title="切换全屏">{fullscreen ? '退出全屏' : '全屏'}</button>
       {props.actions}
-      {maximized && <button type="button" className="screen-stage-close" onClick={() => setMaximized(false)}
-        aria-label="关闭最大化"><CloseIcon /></button>}
-    </div>
-    {props.hint && <p className="screen-stage-hint">{props.hint}</p>}
-    {annotating && <p className="screen-stage-tip">标注中：在画面上拖动即可画线，所有人都能看到</p>}
+      <button type="button" className="screen-stage-close" onClick={() => {
+        if (document.fullscreenElement === host.current) void document.exitFullscreen().catch(() => undefined);
+        setMaximized(false);
+      }} aria-label="关闭放大视图"><CloseIcon /></button>
+    </div>}
+    {enlarged && props.hint && <p className="screen-stage-hint">{props.hint}</p>}
+    {annotating && enlarged && <p className="screen-stage-tip">标注中：在画面上拖动即可画线，所有人都能看到</p>}
   </div>;
 }

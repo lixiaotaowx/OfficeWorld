@@ -13,12 +13,25 @@
   padding: 8px 10px; border-radius: 14px;
   background: #1d2a24e6; border: 1px solid #ffffff1f;
   box-shadow: 0 10px 30px #0b161020;
-  opacity: 0; transition: opacity .18s ease;
 }
-.screen-stage:hover .screen-stage-bar,
-.screen-stage:focus-within .screen-stage-bar,
-.screen-stage.annotating .screen-stage-bar,
-.screen-stage.maximized .screen-stage-bar { opacity: 1; }
+/* Inline mode: one button, no strip, so it cannot cover the shared picture. */
+.screen-stage-bar.minimal {
+  left: auto; right: 10px; bottom: 10px; padding: 0;
+  background: transparent; border: 0; box-shadow: none; opacity: 1;
+}
+.screen-stage-expand {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px; font-size: 12px;
+  color: #f4f2eb; background: #1d2a24d9; border: 1px solid #ffffff2e;
+  box-shadow: 0 6px 18px #0b161033; backdrop-filter: blur(4px);
+}
+.screen-stage-expand:hover { background: #26362e; }
+.screen-stage-bar:not(.minimal) { opacity: 0; transition: opacity .18s ease; }
+.screen-stage:hover .screen-stage-bar:not(.minimal),
+.screen-stage:focus-within .screen-stage-bar:not(.minimal),
+.screen-stage.annotating .screen-stage-bar:not(.minimal),
+.screen-stage.maximized .screen-stage-bar:not(.minimal),
+.screen-stage:fullscreen .screen-stage-bar:not(.minimal) { opacity: 1; }
 .screen-stage-name {
   display: flex; align-items: center; gap: 6px; margin-right: auto;
   color: #f4f2eb; font-size: 12px; font-weight: 600; letter-spacing: .2px;

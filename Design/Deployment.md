@@ -17,6 +17,13 @@
 - 线上包里已确认含标注 UI（"标注中…"、"抢占共享"、"静音对方"、`annotate` 事件）。
 - **未完成**：两客户端真实联机标注会话尚未人工跑通；中继行为由自动化测试覆盖（私聊/会议授权、越权拒绝、限频、清理）。
 
+### 2026-09-14 22:00 小窗按钮修正（前端 `index-7ug9IbJH.js`）
+
+- 用户反馈：小窗里一排按钮叠在画面上。原因是把完整按钮条也放进了内联视图，窄面板下换行盖住了画面。
+- 修正：内联只保留**一个**「全屏」药丸按钮（高 36px，右下角，不占条带）；「标注 / 撤销 / 清空 / 放大 / 退出全屏 / 静音我 / 静音对方 / 抢占共享 / 挂断 / 关闭」只在进入全屏或窗口内放大后出现。
+- 验证：新增 `test/browser/screen-stage.cjs`（harness `test/screen-stage-harness.html`）断言——内联按钮集合必须恰好是 `["全屏"]` 且高度 <48px；点全屏后 `document.fullscreenElement` 成立、按钮集合为完整 8 项、按钮条 opacity=1；进入标注后追加「撤销/清空」。截图 `Build/stage-inline.png`、`Build/stage-fullscreen.png`、`Build/stage-annotating.png`。
+- 线上入口 `index-7ug9IbJH.js`，SHA256 `f510fdedbbaccab7e3b07686400dad7fba7fa74975c973e4097e4a2fe4df7e21` 与本地一致。桌面 EXE 无需重新打包（0.1.8 不变）。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。
