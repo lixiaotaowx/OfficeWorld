@@ -37,6 +37,20 @@
   color: #f4f2eb; font-size: 12px; font-weight: 600; letter-spacing: .2px;
 }
 .screen-stage-name svg { width: 15px; height: 15px; }
+/* panels.css pins every button inside a session panel to the panel's top-right
+   corner (`.session-panel button { position: absolute; top: 4px; right: 0 }`).
+   That rule has the same specificity as a single class and loads later, so it used
+   to tear the stage buttons out of their bar: they stacked on top of each other in
+   the small view and were clipped below the picture. Two classes win regardless of
+   stylesheet order, so the bar owns the positioning and the buttons stay in it. */
+.screen-stage .screen-stage-bar button {
+  position: static;
+  inset: auto;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+}
 .screen-stage-bar button {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 7px 11px; border-radius: 10px; font-size: 12px;

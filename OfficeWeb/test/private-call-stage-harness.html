@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div><script type="module">
+import React from 'react'; import {createRoot} from 'react-dom/client';
+import PrivateCallPanel from '/src/PrivateCallPanel.tsx';
+import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/workspace-responsive.css'; import '/src/panels.css';
+// Synthetic shared screen, so the real panel (340px wide, scrolling) can be judged.
+const canvas=document.createElement('canvas'); canvas.width=1280; canvas.height=720;
+const ctx=canvas.getContext('2d');
+ctx.fillStyle='#20406a'; ctx.fillRect(0,0,1280,720);
+ctx.fillStyle='#fff'; ctx.font='60px sans-serif'; ctx.fillText('SHARED SCREEN',90,150);
+const stream=canvas.captureStream(5);
+const noop=async()=>{};
+const office={
+  requests:[], outgoing:[], people:[{id:'peer',name:'林木'}], clientId:'me',
+  sessions:[{id:'call',peer:'peer',kind:'screen',room:'call-1'}],
+  callStates:{call:{voice:'已开启',connected:true,sharing:false}},
+  videos:{call:stream}, annotations:[],
+  annotation:{draw:noop,clear:noop,undo:noop},
+  mute:noop, end:noop, shareInCall:noop, stopShare:noop, setRemoteAudioMuted:noop,
+};
+createRoot(document.getElementById('root')).render(React.createElement(PrivateCallPanel,{office}));
+window.__stageReady=true;
+</script></body></html>

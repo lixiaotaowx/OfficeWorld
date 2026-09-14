@@ -24,6 +24,15 @@
 - 验证：新增 `test/browser/screen-stage.cjs`（harness `test/screen-stage-harness.html`）断言——内联按钮集合必须恰好是 `["全屏"]` 且高度 <48px；点全屏后 `document.fullscreenElement` 成立、按钮集合为完整 8 项、按钮条 opacity=1；进入标注后追加「撤销/清空」。截图 `Build/stage-inline.png`、`Build/stage-fullscreen.png`、`Build/stage-annotating.png`。
 - 线上入口 `index-7ug9IbJH.js`，SHA256 `f510fdedbbaccab7e3b07686400dad7fba7fa74975c973e4097e4a2fe4df7e21` 与本地一致。桌面 EXE 无需重新打包（0.1.8 不变）。
 
+### 2026-09-14 22:05 按钮被切割的真正原因（前端 `index-BDoTVoaO.js` + `index-njgHlGw4.css`）
+
+- 用户反馈：小窗里的按钮被切割。定位到根因不是我的样式，而是 `panels.css:218` 的
+  `.session-panel button { position: absolute; top: 4px; right: 0; }`——它是 (0,1,1) 特异性、且比 `screen-stage.css` 后加载，
+  于是把舞台里**每一个**按钮都从按钮条里拽出来、按面板右上角定位：小窗里表现为按钮压在画面上并掉到画面外被 `overflow:hidden` 裁掉（实测按钮底边 707px vs 画面底边 667px），多按钮时表现为"一堆按钮叠在一起"。
+- 修复：`screen-stage.css` 增加 `.screen-stage .screen-stage-bar button { position: static; inset: auto; }`（两个类胜过那条单类规则，与样式表顺序无关），定位权只留给按钮条本身。
+- 教训与测试修正：我之前只在**独立** harness（无 `.session-panel`）里断言，那条全局规则不生效，所以断言全过而真实面板是坏的。新增 `test/browser/private-call-stage.cjs` + `test/private-call-stage-harness.html`：在**真实私聊面板**里跑，断言按钮 `position=static`、完全落在画面矩形内、滚动后仍可见、放大后 8 个按钮位置互不重叠且都在可见区域。`test/browser/stage-cascade.cjs` 保留为定位类问题的诊断脚本。
+- 证据：`Build/panel-inline.png`（单按钮在画面内）、`Build/panel-fullscreen.png`。线上 CSS SHA256 `5a68375ce265cc646d38a19ab3bd8473…` 与本地逐字节一致，且线上 CSS 内含上述两条规则。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。
