@@ -389,6 +389,10 @@ export function useOffice(account: Account) {
     videos,
     connected,
     sharing: window.officeDesktop ? desktopPreview.active : sharing,
+    // In a browser the low-resolution preview comes from an authorised screen share
+    // (media.ts), so the status line has to speak about that path instead.
+    previewReason: window.officeDesktop || !sharing
+      ? desktopPreview.reason : '我的工位预览：共享中（浏览器）',
     muted,
     voiceStatus,
     callStates,

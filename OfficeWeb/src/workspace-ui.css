@@ -224,6 +224,13 @@ button:focus-visible, a:focus-visible, summary:focus-visible {
   background: transparent;
 }
 .bottom-bar .actions svg { width: 15px; height: 15px; flex-shrink: 0; }
+.bottom-bar .actions .preview-state {
+  align-self: center;
+  max-width: 190px;
+  color: #aebaa2;
+  font-size: 10px;
+  line-height: 1.25;
+}
 .bottom-bar .actions button:hover:not(:disabled) { color: #fff; background: #43533a; }
 .bottom-bar .actions .primary { color: #273520; background: var(--acid); border-color: var(--acid); box-shadow: none; }
 .bottom-bar .actions .primary:hover:not(:disabled) { background: #e4f8b5; color: #273520; }
@@ -248,7 +255,7 @@ button:disabled { opacity: .46; }
 .session-panel { right: 406px; bottom: 125px; }
 .sharing-preview { left: 44px; bottom: 125px; }
 .meeting-presence { top: 72px; background: #28352b; border-color: #a5bf78; }
-.meeting-notification { bottom: 42px; right: 40px; background: #354b2c; border-color: #95a87a; }
+.meeting-notification { background: #354b2c; border-color: #95a87a; }
 @media (prefers-reduced-motion: no-preference) {
   .sidebar { animation: arrive .35s ease both; }
   @keyframes arrive { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }

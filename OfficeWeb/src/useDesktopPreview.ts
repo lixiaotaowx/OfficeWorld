@@ -1,23 +1,26 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { Person } from './types';
-import { mayBroadcastPreview, shouldPreview } from './previewGate';
+import { mayBroadcastPreview, previewReason, shouldPreview } from './previewGate';
 import { BOSS_SEAT } from './seats';
 
 export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   connected: boolean, person: Person | undefined, notice: (text: string) => void) {
   const [active, setActive] = useState(false);
-  // The server says whether anybody else has previews enabled. Default to true so a
-  // freshly loaded page never shows the preview as off while the answer is in flight.
-  const [wanted, setWanted] = useState(true);
+  const [failed, setFailed] = useState(false);
+  // Whether anybody else can receive previews right now. It no longer gates the
+  // capture (your own monitor must always show your own screen); it is kept so the
+  // status line can say that nobody is watching yet.
+  const [watched, setWatched] = useState(true);
   const desktop = !!window.officeDesktop;
-  const eligible = shouldPreview({ desktop, connected, seated: person?.seat != null, wanted,
-    mayBroadcast: mayBroadcastPreview(person?.role, person?.seat, BOSS_SEAT) });
+  const seated = person?.seat != null;
+  const mayBroadcast = mayBroadcastPreview(person?.role, person?.seat, BOSS_SEAT);
+  const eligible = shouldPreview({ desktop, connected, seated, mayBroadcast });
 
   useEffect(() => {
     const channel = socket.current;
     if (!channel) return;
-    const onAmbient = (message: { wanted?: boolean }) => setWanted(message?.wanted !== false);
+    const onAmbient = (message: { wanted?: boolean }) => setWatched(message?.wanted !== false);
     channel.on('ambient', onAmbient);
     return () => { channel.off('ambient', onAmbient); };
   }, [connected]);
@@ -27,8 +30,8 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
     const channel = socket.current;
     if (!eligible || !bridge || !channel) {
       setActive(false);
-      // Nobody can receive it (or we hold no desk): release the capture stream
-      // instead of leaving a screen capture running for nothing.
+      // No desk (or not allowed): release the capture stream instead of leaving a
+      // screen capture running for nothing.
       void bridge?.setPreviewActive?.(false).catch(() => undefined);
       return;
     }
@@ -44,10 +47,12 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
         channel!.emit('ambient-sharing', true);
         channel!.emit('preview', image);
         setActive(true);
+        setFailed(false);
         warned = false;
       } catch {
         if (!stopped) {
           setActive(false);
+          setFailed(true);
           channel!.emit('ambient-sharing', false);
           if (!warned) notice('屏幕预览暂不可用，正在自动重试');
           warned = true;
@@ -69,5 +74,5 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
       setActive(false);
     };
   }, [eligible, connected, person?.id]);
-  return { active, wanted };
+  return { active, reason: previewReason({ active, desktop, connected, seated, mayBroadcast, failed, watched }) };
 }

@@ -266,6 +266,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
                 >
                   <PreviewIcon />{previewAllowed ? "他人工位预览：开" : "他人工位预览：关"}
                 </button>
+                <small className="preview-state" role="status"
+                  title="本机屏幕是否正在采集并显示在自己的工位显示器上">
+                  {office.previewReason}
+                </small>
                 {!window.officeDesktop && !office.sharing && <button
                   className="primary" disabled={!office.connected || insecure || mySeat === null}
                   title="授权浏览器采集屏幕，用于自己的工位小预览"

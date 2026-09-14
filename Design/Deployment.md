@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 01:20 修「还是没有出现屏幕预览」：有工位就一直采集（前端 `index-Dzq7sHO6.js` + `index-BVSyMKpz.css`）
+
+- 现象（用户）：「还是没有出现屏幕预览」。用真实浏览器端到端复现（新增 `OfficeWeb/test/browser/boss-preview.cjs`，隔离服务端 + 桩 `officeDesktop`）：老板工位**屏幕存在、工位认领正常，但客户端一帧都没采集**（`frames: 0`）——因为 2026-09-14 的规则「除你之外没人开着接收就不采集」，一个人办公时 `wanted=false`，于是自己的显示器一片空白；等第二个人进来后画面立刻出现。这正是"没有预览"的原因。
+- 修复：`shouldPreview` 去掉 `wanted`——**桌面客户端在线且持有工位就持续采集**（6 秒 / 300px，常驻流单帧约 3ms，代价可忽略）；`ambient { wanted }` 保留，但只用于状态提示「采集中（暂时没人看）」，不再停采。
+- 顺带补上可诊断性：底部栏常驻一行「我的工位预览：…」（`previewGate.previewReason`），区分需桌面客户端 / 浏览器需点「授权工位预览」 / 连接中 / 还没有工位 / 访客不广播 / 采集失败重试 / 采集中。显示器空白时先看这行。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **122/122**（新增「没人在接收也照常采集」「状态行说得出为什么没有画面」）；浏览器端到端 `boss-preview.cjs` PASS——老板一个人时自己的屏幕上就有画面（`frames>=1`、`shown` 为 JPEG），普通访客 `frames=0` 但能看到老板的画面。
+- 发布：前端逐个文件上传 `index.html` + `assets/index-Dzq7sHO6.js` + `assets/index-BVSyMKpz.css`；线上入口即 `index-Dzq7sHO6.js`，JS SHA256 `7788b3d0b73a70c85dbddd6b3361bbb33f80f1557a31d8354e0bbf75e2b2461b` 与本地一致，线上包内含状态行、老板例外规则与"只要求 desktop/connected/seated"的新判定。纯前端改动，**未改后端、未重启服务**；EXE 无需重新打包。
+
 ## 2026-09-15 00:45 老板也共享低分辨率屏幕（前端 `index-RGgXNJ2q.js`，后端 `preview-policy.mjs`）
 
 - 需求（用户）：「老板也要共享低分辨率屏幕啊」——坐老板工位的人不再受「访客不广播低清预览」限制，即使以访客身份进来也照常采集并广播。
