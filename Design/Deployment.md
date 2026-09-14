@@ -1,5 +1,15 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 桌面端品牌去重（0.1.6）
+
+- 问题：应用标题栏与网页（登录卡、应用内导航条）各显示一次 "iruler dream"；桌面预加载还会把网页里的 OFFICE 改写成 iruler dream，导致窗口顶部出现两行相同品牌。
+- 定案：**标题栏只保留图标**（名称仍在 DOM 中供读屏，窗口标题仍是 iruler dream）；**网页只保留字母**（图标隐藏），因此品牌在整个窗口里只出现一次。
+- 改动只在外壳：`OfficeDesktop/chrome.html`、`chrome.css`、`desktop-theme.css`。**网站未改动、未重新部署**，浏览器版视觉不变。
+- 新产物 `Build/OfficeDesktopRelease/iruler-dream-0.1.6-Windows-x64.exe`（`package.json` 0.1.5→0.1.6，不覆盖旧包）。
+- 验证：app.asar 内 chrome.html/chrome.css/desktop-theme.css 与源码 SHA256 逐字节一致；`--office-smoke-test` 隔离启动 `ok=true`、加载 https://115.159.43.237/；真实窗口截图 `Build/desktop-real-app.png`（登录页实测登录卡图标 display:none、图标 30px、标题文字 clip-path inset(50%)）。
+- 登录后的应用内导航条由同一条 `.rail .brand .brand-mark` 选择器覆盖，本机未登录故未截图实测。
+- 未做：安装版与开机自启（按用户要求后续处理，见 `TODO.md`）。
+
 ## 2026-09-14 新域名 HTTPS
 
 - `iruler.online` 和 `www.iruler.online` 已解析到本 VPS；原警告原因是服务器仅提供 IP 证书，域名不匹配。

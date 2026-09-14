@@ -7,9 +7,14 @@
 .window-controls button:hover { background: #ffffff12; color: #fff; }
 .window-controls button:last-child:hover { background: #bd534e; }
 .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.brand img { width: 28px; height: 28px; border-radius: 9px; }
-.brand strong { font-size: 16px; letter-spacing: -.5px; font-weight: 650; }
-.brand strong span { color: #f4ce62; font-weight: 450; }
+.brand img { width: 30px; height: 30px; border-radius: 9px; }
+/* The icon alone is the mark in the title bar: the page below owns the wordmark
+   ("iruler dream 一起在场"), so repeating it here was the duplication. The name
+   stays in the DOM for screen readers, and in the taskbar via the window title. */
+.brand strong {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+  white-space: nowrap; clip-path: inset(50%);
+}
 nav { display: flex; gap: 5px; height: 100%; align-items: center; -webkit-app-region: no-drag; }
 button { font: inherit; border: 0; cursor: pointer; color: inherit; background: transparent; }
 .menu { position: relative; }

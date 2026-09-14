@@ -7,9 +7,11 @@ html.iruler-desktop {
 }
 html.iruler-desktop .rail { height: 64px; border-bottom-color: transparent; gap: 10px; }
 html.iruler-desktop .rail .brand { margin-right: auto; }
-html.iruler-desktop .brand-wordmark { font-size: 14px; letter-spacing: -.4px; text-transform: none; }
-html.iruler-desktop .brand-mark { width: 29px; height: 29px; background: var(--dream-icon) center/contain no-repeat; color: transparent !important; }
-html.iruler-desktop .brand-mark > span { visibility: hidden; }
+html.iruler-desktop .brand-wordmark { font-size: 15px; letter-spacing: -.2px; text-transform: none; }
+/* The title bar already shows the app icon, so the page keeps the wordmark only.
+   Covers both the in-app rail and the login card, so the mark never appears twice. */
+html.iruler-desktop .rail .brand .brand-mark,
+html.iruler-desktop .account-brand .brand-mark { display: none; }
 html.iruler-desktop .stage { border-radius: 20px; box-shadow: 0 3px 14px #23352809; }
 html.iruler-desktop .panel { border-radius: 20px; }
 html.iruler-desktop .view-tabs { box-shadow: 0 4px 18px #2030250c; }
