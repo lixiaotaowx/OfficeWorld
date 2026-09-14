@@ -11,8 +11,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const assert = require("node:assert/strict");
 const { pathToFileURL } = require("node:url");
+const { io: connect } = require("socket.io-client");
 
 const BOSS_SEAT = 8;
+const ADMIN_PASSWORD = "qa-admin";
 
 async function startServer() {
   const { createOfficeServer } = await import(pathToFileURL(path.resolve("OfficeWeb/server.mjs")));
@@ -21,6 +23,7 @@ async function startServer() {
     statePath: dir + "/state.json",
     accountsPath: dir + "/accounts.json",
     secureCookies: false,
+    adminPassword: ADMIN_PASSWORD,
   });
   await new Promise(resolve => server.http.listen(0, "127.0.0.1", resolve));
   return { server, dir, base: "http://127.0.0.1:" + server.http.address().port };
@@ -132,6 +135,24 @@ const readSeat = (page, seat) => page.evaluate(index => {
     report.memberPicker = await member.page.locator(".seat-picker-hint").count();
     report.memberErrors = member.errors;
 
+    // 4) Somebody shown out of the space leaves every conversation list, and their own
+    //    client returns to the login screen instead of sitting in a dead office.
+    const adminCookie = await join(base, "管理员QA", "employee");
+    const adminSocket = connect(base, { transports: ["websocket"], reconnection: false,
+      extraHeaders: { Cookie: adminCookie, Origin: base } });
+    await new Promise((resolve, reject) => {
+      adminSocket.once("connect", resolve); adminSocket.once("connect_error", reject);
+    });
+    adminSocket.emit("join", { name: "管理员QA" });
+    await new Promise(resolve => adminSocket.once("people", resolve));
+    report.chatBefore = await guest.page.locator(".conversation-row").allTextContents();
+    const shownOut = await adminSocket.emitWithAck("admin", { seat: BOSS_SEAT, password: ADMIN_PASSWORD });
+    assert.equal(shownOut.ok, true, "管理员应能请出工位上的人");
+    await guest.page.waitForTimeout(1200);
+    report.chatAfter = await guest.page.locator(".conversation-row").allTextContents();
+    report.bossBackAtLogin = await boss.page.getByLabel("姓名", { exact: true }).count();
+    adminSocket.disconnect();
+
     console.log(JSON.stringify(report, null, 2));
     assert.equal(report.boss.hasScreen, true, "老板工位必须有一块可显示的屏幕");
     assert.equal(report.bossRoster, "李文杰测试", "名字含文杰应坐进老板工位");
@@ -144,6 +165,11 @@ const readSeat = (page, seat) => page.evaluate(index => {
     assert.match(report.guestIdentity || "", /沙发/, "访客的身份栏应写明坐在公共区沙发");
     assert.equal(report.guestChatRows.some((row) => row.includes("公共聊天")), false,
       "访客的会话列表里不应出现公共聊天");
+    assert.equal(report.chatBefore.some((row) => row.includes("李文杰测试")), true,
+      "被请出之前，他的会话应当在列表里");
+    assert.equal(report.chatAfter.some((row) => row.includes("李文杰测试")), false,
+      "被请出的人必须从聊天会话列表消失");
+    assert.equal(report.bossBackAtLogin, 1, "被请出的人要回到登录页，不能留在空间里");
     assert.equal(report.memberPicker, 1, "没有工位的成员仍然要能选座");
     assert.deepEqual(report.bossErrors, []);
     assert.deepEqual(report.guestErrors, []);

@@ -12,6 +12,8 @@ interface Props extends ChatFileActions {
   visible: boolean;
   /** A visiting client has no public channel, only private threads (user, 2026-09-15). */
   visitor: boolean;
+  /** Accounts shown out of the space: their threads are not offered at all. */
+  hidden: string[];
   onMessage: (text: string, recipientId?: string) => Promise<boolean>;
   onUnread: (count: number) => void;
 }
@@ -19,7 +21,7 @@ export const conversationKey = (message: Message, accountId: string) =>
   !message.recipientId ? 'public' : message.senderId === accountId ? message.recipientId : message.senderId || '';
 
 export default function ChatInbox(props: Props) {
-  const { accountId, messages, contacts, people, visible, visitor } = props;
+  const { accountId, messages, contacts, people, visible, visitor, hidden } = props;
   const [active, setActive] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -39,8 +41,11 @@ export default function ChatInbox(props: Props) {
       if (key !== 'public' && !directory.has(key)) directory.set(key,
         m.senderId === accountId ? m.recipientName || '同事' : m.name);
     }
-    const rows = visitor ? [...directory].map(([id, name]) => ({ id, name }))
-      : [{ id: 'public', name: '公共聊天' }, ...[...directory].map(([id, name]) => ({ id, name }))];
+    const rows = (visitor ? [...directory].map(([id, name]) => ({ id, name }))
+      : [{ id: 'public', name: '公共聊天' }, ...[...directory].map(([id, name]) => ({ id, name }))])
+      // Somebody shown out of the space is not offered, even though their older
+      // messages are still in this device's archive.
+      .filter(row => !hidden.includes(row.id));
     return rows.map(row => {
       const history = messages.filter(m => conversationKey(m, accountId) === row.id);
       return { ...row, history, last: history.at(-1),
@@ -48,7 +53,7 @@ export default function ChatInbox(props: Props) {
         unread: history.filter(m => m.senderId !== accountId && m.id > (read[row.id] || '')).length };
     }).sort((a, b) => a.id === 'public' ? -1 : b.id === 'public' ? 1 :
       (b.last?.time || 0) - (a.last?.time || 0) || a.name.localeCompare(b.name, 'zh-CN'));
-  }, [contacts, people, messages, accountId, read, visitor]);
+  }, [contacts, people, messages, accountId, read, visitor, hidden]);
   const current = threads.find(t => t.id === active);
   const last = current?.last?.id;
   useEffect(() => {

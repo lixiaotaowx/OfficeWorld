@@ -156,6 +156,15 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     if (user && ROLES.has(role)) { user.role = role; commit(); return true; }
     return false;
   };
+  /** Drop every stored session of one account. Used when somebody is shown out of
+   *  the space: the cookie they still hold must not walk them back in (user,
+   *  2026-09-15). Persist-then-apply, like the other writes here. */
+  const revokeSessions = (userId) => {
+    const previous = data.sessions;
+    data.sessions = data.sessions.filter((session) => session.userId !== userId);
+    try { commit(); return true; }
+    catch { data.sessions = previous; return false; }
+  };
   const listContacts = () => data.users.map(user => ({ id: user.id, name: user.name }));
-  return { handle, authenticate, setCharacter, setRole, originAllowed, listContacts };
+  return { handle, authenticate, setCharacter, setRole, revokeSessions, originAllowed, listContacts };
 }

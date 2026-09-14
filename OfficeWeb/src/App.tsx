@@ -314,6 +314,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
             panelOpen={panelOpen}
             connected={office.connected}
             contacts={office.contacts}
+            hiddenContacts={office.hiddenContacts}
             onTab={setTab}
             onSelect={(seat) => { setRenderPaused(false); setSelected(seat); setFocusSeat({ seat, nonce: Date.now() }); }}
             onOpenDesks={() => {}}

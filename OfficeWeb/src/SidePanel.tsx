@@ -23,6 +23,8 @@ interface Props extends ChatFileActions {
   panelOpen: boolean;
   connected: boolean;
   contacts: ChatContact[];
+  /** Accounts shown out of the space: their conversations stay hidden. */
+  hiddenContacts: string[];
   onMessage: (text: string, recipientId?: string) => Promise<boolean>;
   onTab: (tab: "people" | "chat") => void;
   onSelect: (seat: number) => void;
@@ -44,6 +46,7 @@ export default function SidePanel({
   panelOpen,
   connected,
   contacts,
+  hiddenContacts,
   onMessage,
   onTab,
   onSelect,
@@ -180,7 +183,7 @@ export default function SidePanel({
       ) : null}
       <ChatInbox accountId={accountId} messages={messages} contacts={contacts} people={people}
         connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
-        visitor={visitor}
+        visitor={visitor} hidden={hiddenContacts}
         onFile={onFile} loadFile={loadFile} onUnread={setUnread} />
       <div className="side-foot">
         <span className="dot" /> 各自专注，随时连接。

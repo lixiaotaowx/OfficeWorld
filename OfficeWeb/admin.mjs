@@ -8,7 +8,8 @@ import { createHash, timingSafeEqual } from "node:crypto";
 const MAX_FAILS = 5;
 const WINDOW_MS = 10 * 60000;
 
-export function createAdmin({ io, people, roster, save, publish, adminPassword, seatCount }) {
+export function createAdmin({ io, people, roster, save, publish, adminPassword, seatCount,
+  eject = () => {} }) {
   const fails = new Map();
   const blocked = (socketId) => {
     const now = Date.now();
@@ -51,11 +52,14 @@ export function createAdmin({ io, people, roster, save, publish, adminPassword, 
       return reply({ ok: false, error: "工位未保存成功，请稍后重试" });
     }
     fails.delete(socket.id);
-    // If the owner is online right now, take the desk away from them.
+    // If the owner is online right now, take the desk away from them - and show them
+    // out of the space: they must not stay in the member list and chat as if nothing
+    // happened (user, 2026-09-15).
     for (const person of online) person.seat = null;
     publish();
     for (const person of online)
-      io.to(person.id).emit("kicked", { seat, message: "你被管理员请出了工位" });
+      io.to(person.id).emit("kicked", { seat, message: "你被管理员请出了空间，请重新登录" });
+    if (online.length) eject(owner.id);
     reply({ ok: true, seat, name: owner.name });
   }
 

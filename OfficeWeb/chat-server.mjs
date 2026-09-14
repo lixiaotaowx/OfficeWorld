@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { recipientFor, publishChat } from './chat-access.mjs';
 export function attachChat(io, socket, people, store, contacts = () =>
-  [...people.values()].map(p => ({ id: p.clientId, name: p.name }))) {
+  [...people.values()].map(p => ({ id: p.clientId, name: p.name })), hidden = () => []) {
   socket.on('chat-contacts', reply => {
     if (typeof reply !== 'function') return;
     if (!people.has(socket.id)) return reply({ ok: false });
-    reply({ ok: true, contacts: contacts() });
+    // `hidden` lists accounts shown out of the space: they disappear from every
+    // conversation list until they log in again (user, 2026-09-15).
+    reply({ ok: true, contacts: contacts(), hidden: hidden() });
   });
   let windowStart = 0, count = 0;
   socket.on("chat-history", (after, reply) => {

@@ -1,6 +1,6 @@
 import { attachOfficeNotifications } from './officeNotifications';
 import { attachChatClient } from "./chatClient";
-import { retainPresent } from './presenceResources';
+import { retainPresent, sameCallStates } from './presenceResources';
 import { useDesktopPreview } from './useDesktopPreview';
 import { useMeetings } from "./useMeetings";
 import type { AnnotateMessage } from './annotations';
@@ -20,20 +20,6 @@ import type {
 
 import type { Account } from "./AccountGate";
 
-/** Cheap equality for the 500ms call-status snapshot, so identity can be kept. */
-function sameCallStates(
-  a: Record<string, { voice: string; connected: boolean; sharing: boolean }>,
-  b: Record<string, { voice: string; connected: boolean; sharing: boolean }>,
-) {
-  const keys = Object.keys(b);
-  if (keys.length !== Object.keys(a).length) return false;
-  return keys.every((key) => {
-    const left = a[key], right = b[key];
-    return left && left.voice === right.voice && left.connected === right.connected &&
-      left.sharing === right.sharing;
-  });
-}
-
 /** How often relayed positions and thumbnails are folded into React state. */
 const MOTION_FLUSH_MS = 100;
 const PREVIEW_FLUSH_MS = 500;
@@ -42,6 +28,9 @@ export function useOffice(account: Account) {
   const [people, setPeople] = useState<Person[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [contacts, setContacts] = useState<ChatContact[]>([]);
+  /** Accounts shown out of the space: their conversations are hidden until they log
+   *  in again, for everybody (user, 2026-09-15). */
+  const [hiddenContacts, setHiddenContacts] = useState<string[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [outgoing, setOutgoing] = useState<Request[]>([]);
   const requestBusy = useRef(false);
@@ -222,10 +211,14 @@ export function useOffice(account: Account) {
       }, MOTION_FLUSH_MS);
     });
     s.on("notice", setNotice);
+    // Being shown out means leaving the space: the server revokes the session and
+    // closes the socket, so return to the login screen instead of sitting in a dead
+    // office (and clear a saved desktop login, or the EXE would log straight back in).
     s.on("kicked", (info: { message?: string }) =>
-      setNotice(info?.message || "你被管理员请出了工位"),
+      sessionEnded(info?.message || "你被管理员请出了空间，请重新登录"),
     );
-    const chat = attachChatClient(s, account.id, setMessages, setNotice, setContacts);
+    const chat = attachChatClient(s, account.id, setMessages, setNotice,
+      (rows, hidden) => { setContacts(rows); setHiddenContacts(hidden); });
     chatClient.current = chat;
     // Thumbnails are batched for the same reason as motion: several people sharing
     // used to mean a render per JPEG, and the 3D scene only needs the newest frame.
@@ -380,6 +373,7 @@ export function useOffice(account: Account) {
     seats,
     messages,
     contacts,
+    hiddenContacts,
     requests,
     outgoing,
     cancelRequest: (id: string) => socket.current?.emit('cancel-request', id),

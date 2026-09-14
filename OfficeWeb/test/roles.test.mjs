@@ -168,3 +168,46 @@ test("访客不参与公共聊天，私聊照常可用", async () => {
     assert.equal(history.messages.some((m) => m.recipientId), true, "私聊历史仍然可见");
   });
 });
+
+test("管理员请出＝离开空间：断开连接并撤销会话", async () => {
+  await withAuthServer(async ({ post, enter, url }) => {
+    const member = await post("register", { name: "成员辛", password: "1" });
+    await post("role", { role: "employee" }, member.cookie);
+    const seated = await enter(member.cookie, "成员辛");
+    const kickedId = seated.me().clientId;
+    assert.equal((await seated.socket.emitWithAck("seat", 3)).ok, true);
+
+    const boss = await post("register", { name: "管理员壬", password: "1" });
+    const admin = await enter(boss.cookie, "管理员壬");
+    let roster = [];
+    admin.socket.on("people", (rows) => { roster = rows; });
+    const kicked = new Promise((resolve) => seated.socket.once("kicked", resolve));
+    const reply = await admin.socket.emitWithAck("admin", { seat: 3, password: "test-admin" });
+    assert.equal(reply.ok, true);
+    assert.match((await kicked).message, /请出/, "被请出的人要收到明确通知");
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    assert.equal(seated.socket.connected, false, "被请出的人必须离开空间");
+    const me = await fetch(url + "/api/auth/me", { headers: { Cookie: member.cookie, Origin: url } });
+    assert.equal(me.status, 401, "被请出的人会话被撤销，不能自动回到空间");
+    // The desk comes free at the same time, and the member list no longer has them.
+    assert.equal((await admin.socket.emitWithAck("seat", 3)).ok, true);
+    assert.equal(roster.some((person) => person.id === seated.socket.id), false,
+      "被请出的人不再出现在成员列表");
+
+    // Chat follows the same rule: the account is off the conversation list for
+    // everybody, and the hidden list says so.
+    const directory = await admin.socket.emitWithAck("chat-contacts");
+    assert.equal(directory.contacts.some((contact) => contact.id === kickedId), false,
+      "被请出的人不再出现在聊天会话列表");
+    assert.equal(directory.hidden.includes(kickedId), true, "hidden 名单要带上他");
+
+    // Logging in again makes them a member once more.
+    const back = await post("login", { name: "成员辛", password: "1" });
+    assert.equal(back.status, 200);
+    const after = await admin.socket.emitWithAck("chat-contacts");
+    assert.equal(after.contacts.some((contact) => contact.id === kickedId), true,
+      "重新登录后回到名册");
+    assert.equal(after.hidden.includes(kickedId), false);
+  }, { adminPassword: "test-admin" });
+});

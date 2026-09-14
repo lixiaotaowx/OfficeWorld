@@ -7,9 +7,11 @@ type Page = { ok: boolean; error?: string; messages: Message[]; cursor: string; 
 
 export function attachChatClient(socket: Socket, accountId: string,
   update: (fn: (old: Message[]) => Message[]) => void, notice: (text: string) => void,
-  contacts: (people: ChatContact[]) => void = () => {}) {
+  contacts: (people: ChatContact[], hidden: string[]) => void = () => {}) {
   let disposed = false, syncing = false, cursor = "";
   let db: IDBDatabase | undefined;
+  /** Last directory the server sent, kept so a pushed hidden-list can be applied. */
+  let directory: ChatContact[] = [];
   const pendingFiles = new Map<string, NonNullable<Message["attachment"]>>();
   let savingFiles = false, sendingFile = false, reportedFileError = false;
   const loadFile = createAttachmentCache(async () => {
@@ -71,8 +73,13 @@ export function attachChatClient(socket: Socket, accountId: string,
     if (disposed || syncing || !socket.connected) return;
     syncing = true;
     try {
-      const directory = await socket.timeout(10000).emitWithAck('chat-contacts');
-      if (!disposed && directory?.ok) contacts(directory.contacts);
+      const reply = await socket.timeout(10000).emitWithAck('chat-contacts');
+      // `hidden` lists accounts shown out of the space: their conversations must not
+      // be offered, even though their older messages are still in the archive.
+      if (!disposed && reply?.ok) {
+        directory = reply.contacts || [];
+        contacts(directory, Array.isArray(reply.hidden) ? reply.hidden : []);
+      }
       let after = cursor;
       do {
         const page: Page = await socket.timeout(10000).emitWithAck("chat-history", after);
@@ -94,6 +101,13 @@ export function attachChatClient(socket: Socket, accountId: string,
   }
   socket.on("chat", receive);
   socket.on("connect", sync);
+  // Pushed when somebody is shown out of the space, so the conversation disappears
+  // immediately instead of at the next sync.
+  const applyDirectory = (payload: { hidden?: string[] }) => {
+    if (disposed || !Array.isArray(payload?.hidden)) return;
+    contacts(directory, payload.hidden);
+  };
+  socket.on("chat-directory", applyDirectory);
   // Retry gaps and failed history requests even without a fresh connection event.
   const retry = window.setInterval(() => { void sync(); void saveFiles(); }, 30000);
   return {
@@ -131,6 +145,7 @@ export function attachChatClient(socket: Socket, accountId: string,
       clearInterval(retry);
       socket.off("chat", receive);
       socket.off("connect", sync);
+      socket.off("chat-directory", applyDirectory);
       db?.close();
     },
   };

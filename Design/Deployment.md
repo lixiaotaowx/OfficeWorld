@@ -1,5 +1,17 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 03:40 「请出」＝离开空间：聊天里不再有他（前端 `index-NYCwsRDX.js`，后端 `membership.mjs` 等）
+
+- 现象（用户）：「已经踢了的人怎么还会在聊天里面」。确认后用户选定的行为：**被请出的人直接从空间移除**（他当时仍在线），其他人的聊天行为不变。
+- 原因：管理员「请出工位」只收回工位，socket 与 Cookie 会话都还在，所以他还在成员列表和聊天会话列表里。
+- 改动：
+  - 新模块 `membership.mjs`：`eject(accountId)` 把账号加入 `ejected`、`accounts.revokeSessions` 撤销其会话、断开他所有 socket，并用 `io.emit("chat-directory", { hidden })` 推送给所有人；`login(accountId)` 在他重新登录时清除标记；`contacts()`/`hidden()` 供 `chat-contacts` 使用。`server.mjs` 只多 3 行（已到 493/500，因此单独成模块）。
+  - `accounts.mjs` 新增 `revokeSessions(userId)`（持久化失败回滚）；`admin.mjs` 在释放工位与 `publish()` 之后发 `kicked`（文案改为「你被管理员请出了空间，请重新登录」）并调用 `eject`；`chat-server.mjs` 的 `chat-contacts` 回包增加 `hidden`。
+  - 客户端：`useOffice` 收到 `kicked` 走 `sessionEnded`（回到登录页 + 清掉 EXE 保存的登录信息，避免自动登回）；`chatClient` 缓存目录并处理 `chat-directory` 推送；`ChatInbox` 新增 `hidden` 属性，被隐藏账号的会话（含本地存档里的旧消息）不再出现；`AdminDialog` 按钮/文案改为「请出」。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **125/125**，新增「管理员请出＝离开空间：断开连接并撤销会话」——`kicked` 通知、socket 断开、`/api/auth/me` 401、工位可被他人认领、成员列表与 `chat-contacts` 都不再有他、`hidden` 名单含他、**重新登录后恢复**；浏览器端到端 `test/browser/desk-preview.cjs` 新增第 4 幕 PASS——被请出前访客会话列表里有「李文杰测试」，请出 1.2 秒后该会话消失，且被请出的那个客户端回到登录页。
+- 发布：后端上传 `server.mjs` / `membership.mjs` / `admin.mjs` / `accounts.mjs` / `chat-server.mjs` 并重启（active）；前端上传 `index.html` + `assets/index-CfRI5GXj.js`（最终构建）。线上 `server.mjs` SHA256 `eaf9f330922c166467043a9bf760ca419c0a557652a70d9f4a6c528ab58e51a6`、`membership.mjs` `38117be0d888dcba48976a85e482c2d48d48954dfc559d7c6791e30fd66291dd`、JS `c1d358dde642790518f4330402d9783c1740e546920cfb1a92c33fa9a11fcee1`，与本地一致。备份 `backups/eject-20260915/`。
+  - 顺带拆分：`useOffice.ts` 到 500 行上限，把 `sameCallStates` 移到 `src/presenceResources.ts`（纯函数、无行为变化），`useOffice.ts` 回落到 486 行。
+
 ## 2026-09-15 03:00 访客不接收公共聊天，私聊照常（前端 `index-CE4Bcpwz.js`，后端 4 个 chat 模块）
 
 - 需求（用户）：「访客不可以收到公共聊天频道 私聊可以」。

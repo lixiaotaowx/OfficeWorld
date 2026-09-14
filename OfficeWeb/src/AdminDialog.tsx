@@ -30,9 +30,9 @@ export default function AdminDialog({ seats, onKick, onClose }: Props) {
     const reply = await onKick(seat, password);
     setBusy(null);
     if (reply.ok) {
-      setNotice(`已请出「${reply.name}」（${WORKSTATIONS[seat]?.label}）`);
+      setNotice(`已请出「${reply.name}」（${WORKSTATIONS[seat]?.label}），他已离开空间`);
     } else {
-      setError(reply.error || "踢出失败");
+      setError(reply.error || "请出失败");
     }
   }
 
@@ -40,7 +40,7 @@ export default function AdminDialog({ seats, onKick, onClose }: Props) {
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="管理员">
       <section className="modal admin-modal">
         <h2>管理员</h2>
-        <p>输入管理员密码后，可以把工位上的人「踢出」。踢出后该工位立即变成空闲。</p>
+        <p>输入管理员密码后，可以把工位上的人「请出」：他会立刻离开空间（需要重新登录），工位同时变成空闲。</p>
         <label className="admin-password">
           <span>管理员密码（iruler 成员通用密码）</span>
           <input
@@ -70,7 +70,7 @@ export default function AdminDialog({ seats, onKick, onClose }: Props) {
                   disabled={!owner || busy !== null}
                   onClick={() => void kick(w.index)}
                 >
-                  {busy === w.index ? "…" : "踢出"}
+                  {busy === w.index ? "…" : "请出"}
                 </button>
               </div>
             );

@@ -16,6 +16,7 @@ import {
 import { serveStatic } from "./static.mjs";
 import { dirname, join } from "node:path";
 import { createChatStore } from "./chat-store.mjs";
+import { createMembership } from "./membership.mjs";
 import { attachChat } from "./chat-server.mjs";
 import { createChatFiles } from "./chat-files.mjs";
 import { createAccounts } from "./accounts.mjs";
@@ -144,6 +145,7 @@ export function createOfficeServer(options = {}) {
           socket.disconnect(true);
         }
       }
+      membership.login(accountId);
     } },
   );
   const http = createServer(async (req, res) => {
@@ -162,6 +164,7 @@ export function createOfficeServer(options = {}) {
     );
   });
   const io = new Server(http, { maxHttpBufferSize: 300000 });
+  const membership = createMembership({ io, accounts });
   const cleanup = setInterval(() => {
     try { chatStore.prune(); chatFiles.prune(); } catch (error) { console.error("聊天过期清理失败", error); }
   }, 60000);
@@ -202,6 +205,8 @@ export function createOfficeServer(options = {}) {
   };
   const admin = createAdmin({
     io, people, roster, save, publish, adminPassword, seatCount: SEAT_COUNT,
+    // Somebody shown out leaves the member and chat lists and loses their session.
+    eject: (accountId) => membership.eject(accountId),
   });
   const sitting = createSitting(people, roster, publish, SEAT_COUNT);
   const meetings = createMeetings(io, people, publish, removeMeetingMedia,
@@ -461,7 +466,7 @@ export function createOfficeServer(options = {}) {
     });
     sitting.attach(s);
     annotations.attach(s);
-    attachChat(io, s, people, chatStore, accounts?.listContacts);
+    attachChat(io, s, people, chatStore, membership.contacts, membership.hidden);
     s.on('private-screen', async (id, reply) => {
       if (typeof reply !== 'function') return;
       try { reply({ ok: true, session: await privateCalls.claim(s, id) }); }
