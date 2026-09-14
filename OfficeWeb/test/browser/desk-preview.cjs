@@ -110,7 +110,9 @@ const readSeat = (page, seat) => page.evaluate(index => {
     report.bossRoster = roster.seats[BOSS_SEAT]?.name || null;
 
     // 2) A plain visiting client holds a sofa, must never capture, yet still sees the
-    //    manager's screen.
+    //    manager's screen. An account that registered long ago and never came back
+    //    must not clutter the conversation list.
+    await join(base, "老同事", "employee");
     const guestCookie = await join(base, "客户乙", "visitor");
     const guest = await openPage(browser, base, build, guestCookie);
     await guest.page.waitForFunction(index => window.__officeDebug.monitors.slots.get(index)?.shown,
@@ -165,6 +167,10 @@ const readSeat = (page, seat) => page.evaluate(index => {
     assert.match(report.guestIdentity || "", /沙发/, "访客的身份栏应写明坐在公共区沙发");
     assert.equal(report.guestChatRows.some((row) => row.includes("公共聊天")), false,
       "访客的会话列表里不应出现公共聊天");
+    assert.equal(report.guestChatRows.some((row) => row.includes("老同事")), false,
+      "从没聊过、也不在空间的旧账号不该占一行");
+    assert.equal(report.guestChatRows.some((row) => row.includes("李文杰测试")), true,
+      "在空间里的同事要出现");
     assert.equal(report.chatBefore.some((row) => row.includes("李文杰测试")), true,
       "被请出之前，他的会话应当在列表里");
     assert.equal(report.chatAfter.some((row) => row.includes("李文杰测试")), false,

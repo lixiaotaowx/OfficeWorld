@@ -34,12 +34,16 @@ export default function ChatInbox(props: Props) {
     catch { return {}; }
   });
   const threads = useMemo(() => {
-    const directory = new Map(contacts.filter(c => c.id !== accountId).map(c => [c.id, c.name]));
+    // Only people who are here now, plus colleagues this device really has a
+    // conversation with. The account roster lists everybody who ever registered,
+    // which used to fill the list with names from months ago (user, 2026-09-15).
+    const directory = new Map<string, string>();
     for (const person of people) if (person.clientId !== accountId) directory.set(person.clientId, person.name);
     for (const m of messages) {
       const key = conversationKey(m, accountId);
-      if (key !== 'public' && !directory.has(key)) directory.set(key,
-        m.senderId === accountId ? m.recipientName || '同事' : m.name);
+      if (key === 'public' || directory.has(key)) continue;
+      const known = contacts.find(c => c.id === key);
+      directory.set(key, known?.name || (m.senderId === accountId ? m.recipientName || '同事' : m.name));
     }
     const rows = (visitor ? [...directory].map(([id, name]) => ({ id, name }))
       : [{ id: 'public', name: '公共聊天' }, ...[...directory].map(([id, name]) => ({ id, name }))])

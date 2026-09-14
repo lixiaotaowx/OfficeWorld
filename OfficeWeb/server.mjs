@@ -164,7 +164,7 @@ export function createOfficeServer(options = {}) {
     );
   });
   const io = new Server(http, { maxHttpBufferSize: 300000 });
-  const membership = createMembership({ io, accounts });
+  const membership = createMembership({ io, accounts, path: join(dirname(statePath), "ejected.json") });
   const cleanup = setInterval(() => {
     try { chatStore.prune(); chatFiles.prune(); } catch (error) { console.error("聊天过期清理失败", error); }
   }, 60000);
