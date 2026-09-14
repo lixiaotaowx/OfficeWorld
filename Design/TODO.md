@@ -338,11 +338,12 @@ Do not call the project complete while required items remain failed, unimplement
 - [x] 删除 16 个乱码空目录（Blender 无 `HOME` 时的缩略图缓存残留）与两个零引用大资源（`office.glb` 17.9MB、`office-white.glb` 5.0MB）。
 - [x] 浏览器测试不再硬编码某一台机器的 Codex Playwright 路径，统一走 `test/browser/playwright.cjs`（支持 `PLAYWRIGHT_PACKAGE` / 全局安装 / 旧路径）。
 - [x] 已重新构建并部署到 https://115.159.43.237/（`index-C2mGk0gA.js`，线上 SHA256 与本地构建逐字节一致；Range 206、匿名 `/api/auth/me` 401、服务 active 已核验）。
+- [x] `package-lock.json`（2165 行）不能按行拆分（npm 只认单个根锁文件），经用户确认记为 500 行规则的**唯一**例外，条款写入 `OfficeWeb/AGENTS.md`。
+- [x] 决策（2026-09-14 用户）：`Build/` 下 30 份历史构建副本共 2.8GB **全部保留**，改为依靠修正后的部署文档避免传错目录。
+- [x] 决策（2026-09-14 用户）：`.git` 约 5.9GB 不可达松散对象**保持现状**，不执行 `git gc`（git 会持续打印 unreachable objects 警告，无害）。
 
 仍待处理（本次未做，需用户决定）：
-- [ ] `Build/` 下有 25 份历史 OfficeWeb 构建副本（含 `OfficeWebPreviewReceiveRelease` 等已记入部署记录的版本），既是"传错目录"的风险也是发布留档；删除前需确认。
-- [ ] `.git` 有约 5.9GB 松散对象（16,497 个不可达对象，源自 2026-09-09 的一次批量 add）。`git gc --prune=now` 可回收，但属不可逆操作，未执行。
 - [ ] 开放注册 + 附件无总量配额仍可刷满磁盘（单文件 20MB、保留 7 天，无总配额）。
 - [ ] `screen-`/`voice-` 房间（遗留授权路径，客户端已不用）的 LiveKit 令牌未限制 `canPublishSources`。
-- [ ] 浏览器回归测试需要本机装 Playwright：`npm i -g playwright && npx playwright install msedge`；本次未跑浏览器/桌面回归。
+- [ ] 浏览器回归测试需要本机装 Playwright：`npm i -g playwright && npx playwright install msedge`；本次只做了线上登录页真实浏览器检查，未跑完整浏览器/桌面回归。
 - [ ] 真实跨网络双设备音视频验收仍按既有条目未完成。
