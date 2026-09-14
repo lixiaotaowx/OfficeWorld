@@ -2,7 +2,7 @@ const { desktopCapturer } = require('electron');
 const { trusted, microphoneOnly } = require('./policy.cjs');
 const { chooseSource } = require('./source-picker.cjs');
 
-function configurePermissions(session, getWindow) {
+function configurePermissions(session, getWindow, hooks = {}) {
   let choosingScreen = false;
   const current = wc => wc && !wc.isDestroyed() && wc === getWindow()?.webContents && trusted(wc.getURL());
 
@@ -42,6 +42,9 @@ function configurePermissions(session, getWindow) {
       const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 360, height: 220 } });
       const source = await chooseSource(getWindow(), sources);
       if (!source || !current(wc) || request.frame !== wc.mainFrame) { callback({}); return; }
+      // Remember what is being shared: the annotation layer covers exactly that
+      // display, and an empty id (a window share) means it cannot cover anything.
+      hooks.onDisplayChosen?.(source.display_id || '');
       // Screen sound and microphone are not implicitly bundled into capture.
       callback({ video: source });
     } catch { callback({}); }

@@ -7,6 +7,13 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
   saveLogin: value => ipcRenderer.invoke('office:login-save', value),
   readLogin: () => ipcRenderer.invoke('office:login-read'),
   clearLogin: () => ipcRenderer.invoke('office:login-clear'),
+  // Annotation layer over the display this client is sharing.
+  annotations: {
+    attach: () => ipcRenderer.invoke('office:annotation-layer', true),
+    detach: () => ipcRenderer.invoke('office:annotation-layer', false),
+    draw: message => ipcRenderer.invoke('office:annotation-push', message),
+    clear: () => ipcRenderer.invoke('office:annotation-clear'),
+  },
 }));
 
 // Desktop-only chrome; the website remains isolated from Electron APIs.

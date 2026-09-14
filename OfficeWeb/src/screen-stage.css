@@ -1,0 +1,54 @@
+/* Shared-screen stage: the video, the annotation board drawn on top of it, and a
+   floating control bar. Used by private calls and by meetings. */
+.screen-stage { position: relative; width: 100%; border-radius: 16px; overflow: hidden; background: #101a17; }
+.screen-stage video { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; background: #101a17; }
+.screen-stage-board { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Only capture the pointer while drawing, so the video stays clickable otherwise. */
+.screen-stage-draw { position: absolute; inset: 0; display: none; touch-action: none; cursor: crosshair; }
+.screen-stage.annotating .screen-stage-draw { display: block; }
+
+.screen-stage-bar {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 8px 10px; border-radius: 14px;
+  background: #1d2a24e6; border: 1px solid #ffffff1f;
+  box-shadow: 0 10px 30px #0b161020;
+  opacity: 0; transition: opacity .18s ease;
+}
+.screen-stage:hover .screen-stage-bar,
+.screen-stage:focus-within .screen-stage-bar,
+.screen-stage.annotating .screen-stage-bar,
+.screen-stage.maximized .screen-stage-bar { opacity: 1; }
+.screen-stage-name {
+  display: flex; align-items: center; gap: 6px; margin-right: auto;
+  color: #f4f2eb; font-size: 12px; font-weight: 600; letter-spacing: .2px;
+}
+.screen-stage-name svg { width: 15px; height: 15px; }
+.screen-stage-bar button {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 11px; border-radius: 10px; font-size: 12px;
+  color: #eef3ec; background: #ffffff16; border: 1px solid #ffffff24;
+}
+.screen-stage-bar button:hover:not(:disabled) { background: #ffffff28; }
+.screen-stage-bar button[aria-pressed="true"] { background: #f0d274; border-color: #f0d274; color: #273520; }
+.screen-stage-bar .screen-stage-close { margin-left: 4px; }
+.screen-stage-bar .call-hangup { background: #b3504233; border-color: #d3877a55; color: #ffd9cf; }
+.screen-stage-bar .call-hangup:hover { background: #b3504255; }
+
+.screen-stage-tip, .screen-stage-hint {
+  position: absolute; left: 12px; top: 12px; margin: 0;
+  padding: 6px 10px; border-radius: 10px; font-size: 11px;
+  background: #f0d274e6; color: #273520;
+}
+.screen-stage-hint { background: #1d2a24e6; color: #d9e2d6; }
+
+/* App-level maximize: fills the page box (desktop chrome keeps its own bar). */
+.screen-stage.maximized {
+  position: fixed; inset: var(--desktop-chrome-height, 0) 0 0 0; z-index: 60;
+  border-radius: 0 0 var(--window-radius, 0) var(--window-radius, 0);
+  background: #0d1512; display: flex; align-items: center; justify-content: center;
+}
+.screen-stage.maximized video { width: 100%; height: 100%; max-height: none; }
+.screen-stage.maximized .screen-stage-bar { left: 18px; right: 18px; bottom: 18px; }
+.screen-stage:fullscreen { border-radius: 0; }
+.screen-stage:fullscreen video { max-height: none; height: 100%; }

@@ -3,6 +3,7 @@ import { attachChatClient } from "./chatClient";
 import { retainPresent } from './presenceResources';
 import { useDesktopPreview } from './useDesktopPreview';
 import { useMeetings } from "./useMeetings";
+import { applyAnnotate, applyClear, applyUndo, type AnnotateMessage, type Stroke } from './annotations';
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
@@ -34,6 +35,26 @@ export function useOffice(account: Account) {
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [motions, setMotions] = useState<Record<string, Motion>>({});
   const [videos, setVideos] = useState<Record<string, MediaStream>>({});
+  // Drawing board over shared screens, keyed by the room the stroke belongs to.
+  const [annotations, setAnnotations] = useState<Stroke[]>([]);
+  const annotationStroke = useRef<{ scope: string; id: string } | null>(null);
+  const annotationSeq = useRef(0);
+  const annotationLayerReady = useRef(false);
+  /** Show the desktop layer over the shared display (Electron app only). */
+  const attachAnnotationLayer = () => {
+    const bridge = window.officeDesktop?.annotations;
+    if (!bridge || annotationLayerReady.current) return;
+    annotationLayerReady.current = true;
+    void bridge.attach().then((result) => {
+      if (result && result.ok === false) setNotice(result.reason === 'window-share'
+        ? '当前共享的是一个窗口，标注只显示在共享画面上。'
+        : '这台设备无法在桌面上显示标注层。');
+    }).catch(() => { annotationLayerReady.current = false; });
+  };
+  const detachAnnotationLayer = () => {
+    annotationLayerReady.current = false;
+    void window.officeDesktop?.annotations?.detach().catch(() => undefined);
+  };
   const [connected, setConnected] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -150,6 +171,26 @@ export function useOffice(account: Account) {
       m.end(id);
       setSessions((old) => old.filter((x) => x.id !== id));
     });
+    // Annotation board. The desktop app additionally mirrors the strokes onto the
+    // display it is sharing, so the sharer sees them while working in other apps.
+    const forwardToLayer = (message: Record<string, unknown>) => {
+      const bridge = window.officeDesktop?.annotations;
+      if (!bridge || !media.current?.screen?.active) return;
+      attachAnnotationLayer();
+      void bridge.draw(message).catch(() => undefined);
+    };
+    s.on("annotate", (message: AnnotateMessage) => {
+      setAnnotations((old) => applyAnnotate(old, message));
+      forwardToLayer({ type: 'annotate', ...message });
+    });
+    s.on("annotate-clear", (message: { scope?: string }) => {
+      setAnnotations((old) => applyClear(old, message?.scope));
+      forwardToLayer({ type: 'clear' });
+    });
+    s.on("annotate-undo", (message: { id?: string; clientId?: string; scope?: string }) => {
+      setAnnotations((old) => applyUndo(old, message?.clientId || String(message?.id || ''), message?.scope));
+      void window.officeDesktop?.annotations?.draw({ type: 'undo', id: message?.id }).catch(() => undefined);
+    });
     s.connect();
     return () => {
       disposeNotifications();
@@ -164,6 +205,7 @@ export function useOffice(account: Account) {
     if (sharing) return media.current?.stopScreen();
     try {
       await media.current?.startScreen();
+      attachAnnotationLayer();
     } catch {
       setNotice("未开始共享。可以重新选择窗口或屏幕。");
     }
@@ -260,10 +302,37 @@ export function useOffice(account: Account) {
     adminKick,
     share,
     shareInCall: async (id: string) => {
-      try { await media.current?.shareInCall(id); }
+      try { await media.current?.shareInCall(id); attachAnnotationLayer(); }
       catch (error) { setNotice(error instanceof Error ? error.message : '未开始共享，请重试'); }
     },
-    stopShare: () => media.current?.stopScreen(),
+    stopShare: () => { media.current?.stopScreen(); detachAnnotationLayer(); },
+    annotations,
+    clientId: account.id,
+    setRemoteAudioMuted: (room: string, muted: boolean) => media.current?.setRemoteAudioMuted(room, muted),
+    /** Whiteboard actions for one shared screen. */
+    annotation: {
+      draw(scope: string, points: [number, number][], done = false) {
+        const active = socket.current;
+        if (!active?.connected || !points.length) return;
+        if (!annotationStroke.current || annotationStroke.current.scope !== scope)
+          annotationStroke.current = { scope, id: `st${(annotationSeq.current += 1)}` };
+        const message: AnnotateMessage = { id: active.id || '', clientId: account.id, name: account.name,
+          scope, stroke: annotationStroke.current.id, points, done };
+        // The server relays to the other peers only, so paint our own stroke here.
+        setAnnotations((old) => applyAnnotate(old, message));
+        active.emit('annotate', { scope, stroke: message.stroke, points, done });
+        if (done) annotationStroke.current = null;
+      },
+      clear(scope: string) {
+        setAnnotations((old) => applyClear(old, scope));
+        socket.current?.emit('annotate-clear', { scope });
+        void window.officeDesktop?.annotations?.clear().catch(() => undefined);
+      },
+      undo(scope: string) {
+        setAnnotations((old) => applyUndo(old, account.id, scope));
+        socket.current?.emit('annotate-undo', { scope });
+      },
+    },
     meetings,
     respond,
     claimSeat,

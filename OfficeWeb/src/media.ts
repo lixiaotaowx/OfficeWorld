@@ -33,8 +33,11 @@ export class OfficeMedia {
   private voiceRooms = new Set<string>();
   private privateSessions = new Map<string, Session>();
   private privateRecovery = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Rooms whose incoming audio this machine has muted (never affects the sender). */
+  private remoteMuted = new Set<string>();
   private audioFocus = new MediaAudioFocus(this.connections, name => {
-    for (const [key, element] of this.audio) element.muted = !name || !key.startsWith(`${name}:`);
+    for (const [key, element] of this.audio)
+      element.muted = !name || !key.startsWith(`${name}:`) || this.remoteMuted.has(name);
     if (this.meetingRoom && name !== this.meetingRoom) this.meetingMic = false;
   }, message => this.onNotice(message));
   private audio = new Map<string, HTMLMediaElement>();
@@ -115,7 +118,7 @@ export class OfficeMedia {
         const key = `${roomName}:${track.sid}`;
         const element = track.attach();
         element.autoplay = true;
-        element.muted = this.audioFocus.current !== roomName;
+        element.muted = this.audioFocus.current !== roomName || this.remoteMuted.has(roomName);
         document.body.appendChild(element);
         void element.play?.().catch(() => {
           this.onNotice("浏览器阻止自动播放，请点击恢复声音");
@@ -162,6 +165,20 @@ export class OfficeMedia {
           }, 1500);
         }
       });
+  }
+
+  /** Silence (or restore) everything coming from one room on this machine only. */
+  setRemoteAudioMuted(room: string, muted: boolean) {
+    if (muted) this.remoteMuted.add(room);
+    else this.remoteMuted.delete(room);
+    for (const [key, element] of this.audio) {
+      if (!key.startsWith(`${room}:`)) continue;
+      element.muted = muted || this.audioFocus.current !== room;
+    }
+  }
+
+  remoteAudioMuted(room: string) {
+    return this.remoteMuted.has(room);
   }
 
   private clearRoomAudio(roomName: string) {

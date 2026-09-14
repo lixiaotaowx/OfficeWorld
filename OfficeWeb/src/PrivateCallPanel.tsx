@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { useOffice } from './useOffice';
-import { SharingVideo } from './SharingPreview';
+import ScreenStage from './ScreenStage';
 import { MicIcon, MicOffIcon, PhoneIcon, HangupIcon, ScreenIcon } from './icons';
 import './private-call.css';
 
 export default function PrivateCallPanel({ office }: { office: ReturnType<typeof useOffice> }) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [mutedPeer, setMutedPeer] = useState<string | null>(null);
   const respond = async (id: string, accept: boolean) => {
     if (busy) return;
     setBusy(id);
@@ -41,7 +42,33 @@ export default function PrivateCallPanel({ office }: { office: ReturnType<typeof
           <span role="status">{state?.connected ? '已连接' : '正在连接'} · 麦克风：{voice}</span>
           <span>{state?.sharing ? '正在分享你的屏幕' : office.videos[session.id] ? '正在观看对方屏幕' :
             session.kind === 'screen' ? '等待屏幕画面 · 语音通话保留' : '当前仅语音 · 屏幕已停止或尚未共享'}</span>
-          {office.videos[session.id] && <SharingVideo stream={office.videos[session.id]} label="对方共享屏幕" />}
+          {office.videos[session.id] && <ScreenStage
+            stream={office.videos[session.id]}
+            scope={session.room}
+            label="对方共享屏幕"
+            strokes={office.annotations}
+            myClientId={office.clientId}
+            onDraw={office.annotation.draw}
+            onClear={office.annotation.clear}
+            onUndo={office.annotation.undo}
+            hint={state?.sharing ? undefined : '可点「标注」在画面上画线，所有人都能看到'}
+            actions={<>
+              <button disabled={!state?.connected || busy === session.id} onClick={async () => {
+                setBusy(session.id); try { await office.mute(session.id); } finally { setBusy(null); }
+              }}>{voice === '已开启' ? <MicIcon /> : <MicOffIcon />}{voice === '已开启' ? '静音我' : '开麦'}</button>
+              <button aria-pressed={mutedPeer === session.id} title="只影响本机听到的声音"
+                onClick={() => {
+                  const next = mutedPeer === session.id ? null : session.id;
+                  setMutedPeer(next);
+                  office.setRemoteAudioMuted(session.room, next !== null);
+                }}>{mutedPeer === session.id ? '恢复对方声音' : '静音对方'}</button>
+              {state?.sharing
+                ? <button onClick={office.stopShare}><ScreenIcon />停止我的共享</button>
+                : <button disabled={!state?.connected || !!busy} onClick={async () => {
+                    setBusy(session.id); try { await office.shareInCall(session.id); } finally { setBusy(null); }
+                  }}><ScreenIcon />{busy === session.id ? '正在选择屏幕…' : '抢占共享'}</button>}
+              <button className="call-hangup" onClick={() => office.end(session.id)}><HangupIcon />挂断</button>
+            </>} />}
           <div className="private-call-actions">
             <button disabled={!state?.connected || busy === session.id} onClick={async () => {
               setBusy(session.id); try { await office.mute(session.id); } finally { setBusy(null); }

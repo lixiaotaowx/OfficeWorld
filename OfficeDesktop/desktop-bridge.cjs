@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { trusted } = require('./policy.cjs');
 
-function installDesktopBridge(getWindow) {
+function installDesktopBridge(getWindow, dependencies = {}) {
+  const annotationLayer = dependencies.annotationLayer;
   const credentials = path.join(app.getPath('userData'), 'login.enc');
   const displayFile = path.join(app.getPath('userData'), 'preview-display.json');
   let selected = '', pending;
@@ -60,5 +61,24 @@ function installDesktopBridge(getWindow) {
     window.show(); window.focus(); return true;
   });
   handle('office:login-clear', () => { fs.rmSync(credentials, { force: true }); return true; });
+  // Annotation layer over the shared display. "attach" only succeeds for a
+  // display share; a window share has no place on the desktop to draw on.
+  handle('office:annotation-layer', enabled => {
+    if (!annotationLayer) return { ok: false, reason: 'unsupported' };
+    if (enabled === false) { annotationLayer.close(); return { ok: true }; }
+    if (!annotationLayer.displayId()) return { ok: false, reason: 'window-share' };
+    annotationLayer.open(annotationLayer.displayId());
+    return { ok: true };
+  });
+  handle('office:annotation-push', message => {
+    if (!annotationLayer || !annotationLayer.isOpen()) return false;
+    if (!message || typeof message !== 'object') return false;
+    if (!['annotate', 'undo'].includes(message.type)) return false;
+    return annotationLayer.push(message);
+  });
+  handle('office:annotation-clear', () => {
+    if (!annotationLayer || !annotationLayer.isOpen()) return false;
+    return annotationLayer.push({ type: 'clear' });
+  });
 }
 module.exports = { installDesktopBridge };

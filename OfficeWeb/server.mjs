@@ -1,5 +1,6 @@
 import { createSitting } from "./sitting.mjs";
 import { createAdmin } from "./admin.mjs";
+import { createCollabAnnotations } from "./collab-annotations.mjs";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { fileURLToPath } from "node:url";
@@ -202,6 +203,7 @@ export function createOfficeServer(options = {}) {
     });
   };
   const privateCalls = createPrivateSessions(io, people, sessions, invites, end, options.privatePermissions || updatePrivatePermissions);
+  const annotations = createCollabAnnotations({ io, people, sessions });
   io.on("connection", (s) => {
     if (accounts) s.use((_packet, next) => {
       if (!accounts.authenticate(s.request)) {
@@ -415,6 +417,7 @@ export function createOfficeServer(options = {}) {
       sendPreview(image);
     });
     sitting.attach(s);
+    annotations.attach(s);
     attachChat(io, s, people, chatStore, accounts?.listContacts);
     s.on('private-screen', async (id, reply) => {
       if (typeof reply !== 'function') return;
@@ -427,6 +430,7 @@ export function createOfficeServer(options = {}) {
     s.on("disconnect", () => {
       people.delete(s.id);
       admin.forget(s.id);
+      annotations.forget(s.id);
       for (const [id, c] of sessions) if (c.peers.includes(s.id)) end(id);
       for (const [id, i] of invites)
         if (i.from === s.id || i.target === s.id) {

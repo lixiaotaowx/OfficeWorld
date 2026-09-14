@@ -351,3 +351,20 @@ Do not call the project complete while required items remain failed, unimplement
 - [ ] `screen-`/`voice-` 房间（遗留授权路径，客户端已不用）的 LiveKit 令牌未限制 `canPublishSources`。
 - [ ] 浏览器回归测试需要本机装 Playwright：`npm i -g playwright && npx playwright install msedge`；本次只做了线上登录页真实浏览器检查，未跑完整浏览器/桌面回归。
 - [ ] 真实跨网络双设备音视频验收仍按既有条目未完成。
+
+## 2026-09-14 屏幕标注（进行中）
+需求：观看别人屏幕时可最大化/全屏、视频上有悬浮按钮（静音/挂断/抢占共享），并能像白板一样在共享画面上标注；分享者要在**自己真实桌面上**看到别人的标注（他在别的软件里也要看得见）。
+已完成并验证的部分：
+- [x] 服务端中继 `collab-annotations.mjs`：只有同一通话/同一会议的人能互相看到笔画，坐标夹紧到 0..1、超频丢弃、越权 scope 不转发、断线清理表；集成测试 3 项（含会议分支与第三人越权）。
+- [x] 客户端纯逻辑 `src/annotations.ts`：笔画归并、每人稳定颜色、**按共享屏命名空间**（这就是多屏识别）、扣掉 object-fit 黑边的坐标归一化；单测 6 项。
+- [x] 观看/标注舞台 `src/ScreenStage.tsx`：视频 + 画布叠加层 + 悬浮按钮条（标注/撤销/清空/最大化/全屏 + 调用方传入的静音我/静音对方/抢占共享/挂断）。已接入私聊通话面板。
+- [x] `media.ts` 新增"静音对方"（仅本机听不到，不影响发送方）。
+- [x] 桌面屏幕层 `OfficeDesktop/annotation-overlay.*`：置顶('screen-saver')、`setIgnoreMouseEvents(true,{forward:true})` 鼠标穿透、`setContentProtection(true)` 不进屏幕采集、按被共享显示器定位、换屏复用同一窗口；桌面测试 5 项（原有 15 项也全过）。
+- [x] 桌面接线：`permissions.cjs` 在选定共享源时记录显示器、`desktop-bridge.cjs` 三个 IPC、预加载暴露 `annotations.attach/detach/draw/clear`、`main.cjs` 创建层。
+- [x] `tsc --noEmit` 通过；网页单测 104/104；桌面测试 20/20；`npm run build` 通过；所有文件 ≤500 行。
+
+未完成（下一步）：
+- [ ] **两客户端浏览器实测**（项目规则：没做多人验证不得宣称可用）：观众画线 → 分享者桌面层出现；最大化/全屏/悬浮按钮实测截图。
+- [ ] `MeetingCenter.tsx` 的远端屏幕也换成带标注的舞台（当前只有私聊通话面板接了）。
+- [ ] 打包新 EXE（版本待定）并部署网页；上线后核验线上版本。
+- [ ] 已知限制：共享"窗口"时无法映射到桌面，标注只显示在共享画面上（会提示用户）；屏幕采集是否会录到标注层需在真实设备上确认（已用 setContentProtection 防，但未实测）。

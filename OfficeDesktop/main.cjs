@@ -8,6 +8,7 @@ const { reconnect } = require('./reconnect.cjs');
 const { installTray } = require('./tray.cjs');
 const { installChrome } = require('./chrome.cjs');
 const { applyWindowIcon } = require('./window-icon.cjs');
+const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 
 // Requested short notification tone must also play while hidden in the tray.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -36,8 +37,16 @@ else {
 
 function createWindow() {
   const officeSession = session.fromPartition(smoke ? 'office-smoke' : 'persist:office-world');
+  // The layer that draws other people's annotations over the shared display.
+  const annotationLayer = createAnnotationLayer();
   if (smoke) officeSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
-  else configurePermissions(officeSession, () => mainWindow);
+  else configurePermissions(officeSession, () => mainWindow, {
+    // A display share can be covered; a window share cannot (empty id).
+    onDisplayChosen: (displayId) => {
+      if (displayId) annotationLayer.target(displayId);
+      else annotationLayer.target('');
+    },
+  });
   mainWindow = new BrowserWindow({
     width: 1440, height: 940, minWidth: 800, minHeight: 640,
     title: 'iruler dream', transparent: true, backgroundColor: '#00000000', show: !smoke, icon: iconPath,
@@ -55,7 +64,7 @@ function createWindow() {
       dialog.showErrorBox('托盘不可用', `关闭窗口将退出应用。\n${error.message}`);
     }
   }
-  if (!smoke) installDesktopBridge(() => mainWindow);
+  if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer });
   contents.setWindowOpenHandler(({ url }) => {
     if (trusted(url)) void contents.loadURL(url);
     else if (/^https?:/.test(url)) void shell.openExternal(url);

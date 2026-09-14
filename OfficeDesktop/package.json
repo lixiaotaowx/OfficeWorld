@@ -30,7 +30,10 @@
       "assets/icon.ico",
       "chrome.html",
       "chrome.css",
-      "desktop-theme.css"
+      "desktop-theme.css",
+      "annotation-overlay.html",
+      "annotation-overlay.css",
+      "annotation-overlay.js"
     ],
     "win": {
       "target": "portable",
