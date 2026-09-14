@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 00:45 老板也共享低分辨率屏幕（前端 `index-RGgXNJ2q.js`，后端 `preview-policy.mjs`）
+
+- 需求（用户）：「老板也要共享低分辨率屏幕啊」——坐老板工位的人不再受「访客不广播低清预览」限制，即使以访客身份进来也照常采集并广播。
+- 规则：判定以**坐位**为准。新增后端模块 `preview-policy.mjs` 的 `broadcastsPreview(person, BOSS_SEAT)`（`server.mjs` 的 `ambient-sharing` 与 `preview` 两处都改用它，作为服务端兜底）；客户端对应 `src/previewGate.ts` 的 `mayBroadcastPreview(role, seat, bossSeat)`，`src/seats.ts` 新增由坐位表推导的 `BOSS_SEAT`，`useDesktopPreview` 用它决定是否采集。普通访客一切照旧（不采集、服务端拒绝）。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **120/120** 通过；新增/加强 3 项测试——`roles.test.mjs`「老板工位的人即使是访客身份，也照常共享低清预览」（同事确实收到老板的低清帧，且服务端不把它清掉）、原有访客用例补上"服务端主动清屏"断言、`seats.test.mjs` 校验服务端 `BOSS_SEAT` 与坐位表同源。
+- 发布：前端逐个文件上传 `index.html` + `assets/index-RGgXNJ2q.js`（CSS 未变）；后端上传 `server.mjs` + `preview-policy.mjs` 并 `systemctl restart officeweb`（active）。线上入口 `index-RGgXNJ2q.js`，JS SHA256 `586e56d104fe41ce92ad935a0a918b0e7f21cdb201d1a1f611495b00d8a78e5d` 与本地一致；`server.mjs` 线上 SHA256 `b080645c14a1f0ef68ff6b8d490ab5dce7ce406562080634bf4813f1091e0951` 与本地一致；线上 JS 里能查到编译后的规则 `function(i,e,t){return i!=="visitor"||e===t}`。
+- 备份 `backups/boss-preview-20260915/`（旧 `server.mjs` + 旧 `index.html`）；未覆盖账号、工位、聊天数据。线上未用真实"文杰"账号跑端到端（避免测试账号混入正式名册），转发链路由同一份 `server.mjs` 的隔离测试覆盖。
+
 ## 2026-09-15 00:20 身份改名：员工 → 成员（前端 `index-CvfrhYs1.js` + `index-C5yNhsdZ.css`）
 
 - 需求（用户）：把界面上的「iruler 员工」改成「iruler 成员」，只改称呼。

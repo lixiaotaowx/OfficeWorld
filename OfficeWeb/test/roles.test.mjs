@@ -9,6 +9,9 @@ import { join } from "node:path";
 import { io as connect } from "socket.io-client";
 import { BOSS_SEAT, createOfficeServer } from "../server.mjs";
 
+/** One plausible low-resolution frame, in the shape the desktop client sends. */
+const FRAME = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA==";
+
 async function withAuthServer(run, options = {}) {
   const dir = mkdtempSync(join(tmpdir(), "office-roles-"));
   const sockets = [];
@@ -71,11 +74,11 @@ test("访客身份落库，进空间就坐沙发，且不广播低清预览", as
     other.socket.on("preview", (value) => frames.push(value));
     // 前台会把访客的预览强行关掉，即使客户端硬发也不转发。
     socket.emit("ambient-sharing", true);
-    socket.emit("preview", "data:image/jpeg;base64,dGVzdA==");
-    await new Promise((resolve) => setTimeout(resolve, 120));
-    assert.notEqual(me().previewSharing, true, "服务端不得为访客开启预览广播");
+    socket.emit("preview", FRAME);
+    await new Promise((resolve) => setTimeout(resolve, 150));
     // 只允许"清空"（image 为 null）传过去，不允许任何画面。
     assert.equal(frames.filter((value) => value.image).length, 0, "同事不应收到访客的低清画面");
+    assert.equal(frames.some((value) => value.image === null), true, "服务端要主动清掉访客占用的显示器");
     assert.equal(other.people.length, 2, "两人都在线");
   });
 });
@@ -101,5 +104,28 @@ test("访客不能占工位，员工可以；名字含文杰直接进老板工�
     // 重启后仍然保留。
     const rosterAgain = JSON.parse(readFileSync(join(dir, "state.json"), "utf8"));
     assert.equal(String(rosterAgain.seats[BOSS_SEAT].id).length > 0, true);
+  });
+});
+
+test("老板工位的人即使是访客身份，也照常共享低清预览", async () => {
+  await withAuthServer(async ({ post, enter }) => {
+    const boss = await post("register", { name: "李文杰", password: "1" });
+    await post("role", { role: "visitor" }, boss.cookie);
+    const { socket, me } = await enter(boss.cookie, "李文杰");
+    assert.equal(me().role, "visitor");
+    assert.equal(me().seat, BOSS_SEAT, "名字含文杰照样坐进老板工位");
+
+    const colleague = await post("register", { name: "同事丁", password: "1" });
+    await post("role", { role: "employee" }, colleague.cookie);
+    const other = await enter(colleague.cookie, "同事丁");
+    const frames = [];
+    other.socket.on("preview", (value) => frames.push(value));
+
+    socket.emit("ambient-sharing", true);
+    socket.emit("preview", FRAME);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.deepEqual(frames.filter((value) => value.image).map((value) => value.image), [FRAME],
+      "同事应收到老板的低清画面");
+    assert.equal(frames.some((value) => value.image === null), false, "不得把老板的画面清掉");
   });
 });

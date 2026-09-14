@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { io } from "socket.io-client";
 import {
+  BOSS_SEAT,
   createOfficeServer,
   SEAT_COUNT,
 } from "../server.mjs";
@@ -72,6 +73,7 @@ test("server 的工位数与 src/seats.ts 一致", () => {
   assert.equal(ids.length, SEAT_COUNT, `seats.ts 有 ${ids.length} 个工位`);
   assert.equal(new Set(ids).size, ids.length, "工位 id 不应重复");
   assert.equal(ids[8], "Manager", "老板工位追加在原有八个工位之后");
+  assert.equal(BOSS_SEAT, ids.indexOf("Manager"), "服务端的 BOSS_SEAT 与坐位表同源");
 });
 
 test("老板工位可以认领且拒绝并发抢占与越界座位", async () => {

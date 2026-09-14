@@ -1,7 +1,8 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { Person } from './types';
-import { shouldPreview } from './previewGate';
+import { mayBroadcastPreview, shouldPreview } from './previewGate';
+import { BOSS_SEAT } from './seats';
 
 export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   connected: boolean, person: Person | undefined, notice: (text: string) => void) {
@@ -11,7 +12,7 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   const [wanted, setWanted] = useState(true);
   const desktop = !!window.officeDesktop;
   const eligible = shouldPreview({ desktop, connected, seated: person?.seat != null, wanted,
-    employee: person?.role !== 'visitor' });
+    mayBroadcast: mayBroadcastPreview(person?.role, person?.seat, BOSS_SEAT) });
 
   useEffect(() => {
     const channel = socket.current;
