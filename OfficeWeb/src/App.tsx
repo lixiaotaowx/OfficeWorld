@@ -35,7 +35,9 @@ function Stream({ stream }: { stream: MediaStream }) {
 export default function App({ account, onLogout }: { account: Account; onLogout: () => void }) {
   const office = useOffice(account);
   const [focusSeat, setFocusSeat] = useState<{ seat: number; nonce: number } | null>(null);
-  const [view, setView] = useState<View>("overview");
+  // The open workstations are what a visitor comes for, so that is the camera
+  // position the office opens on. 空间总览 stays one click away on the rail.
+  const [view, setView] = useState<View>("desks");
   function chooseView(next: View) { setRenderPaused(false); setFocusSeat(null); setView(next); }
   const [selected, setSelected] = useState(0);
   const [tab, setTab] = useState<"people" | "chat">("people");
@@ -225,6 +227,9 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               onFocusScreen={(seat) => { setRenderPaused(false); setSelected(seat); setFocusSeat({ seat, nonce: Date.now() }); }}
               renderPaused={renderPaused}
               onResumeRendering={() => setRenderPaused(false)}
+              // While our screen is being watched the 3D view must keep painting even
+              // if this window is not focused, or viewers would see a frozen office.
+              keepRendering={office.sharing}
               character={character}
               onMotion={office.reportMotion}
               onSit={office.sitSpot}

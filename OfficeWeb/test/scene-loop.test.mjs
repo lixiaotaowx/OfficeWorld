@@ -29,15 +29,16 @@ function harness() {
     simulated: () => simulated };
 }
 
-test('120Hz屏幕也限制静止10帧、操作/走路60帧、失焦10帧', () => {
+test('120Hz屏幕也限制静止10帧、操作/走路60帧、失焦不再刷新', () => {
   const h = harness();
   h.advance(1000); assert(h.drawn.length >= 9 && h.drawn.length <= 11);
   let before = h.drawn.length; h.loop.activity(); h.advance(1000);
   assert(h.drawn.length - before >= 59 && h.drawn.length - before <= 61);
   h.advance(3000); h.setMoving(true); before = h.drawn.length; h.advance(1000);
   assert(h.drawn.length - before >= 59 && h.drawn.length - before <= 61);
+  // 2026-09-14 用户要求：焦点外不再刷新三维画面（共享屏幕时例外，见下一条测试）。
   h.loop.setFocused(false); before = h.drawn.length; h.advance(1000);
-  assert(h.drawn.length - before >= 9 && h.drawn.length - before <= 11);
+  assert.equal(h.drawn.length, before, '失焦不再出帧');
   h.loop.dispose();
 });
 
@@ -48,6 +49,25 @@ test('不可见时零绘制，位置模拟继续；恢复不追赶时间、不�
   h.loop.setVisible(true); h.loop.setVisible(true); h.advance(1000);
   assert(h.drawn.length > before); assert(h.deltas.every(dt => dt <= .1));
   assert.equal(h.jobs.size, 1); h.loop.dispose(); assert.equal(h.jobs.size, 0);
+});
+
+test('失焦零刷新，位置模拟继续；正在共享屏幕时才继续画', () => {
+  const h = harness(); h.advance(500);
+  h.loop.setFocused(false);
+  const before = h.drawn.length, simulated = h.simulated(); h.advance(2000);
+  assert.equal(h.drawn.length, before, '焦点外不应刷新三维画面');
+  assert(h.simulated() - simulated > 1.8, '位置模拟必须继续');
+  // 共享屏幕时例外：画面真的有人在看，不能冻住。
+  h.loop.setBackgroundDraws(true);
+  let shared = h.drawn.length; h.advance(1000);
+  assert(h.drawn.length - shared >= 9 && h.drawn.length - shared <= 11, '共享时失焦仍按 10fps 出帧');
+  h.loop.setBackgroundDraws(false);
+  shared = h.drawn.length; h.advance(1000);
+  assert.equal(h.drawn.length, shared, '停止共享后立刻回到零刷新');
+  // 重新聚焦必须立刻恢复出帧，而不是等一个节流窗口。
+  h.loop.setFocused(true); h.advance(100);
+  assert(h.drawn.length > shared, '回到焦点应立即出帧');
+  h.loop.dispose();
 });
 
 test('手动暂停不会因窗口重新聚焦解除，只有显式恢复才继续画面', () => {

@@ -24,6 +24,8 @@ export type View = "overview" | "desks" | "meeting" | "lounge";
 interface Props {
   renderPaused?: boolean;
   onResumeRendering?: () => void;
+  /** Keep painting while unfocused, because our screen is being watched. */
+  keepRendering?: boolean;
   mySeat: number | null;
   people: Person[];
   /** Our own socket id: we never draw ourselves as a remote avatar. */
@@ -106,6 +108,7 @@ export default function OfficeScene(props: Props) {
   const remotesRef = useRef<RemoteAvatars>();
   const loopRef = useRef<SceneLoop>();
   useEffect(() => { loopRef.current?.setPaused(!!props.renderPaused); }, [props.renderPaused]);
+  useEffect(() => { loopRef.current?.setBackgroundDraws(!!props.keepRendering); }, [props.keepRendering]);
   const mySeat = props.mySeat;
   useEffect(() => {
     if (!props.people.some(p => p.id === props.myId)) actor.current?.standUp();
@@ -423,6 +426,7 @@ export default function OfficeScene(props: Props) {
       p.id !== latest.current.myId && latest.current.motions[p.id]?.moving));
     loopRef.current = loop;
     loop.setPaused(!!latest.current.renderPaused);
+    loop.setBackgroundDraws(!!latest.current.keepRendering);
     const stopObserving = observeSceneVisibility(el, loop);
     return () => {
       stopLoading();

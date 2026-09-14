@@ -22,6 +22,7 @@ export class SceneLoop {
   private visible = true;
   private focused = true;
   private paused = false;
+  private backgroundDraws = false;
   private activeUntil = 0;
   private lastStep: number;
   private lastDraw = -Infinity;
@@ -77,6 +78,23 @@ export class SceneLoop {
     this.frame = this.timer = null;
   }
 
+  /**
+   * Whether an unfocused window should keep painting. Off by default: a window the
+   * user is not looking at needs no new frames, and the simulation keeps stepping so
+   * positions stay correct. It is switched on while this client is sharing its
+   * screen, because then the picture really is being watched.
+   */
+  setBackgroundDraws(value: boolean) {
+    if (this.backgroundDraws === value) return;
+    this.backgroundDraws = value;
+    this.wake();
+  }
+
+  /** Painting happens when focused, or when sharing with an unfocused window. */
+  private draws(mode: string) {
+    return mode === 'active' || mode === 'idle' || (mode === 'unfocused' && this.backgroundDraws);
+  }
+
   private wake() {
     this.cancel();
     // Don't replay elapsed background time as a giant movement or camera jump.
@@ -87,7 +105,11 @@ export class SceneLoop {
 
   private schedule() {
     if (this.stopped) return;
-    if (this.mode() === 'paused') this.timer = this.host.setTimer(this.tick, 100);
+    const mode = this.mode();
+    // Without a draw there is nothing to paint, so wake ten times a second with a
+    // timer instead of asking for sixty animation frames.
+    if (mode === 'paused' || (mode === 'unfocused' && !this.backgroundDraws))
+      this.timer = this.host.setTimer(this.tick, 100);
     else this.frame = this.host.requestFrame(this.tick);
   }
 
@@ -96,8 +118,9 @@ export class SceneLoop {
     if (this.stopped) return;
     const now = this.host.now();
     const mode = this.mode();
+    const drawing = this.draws(mode);
     const interval = 1000 / (mode === 'active' ? 60 : 10);
-    if (mode !== 'paused' && now - this.lastDraw < interval - 1) {
+    if (drawing && now - this.lastDraw < interval - 1) {
       this.schedule();
       return;
     }
@@ -106,7 +129,7 @@ export class SceneLoop {
     // Continue local walking/arrival and position reports without any GPU draw.
     this.update(dt);
     this.steps++;
-    if (mode !== 'paused') {
+    if (drawing) {
       this.draw(dt);
       this.frames++;
       this.lastDraw = now;
