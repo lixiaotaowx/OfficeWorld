@@ -47,6 +47,8 @@ interface Props {
   /** Publish our own motion so everybody else can draw us. */
   onMotion: (motion: Motion) => void;
   onSit: (spot: string | null) => Promise<boolean>;
+  /** A public seat the office assigned to us (visitors are placed on a sofa). */
+  sitSpot?: string | null;
 }
 
 /** Everyone except us is drawn from the last snapshot the server relayed. */
@@ -148,6 +150,16 @@ export default function OfficeScene(props: Props) {
     if (mySeat === null) actor.current?.standUp();
     else actor.current?.sit(mySeat);
   }, [mySeat]);
+  // The office can place somebody directly (a visiting client is put on a sofa), in
+  // which case the avatar walks over and sits down. Applied once per assignment so
+  // it never fights the user walking around afterwards.
+  const appliedSpot = useRef<string | null>(null);
+  useEffect(() => {
+    const spot = props.sitSpot ?? null;
+    if (!spot || appliedSpot.current === spot) return;
+    appliedSpot.current = spot;
+    void actor.current?.sitAt(spot);
+  }, [props.sitSpot]);
   useEffect(() => {
     const el = host.current!;
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -172,6 +184,7 @@ export default function OfficeScene(props: Props) {
     void avatar.load(latest.current.character).then(() => {
       const seat = latest.current.mySeat;
       if (seat != null) avatar.sit(seat);
+      else if (latest.current.sitSpot) void avatar.sitAt(latest.current.sitSpot);
     });
     const remotes = new RemoteAvatars(world);
     remotesRef.current = remotes;

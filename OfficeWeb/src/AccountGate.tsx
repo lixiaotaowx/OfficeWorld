@@ -5,7 +5,34 @@ import SpaceArtwork from "./SpaceArtwork";
 import "./styles.css";
 import "./account.css";
 
-export interface Account { id: string; name: string; character: string }
+export type Role = "employee" | "visitor";
+export interface Account { id: string; name: string; character: string; role?: Role | "" }
+
+/** Asked once on the way in: a colleague, or somebody visiting the office. */
+function RoleChoice({ busy, error, choose }: {
+  busy: boolean; error: string; choose: (role: Role) => void;
+}) {
+  return <main className="account-page role-page">
+    <section className="role-card">
+      <span className="eyebrow">WHO IS COMING IN</span>
+      <h2>你是哪一位？</h2>
+      <p>员工进工位办公；访客直接到公共区就坐。两种身份都能开会、私聊、语音与共享屏幕。</p>
+      <div className="role-options">
+        <button type="button" className="role-option" disabled={busy} onClick={() => choose("employee")}>
+          <strong>iruler 员工</strong>
+          <small>使用自己的专属工位，并广播工位小屏幕预览</small>
+        </button>
+        <button type="button" className="role-option" onClick={() => choose("visitor")} disabled={busy}>
+          <strong>访问人（客户）</strong>
+          <small>在公共区沙发就坐，不广播小屏幕预览</small>
+        </button>
+      </div>
+      {error && <p className="account-error" role="alert">{error}</p>}
+      <small className="role-note">身份会记住，之后可由管理员调整。</small>
+    </section>
+  </main>;
+}
+
 export default function AccountGate() {
   const [user, setUser] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +41,22 @@ export default function AccountGate() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [roleBusy, setRoleBusy] = useState(false);
   const stopRestore = useRef<() => void>();
+  /** Chosen once, on the way in; the server remembers it from then on. */
+  async function chooseRole(role: Role) {
+    if (!user || roleBusy) return;
+    setRoleBusy(true); setError("");
+    try {
+      const response = await fetch("/api/auth/role", { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) });
+      const data = await response.json();
+      if (!response.ok) throw Error(data?.error || "身份未保存，请重试");
+      setUser(data.user);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "身份未保存，请重试");
+    } finally { setRoleBusy(false); }
+  }
   useEffect(() => {
     const ended = (event: Event) => {
       stopRestore.current?.();
@@ -67,6 +109,7 @@ export default function AccountGate() {
     } catch { window.alert("退出失败，请检查连接后重试"); }
     finally { setBusy(false); }
   }
+  if (user && !user.role) return <RoleChoice busy={roleBusy} error={error} choose={chooseRole} />;
   if (user) return <App account={user} onLogout={() => void logout()} />;
   return <main className="account-page">
     <section className="account-intro">

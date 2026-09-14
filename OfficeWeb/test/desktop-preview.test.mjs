@@ -18,6 +18,8 @@ test("四个条件缺一不可", () => {
   assert.equal(shouldPreview({ ...base, connected: false }), false, "断线不采集");
   assert.equal(shouldPreview({ ...base, seated: false }), false, "没有工位不采集");
   assert.equal(shouldPreview({ ...base, wanted: false }), false, "没有人在接收就不采集");
+  assert.equal(shouldPreview({ ...base, employee: false }), false, "访客从不广播低清预览");
+  assert.equal(shouldPreview({ ...base, employee: true }), true);
 });
 
 test("释放采集的那条调用存在，且默认按“开启”渲染", () => {

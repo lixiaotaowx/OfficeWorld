@@ -233,6 +233,8 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               character={character}
               onMotion={office.reportMotion}
               onSit={office.sitSpot}
+              // The office may seat us itself: a visiting client is placed on a sofa.
+              sitSpot={office.people.find((person) => person.id === office.myId)?.sittingSpot ?? null}
             />
             <div className="bottom-bar">
               <div className="identity">
@@ -323,7 +325,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
         <SharingPreview stream={office.videos['local-screen']} meeting={false} onStop={office.stopShare} />}
       {help && (
         <div className="modal-backdrop">
-          <section className="modal">
+          <section className="modal settings-modal">
             <h2>设置</h2>
             <CharacterSetting value={character} onChange={chooseCharacter} />
             <NotificationSetting />

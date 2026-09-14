@@ -10,6 +10,8 @@ export interface Person {
   seat: number | null;
   /** Which bundled avatar this player wears, so colleagues render it. */
   character: CharacterId;
+  /** `employee`, `visitor`, or empty before they chose on the way in. */
+  role?: "employee" | "visitor" | "";
   /** Whether this person's tiny thumbnail may show on their monitor. */
   previewAllowed: boolean;
   sharing: boolean;

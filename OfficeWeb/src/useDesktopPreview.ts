@@ -10,7 +10,8 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   // freshly loaded page never shows the preview as off while the answer is in flight.
   const [wanted, setWanted] = useState(true);
   const desktop = !!window.officeDesktop;
-  const eligible = shouldPreview({ desktop, connected, seated: person?.seat != null, wanted });
+  const eligible = shouldPreview({ desktop, connected, seated: person?.seat != null, wanted,
+    employee: person?.role !== 'visitor' });
 
   useEffect(() => {
     const channel = socket.current;

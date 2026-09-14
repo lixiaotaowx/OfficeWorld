@@ -5,6 +5,8 @@ import { loadAccounts, saveAccounts } from "./account-storage.mjs";
 const scrypt = promisify(scryptCallback);
 const COOKIE = "office_session";
 const LIFE = 30 * 24 * 3600 * 1000;
+/** Who somebody is in the office: a colleague or a visiting client. */
+export const ROLES = new Set(["employee", "visitor"]);
 const digest = (token) => createHash("sha256").update(token).digest("hex");
 const cleanName = (name) => typeof name === "string" ? name.normalize("NFKC").trim() : "";
 
@@ -16,7 +18,8 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     data.sessions = data.users.flatMap(u => data.sessions.filter(s => s.userId === u.id && s.expires > Date.now()).slice(-12));
     saveAccounts(path, data);
   };
-  const publicUser = (user) => ({ id: user.id, name: user.name, character: user.character });
+  const publicUser = (user) => ({ id: user.id, name: user.name, character: user.character,
+    role: ROLES.has(user.role) ? user.role : "" });
   const tokenOf = (req) => {
     const match = /(?:^|;\s*)office_session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie || "");
     return match?.[1];
@@ -86,6 +89,19 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
       data.sessions = data.sessions.filter((s) => s.hash !== digest(token || ""));
       commit(); reply(res, 200, { ok: true }, { "Set-Cookie": cookie("", 0) }); return true;
     }
+    // Chosen once when somebody first enters the office (and changeable later).
+    if (route === "/api/auth/role") {
+      const user = authenticate(req);
+      if (!user) { reply(res, 401, { error: "请先登录" }); return true; }
+      try {
+        const body = await bodyOf(req);
+        if (!ROLES.has(body?.role)) { reply(res, 400, { error: "身份只能是员工或访客" }); return true; }
+        user.role = body.role;
+        commit();
+        reply(res, 200, { user: publicUser(user) });
+      } catch { if (!res.headersSent) reply(res, 400, { error: "请求未完成，请稍后重试" }); }
+      return true;
+    }
     if (!["/api/auth/login", "/api/auth/register"].includes(route)) {
       reply(res, 404, { error: "接口不存在" }); return true;
     }
@@ -135,6 +151,11 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     const user = data.users.find((u) => u.id === id);
     if (user) { user.character = character; commit(); }
   };
+  const setRole = (id, role) => {
+    const user = data.users.find((u) => u.id === id);
+    if (user && ROLES.has(role)) { user.role = role; commit(); return true; }
+    return false;
+  };
   const listContacts = () => data.users.map(user => ({ id: user.id, name: user.name }));
-  return { handle, authenticate, setCharacter, originAllowed, listContacts };
+  return { handle, authenticate, setCharacter, setRole, originAllowed, listContacts };
 }

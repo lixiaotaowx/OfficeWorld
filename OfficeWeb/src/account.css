@@ -8,6 +8,20 @@
   background: #26312b;
   color: #eff4df;
 }
+/* Identity choice on the way in: one centred card, two clear options. */
+.role-page { display: grid; place-items: center; }
+.role-card { width: min(520px, 100%); display: grid; gap: 14px; padding: 40px 38px;
+  border-radius: 24px; background: #fbfcf8; color: #2d3e32; box-shadow: 0 20px 60px #101a1433; }
+.role-card .eyebrow { font-size: 10px; letter-spacing: 2.4px; color: #7d8b72; }
+.role-card h2 { margin: 0; font-size: 28px; }
+.role-card p { margin: 0; font-size: 13px; line-height: 1.7; color: #5d6b58; }
+.role-options { display: grid; gap: 12px; margin-top: 6px; }
+.role-option { display: grid; gap: 6px; text-align: left; padding: 18px 20px; border-radius: 16px;
+  border: 1px solid #d9e2d5; background: #f4f7ef; color: #2c4133; cursor: pointer; }
+.role-option:hover:not(:disabled) { border-color: #9fb98f; background: #eaf2e2; }
+.role-option strong { font-size: 16px; }
+.role-option small { font-size: 12px; color: #6c7968; line-height: 1.6; }
+.role-note { font-size: 11px; color: #8b937f; }
 .account-intro {
   position: relative;
   min-height: calc(100dvh - 40px);

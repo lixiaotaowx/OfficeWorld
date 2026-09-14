@@ -36,6 +36,12 @@ const DIST = fileURLToPath(new URL("./dist/", import.meta.url));
 /** Must match the number of workstations in src/seats.ts; a test asserts this. */
 export const SEAT_COUNT = 9;
 
+/** The manager's chair in src/seats.ts ("老板工位", id "Manager"). */
+export const BOSS_SEAT = 8;
+
+/** Names containing this are seated in the manager's chair automatically. */
+export const BOSS_NAME = /文杰/;
+
 /**
  * Administrator password for the kick feature. Override with ADMIN_PASSWORD in
  * .env or the environment; administration stays disabled without a password.
@@ -265,11 +271,14 @@ export function createOfficeServer(options = {}) {
       for (const [seatKey, owner] of Object.entries(roster)) {
         if (owner.id === clientId) seat = Number(seatKey);
       }
-      people.set(s.id, {
+      const role = s.data.account?.role === "visitor" || data?.role === "visitor" ? "visitor"
+        : s.data.account?.role === "employee" || data?.role === "employee" ? "employee" : "";
+      const person = {
         id: s.id,
         clientId,
         name,
         seat,
+        role,
         // Which bundled avatar this player wears, so colleagues render it.
         character: sanitizeCharacter(s.data.account?.character || data?.character),
         // The tiny ambient thumbnail may be shown on the workstation screen.
@@ -277,8 +286,27 @@ export function createOfficeServer(options = {}) {
         previewAllowed: true,
         sharing: false,
         meeting: false,
-      });
+      };
+      people.set(s.id, person);
+      // The boss sits in the manager's chair without having to claim it. The name is
+      // the office's own rule, so it is applied server-side and persisted like any
+      // other claim.
+      if (BOSS_NAME.test(name) && (!roster[BOSS_SEAT] || roster[BOSS_SEAT].id === clientId)) {
+        for (const [seatKey, held] of Object.entries(roster)) {
+          if (held.id === clientId && Number(seatKey) !== BOSS_SEAT) delete roster[seatKey];
+        }
+        roster[BOSS_SEAT] = { id: clientId, name };
+        person.seat = BOSS_SEAT;
+        save();
+      }
+      // A visiting client is seated in the public area straight away; they keep every
+      // other feature but do not broadcast a screen preview of their own.
+      if (person.seat === null && role === "visitor") {
+        const sofa = sitting.freeSofa(person);
+        if (sofa) person.sittingSpot = sofa;
+      }
       meetings.sync();
+      publish();
     });
     // Seat arbitration. Two players clicking the same workstation must not both
     // win, and this handler runs synchronously on the event loop, so the
@@ -291,6 +319,9 @@ export function createOfficeServer(options = {}) {
       if (typeof reply !== "function") return;
       const person = people.get(s.id);
       if (!person) return reply({ ok: false, error: "请先进入空间" });
+      // A visiting client uses the public area; employee desks stay with employees.
+      if (person.role === "visitor")
+        return reply({ ok: false, error: "访客在公共区就坐，不占用同事的工位" });
       // Seats are permanent: nobody gives one up on their own; only the
       // administrator frees a desk (see the "admin" handler below).
       if (requested === null)
@@ -404,12 +435,17 @@ export function createOfficeServer(options = {}) {
     s.on("ambient-sharing", value => {
       const p = people.get(s.id);
       if (!p) return;
-      p.previewSharing = value === true && p.seat != null;
+      // A visiting client never broadcasts a low-resolution screen preview. The
+      // client does not even capture one; this is the server-side backstop.
+      p.previewSharing = value === true && p.seat != null && p.role !== "visitor";
       if (!p.previewSharing) sendPreview(null);
     });
     let lastFrame = 0;
     s.on("preview", (image) => {
       const p = people.get(s.id);
+      // Visitors never broadcast the low-resolution preview, even while sharing in
+      // high definition: that is the one part of the office they opt out of.
+      if (p?.role === "visitor") return;
       if (
         !(p?.sharing || p?.previewSharing) ||
         typeof image !== "string" ||

@@ -1,5 +1,16 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 23:10 设置里的角色选择改为缩略图网格（前端 `index-C83fSQrx.js` + `index-B4pndPqT.css`）
+
+- 需求（用户）：设置里选「我的角色」时，要和刚进来时一样有缩略图。此前设置里是个只有文字的 `<select>`。
+- 做法：抽出 `src/CharacterChooser.tsx`（女/男页签 + 缩略图网格），首访选座弹窗 `SeatPicker` 与设置里的 `CharacterSetting` **共用同一个组件**，两处不会再各写一套；设置里的下拉框删除。
+- 版面：设置弹窗加宽到 560px（`.modal.settings-modal`），让 11 个缩略图两行放完、缩略图尺寸与首访一致；`.modal` 补 `max-height: 88dvh; overflow-y: auto`，窗口矮时整个弹窗可滚动，不会再把「关闭」顶出视口。
+- 验证：网页单测 **112/112**、`tsc --noEmit`、`vite build` 通过。新增 `test/browser/character-setting.cjs`（真实浏览器跑构建产物 + 隔离服务器 + 隔离账号）：设置里 2 个页签、女 10 / 男 11 个缩略图，逐个 `naturalWidth > 0` 确认真的解码（含滚动后的懒加载图）；缩略图地址集合与首访弹窗**逐项相同**；点「宇航服」后确实发起 `man_spacesuit.glb` 请求且高亮跟随；刷新后设置里仍是宇航服并按它加载模型。截图 `Build/character-setting-thumbnails.png`、`Build/character-setting-chosen.png`，证据 `Build/character-setting-evidence.json`。
+- 线上：`index-C83fSQrx.js`（1,445,925 字节，SHA256 `ca595e90725e2a72a09bded0578d143bc354df55a95700f8ff5ca9dbdfc6873c`）、`index-B4pndPqT.css`（52,888 字节，SHA256 `5e90aa2a2d0e951dc0cb06c8d43321b3d992295da7ecdcd690e658634c5c4036`），两者与本地 `Build/OfficeWeb` **逐字节一致**，线上 CSS 内已含 `.settings-modal` 与 `.character-setting .character-grid`。纯前端，**未重启 `officeweb`**。
+- 测试选择器同步：`livekit-remote-avatars.mjs` 与 `livekit-workstation.mjs` 不再用 `select[aria-label='选择角色']`（该元素已删），改为在设置网格里点缩略图；打开设置改用 `button[aria-label="设置"]`——玩家昵称里可能含「设置」二字，`getByRole(name)` 会撞到成员按钮。
+- 本次上传的是当时工作区的整份前端产物：除本任务外还**顺带包含当时未提交的前端改动**（`PrivateCallPanel.tsx`、`ScreenStage.tsx`、`screen-stage.css`、`officeNotifications.ts`、`useOffice.ts`）。同批未提交的 `OfficeDesktop/annotation-overlay.*` 属于 EXE，**没有**随本次上线。
+- 已知问题（本次未修）：`deployed-smoke.mjs`、`livekit-screen.mjs`、`livekit-workstation.mjs` 仍在断言旧版选座弹窗（`.seat-picker`、`.seat-picker-grid`、「先不选」），而现在的选座是「先选角色 → 点场景里的椅子」（`.seat-picker-hint`），按现状跑必然失败；已记入 `Design/TODO.md`。
+
 ## 2026-09-14 23:05 工位预览改为常驻低频采集（EXE 0.1.10，300px / 6 秒）
 
 - 用户决定：采用 B 方案，并把分辨率改为 **300px**、间隔改为 **6 秒**（原 480px / 3 秒作废）。
@@ -94,6 +105,40 @@
 - 上线核验：本地入口 `index-BElqbAGe.js`（CSS 沿用 `index-Dx7H4GVR.css`），线上 `https://115.159.43.237/assets/index-BElqbAGe.js` SHA256 `22c6443fce0b0eeb4a8c175c859433bf597602fa97891bf6c7631c65f633c5f0` 与本地逐字节一致，`officeweb` active、无 error。备份 `backups/notifications-20260914/`。**只改前端，未重启服务，线上用户未掉线**（上次入口 `index-vJVhJjFz.js` 保留在盘上）。
 - 测试：桌面 24/24（含新增 alert 用例）、网页 106/106（含新增 3 条通知用例）、`tsc --noEmit` 通过。EXE 于 22:22:17 重新打包，并在 `win-unpacked/resources/app.asar` 实测到 `office:alert`、`office:alert-open`、`backgroundThrottling`、`flashFrame`、`setAlwaysOnTop`、`onAlertOpen`。
 - 注意：本次前端构建快照同时包含 22:25 那条「最大化/全屏」改动（同一 `src/` 树）。**未验收**：真实 Windows 上「关窗到托盘 → 另一客户端来电/会议」的弹屏与响铃尚需人工双端实测。
+
+### 2026-09-14 23:10 标注变成单层：只画在共享的那块屏幕上（前端 `index-Yp42T-T1.js` + EXE 0.1.10）
+
+- 用户要求（参考腾讯会议 / 向日葵）：标注应画在**对方那块真实屏幕**上，画完被共享画面拍进去，所有人自然就看到了；**不要在视频上再叠一层**。
+- 根因：overlay 原来 `setContentProtection(true)` 把标注层**排除在采集之外**，所以只能在视频里补第二层——这正是「多此一举」的来源。另外 `annotation-overlay.js` 的 `paint()` 把 `startX/startY` 提到循环外，一条笔画被画成从起点散开的 N-1 根线。
+- 改法：`setContentProtection(false)` 让标注层留在共享画面里；`ScreenStage` 删除 canvas 与全部笔迹渲染，只留不可见的拖动输入面 `.screen-stage-draw`；`useOffice` 删除本地笔迹 state（不再每批笔迹触发 React 重渲染）。**全链路只剩共享屏幕这一层。**
+- 折线修复证据：新增 `OfficeDesktop/test/annotation-paint.test.cjs`；把旧 `paint()` 换回去是 **2 失败**，用新实现是 **2 通过**。
+- 核验：本次上传的线上入口 `index-Yp42T-T1.js` + `index-BbmmLFdr.css` SHA256 与本地逐字节一致；线上 JS 实测含 `screen-stage-draw`、不含 `screen-stage-board`。（并发会话随后又重建过一次，线上入口现为 `index-Cp4VNN2K.js`，已复验仍含 `screen-stage-draw`、不含 `screen-stage-board`，即本改动在线。）EXE 0.1.10 于 23:08:41 打包，`app.asar` 内实测 `setContentProtection(false)` 为真、`true` 为假，且含折线修复。
+- 测试：桌面 30/30、网页 111/111、`tsc --noEmit` 通过。备份 `backups/single-annotation-layer-20260914/`。
+- 已知限制与未验收：标注需要**共享方运行桌面 EXE** 才有那层可画（浏览器共享没有本机层）；两台真实客户端之间的标注仍未人工跑通。
+- 事故与教训：本轮 `scp -r assets` 在并发构建下中途失败，造成 index.html 已更新而新 JS 未上传；`static.mjs` 的 SPA 回退会把缺失资源返回成 200 的 HTML，**只看状态码会误判成功**。已改为逐文件上传并复验；传前端请显式列出改动的哈希文件，不要 `-r` 整个 assets。
+
+### 2026-09-14 23:20 提醒卡片改为屏幕居中（前端 `index-BSh4ZjSM.js` + `index-D5TZK3cm.css`，纯 CSS 无需重打包）
+
+- 用户反馈：消息提醒没有居中。原两个应用内提醒都钉在角落：`.incoming-calls`（来电/看屏幕邀请）右上 `top:85px;right:28px`，`.meeting-notification`（会议邀请/有人共享）右下 `bottom:30px;right:30px`。
+- 改法：`.incoming-calls` 改为 `fixed;inset:0` 的 flex 居中 + 浅色遮罩 `#0e1a1424`；容器 `pointer-events:none`、`.incoming-calls>*{pointer-events:auto}`，卡片居中显眼而背后界面仍可点、按钮照常可用；`.call-invite` 固定 `width:min(380px,calc(100vw - 32px))`。`.meeting-notification` 改为 `left:50%;top:calc(50% - 150px);transform:translateX(-50%)`（略高于中心，避免压住居中的来电卡片）。
+- **踩到的坑**：`.meeting-notification` 在 `workspace-ui.css:251` 与 `workspace-responsive.css:83` 各有一条**后加载的覆盖规则**又把它按回底部（`bottom:42px;right:40px`、`left/right/bottom:22px`）。同优先级下后写的赢，**只改 `meetings.css` 等于没改**。已去掉这两处定位，只留配色与窄屏字号。
+- 核验（线上抽 CSS 逐条核对，不只看状态码）：`index-BSh4ZjSM.js` + `index-D5TZK3cm.css` SHA256 与本地一致；线上 `.meeting-notification` 只剩 3 条规则且**都不含 left/right/bottom 定位**；`.incoming-calls` 实测含 `justify-content:center`、`pointer-events:none`，且 `.incoming-calls>*{pointer-events:auto}` 在线上存在（缺了接听/拒绝按钮就点不动）；`top:85px`/`right:28px`/`bottom:42px`/`right:40px` 均已不在线上。备份 `backups/centered-alerts-20260914/`。
+- 未验收：居中效果未在真实双端来电场景截图确认（只核对了线上 CSS 规则与哈希）。
+
+### 2026-09-14 23:41 管理员密码改为用户指定值（仅服务器 `.env`，无代码/前端改动）
+
+- 位置：`/home/ubuntu/officeweb/.env` 的 `ADMIN_PASSWORD`。`server.mjs` 用 `process.loadEnvFile` 在启动时读同目录 `.env`；`admin.mjs` 把两边 SHA-256 后常量时间比较，并按 socket 限流（5 次失败锁 10 分钟）。**明文不写入本仓库。**
+- **更正本文档旧记录**：此前写的「未设置时默认 `admin123`」是错的。`server.mjs:43` 是 `process.env.ADMIN_PASSWORD || ""`，空值即**关闭**管理功能；实测改动前线上 `.env` 根本没有这一行，也就是管理员功能一直是关的。`.env.example` 的说法（留空即禁用、无默认值）才是对的。
+- 做法：备份 `backups/admin-password-20260914/.env.before`（原文件仅 LIVEKIT 三项）→ 用 `grep -v` 删掉旧行后追加新行 → `cat` 回写以保持 inode/权限 → `chmod 600` → `systemctl restart officeweb`。
+- 核验：该行值长度 8、全为数字、**不含 CR/LF**（带 CR 会让密码静默永不匹配，本轮就差点踩到）；服务器上 `process.loadEnvFile('./.env')` 载入值的 SHA-256 与预期完全一致；服务 active、3108 恰好 1 个监听、回环 200、正式站 200、日志 `OfficeWeb ready on http://127.0.0.1:3108 (livekit: wss://115.159.43.237)`（LIVEKIT 三项未被破坏）。
+- 未验收：真实「管理员踢人」流程未跑（需要已登录会话；唯一不破坏数据的探针是「正确密码 + 非法工位号」，同样要先登录）。重启会让在线用户掉线一次，重连即可。
+- 提醒：纯数字、日期形态属弱口令；`admin` 目前只有「踢出工位」一个动作，但共享空间建议换成更长的随机串。
+
+### 2026-09-14 23:52 管理员密码标签写明用途（前端 `index-DxsZMtyx.js`，纯前端无需重打包）
+
+- 用户要求：管理员密码那里标注它的用途。`AdminDialog.tsx` 的标签由「管理员密码」改为「管理员密码（iruler员工通用密码）」，`aria-label` 同步，读屏与可见文本一致。
+- 核验：线上入口 `index-DxsZMtyx.js` SHA256 与本地逐字节一致；从线上 bundle 抽出的 JSX 实测为 `jsx("span",{children:"管理员密码（iruler员工通用密码）"})`（共 2 处：可见标签 + `aria-label`）。CSS 未变，沿用 `index-D5TZK3cm.css`。
+- 说明：`.admin-password` 是 flex 纵向布局，长标签只会自然换行，不会挤压输入框宽度。
 
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 

@@ -25,6 +25,18 @@ export function createSitting(people, roster, publish, seatCount) {
   };
   return {
     blocked,
+    /**
+     * The first free public sofa. A visiting client is placed here on arrival
+     * instead of at a desk, so they can sit down without taking anybody's seat.
+     */
+    freeSofa(person) {
+      for (const seat of publicSeats) {
+        if (!seat.id.startsWith('sofa-')) continue;
+        const other = occupant(seat.id);
+        if (!other || other.id === person.id) return seat.id;
+      }
+      return null;
+    },
     attach(socket) {
       socket.on('sit', (id, reply) => {
         if (typeof reply !== 'function') return;
