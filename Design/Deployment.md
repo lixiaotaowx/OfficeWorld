@@ -33,6 +33,14 @@
 - 教训与测试修正：我之前只在**独立** harness（无 `.session-panel`）里断言，那条全局规则不生效，所以断言全过而真实面板是坏的。新增 `test/browser/private-call-stage.cjs` + `test/private-call-stage-harness.html`：在**真实私聊面板**里跑，断言按钮 `position=static`、完全落在画面矩形内、滚动后仍可见、放大后 8 个按钮位置互不重叠且都在可见区域。`test/browser/stage-cascade.cjs` 保留为定位类问题的诊断脚本。
 - 证据：`Build/panel-inline.png`（单按钮在画面内）、`Build/panel-fullscreen.png`。线上 CSS SHA256 `5a68375ce265cc646d38a19ab3bd8473…` 与本地逐字节一致，且线上 CSS 内含上述两条规则。
 
+### 2026-09-14 22:12 放大后按钮居中（前端 `index-B-vtqV4X.js` + `index-Dx7H4GVR.css`）
+
+- 用户反馈：展开后按钮仍"围在一起"。实为其时按钮条是**通栏**：标题孤零零在最左，8 个按钮全挤在右下角。
+- 修正：放大/全屏时按钮条改为**底部居中的药丸**（`left:50%` + `translate(-50%)`、`width:max-content`、`max-width:min(940px, calc(100% - 32px))`、`justify-content:center`、`gap:8px`），标题后加一条分隔线；窄屏自动换行仍保持居中。
+- 实测（真实私聊面板 + 全屏，1440×900）：按钮条中心 720 = 视口中心 720；宽 744 < 1440；中心线跨度 0px（单行）；两两重叠面积 0；间距 8px 均匀；位于下方（824–878）。截图 `Build/panel-fullscreen.png`。
+- 新增断言写入 `test/browser/private-call-stage.cjs`（居中 ±4px、单行、无重叠、间距 3–24px、不拉满、在下方）。
+- 线上入口 `index-B-vtqV4X.js` + `index-Dx7H4GVR.css`；CSS SHA256 `a0e5bb9d255ce3d9…` 线上与本地一致，并已从线上 CSS 抽出该规则逐字核对（压缩后为 `translate(-50%)`，不是 `translateX(-50%)`）。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。
