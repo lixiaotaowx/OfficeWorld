@@ -1,5 +1,12 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 23:50 身份选择：员工 / 访客（前端 `index-D-FK-i7S.js`）
+
+- 需求（用户）：进软件先选身份——**iruler 员工**或**访问人（客户）**；访客直接坐公共区沙发、**不广播低清屏幕预览**，但会议/私聊/语音/高清共享照旧；**名字含「文杰」直接进老板工位**。
+- 服务端：`accounts.mjs` 增加 `role`（`POST /api/auth/role`，落库持久化）；`server.mjs` 在 join 时按身份落座——名字匹配 `BOSS_NAME = /文杰/` 时直接认领 `BOSS_SEAT = 8`（`src/seats.ts` 的 `Manager`/"老板工位"）并 `save()`；访客由 `sitting.freeSofa()` 选空沙发就坐、认领工位被拒；`ambient-sharing` 与 `preview` **双重拒绝**访客的低清帧。
+- 客户端：`AccountGate` 在 `role` 为空时先显示身份选择页；`previewGate` 增加 `employee` 条件；`OfficeScene` 新增 `sitSpot`，访客会走过去坐到服务端安排的沙发（每次分配只应用一次）。
+- 验证：新增 `test/roles.test.mjs` 2 项；网页 118/118；线上入口 `index-D-FK-i7S.js` 与本地逐字节一致；匿名 `POST /api/auth/role` 被 CSRF 来源检查拦为 403（浏览器内未登录为 401）。
+
 ## 2026-09-14 23:10 设置里的角色选择改为缩略图网格（前端 `index-C83fSQrx.js` + `index-B4pndPqT.css`）
 
 - 需求（用户）：设置里选「我的角色」时，要和刚进来时一样有缩略图。此前设置里是个只有文字的 `<select>`。
