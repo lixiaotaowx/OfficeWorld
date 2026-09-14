@@ -13,7 +13,10 @@ export function attachChat(io, socket, people, store, contacts = () =>
     if (!people.has(socket.id)) return reply({ ok: false, error: "请先进入空间" });
     if (typeof after !== "string" || after.length > 100)
       return reply({ ok: false, error: "无效的消息游标" });
-    try { reply(store.page(after, people.get(socket.id).clientId)); }
+    try {
+      const person = people.get(socket.id);
+      reply(store.page(after, person.clientId, person.role === "visitor"));
+    }
     catch { reply({ ok: false, error: "聊天存档暂不可用，请稍后重试" }); }
   });
   socket.on("chat", (payload, reply) => {
@@ -31,6 +34,10 @@ export function attachChat(io, socket, people, store, contacts = () =>
     if (++count > 20) return respond({ ok: false, error: "发送过快，请稍后重试" });
     try {
       const recipient = recipientFor(payload?.recipientId, person, contacts());
+      // A visiting client has no public channel; private messages are how they talk
+      // to the office (user, 2026-09-15).
+      if (!recipient && person.role === "visitor")
+        return respond({ ok: false, error: "访客不能发公共聊天，请私聊同事" });
       const message = store.append(person, text.trim(), requestId, undefined, recipient);
       publishChat(io, people, message);
       respond({ ok: true, message });

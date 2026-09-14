@@ -308,6 +308,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
             myId={office.myId}
             accountId={account.id}
             mySeat={mySeat}
+            visitor={isVisitor}
             selected={selected}
             tab={tab}
             panelOpen={panelOpen}

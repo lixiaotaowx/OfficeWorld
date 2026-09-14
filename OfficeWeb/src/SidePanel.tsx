@@ -16,6 +16,8 @@ interface Props extends ChatFileActions {
   myId: string;
   accountId: string;
   mySeat: number | null;
+  /** Visitors have no public chat channel, only private threads. */
+  visitor: boolean;
   selected: number;
   tab: "people" | "chat";
   panelOpen: boolean;
@@ -36,6 +38,7 @@ export default function SidePanel({
   myId,
   accountId,
   mySeat,
+  visitor,
   selected,
   tab,
   panelOpen,
@@ -177,6 +180,7 @@ export default function SidePanel({
       ) : null}
       <ChatInbox accountId={accountId} messages={messages} contacts={contacts} people={people}
         connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
+        visitor={visitor}
         onFile={onFile} loadFile={loadFile} onUnread={setUnread} />
       <div className="side-foot">
         <span className="dot" /> 各自专注，随时连接。

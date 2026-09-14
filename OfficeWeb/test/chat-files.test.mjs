@@ -15,7 +15,13 @@ test("附件分片去重、取消、大小校验、持久化与七天实际清�
     const files = createChatFiles(join(dir, "files"), store);
     const socket = new EventEmitter(); socket.id = "socket-a";
     const broadcast = [];
-    files.attach({ emit: (event, message) => broadcast.push(message) }, socket,
+    // `to(socketId)` is what publishChat uses for the public channel, because a
+    // visiting client is skipped there; the fake io mirrors both shapes.
+    const io = {
+      emit: (event, message) => broadcast.push(message),
+      to: () => ({ emit: (event, message) => broadcast.push(message) }),
+    };
+    files.attach(io, socket,
       new Map([[socket.id, { clientId: "a", name: "同事" }]]));
     const send = data => { let reply; socket.emit("chat-file", data, answer => reply = answer); return reply; };
     const first = { requestId: "file-one", name: "../中文\r\n.txt", size: 6, offset: 0, bytes: Buffer.from("abc") };

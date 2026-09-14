@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 03:00 访客不接收公共聊天，私聊照常（前端 `index-CE4Bcpwz.js`，后端 4 个 chat 模块）
+
+- 需求（用户）：「访客不可以收到公共聊天频道 私聊可以」。
+- 服务端规则（公共频道 = 无 `recipientId` 的消息）：`chat-access.mjs` 的 `canReadChat(row, accountId, visitor)` 公开行对访客不可读、`publishChat` 的公共分支只发给成员；`chat-store.mjs` 的 `page(after, accountId, visitor)` 透传；`chat-server.mjs` 的 `chat-history` 按身份过滤、`chat` 拒绝访客发公共消息（"访客不能发公共聊天，请私聊同事"）；`chat-files.mjs` 同规则拒绝访客的公共文件并在附件下载时对公共文件返回 403。**私聊路径完全没有改动**（实时、历史、文件、未读）。
+- 客户端：`ChatInbox` 新增 `visitor` 属性——访客的会话列表不渲染「公共聊天」那一行，列表副标题改为「和同事单独聊聊」；`SidePanel` 透传，`App.tsx` 传 `isVisitor`。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **124/124**（新增「访客不参与公共聊天，私聊照常可用」：成员自己的公共消息照旧可见、访客收不到公共消息、访客能收到私聊、访客发公共被拒、访客历史里没有公共消息）；浏览器端到端 `test/browser/desk-preview.cjs` PASS，并确认访客的会话列表里没有「公共聊天」。
+- 发布：后端上传 `chat-access.mjs` / `chat-store.mjs` / `chat-server.mjs` / `chat-files.mjs` 并 `systemctl restart officeweb` → active；前端上传 `index.html` + `assets/index-CE4Bcpwz.js`。线上入口 `index-CE4Bcpwz.js`（JS SHA256 `1de66756d4b1d9a04e8d16f342785dfc4e4dd1a0eee19fb3f29fb614680d1970`）、`chat-access.mjs`（`7d96ffaf712f6d6820b60d78cffa906cf55f84796e6d3397f4b468403feb028c`）、`chat-store.mjs`（`60db4029…`）、`chat-server.mjs`（`552916e7…`）、`chat-files.mjs`（`1a3ce14d…`）全部与本地一致。备份 `backups/visitor-chat-20260915/`。
+
 ## 2026-09-15 02:30 访客不再出现选座提示（前端 `index-DptbtmyV.js`）
 
 - 需求（用户）：「客户的话就不需要再出现"点击场景里你想坐的椅子"了……只需要去掉这个选择」——访客已由服务端安排在公共区沙发，不该再被要求点椅子。

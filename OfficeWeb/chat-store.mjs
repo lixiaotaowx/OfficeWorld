@@ -58,10 +58,10 @@ export function createChatStore(directory, now = Date.now) {
       records.set(row.id, row);
       return row;
     },
-    page(after = "", accountId) {
+    page(after = "", accountId, visitor = false) {
       prune();
       const rows = [...records.values()].filter(r => r.id > after &&
-        (accountId === undefined || canReadChat(r, accountId)))
+        (accountId === undefined || canReadChat(r, accountId, visitor)))
         .sort((a, b) => a.id.localeCompare(b.id));
       const messages = rows.slice(0, 200);
       return { ok: true, messages, more: rows.length > 200,

@@ -119,6 +119,10 @@ const readSeat = (page, seat) => page.evaluate(index => {
     // chair (user, 2026-09-15); the bottom bar should say where they are sitting.
     report.guestPicker = await guest.page.locator(".seat-picker-hint").count();
     report.guestIdentity = await guest.page.locator(".bottom-bar .identity small").textContent();
+    // The public channel is not for visitors: the chat list must not offer it.
+    await guest.page.getByRole("button", { name: /^聊天/ }).first().click();
+    await guest.page.locator(".conversation-list-heading, .conversation-heading").first().waitFor();
+    report.guestChatRows = await guest.page.locator(".conversation-row").allTextContents();
 
     // 3) A member without a desk still gets the picker, so the hint is only gone for
     //    the people it does not apply to.
@@ -138,6 +142,8 @@ const readSeat = (page, seat) => page.evaluate(index => {
     assert.equal(report.guest.frames, 0, "普通访客不得采集屏幕");
     assert.equal(report.guestPicker, 0, "访客不该再看到“点击场景里你想坐的椅子”");
     assert.match(report.guestIdentity || "", /沙发/, "访客的身份栏应写明坐在公共区沙发");
+    assert.equal(report.guestChatRows.some((row) => row.includes("公共聊天")), false,
+      "访客的会话列表里不应出现公共聊天");
     assert.equal(report.memberPicker, 1, "没有工位的成员仍然要能选座");
     assert.deepEqual(report.bossErrors, []);
     assert.deepEqual(report.guestErrors, []);

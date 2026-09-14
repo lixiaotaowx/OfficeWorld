@@ -37,6 +37,9 @@ export function createChatFiles(directory, store) {
         const person = people.get(socket.id);
         if (!person || !validId(data?.requestId)) throw Error("请先进入空间");
         const recipient = recipientFor(data.recipientId, person, contacts());
+        // File messages follow the same rule as text: no public channel for visitors.
+        if (!recipient && person.role === "visitor")
+          throw Error("访客不能发公共聊天，请私聊同事");
         const existing = store.all().find(row => row.senderId === person.clientId &&
           row.requestId === data.requestId);
         if (existing) {
@@ -102,7 +105,7 @@ export function createChatFiles(directory, store) {
     let attachment;
     try {
       const row = store.all().find(row => row.attachment?.id === id);
-      if (row && !canReadChat(row, account.id)) { res.writeHead(403); res.end(); return true; }
+      if (row && !canReadChat(row, account.id, account.role === "visitor")) { res.writeHead(403); res.end(); return true; }
       attachment = row?.attachment;
     }
     catch { res.writeHead(503); res.end(); return true; }

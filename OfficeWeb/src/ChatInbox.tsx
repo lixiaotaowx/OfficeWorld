@@ -10,6 +10,8 @@ interface Props extends ChatFileActions {
   messages: Message[];
   connected: boolean;
   visible: boolean;
+  /** A visiting client has no public channel, only private threads (user, 2026-09-15). */
+  visitor: boolean;
   onMessage: (text: string, recipientId?: string) => Promise<boolean>;
   onUnread: (count: number) => void;
 }
@@ -17,7 +19,7 @@ export const conversationKey = (message: Message, accountId: string) =>
   !message.recipientId ? 'public' : message.senderId === accountId ? message.recipientId : message.senderId || '';
 
 export default function ChatInbox(props: Props) {
-  const { accountId, messages, contacts, people, visible } = props;
+  const { accountId, messages, contacts, people, visible, visitor } = props;
   const [active, setActive] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -37,7 +39,8 @@ export default function ChatInbox(props: Props) {
       if (key !== 'public' && !directory.has(key)) directory.set(key,
         m.senderId === accountId ? m.recipientName || '同事' : m.name);
     }
-    const rows = [{ id: 'public', name: '公共聊天' }, ...[...directory].map(([id, name]) => ({ id, name }))];
+    const rows = visitor ? [...directory].map(([id, name]) => ({ id, name }))
+      : [{ id: 'public', name: '公共聊天' }, ...[...directory].map(([id, name]) => ({ id, name }))];
     return rows.map(row => {
       const history = messages.filter(m => conversationKey(m, accountId) === row.id);
       return { ...row, history, last: history.at(-1),
@@ -45,7 +48,7 @@ export default function ChatInbox(props: Props) {
         unread: history.filter(m => m.senderId !== accountId && m.id > (read[row.id] || '')).length };
     }).sort((a, b) => a.id === 'public' ? -1 : b.id === 'public' ? 1 :
       (b.last?.time || 0) - (a.last?.time || 0) || a.name.localeCompare(b.name, 'zh-CN'));
-  }, [contacts, people, messages, accountId, read]);
+  }, [contacts, people, messages, accountId, read, visitor]);
   const current = threads.find(t => t.id === active);
   const last = current?.last?.id;
   useEffect(() => {
@@ -83,7 +86,8 @@ export default function ChatInbox(props: Props) {
         onFile={(file, progress) => props.onFile(file, progress, active === 'public' ? undefined : active!)}
         loadFile={props.loadFile} />
     </> : <>
-      <div className="conversation-list-heading"><h3>会话</h3><small>公共交流，也能单独聊聊</small></div>
+      <div className="conversation-list-heading"><h3>会话</h3><small>{visitor
+        ? '和同事单独聊聊' : '公共交流，也能单独聊聊'}</small></div>
       <input className="conversation-search" aria-label="搜索聊天会话" placeholder="搜索同事或会话" value={search}
         onChange={event => setSearch(event.target.value)} />
       <div className="conversation-list">
