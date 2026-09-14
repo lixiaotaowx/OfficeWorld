@@ -1,5 +1,10 @@
 # Electron Windows 客户端 · 2026-09-13
 
+> **已被 2026-09-14 的 0.1.8 变更取代（只针对屏幕共享的取源方式）**：不再弹独立选屏窗口。
+> 共享直接使用"低清工位预览"已经选定的那块显示器（`display-store.cjs` 是唯一决策点），
+> 私聊与会议统一走同一条路；`source-picker.cjs` 与 `picker.*` 已删除。
+> 本文其余关于权限、单次选择 IPC 与网页无 Node 能力的结论仍然成立。
+
 ## 用户要求与实现
 - 保留浏览器，同时提供Windows exe；用户明确客户端不再弹麦克风网页授权框。
 - 新OfficeDesktop独立项目，Electron44.3.0、electron-builder26.15.3，加载正式HTTPS网站。

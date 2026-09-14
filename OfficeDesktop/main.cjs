@@ -9,6 +9,7 @@ const { installTray } = require('./tray.cjs');
 const { installChrome } = require('./chrome.cjs');
 const { applyWindowIcon } = require('./window-icon.cjs');
 const { createAnnotationLayer } = require('./annotation-overlay.cjs');
+const { createDisplayStore } = require('./display-store.cjs');
 
 // Requested short notification tone must also play while hidden in the tray.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -39,8 +40,11 @@ function createWindow() {
   const officeSession = session.fromPartition(smoke ? 'office-smoke' : 'persist:office-world');
   // The layer that draws other people's annotations over the shared display.
   const annotationLayer = createAnnotationLayer();
+  // Preview and screen sharing both follow this one display selection.
+  const displays = createDisplayStore(path.join(profilePath, 'preview-display.json'));
   if (smoke) officeSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   else configurePermissions(officeSession, () => mainWindow, {
+    displays,
     // A display share can be covered; a window share cannot (empty id).
     onDisplayChosen: (displayId) => {
       if (displayId) annotationLayer.target(displayId);
@@ -64,7 +68,7 @@ function createWindow() {
       dialog.showErrorBox('托盘不可用', `关闭窗口将退出应用。\n${error.message}`);
     }
   }
-  if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer });
+  if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer, displays });
   contents.setWindowOpenHandler(({ url }) => {
     if (trusted(url)) void contents.loadURL(url);
     else if (/^https?:/.test(url)) void shell.openExternal(url);

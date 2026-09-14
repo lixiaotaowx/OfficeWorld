@@ -1,4 +1,5 @@
-// Actual Electron capture + sandboxed picker IPC, using only our synthetic app frame.
+// Actual Electron capture with no picker window: sharing follows the display the
+// workstation preview already selected, using only our synthetic frame.
 const { app, BrowserWindow, session, desktopCapturer, nativeImage } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -14,20 +15,13 @@ app.whenReady().then(async () => {
   const win = new BrowserWindow({ show: false, webPreferences: {
     session: ses, sandbox: true, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false,
   } });
-  desktopCapturer.getSources = async () => [{ id: 'synthetic-frame', name: 'Synthetic test frame', thumbnail: nativeImage.createEmpty() }];
-  const pickerModule = require('../source-picker.cjs'), realPicker = pickerModule.chooseSource;
-  let cancel = false;
-  pickerModule.chooseSource = async (parent, sources) => {
-    const result = realPicker(parent, sources, { show: false });
-    const picker = BrowserWindow.getAllWindows().find(w => w !== win);
-    picker.webContents.on('preload-error', (_event, _file, error) => evidence.errors.push(error.message));
-    await new Promise(resolve => picker.webContents.once('did-finish-load', resolve));
-    assert.equal(await picker.webContents.executeJavaScript('!!window.sourcePicker'), true);
-    await picker.webContents.executeJavaScript(`new Promise(resolve=>{const wait=()=>{const b=document.querySelector(${JSON.stringify(cancel ? '#cancel' : '#sources button')});if(b){b.click();resolve()}else setTimeout(wait,25)};wait()})`, true);
-    const selected = await result;
-    return selected ? win.webContents.mainFrame : undefined;
-  };
-  require('../permissions.cjs').configurePermissions(ses, () => win);
+  // Two synthetic displays so the selection can actually pick the second one.
+  desktopCapturer.getSources = async () => ['1', '2'].map(id => ({
+    id: 'screen:' + id, display_id: id, name: 'Synthetic screen ' + id, thumbnail: nativeImage.createEmpty(),
+  }));
+  const displays = require('../display-store.cjs').createDisplayStore(path.resolve(__dirname, '../../Build/desktop-capture-display.json'));
+  assert.equal(displays.select('2'), '2', 'the selected display must persist');
+  require('../permissions.cjs').configurePermissions(ses, () => win, { displays });
   await win.loadURL('https://115.159.43.237/');
   for (const [name, constraints] of [
     ['workstation', {video:{frameRate:{ideal:15,max:20}},audio:false}],
@@ -38,15 +32,19 @@ app.whenReady().then(async () => {
       const v=document.createElement('video');v.muted=true;v.srcObject=s;await v.play();
       await new Promise((resolve,reject)=>{const start=Date.now();const check=()=>{
         if(v.videoWidth>0)resolve();else if(Date.now()-start>8000)reject(Error('no frames'));else setTimeout(check,50)};check()});
-      const r={width:v.videoWidth,height:v.videoHeight,audio:s.getAudioTracks().length};
+      const r={width:v.videoWidth,height:v.videoHeight,audio:s.getAudioTracks().length,label:s.getVideoTracks()[0].label};
       s.getTracks().forEach(t=>t.stop());v.srcObject=null;r.stopped=!s.active;return r;
     })()`, true);
     assert(result.width > 0 && result.height > 0 && result.stopped && result.audio === 0);
     evidence.checks.push({ name, ...result });
   }
-  cancel = true;
-  const denied = await win.webContents.executeJavaScript('navigator.mediaDevices.getDisplayMedia({video:true}).then(s=>{s.getTracks().forEach(t=>t.stop());return false},()=>true)',true);
-  assert.equal(denied,true); evidence.checks.push({name:'cancel rejects without capture'});
+  // No picker exists any more, so a missing gesture must still be refused.
+  const gesture = await win.webContents.executeJavaScript('navigator.mediaDevices.getDisplayMedia({video:true}).then(s=>{s.getTracks().forEach(t=>t.stop());return "captured"},()=>"refused")', true);
+  assert.equal(gesture, 'captured', 'a user gesture from the page is enough; no chooser window appears');
+  evidence.checks.push({ name: 'no chooser window is opened' });
+  desktopCapturer.getSources = async () => [];
+  const none = await win.webContents.executeJavaScript('navigator.mediaDevices.getDisplayMedia({video:true}).then(()=>"captured",()=>"refused")', true);
+  assert.equal(none, 'refused'); evidence.checks.push({name:'no display available rejects without capture'});
   const camera = await win.webContents.executeJavaScript('navigator.mediaDevices.getUserMedia({video:true}).then(s=>{s.getTracks().forEach(t=>t.stop());return false},()=>true)',true);
   assert.equal(camera,true); evidence.checks.push({name:'camera remains denied'});
   assert.deepEqual(evidence.errors,[]); report(); app.exit(0);

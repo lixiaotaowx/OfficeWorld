@@ -2,6 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const policy = require('../policy.cjs');
 
@@ -43,9 +45,14 @@ function fixture() {
     throw Error(name);
   } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../desktop-bridge.cjs'), 'utf8'), context);
-  context.module.exports.installDesktopBridge(() => ({ webContents: wc }));
+  // The real display store (in a scratch file, so runs cannot see each other),
+  // which also covers the shared preview/share display selection.
+  const { createDisplayStore } = require('../display-store.cjs');
+  const displayFile = path.join(os.tmpdir(), `office-bridge-display-${process.pid}-${Math.random().toString(36).slice(2)}.json`);
+  const displays = createDisplayStore(displayFile);
+  context.module.exports.installDesktopBridge(() => ({ webContents: wc }), { displays });
   return { call: (name, ...args) => handlers['office:' + name](event, ...args),
-    event, state, files, calls, handlers, wc };
+    event, state, files, calls, handlers, wc, displays, displayFile };
 }
 
 test('自动低清只枚举屏幕、维持比例，双屏切换与断开回退', async () => {

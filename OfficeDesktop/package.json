@@ -1,6 +1,6 @@
 {
   "name": "office-world-desktop",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "iruler dream · 一起在场",
   "author": "iruler dream",
   "private": true,
@@ -23,9 +23,6 @@
     },
     "files": [
       "*.cjs",
-      "picker.html",
-      "picker.js",
-      "picker.css",
       "package.json",
       "assets/icon.ico",
       "chrome.html",

@@ -1,5 +1,14 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-14 共享屏幕不再选屏（0.1.8）
+
+- 需求（用户）：共享屏幕不再让用户选，直接用"低分辨率工位预览"已经选定的那块显示器；私聊和会议统一；不再弹独立选屏窗口。
+- 做法：新增 `display-store.cjs` 作为**唯一决策点**（选择持久化在 `preview-display.json`，选中的屏幕断开则回退主屏）。`permissions.cjs` 的 `setDisplayMediaRequestHandler` 直接解析该显示器并回调，不再调用选择器；`desktop-bridge.cjs` 的 `office:displays` / `office:display-select` / `office:preview-frame` 全部改用同一个 store，因此低清预览与高清共享必然同一块屏。
+- 删除：`source-picker.cjs`、`picker.html/js/css`、`picker-preload.cjs`（连同打包清单里的条目）。私聊与会议都走 `getDisplayMedia`，所以两条路自动统一。
+- 平台限制（必须知道）：**浏览器版无法跳过**浏览器的原生选择器——这是浏览器的安全要求，网页做不到；只有桌面 EXE 里那个我们自己的弹窗被去掉了。
+- 波及的测试已同步：`permissions.test.cjs`（改为断言"直接给已选屏、不存在第二次交互"）、`desktop-bridge.test.cjs`（改用真实 display store + 临时文件）、新增 `display-store.test.cjs`（默认主屏/选择生效/重启恢复/断屏回退/无屏返回 undefined）、`capture-integration.cjs` 与 `capture-trace.cjs`（真实 Electron 采集改为无选择窗路径：三种约束直接采集、无可用显示器时拒绝、摄像头仍拒绝）。
+- 桌面测试 22/22 通过。新产物 `Build/OfficeDesktopRelease/iruler-dream-0.1.8-Windows-x64.exe`。
+
 ## 2026-09-14 桌面端窗口圆角（0.1.7）
 
 - 背景：Windows 10 的无边框窗口没有原生圆角；Electron 的 `roundedCorners` 只从 Windows 11 Build 22000 起生效（该选项默认 true），Win10 上必须由外壳自己实现。

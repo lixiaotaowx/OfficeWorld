@@ -14,11 +14,9 @@ app.whenReady().then(async () => {
   } });
   desktopCapturer.getSources = async () => {
     evidence.push({ step: 'enumerate' });
-    return [{ id: 'window:synthetic', name: 'Synthetic fixture', thumbnail: nativeImage.createEmpty() }];
+    return [{ id: 'screen:1', display_id: '1', name: 'Synthetic screen', thumbnail: nativeImage.createEmpty() }];
   };
-  require('../source-picker.cjs').chooseSource = async () => {
-    evidence.push({ step: 'picker' }); return undefined;
-  };
+  const displays = { source: async (capturer, screenApi) => (await capturer.getSources({ types: ['screen'] }))[0] };
   const proxy = {
     setPermissionCheckHandler(handler) { ses.setPermissionCheckHandler((wc, permission, origin, details) => {
       const result = handler(wc, permission, origin, details);
@@ -34,7 +32,7 @@ app.whenReady().then(async () => {
       return handler(request, callback);
     }); },
   };
-  require('../permissions.cjs').configurePermissions(proxy, () => win);
+  require('../permissions.cjs').configurePermissions(proxy, () => win, { displays });
   await win.loadURL('https://115.159.43.237/');
   const result = await win.webContents.executeJavaScript(`navigator.mediaDevices.getDisplayMedia({video:true,audio:false})
     .then(s=>{s.getTracks().forEach(t=>t.stop());return 'captured'})

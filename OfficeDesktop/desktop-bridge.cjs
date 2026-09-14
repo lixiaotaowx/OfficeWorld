@@ -5,34 +5,28 @@ const { trusted } = require('./policy.cjs');
 
 function installDesktopBridge(getWindow, dependencies = {}) {
   const annotationLayer = dependencies.annotationLayer;
+  const displays = dependencies.displays;
   const credentials = path.join(app.getPath('userData'), 'login.enc');
-  const displayFile = path.join(app.getPath('userData'), 'preview-display.json');
-  let selected = '', pending;
-  try { selected = JSON.parse(fs.readFileSync(displayFile, 'utf8')).id || ''; } catch {}
+  let pending;
   const allow = event => {
     const window = getWindow();
     if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame ||
         !trusted(event.senderFrame.url)) throw Error('Untrusted desktop request');
   };
   async function sources() {
-    const displays = screen.getAllDisplays();
-    const primary = String(screen.getPrimaryDisplay().id);
-    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 480, height: 480 } });
-    const chosen = sources.find(s => (s.display_id || s.id) === selected) || sources.find(s => s.display_id === primary) || sources[0];
-    return { sources, chosen, list: sources.map((s, index) => {
-      const display = displays.find(d => String(d.id) === s.display_id);
-      return { id: s.display_id || s.id, name: `屏幕 ${index + 1}${s.display_id === primary ? '（主屏幕）' : ''}`,
-        width: display?.size.width, height: display?.size.height, selected: s === chosen };
-    }) };
+    const rows = await displays.list(desktopCapturer, screen);
+    const chosen = rows.find((row) => row.selected) ||
+      rows.find((row) => row.id === String(screen.getPrimaryDisplay().id)) || rows[0];
+    return { sources: rows.map((row) => row.source), chosen: chosen?.source,
+      list: rows.map(({ source: _source, ...rest }) => rest) };
   }
   const handle = (name, fn) => ipcMain.handle(name, (event, ...args) => { allow(event); return fn(...args); });
   handle('office:displays', async () => (await sources()).list);
   handle('office:display-select', async id => {
-    const { sources: rows } = await sources();
-    const source = rows.find(s => (s.display_id || s.id) === id);
+    const rows = await displays.list(desktopCapturer, screen);
+    const source = rows.find((row) => row.id === id);
     if (!source) throw Error('屏幕已断开，请重新选择');
-    selected = source.display_id || source.id;
-    fs.writeFileSync(displayFile, JSON.stringify({ id: selected }));
+    displays.select(source.id);
     return true;
   });
   handle('office:preview-frame', () => {
