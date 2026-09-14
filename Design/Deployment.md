@@ -119,7 +119,7 @@ Remove-Item ..\Build\OfficeWeb\assets\office.glb, ..\Build\OfficeWeb\assets\offi
 # 1) 前端：把构建产物【内容】传到远端 dist（不要传本地 dist，它根本不存在）
 scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes -r ..\Build\OfficeWeb\* ubuntu@115.159.43.237:~/officeweb/dist/
 # 2) 后端：全部运行时文件，缺一个服务就起不来（依赖关系见下表）
-scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes server.mjs start.mjs static.mjs livekit.mjs accounts.mjs account-storage.mjs chat-access.mjs chat-store.mjs chat-server.mjs chat-files.mjs meetings.mjs privateSessions.mjs sitting.mjs public-seats.json package.json ubuntu@115.159.43.237:~/officeweb/
+scp -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes server.mjs start.mjs static.mjs livekit.mjs admin.mjs accounts.mjs account-storage.mjs chat-access.mjs chat-store.mjs chat-server.mjs chat-files.mjs meetings.mjs privateSessions.mjs sitting.mjs public-seats.json package.json ubuntu@115.159.43.237:~/officeweb/
 ssh -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes ubuntu@115.159.43.237 "sudo -n systemctl restart officeweb"
 ```
 
@@ -131,6 +131,7 @@ ssh -i C:/Users/Administrator/.ssh/id_ed25519_aiwb -o IdentitiesOnly=yes ubuntu@
 | `server.mjs` | 信令、工位、静态与路由 | `start.mjs` |
 | `livekit.mjs` | 令牌与房间授权 | `server.mjs`、`meetings.mjs` |
 | `static.mjs` | dist 静态托管（支持 Range） | `server.mjs` |
+| `admin.mjs` | 管理员释放工位、密码限流与恒定时间比较 | `server.mjs` |
 | `accounts.mjs` + `account-storage.mjs` | 账号、会话、scrypt | `server.mjs` |
 | `chat-store.mjs` / `chat-files.mjs` / `chat-server.mjs` / `chat-access.mjs` | 聊天与附件 | `server.mjs` |
 | `meetings.mjs` / `privateSessions.mjs` | 会议与私聊会话 | `server.mjs` |

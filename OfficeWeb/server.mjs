@@ -1,7 +1,7 @@
 import { createSitting } from "./sitting.mjs";
+import { createAdmin } from "./admin.mjs";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
-import { randomUUID, createHash, timingSafeEqual } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { readFileSync, writeFileSync, renameSync } from "node:fs";
 import {
@@ -174,25 +174,6 @@ export function createOfficeServer(options = {}) {
   /** Permanent seat ownership: seat index -> { id, name }. */
   const roster = loadRoster(statePath);
   const save = () => saveRoster(statePath, roster);
-  /** One shared admin secret, so wrong guesses are throttled per socket. */
-  const adminFails = new Map();
-  const ADMIN_MAX_FAILS = 5;
-  const ADMIN_WINDOW_MS = 10 * 60000;
-  const adminBlocked = (socketId) => {
-    const now = Date.now();
-    for (const [id, entry] of adminFails) if (entry.until < now) adminFails.delete(id);
-    return (adminFails.get(socketId)?.count || 0) >= ADMIN_MAX_FAILS;
-  };
-  const recordAdminFail = (socketId) => {
-    const entry = adminFails.get(socketId) || { count: 0, until: Date.now() + ADMIN_WINDOW_MS };
-    entry.count++;
-    adminFails.set(socketId, entry);
-  };
-  // Hash both sides so the comparison neither leaks length nor short-circuits.
-  const adminSecretMatches = (given) => timingSafeEqual(
-    createHash("sha256").update(String(given)).digest(),
-    createHash("sha256").update(adminPassword).digest(),
-  );
   /** Seat view for clients: who holds each desk and whether they are online. */
   const seatsView = () =>
     Array.from({ length: SEAT_COUNT }, (_, seat) => {
@@ -205,6 +186,9 @@ export function createOfficeServer(options = {}) {
     io.emit("people", [...people.values()]);
     io.emit("seats", seatsView());
   };
+  const admin = createAdmin({
+    io, people, roster, save, publish, adminPassword, seatCount: SEAT_COUNT,
+  });
   const sitting = createSitting(people, roster, publish, SEAT_COUNT);
   const meetings = createMeetings(io, people, publish, removeMeetingMedia,
     options.meetingPermissions || updatePrivatePermissions);
@@ -369,45 +353,8 @@ export function createOfficeServer(options = {}) {
       publish();
       if (typeof reply === "function") reply({ ok: true, name: clean });
     });
-    // Administrator: free a permanently held desk. The password is checked per
-    // request, so an authenticated admin panel simply repeats the same secret.
-    s.on("admin", (data, reply) => {
-      if (typeof reply !== "function") return;
-      if (!adminPassword)
-        return reply({ ok: false, error: "服务器尚未配置管理员密码" });
-      if (adminBlocked(s.id))
-        return reply({ ok: false, error: "管理员密码尝试过于频繁，请十分钟后再试" });
-      if (!adminSecretMatches(data?.password)) {
-        recordAdminFail(s.id);
-        return reply({ ok: false, error: "管理员密码不正确" });
-      }
-      const seat = Number(data?.seat);
-      if (!Number.isInteger(seat) || seat < 0 || seat >= SEAT_COUNT)
-        return reply({ ok: false, error: "无效的工位" });
-      const owner = roster[seat];
-      if (!owner) return reply({ ok: false, error: "这个工位本来就是空的" });
-      // Persist before telling anybody, so a failed write cannot free a desk
-      // that comes straight back on the next restart (the user claim path does
-      // the same rollback).
-      const previousRoster = { ...roster };
-      const online = [...people.values()].filter((p) => p.clientId === owner.id);
-      delete roster[seat];
-      if (!save()) {
-        for (const key of Object.keys(roster)) delete roster[key];
-        Object.assign(roster, previousRoster);
-        return reply({ ok: false, error: "工位未保存成功，请稍后重试" });
-      }
-      adminFails.delete(s.id);
-      // If the owner is online right now, take the desk away from them.
-      for (const person of online) person.seat = null;
-      publish();
-      for (const person of online)
-        io.to(person.id).emit("kicked", {
-          seat,
-          message: "你被管理员请出了工位",
-        });
-      reply({ ok: true, seat, name: owner.name });
-    });
+    // Administrator: free a permanently held desk (see admin.mjs).
+    admin.attach(s);
     // Motion relay. Throttled so one client cannot flood the room, and clamped
     // so a bogus position cannot place an avatar outside the building.
     let lastMotion = 0;
@@ -479,7 +426,7 @@ export function createOfficeServer(options = {}) {
     meetings.attach(s);
     s.on("disconnect", () => {
       people.delete(s.id);
-      adminFails.delete(s.id);
+      admin.forget(s.id);
       for (const [id, c] of sessions) if (c.peers.includes(s.id)) end(id);
       for (const [id, i] of invites)
         if (i.from === s.id || i.target === s.id) {
