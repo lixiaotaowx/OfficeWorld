@@ -11,9 +11,11 @@
 //     clicks must pass straight through to whatever is underneath.
 //   * setAlwaysOnTop(true, 'screen-saver') - a normal topmost window would drop
 //     behind full-screen apps.
-//   * setContentProtection(true) - keeps this layer itself out of the screen
-//     capture, otherwise every viewer would see their own stroke recorded back
-//     into the shared image on top of the sharer's real content.
+//   * setContentProtection(false) - this layer MUST be captured. Annotation works
+//     like a remote-desktop tool: the stroke is painted here, on the screen being
+//     shared, and the screen share carries it to every viewer. Excluding this
+//     window from the capture (the earlier setting) is exactly what forced a second
+//     copy of the strokes to be drawn over the video in the app.
 const electron = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -40,6 +42,12 @@ function createAnnotationLayer(overrides = {}) {
   function place() {
     if (!layer || layer.isDestroyed()) return;
     const bounds = boundsForDisplay(screenApi.getAllDisplays(), targetDisplayId);
+    // The page maps strokes against its own content box, so the layer must cover the
+    // shared display exactly. Skipping an identical setBounds avoids a flicker, and
+    // re-fitting when the display changes keeps that invariant on every resolution.
+    const current = typeof layer.getBounds === 'function' ? layer.getBounds() : undefined;
+    if (current && current.x === bounds.x && current.y === bounds.y &&
+        current.width === bounds.width && current.height === bounds.height) return;
     layer.setBounds(bounds);
   }
 
@@ -71,12 +79,17 @@ function createAnnotationLayer(overrides = {}) {
     });
     layer.setAlwaysOnTop(true, 'screen-saver');
     layer.setIgnoreMouseEvents(true, { forward: true });
-    layer.setContentProtection(true);
+    // Captured on purpose: the strokes are meant to travel inside the shared picture.
+    layer.setContentProtection(false);
     layer.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     layer.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     layer.webContents.on('will-navigate', (event) => event.preventDefault());
     layer.on('closed', () => { layer = undefined; });
     void layer.loadFile(path.join(__dirname, 'annotation-overlay.html')).catch(() => {});
+    // The window is sized before the page exists; re-fit once it is live, and again
+    // whenever the display's resolution or scaling changes under a running share.
+    layer.webContents.on('did-finish-load', () => place());
+    screenApi.on?.('display-metrics-changed', () => { if (visible) place(); });
     return layer;
   }
 

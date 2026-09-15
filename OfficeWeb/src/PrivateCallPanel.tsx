@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { useOffice } from './useOffice';
 import ScreenStage from './ScreenStage';
+import { colorFor } from './annotations';
 import { MicIcon, MicOffIcon, PhoneIcon, HangupIcon, ScreenIcon } from './icons';
 import './private-call.css';
 
@@ -46,12 +47,11 @@ export default function PrivateCallPanel({ office }: { office: ReturnType<typeof
             stream={office.videos[session.id]}
             scope={session.room}
             label="对方共享屏幕"
-            strokes={office.annotations}
-            myClientId={office.clientId}
+            selfColor={colorFor(office.accountId)}
             onDraw={office.annotation.draw}
             onClear={office.annotation.clear}
             onUndo={office.annotation.undo}
-            hint={state?.sharing ? undefined : '可点「标注」在画面上画线，所有人都能看到'}
+            hint={state?.sharing ? undefined : '可点「标注」，笔迹会画在对方的共享屏幕上'}
             actions={<>
               <button disabled={!state?.connected || busy === session.id} onClick={async () => {
                 setBusy(session.id); try { await office.mute(session.id); } finally { setBusy(null); }

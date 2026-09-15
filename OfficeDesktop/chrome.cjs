@@ -56,6 +56,10 @@ function installChrome(window) {
   window.on('unmaximize', () => setMaximized(false));
   window.on('enter-full-screen', () => applyFullscreenState(window, true));
   window.on('leave-full-screen', () => applyFullscreenState(window, false));
+  // A reload must never leave the window stuck in whole-screen mode: the title bar -
+  // and with it the maximise button - is hidden then, and the page that could ask to
+  // leave is gone (user, 2026-09-15).
+  window.webContents.on('did-navigate', () => { if (window.isFullScreen()) setWindowFullscreen(window, false); });
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     let action;

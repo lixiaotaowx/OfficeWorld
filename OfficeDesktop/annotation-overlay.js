@@ -26,28 +26,41 @@ function resize() {
   redraw();
 }
 
+/**
+ * Normalised point (0..1 of the shared picture) -> pixels of this window.
+ *
+ * The layer is kept exactly over the shared display by the main process, so its
+ * content box IS the shared picture on every resolution and scaling factor. Falling
+ * back to the backing store keeps the very first frames of a stroke in place if the
+ * window is measured before layout has run.
+ */
 function pixels(point) {
-  return [point[0] * canvas.clientWidth, point[1] * canvas.clientHeight];
+  const ratio = window.devicePixelRatio || 1;
+  const width = canvas.clientWidth || canvas.width / ratio;
+  const height = canvas.clientHeight || canvas.height / ratio;
+  return [point[0] * width, point[1] * height];
 }
 
-function line(sx, sy, tx, ty) {
-  context.beginPath();
-  context.moveTo(sx, sy);
-  context.lineTo(tx, ty);
-  context.stroke();
-}
-
+/**
+ * One path through consecutive points of the stroke. The segment start MUST advance
+ * with the loop: the earlier version resolved `startX/startY` once, before the loop,
+ * so every segment was drawn from the stroke's FIRST point and one stroke rendered as
+ * N-1 separate lines fanning out of its origin.
+ */
 function paint(points, color, from = 0) {
   if (points.length < 2) return;
   context.strokeStyle = color;
   context.lineWidth = 3;
   context.lineCap = 'round';
   context.lineJoin = 'round';
-  const [startX, startY] = pixels(points[Math.max(0, from - 1)]);
-  for (let index = Math.max(1, from); index < points.length; index += 1) {
+  const first = Math.max(0, from - 1);
+  context.beginPath();
+  for (let index = first; index < points.length; index += 1) {
     const [x, y] = pixels(points[index]);
-    line(startX, startY, x, y);
+    if (index === first) context.moveTo(x, y);
+    else context.lineTo(x, y);
   }
+  context.stroke();
 }
 
 function label(stroke) {

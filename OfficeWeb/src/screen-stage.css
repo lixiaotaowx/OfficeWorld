@@ -1,11 +1,18 @@
-/* Shared-screen stage: the video, the annotation board drawn on top of it, and a
-   floating control bar. Used by private calls and by meetings. */
+/* Shared-screen stage: the video, an invisible drawing surface over it, and a
+   floating control bar. Strokes are never painted here — they go onto the sharer's
+   own display and come back inside the shared picture. Used by private calls and
+   by meetings. */
 .screen-stage { position: relative; width: 100%; border-radius: 16px; overflow: hidden; background: #101a17; }
 .screen-stage video { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; background: #101a17; }
-.screen-stage-board { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 /* Only capture the pointer while drawing, so the video stays clickable otherwise. */
 .screen-stage-draw { position: absolute; inset: 0; display: none; touch-action: none; cursor: crosshair; }
 .screen-stage.annotating .screen-stage-draw { display: block; }
+/* Immediate echo of the stroke being drawn here. It exists only while annotating and
+   is handed over once the same stroke arrives inside the shared picture: the relay
+   goes pointer -> socket -> sharer's display -> capture -> video, which is far too
+   slow to draw with (user, 2026-09-15: "延迟严重"). */
+.screen-stage-ink { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; }
+.screen-stage.annotating .screen-stage-ink { display: block; }
 
 .screen-stage-bar {
   position: absolute; left: 12px; right: 12px; bottom: 12px;

@@ -16,7 +16,7 @@ const collect = (socket, event) => {
   return seen;
 };
 
-test("标注只发给同一通话的人，坐标被夹紧，超频与越权被丢弃", async () => {
+test("标注只发给同一通话的人，坐标被夹紧，超频排队补发而不是丢弃", async () => {
   await withServer(async ({ connect }) => {
     const a = await connect("甲"), b = await connect("乙"), c = await connect("丙");
     const waiting = next(b, "request");
@@ -39,22 +39,38 @@ test("标注只发给同一通话的人，坐标被夹紧，超频与越权被�
     assert.equal(seenB[0].done, false);
     assert.equal(seenC.length, 0, "通话外的人不应看到笔画");
 
-    // Two messages in the same tick: the second falls inside the 40 ms window and
-    // is dropped, so exactly one more message arrives.
+    // Two messages inside one 40 ms window: the second used to be dropped, which left
+    // a visible gap in the stroke. It must be queued and sent on the next tick.
     a.emit("annotate", { scope: session.room, stroke: "s1", points: [[0.3, 0.3]] });
     a.emit("annotate", { scope: session.room, stroke: "s1", points: [[0.31, 0.31]] });
-    await wait(80);
-    assert.equal(seenB.length, 2, "同一时间窗内的第二条应被丢弃");
-    assert.deepEqual(seenB[1].points, [[0.3, 0.3]]);
-    a.emit("annotate", { scope: session.room, stroke: "s1", points: [[0.4, 0.4]], done: true });
-    await wait(60);
-    assert.equal(seenB.length, 3);
-    assert.equal(seenB[2].done, true);
+    await wait(120);
+    assert.deepEqual(seenB.slice(1).map((message) => message.points),
+      [[[0.3, 0.3]], [[0.31, 0.31]]], "同一时间窗内的点必须排队补发，不能丢");
+
+    // A fast drag: many small batches in one tick. Every point must arrive, and the
+    // stroke may only be marked done after its last point.
+    const total = seenB.reduce((sum, message) => sum + message.points.length, 0);
+    for (let index = 0; index < 10; index += 1)
+      a.emit("annotate", { scope: session.room, stroke: "s2",
+        points: [[index / 10, index / 10], [index / 10 + 0.01, index / 10]] });
+    await wait(200);
+    assert.equal(seenB.reduce((sum, message) => sum + message.points.length, 0) - total, 20,
+      "十批点必须全部到达");
+    assert.equal(seenB.filter((message) => message.stroke === "s2" && message.done).length, 0,
+      "还没结束的笔画不能被标记完成");
+
+    const beforeDone = seenB.length;
+    a.emit("annotate", { scope: session.room, stroke: "s2", points: [[0.9, 0.9]], done: true });
+    await wait(120);
+    assert.equal(seenB.length, beforeDone + 1);
+    assert.equal(seenB.at(-1).done, true, "结束消息必须最后到达");
+    assert.deepEqual(seenB.at(-1).points, [[0.9, 0.9]]);
 
     // A socket that is not part of the session cannot draw into its scope.
+    const before = seenB.length;
     c.emit("annotate", { scope: session.room, stroke: "x", points: [[0.5, 0.5]] });
-    await wait(80);
-    assert.equal(seenB.length, 3, "越权的 scope 不应转发");
+    await wait(120);
+    assert.equal(seenB.length, before, "越权的 scope 不应转发");
 
     const cleared = next(b, "annotate-clear");
     a.emit("annotate-clear", { scope: session.room });

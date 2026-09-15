@@ -1,5 +1,16 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 10:40 修两个报障：视频全屏卡住软件 + 标注映射/断线/延迟（前端 `index-BDgLeBTq.js`，后端 `collab-annotations.mjs`，EXE 0.1.11）
+
+- 用户报障：「1. 屏幕全屏时挂断软件也全屏了无法退出全屏，视频全屏不要影响软件，且软件的最大化按钮怎么能没了呢。2. 标注的屏幕映射不对，要针对各种分辨率去适配，以及画笔断开和延迟严重的问题」。
+- **全屏**：整屏模式由 `ScreenStage` 请求，却没人负责结束——挂断只是把组件卸载掉，窗口留在全屏，而 `html.iruler-fullscreen` 会把标题栏（含最大化按钮）隐藏，于是"退不出去 + 没有最大化按钮"是同一个根因。现在：组件卸载（挂断/对方停止共享/退出会议/关闭放大视图）时若整屏是本组件请求的就 `setFullscreen(false)`；Esc 退出；桌面端页面导航（重载）时也退出全屏；`applyFullscreenState` 退出时按窗口真实最大化状态决定圆角类。
+- **标注映射**：坐标测量基准从"绘制层矩形"改为 **`<video>` 元素自身矩形**，并按 letterbox 内的画面框归一化；`videoWidth=0`（首帧未到）时退回元素框，避免第一笔被丢。桌面浮层由主进程保证内容区恰好等于被共享显示器：`place()` 先比较再 `setBounds`、页面加载完成后与 `display-metrics-changed` 时重新贴合。
+- **画笔断开**：中继的 40ms 限速原来是直接 `return` 丢包（快速拖动时留下缺口）。改为**排队补发**：`queued` + `setTimeout` 按窗口发送，`done` 只在最后一批点后发出，队列上限 512 点，`clear`/`undo`/断线清空队列。
+- **延迟**：笔迹要走 指针→socket→分享者桌面浮层→采集→视频 才回来（几百毫秒）。`ScreenStage` 新增本机即时回显层 `.screen-stage-ink`：落笔立刻用自己的颜色画出来，1.4 秒后交还给画面里的真迹，避免双份墨迹。
+- 验证：网页 `tsc --noEmit` 通过、`node --test test/*.test.mjs` **127/127**（新增"超频排队补发而不是丢弃"：同窗口两批点全部到达、十批 20 点全到、`done` 必须最后到达）；浏览器 `test/browser/screen-stage.cjs` PASS（420×700 与 1280×720 两种比例落点都命中 0.25/0.75、本机回显立刻可见且 1.8 秒后交还、桌面端卸载时 `setFullscreen(false)`）；桌面端 `node --test test/*.test.cjs` **34/34**。
+- 发布：前端 `index.html` + `assets/index-BDgLeBTq.js` + `assets/index-BcuF-NcO.css`，后端 `collab-annotations.mjs` 上传并重启（active），线上哈希与本地一致（JS `4ba08972b30ffc5b662beeb33f2ce02736413e3b8801e766a642655a4d2d563c`、`collab-annotations.mjs` `13ca16fee9bd8a26f2df3c3c77f7e9e7295bbc98af57b0e1b5182358c37a8b57`）。备份 `backups/annotation-fullscreen-20260915/`。
+- **EXE 需要更新**：标注浮层贴合与桌面端全屏安全网在桌面侧，已构建 `Build/OfficeDesktopRelease/iruler-dream-0.1.11-Windows-x64.exe`（OfficeDesktop 版本 0.1.10 → 0.1.11）。网页侧改动刷新即生效，但浮层/标题栏相关要装新版客户端。
+
 ## 2026-09-15 04:30 会话列表补回"工位主人（离线也要在）"（前端 `index-BznCqOD4.js`）
 
 - 需求（用户）：「怎么没有提的也没了？工位上的人 离线也要在列表中啊」——上一轮把列表收得过窄，离线但持有工位的同事不该消失。

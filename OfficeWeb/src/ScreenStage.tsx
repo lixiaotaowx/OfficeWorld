@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import {
-  colorFor, contentBox, denormalize, normalizePoint, strokesFor, type Stroke,
-} from './annotations';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { contentBox, normalizePoint } from './annotations';
 import { CloseIcon, ScreenIcon } from './icons';
 import './screen-stage.css';
 
@@ -10,32 +8,50 @@ export interface ScreenStageProps {
   /** `call-…` / `meeting-…`: which shared screen this board belongs to. */
   scope: string;
   label: string;
-  strokes: Stroke[];
-  myClientId: string;
   onDraw: (scope: string, points: [number, number][], done: boolean) => void;
   onClear: (scope: string) => void;
   onUndo: (scope: string) => void;
   /** Call controls rendered next to the stage buttons (mute, hang up, takeover). */
   actions?: ReactNode;
   hint?: string;
+  /** Colour of my own ink, so the immediate local echo matches what other people see. */
+  selfColor?: string;
 }
 
 /** Points are batched so drawing stays smooth without flooding the socket. */
 const FLUSH_POINTS = 6;
 const FLUSH_MS = 70;
+/** How long the local echo stays before the real layer arrives inside the picture. */
+const ECHO_MS = 1400;
+/** Longest stroke the local echo keeps; older points are dropped from the echo only. */
+const ECHO_POINTS = 2000;
 
+/**
+ * The peer's shared screen, plus an invisible surface you draw on.
+ *
+ * Annotation works the way remote-desktop tools do (向日葵 / 腾讯会议): a drag is
+ * relayed and painted onto the SHARER'S real display by the desktop layer, and the
+ * screen share captures that layer, so everyone sees the strokes through the picture
+ * itself. That round trip costs a few hundred milliseconds, so the person drawing
+ * also gets an immediate local echo of their own stroke; it is handed over once the
+ * picture catches up, which keeps the board to exactly one lasting copy.
+ */
 export default function ScreenStage(props: ScreenStageProps) {
-  const { stream, scope, strokes } = props;
+  const { scope, stream } = props;
   const host = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
-  const board = useRef<HTMLCanvasElement>(null);
+  const ink = useRef<HTMLCanvasElement>(null);
   const pending = useRef<[number, number][]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>();
-  const local = useRef<[number, number][] | null>(null);
+  const drawing = useRef(false);
+  /** Local echo of the stroke being drawn right now: drawn here, then handed over. */
+  const echo = useRef<{ points: [number, number][]; color: string; timer?: ReturnType<typeof setTimeout> }>(
+    { points: [], color: '' });
+  /** True while this stage is the reason the window is in whole-screen mode. */
+  const askedFullscreen = useRef(false);
   const [annotating, setAnnotating] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const visible = strokesFor(strokes, scope);
 
   useEffect(() => {
     const element = video.current;
@@ -57,14 +73,42 @@ export default function ScreenStage(props: ScreenStageProps) {
     };
   }, []);
 
-  const paint = useCallback(() => {
-    const canvas = board.current;
-    const element = video.current;
-    if (!canvas || !element) return;
+  const leaveFullscreen = useCallback(() => {
+    const bridge = window.officeDesktop;
+    if (bridge?.setFullscreen && askedFullscreen.current) {
+      askedFullscreen.current = false;
+      void bridge.setFullscreen(false).catch(() => undefined);
+    }
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    setFullscreen(false);
+  }, []);
+
+  /**
+   * A whole-screen stage must never outlive itself: hanging up, the share ending or
+   * leaving the meeting destroyed the video but left the app window full screen with
+   * its title bar and maximise button hidden, and there was no way back (user,
+   * 2026-09-15).
+   */
+  useEffect(() => () => {
+    askedFullscreen.current = false;
+    if (window.officeDesktop?.setFullscreen) void window.officeDesktop.setFullscreen(false).catch(() => undefined);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    clearTimeout(echo.current.timer);
+  }, []);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') leaveFullscreen(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen, leaveFullscreen]);
+
+  /** Paint the local echo: the same letterboxed picture box the relayed points use. */
+  const paintEcho = useCallback(() => {
+    const canvas = ink.current, element = video.current, stage = host.current;
+    if (!canvas || !element || !stage) return;
     const ratio = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    if (!width || !height) return;
+    const width = stage.clientWidth, height = stage.clientHeight;
     if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
@@ -73,44 +117,33 @@ export default function ScreenStage(props: ScreenStageProps) {
     if (!context) return;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
-    // Strokes are normalised to the picture, so letterboxing is handled here.
-    const box = contentBox(element, element.videoWidth, element.videoHeight);
+    const { points, color } = echo.current;
+    if (points.length < 2) return;
+    const box = pictureBox(element);
     if (!box) return;
-    const draw = (points: [number, number][], color: string, name: string) => {
-      if (points.length < 2) return;
-      context.strokeStyle = color;
-      context.lineWidth = 3;
-      context.lineCap = 'round';
-      context.lineJoin = 'round';
-      context.beginPath();
-      points.forEach((point, index) => {
-        const [x, y] = denormalize(box, point[0], point[1]);
-        if (index) context.lineTo(x, y);
-        else context.moveTo(x, y);
-      });
-      context.stroke();
-      const [firstX, firstY] = denormalize(box, points[0][0], points[0][1]);
-      context.font = '600 12px "Segoe UI","Microsoft YaHei",sans-serif';
-      const labelWidth = context.measureText(name).width + 14;
-      context.fillStyle = color;
-      context.beginPath();
-      context.roundRect(firstX + 8, firstY - 26, labelWidth, 20, 10);
-      context.fill();
-      context.fillStyle = '#fffef9';
-      context.fillText(name, firstX + 15, firstY - 12);
-    };
-    for (const stroke of visible) draw(stroke.points, stroke.color, stroke.name);
-    if (local.current) draw(local.current, colorFor(props.myClientId), '我');
-  }, [visible, props.myClientId]);
+    // The canvas covers the stage, the picture sits inside the video element.
+    const video2 = element.getBoundingClientRect();
+    const stage2 = stage.getBoundingClientRect();
+    const dx = video2.left - stage2.left, dy = video2.top - stage2.top;
+    context.strokeStyle = color || '#f0d274';
+    context.lineWidth = 3;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.beginPath();
+    points.forEach(([x, y], index) => {
+      const px = dx + box.x + x * box.width;
+      const py = dy + box.y + y * box.height;
+      if (index === 0) context.moveTo(px, py);
+      else context.lineTo(px, py);
+    });
+    context.stroke();
+  }, []);
 
-  useLayoutEffect(() => {
-    paint();
-    const canvas = board.current;
-    if (!canvas) return;
-    const observer = new ResizeObserver(() => paint());
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [paint]);
+  /** Keep the echo a little longer than the round trip, then hand the stroke over. */
+  const releaseEcho = useCallback(() => {
+    clearTimeout(echo.current.timer);
+    echo.current.timer = setTimeout(() => { echo.current.points = []; paintEcho(); }, ECHO_MS);
+  }, [paintEcho]);
 
   const flush = useCallback((done: boolean) => {
     clearTimeout(timer.current);
@@ -120,13 +153,15 @@ export default function ScreenStage(props: ScreenStageProps) {
     props.onDraw(scope, points, done);
   }, [props, scope]);
 
+  /** Element-relative pixels -> 0..1 of the shared picture, or null when outside it. */
   const point = (event: React.PointerEvent<HTMLDivElement>): [number, number] | null => {
     const element = video.current;
-    const canvas = board.current;
-    if (!element || !canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const box = contentBox(element, element.videoWidth, element.videoHeight);
+    if (!element) return null;
+    const box = pictureBox(element);
     if (!box) return null;
+    // Measured against the video itself, not the drawing surface: the two boxes only
+    // coincide while the layout holds, and every stroke would shift with the window.
+    const rect = element.getBoundingClientRect();
     return normalizePoint(box, event.clientX - rect.left, event.clientY - rect.top);
   };
 
@@ -135,17 +170,21 @@ export default function ScreenStage(props: ScreenStageProps) {
     const first = point(event);
     if (!first) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    local.current = [first];
+    drawing.current = true;
     pending.current = [first];
-    paint();
+    clearTimeout(echo.current.timer);
+    echo.current.points = [first];
+    echo.current.color = props.selfColor || '#f0d274';
   };
   const move = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!annotating || !local.current) return;
+    if (!annotating || !drawing.current) return;
     const next = point(event);
     if (!next) return;
-    local.current.push(next);
     pending.current.push(next);
-    paint();
+    echo.current.points.push(next);
+    if (echo.current.points.length > ECHO_POINTS)
+      echo.current.points.splice(0, echo.current.points.length - ECHO_POINTS);
+    paintEcho();
     if (pending.current.length >= FLUSH_POINTS) flush(false);
     else {
       clearTimeout(timer.current);
@@ -153,10 +192,10 @@ export default function ScreenStage(props: ScreenStageProps) {
     }
   };
   const finish = () => {
-    if (!local.current) return;
-    local.current = null;
+    if (!drawing.current) return;
+    drawing.current = false;
     flush(true);
-    paint();
+    releaseEcho();
   };
 
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -168,7 +207,9 @@ export default function ScreenStage(props: ScreenStageProps) {
     // a browser. "Maximise" is the separate app-level mode that only fills the window.
     const bridge = window.officeDesktop;
     if (bridge?.setFullscreen) {
-      void bridge.setFullscreen(!fullscreen).then((value) => setFullscreen(value === true))
+      const wanted = !fullscreen;
+      askedFullscreen.current = wanted;
+      void bridge.setFullscreen(wanted).then((value) => setFullscreen(value === true))
         .catch(() => undefined);
       return;
     }
@@ -177,7 +218,7 @@ export default function ScreenStage(props: ScreenStageProps) {
   };
 
   const enlarge = () => {
-    if (fullscreen) toggleFullscreen();
+    if (fullscreen) leaveFullscreen();
     setMaximized(true);
   };
 
@@ -186,7 +227,7 @@ export default function ScreenStage(props: ScreenStageProps) {
   return <div ref={host}
     className={`screen-stage${maximized ? ' maximized' : ''}${annotating ? ' annotating' : ''}`}>
     <video ref={video} autoPlay muted playsInline aria-label={props.label} />
-    <canvas ref={board} className="screen-stage-board" aria-hidden="true" />
+    <canvas ref={ink} className="screen-stage-ink" aria-hidden="true" />
     <div className="screen-stage-draw" onPointerDown={start} onPointerMove={move}
       onPointerUp={finish} onPointerCancel={finish} />
     {/* Inline the stage keeps two compact controls only: a row of buttons in a
@@ -199,11 +240,19 @@ export default function ScreenStage(props: ScreenStageProps) {
     </div>}
     {enlarged && <div className="screen-stage-bar">
       <span className="screen-stage-name"><ScreenIcon />{props.label}</span>
-      <button type="button" aria-pressed={annotating} title="在画面上标注，别人也能看到"
-        onClick={() => { setAnnotating(!annotating); local.current = null; }}>标注</button>
+      <button type="button" aria-pressed={annotating} title="在对方的共享屏幕上标注"
+        onClick={() => { setAnnotating(!annotating); drawing.current = false; }}>标注</button>
       {annotating && <>
-        <button type="button" title="撤销我画的上一条" onClick={() => props.onUndo(scope)}>撤销</button>
-        <button type="button" title="清空所有人的标注" onClick={() => props.onClear(scope)}>清空</button>
+        <button type="button" title="撤销我画的上一条" onClick={() => {
+          echo.current.points = [];
+          paintEcho();
+          props.onUndo(scope);
+        }}>撤销</button>
+        <button type="button" title="清空所有人的标注" onClick={() => {
+          echo.current.points = [];
+          paintEcho();
+          props.onClear(scope);
+        }}>清空</button>
       </>}
       <button type="button" onClick={() => (maximized ? setMaximized(false) : enlarge())}
         title={maximized ? '退出窗口内占满' : '在软件窗口内占满'}>
@@ -212,12 +261,24 @@ export default function ScreenStage(props: ScreenStageProps) {
         title="占满整个屏幕">{fullscreen ? '退出全屏' : '全屏'}</button>
       {props.actions}
       <button type="button" className="screen-stage-close" onClick={() => {
-        if (fullscreen && window.officeDesktop?.setFullscreen) void window.officeDesktop.setFullscreen(false);
-        if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+        leaveFullscreen();
         setMaximized(false);
       }} aria-label="关闭放大视图"><CloseIcon /></button>
     </div>}
     {enlarged && props.hint && <p className="screen-stage-hint">{props.hint}</p>}
-    {annotating && enlarged && <p className="screen-stage-tip">标注中：在画面上拖动即可画线，所有人都能看到</p>}
+    {annotating && enlarged && <p className="screen-stage-tip">标注中：拖动即可画线，笔迹画在对方的共享屏幕上</p>}
   </div>;
+}
+
+/**
+ * Where the shared picture sits inside the video element. Falls back to the whole
+ * element while the first frame is still arriving (`videoWidth` is 0 then), so the
+ * very first stroke is not silently dropped on an unusual resolution.
+ */
+function pictureBox(element: HTMLVideoElement) {
+  const measured = contentBox(element, element.videoWidth, element.videoHeight);
+  if (measured) return measured;
+  const { clientWidth, clientHeight } = element;
+  if (!clientWidth || !clientHeight) return null;
+  return { x: 0, y: 0, width: clientWidth, height: clientHeight };
 }

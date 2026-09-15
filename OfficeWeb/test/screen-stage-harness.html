@@ -21,9 +21,13 @@ const ctx=canvas.getContext('2d');
 ctx.fillStyle='#20406a'; ctx.fillRect(0,0,1280,720);
 ctx.fillStyle='#fff'; ctx.font='48px sans-serif'; ctx.fillText('SHARED SCREEN',80,140);
 const stream=canvas.captureStream(5);
-createRoot(document.getElementById('root')).render(React.createElement(ScreenStage,{
-  stream, scope:'call-harness', label:'对方共享屏幕', strokes:[], myClientId:'me',
-  onDraw:()=>{}, onClear:()=>{}, onUndo:()=>{},
+// What the stage asked the relay to send, so a test can check the mapped points.
+window.__drawn=[];
+const root=createRoot(document.getElementById('root'));
+root.render(React.createElement(ScreenStage,{
+  stream, scope:'call-harness', label:'对方共享屏幕', selfColor:'hsl(120 74% 46%)',
+  onDraw:(scope,points,done)=>window.__drawn.push({scope,points,done}),
+  onClear:()=>{ window.__cleared=(window.__cleared||0)+1; }, onUndo:()=>{ window.__undone=(window.__undone||0)+1; },
   hint:'可点「标注」在画面上画线，所有人都能看到',
   actions:React.createElement(React.Fragment,null,
     React.createElement('button',{type:'button'},'静音我'),
@@ -31,5 +35,7 @@ createRoot(document.getElementById('root')).render(React.createElement(ScreenSta
     React.createElement('button',{type:'button'},'抢占共享'),
     React.createElement('button',{type:'button',className:'call-hangup'},'挂断')),
 }));
+// Hanging up removes the stage from the app; the test does the same here.
+window.__unmountStage=()=>root.unmount();
 window.__stageReady=true;
 </script></body></html>

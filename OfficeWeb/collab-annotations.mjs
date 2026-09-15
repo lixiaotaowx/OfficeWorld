@@ -5,9 +5,15 @@
 // (`meeting-<id>`). Points arrive normalised to the shared image (0..1), never in
 // pixels, so a stroke lands in the same place for every window size and for the
 // sharer's own desktop overlay.
+//
+// The rate limit must never drop a segment: a dropped batch used to leave a visible
+// gap in the stroke (user, 2026-09-15: "画笔断开"). Messages that arrive inside the
+// limit are therefore queued and flushed on a timer instead of being discarded.
 const MAX_POINTS_PER_MESSAGE = 64;
 const MIN_INTERVAL_MS = 40;
 const MAX_POINTS_PER_STROKE = 4000;
+/** Bound on one socket's backlog, so a stuck peer cannot grow it without limit. */
+const MAX_QUEUED_POINTS = 512;
 
 /** Who may see this scope: the other peer of one call, or the other members of one meeting. */
 function peersOf(people, sessions, socketId, scope) {
@@ -39,6 +45,57 @@ const cleanPoint = (point) => {
 export function createCollabAnnotations({ io, people, sessions }) {
   const lastSent = new Map();
   const strokeLength = new Map();
+  /** socketId -> one pending batch: { scope, stroke, points, done, timer } */
+  const queued = new Map();
+
+  function drop(socketId) {
+    const entry = queued.get(socketId);
+    if (entry?.timer) clearTimeout(entry.timer);
+    queued.delete(socketId);
+  }
+
+  /** Send what is queued for one socket; the rest waits for the next tick. */
+  function flush(socketId) {
+    const entry = queued.get(socketId);
+    const person = people.get(socketId);
+    if (!entry || !person) { drop(socketId); return; }
+    if (entry.timer) { clearTimeout(entry.timer); entry.timer = undefined; }
+    const points = entry.points.splice(0, MAX_POINTS_PER_MESSAGE);
+    // `done` travels only after the last point of that stroke, or the receiver would
+    // finish the stroke early and drop whatever arrives afterwards.
+    const done = entry.done === true && entry.points.length === 0;
+    if (!points.length && !done) { drop(socketId); return; }
+    if (done) entry.done = false;
+    const key = `${socketId}:${entry.stroke}`;
+    const length = (strokeLength.get(key) || 0) + points.length;
+    // A single stroke cannot grow without bound: stop relaying once it is huge.
+    if (length > MAX_POINTS_PER_STROKE) { drop(socketId); return; }
+    if (done) strokeLength.delete(key);
+    else strokeLength.set(key, length);
+    lastSent.set(socketId, Date.now());
+    const peers = peersOf(people, sessions, socketId, entry.scope);
+    if (peers.length) {
+      const message = {
+        id: socketId,
+        clientId: person.clientId,
+        name: String(person.name || "同事").slice(0, 24),
+        scope: entry.scope,
+        stroke: entry.stroke,
+        points,
+        done,
+      };
+      for (const peer of peers) io.to(peer).emit("annotate", message);
+    }
+    if (entry.points.length || entry.done) schedule(socketId);
+    else drop(socketId);
+  }
+
+  function schedule(socketId) {
+    const entry = queued.get(socketId);
+    if (!entry || entry.timer) return;
+    const wait = Math.max(0, MIN_INTERVAL_MS - (Date.now() - (lastSent.get(socketId) || 0)));
+    entry.timer = setTimeout(() => { entry.timer = undefined; flush(socketId); }, wait);
+  }
 
   function attach(socket) {
     socket.on("annotate", (data) => {
@@ -47,52 +104,51 @@ export function createCollabAnnotations({ io, people, sessions }) {
       const scope = typeof data?.scope === "string" ? data.scope : "";
       const stroke = typeof data?.stroke === "string" ? data.stroke.slice(0, 48) : "";
       if (!scope || !stroke) return;
-      const now = Date.now();
-      if (now - (lastSent.get(socket.id) || 0) < MIN_INTERVAL_MS) return;
       const points = Array.isArray(data?.points)
         ? data.points.slice(0, MAX_POINTS_PER_MESSAGE).map(cleanPoint).filter(Boolean)
         : [];
       const done = data?.done === true;
       if (!points.length && !done) return;
-      const key = `${socket.id}:${stroke}`;
-      const length = (strokeLength.get(key) || 0) + points.length;
-      // A single stroke cannot grow without bound: stop relaying once it is huge.
-      if (length > MAX_POINTS_PER_STROKE) return;
-      if (done) strokeLength.delete(key);
-      else strokeLength.set(key, length);
-      const peers = peersOf(people, sessions, socket.id, scope);
-      if (!peers.length) return;
-      lastSent.set(socket.id, now);
-      const message = {
-        id: socket.id,
-        clientId: person.clientId,
-        name: String(person.name || "同事").slice(0, 24),
-        scope,
-        stroke,
-        points,
-        done,
-      };
-      for (const peer of peers) io.to(peer).emit("annotate", message);
+      let entry = queued.get(socket.id);
+      if (entry && (entry.scope !== scope || entry.stroke !== stroke)) {
+        // A different stroke began: the previous one goes out now, in order.
+        flush(socket.id);
+        entry = undefined;
+      }
+      if (!entry) {
+        entry = { scope, stroke, points: [], done: false, timer: undefined };
+        queued.set(socket.id, entry);
+      }
+      for (const point of points) entry.points.push(point);
+      if (entry.points.length > MAX_QUEUED_POINTS)
+        entry.points.splice(0, entry.points.length - MAX_QUEUED_POINTS);
+      if (done) entry.done = true;
+      if (Date.now() - (lastSent.get(socket.id) || 0) >= MIN_INTERVAL_MS) flush(socket.id);
+      else schedule(socket.id);
     });
     // Clearing and undoing are drawing-board actions, so they follow the same
     // membership rule; the sender id lets each receiver drop only that person's work.
     socket.on("annotate-clear", (data) => {
       const scope = typeof data?.scope === "string" ? data.scope : "";
       const person = people.get(socket.id);
+      // Whatever is still queued belongs to the board that is being cleared.
+      drop(socket.id);
       for (const peer of peersOf(people, sessions, socket.id, scope))
         io.to(peer).emit("annotate-clear", { id: socket.id, clientId: person?.clientId, scope });
     });
     socket.on("annotate-undo", (data) => {
       const scope = typeof data?.scope === "string" ? data.scope : "";
       const person = people.get(socket.id);
+      drop(socket.id);
       for (const peer of peersOf(people, sessions, socket.id, scope))
         io.to(peer).emit("annotate-undo", { id: socket.id, clientId: person?.clientId, scope });
     });
   }
 
-  /** Called on disconnect so the throttle and stroke tables follow live sockets. */
+  /** Called on disconnect so the throttle, queue and stroke tables follow live sockets. */
   function forget(socketId) {
     lastSent.delete(socketId);
+    drop(socketId);
     for (const key of [...strokeLength.keys()])
       if (key.startsWith(`${socketId}:`)) strokeLength.delete(key);
   }

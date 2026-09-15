@@ -32,6 +32,13 @@
 - **名字包含「文杰」**（如 李文杰）→ 进空间**直接坐进老板工位**（服务端 `BOSS_SEAT = 8`，对应 `src/seats.ts` 里 id 为 `Manager`、标签"老板工位"的那一行），并按普通认领**落盘**，重启后仍归他。**只是座位规则**：老板在预览上没有例外（2026-09-15 用户："别什么都老板例外搞得太复杂"），预览只按成员/访客身份判定。
 - 访客仍可接收他人的小屏幕预览（`previewAllowed` 不受身份影响）。
 
+## 共享屏幕与标注（2026-09-15 用户报障后修订）
+
+- **整屏（全屏）必须随视频一起结束**（用户："屏幕全屏时挂断软件也全屏了无法退出全屏，视频全屏不要影响软件"）：`ScreenStage` 卸载时（挂断、对方停止共享、退出会议、关闭放大视图）若整屏模式是本组件请求的，必须 `officeDesktop.setFullscreen(false)`；DOM 全屏同理 `exitFullscreen()`；Esc 也退出。桌面端 `chrome.cjs` 在页面导航（重载）时同样退出全屏——否则标题栏被 `html.iruler-fullscreen #iruler-desktop-chrome { display:none }` 隐藏，最大化按钮消失且没有出路。`applyFullscreenState` 退出时按窗口真实状态决定 `iruler-maximized`，避免最大化窗口被误判成非最大化而出现圆角。
+- **标注中继绝不丢点**（用户："画笔断开"）：`collab-annotations.mjs` 的 40ms 限速改为**排队补发**（`queued` + `setTimeout`），不再 `return` 丢弃；`done` 只在最后一批点之后发送；单 socket 队列上限 512 点；`annotate-clear`/`annotate-undo` 与断线都会清空队列。
+- **本机即时回显**（用户："延迟严重"）：笔迹要经过 指针 → socket → 分享者桌面浮层 → 采集 → 视频 才回来，正常几百毫秒。`ScreenStage` 因此在本机画布 `.screen-stage-ink` 上立即回显自己正在画的笔画（同坐标、同颜色 `colorFor(accountId)`），`ECHO_MS=1400ms` 后交还给画面里的真迹，避免双份墨迹；撤销/清空会同时清掉回显。
+- **映射按"画面框"换算，不按元素框**：坐标一律相对 `<video>`（`object-fit: contain` 的 letterbox 内框）归一化到 0..1，测量基准是 **video 元素自身**的矩形而不是绘制层；首帧未到时（`videoWidth=0`）退回元素框，避免第一笔被丢掉。`test/browser/screen-stage.cjs` 在 420×700 与 1280×720 两种窗口比例下校验落点命中 0.25/0.75。桌面浮层由主进程保证窗口内容区**恰好等于被共享显示器**（`place()` 先比较再 `setBounds`，页面加载完成后与 `display-metrics-changed` 时重新贴合），所以各种分辨率/缩放下 0..1 都对应同一位置。
+
 ## 项目边界
 
 - 本目录是独立的新网页项目，原协作软件只作为参考，不直接修改。

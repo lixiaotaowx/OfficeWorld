@@ -374,6 +374,8 @@ export function useOffice(account: Account) {
     messages,
     contacts,
     hiddenContacts,
+    /** Account id, so a local echo can use the same ink colour other people see. */
+    accountId: account.id,
     requests,
     outgoing,
     cancelRequest: (id: string) => socket.current?.emit('cancel-request', id),

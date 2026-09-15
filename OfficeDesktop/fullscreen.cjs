@@ -4,14 +4,17 @@
 // not reliably emit `enter-full-screen` / `leave-full-screen`: the window resizes,
 // but nothing observes it. So whoever changes the state also applies the page
 // classes and tells the renderer, instead of waiting for an event that may not come.
-const PAGE_CLASSES = (on) =>
+const PAGE_CLASSES = (on, maximized) =>
   `document.documentElement.classList.toggle('iruler-fullscreen', ${on});` +
-  `document.documentElement.classList.toggle('iruler-maximized', ${on});`;
+  `document.documentElement.classList.toggle('iruler-maximized', ${maximized});`;
 
 /** Paint the shell state for the current full-screen value. Idempotent. */
 function applyFullscreenState(window, on) {
   if (!window || window.isDestroyed?.() || window.webContents?.isDestroyed?.()) return false;
-  void window.webContents.executeJavaScript(PAGE_CLASSES(on), true).catch(() => {});
+  // Leaving whole-screen mode hands the window back in whatever state it really is:
+  // assuming "not maximised" would round the corners of a maximised window.
+  const maximized = on === true || window.isMaximized?.() === true;
+  void window.webContents.executeJavaScript(PAGE_CLASSES(on === true, maximized), true).catch(() => {});
   window.webContents.send('office:fullscreen-changed', on === true);
   return on === true;
 }
