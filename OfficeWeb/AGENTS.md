@@ -44,6 +44,13 @@
 - **本机即时回显**（用户："延迟严重"）：笔迹要经过 指针 → socket → 分享者桌面浮层 → 采集 → 视频 才回来，正常几百毫秒。`ScreenStage` 因此在本机画布 `.screen-stage-ink` 上立即回显自己正在画的笔画（同坐标、同颜色 `colorFor(accountId)`），`ECHO_MS=1400ms` 后交还给画面里的真迹，避免双份墨迹；撤销/清空会同时清掉回显。
 - **映射按"画面框"换算，不按元素框**：坐标一律相对 `<video>`（`object-fit: contain` 的 letterbox 内框）归一化到 0..1，测量基准是 **video 元素自身**的矩形而不是绘制层；首帧未到时（`videoWidth=0`）退回元素框，避免第一笔被丢掉。`test/browser/screen-stage.cjs` 在 420×700 与 1280×720 两种窗口比例下校验落点命中 0.25/0.75。桌面浮层由主进程保证窗口内容区**恰好等于被共享显示器**（`place()` 先比较再 `setBounds`，页面加载完成后与 `display-metrics-changed` 时重新贴合），所以各种分辨率/缩放下 0..1 都对应同一位置。
 
+## 未接电话提示（2026-09-15 用户要求）
+
+- 需求（用户）：「添加一个未接电话提示，明显一点的弹窗在程序右下角以及拨打时间30秒没人接就提示未接通，稍后重试」。
+- **振铃 30 秒**：`privateSessions.mjs` 的 `ringMs = 30000`（`createOfficeServer({ inviteRingMs })` 可注入，测试用短值）。到点 `expire(invite, 'timeout')` 给双方发 `request-expired { id, reason }`，发起方另收 notice「未接通，稍后重试」。`reason` 现在是 `timeout | cancelled | answered`（`server.mjs` 断线清理发 `cancelled`）——**协议是 `{ id, reason }` 对象，不是裸 id**；客户端解析器要同时容忍旧的裸字符串（当 `cancelled`）。
+- **弹窗只认 `timeout`**：`src/callAlertRules.ts` 的 `alertForExpiry` 是纯规则（我拨的 →「未接通，稍后重试」；别人拨给我的 →「未接来电」），取消/挂断/婉拒/已接听一律不弹，避免"自己取消也报未接"。视图 `src/CallAlerts.tsx` 固定在右下角（`.call-alerts`），12 秒自动消失，带「再拨一次」「知道了」。窗口在托盘里看不见页面，所以 `officeNotifications.ts` 对 `timeout` 额外发一次桌面/系统通知。
+- 规则与视图分离、服务器只发事实（`reason`），文案由客户端决定：新增原因值时不要改服务器文案，先想清楚"这个原因该不该弹"。
+
 ## 会议室墙面照片（2026-09-15 用户要求）
 
 - 用户给了一张 AI 生成的"团队合影"（12 个角色在办公室里，豆包 AI 生成），要求**放到会议室墙上的画面里**。

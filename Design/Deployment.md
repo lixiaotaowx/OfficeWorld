@@ -1,5 +1,26 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 18:30 未接电话提示：右下角弹窗 + 振铃 30 秒没人接就提示（前端 `index-J_xQsCMi.js` / `index-IILK1dyr.css`，后端 `server.mjs` + `privateSessions.mjs` + `input-presence.mjs`）
+
+- 需求（用户）：「添加一个未接电话提示，明显一点的弹窗在程序右下角以及拨打时间30秒没人接就提示未接通，稍后重试」。
+- **振铃上限 30 秒**：`privateSessions.mjs` 的 `ringMs = 30000`（测试可用 `createOfficeServer({ inviteRingMs })` 注入短值），到点 `expire(invite, 'timeout')`：双方各收一条 `request-expired { id, reason }`，**发起方**另加一条 notice「未接通，稍后重试」。`reason` 现在是 `timeout | cancelled | answered`（外加 `server.mjs` 断线清理那条 `cancelled`），不再只发一个裸 id。
+- **右下角弹窗**：纯规则 `src/callAlertRules.ts`（`alertForExpiry`）**只认 `timeout`**——我拨出去的 →「未接通，稍后重试」+「某某 暂时没有接听（屏幕邀请）」，别人拨给我的 →「未接来电」+「某某 拨打过语音通话／（屏幕邀请）」；自己取消、对方挂断、婉拒、已接听都**不弹**（那些本来就有 notice）。视图 `src/CallAlerts.tsx` 堆叠在 `.call-alerts`（`position:fixed; right:20px; bottom:88px; z-index:260`，窄屏自适应宽度），每张卡有「再拨一次」（直接按原 kind 重新邀请）与「知道了」，12 秒自动消失；`PrivateCallPanel` 挂它，`useOffice` 暴露 `callAlerts` / `dismissCallAlert`。
+- **窗口缩在托盘里也看得到**：`src/officeNotifications.ts` 的 `request-expired` 处理改成收 `{ id, reason }`（旧的裸 id 字符串仍兼容，直接当 `cancelled`），`reason === 'timeout'` 时额外走一次桌面／系统通知（「未接电话 / 这次通话没有接通，可以再试一次」）——页面弹窗在托盘里是看不见的。
+- 验证：`node --test test/*.test.mjs` **152/152**（新增 `test/call-alerts.test.mjs` 6 项：timeout 双向文案、非 timeout 不弹、旧字符串载荷、查不到邀请时安静；`test/missed-call.test.mjs` 用短 `inviteRingMs` 跑真实服务端振铃超时）；浏览器 `test/browser/call-alerts.cjs` PASS（截图 `Build/call-alerts.png`：右下角两张卡、「再拨一次 / 知道了」、重拨目标与关闭回调都对）；`tsc --noEmit` 通过。`private-calls.test.mjs` 里断言旧裸 id 的那一条已按新载荷更新。
+- 发布：前端逐文件上传 `index.html` + `assets/index-J_xQsCMi.js` + `assets/index-IILK1dyr.css`；后端上传 `server.mjs`、`privateSessions.mjs`、`input-presence.mjs`，`systemctl restart officeweb` → `active`。线上入口 `index-J_xQsCMi.js`，JS SHA256 `2fc5234e28c11d1a12affecce3f7ddc5c33a4074738f253f97549c32dfc14c15`、`server.mjs` `da8fbcd16e27b27225c1530ceae666aa036ce6d695677d1a3fb3c15fe844b803`、`privateSessions.mjs` `e2f6d8ec02a80ea2f5bf49ef49eeab604675d5d730e9c0d5b3747f56b2039153`、`input-presence.mjs` `0d786f553226b2c5a4c6de86fa4ad505c6a145e51de5bcfd4e42729fd391818f`，全部与本地逐字节一致；线上 JS 里能查到「未接通，稍后重试」「未接来电」「再拨一次」。
+- **这一轮踩到两个坑（都记下来）**：
+  1. 把 `server.mjs` 传上去后**服务起不来**（`activating` 后崩溃重启）：它 `import "./input-presence.mjs"`，而这个并行会话新加的模块**从没上传过**，`ERR_MODULE_NOT_FOUND`。补传后立刻 `active`。教训：后端要**按 `server.mjs` 的 import 图核对远端是否齐全**，不能只传自己改过的那几个文件。
+  2. 第一次 `scp index.html assets/index-*.js assets/index-*.css ubuntu@…:~/officeweb/dist/` **退出码 0，但两个 assets 根本没落地**（`ls` 时才发现），结果线上 `index.html` 指向一个不存在的 JS，`/assets/…js` 被回退成健康检查 JSON——只看 `scp` 返回码会误判成功。改为显式传到 `dist/assets/` 后正常。**上传后必须逐文件核对远端存在 + 取线上哈希比对本地。**
+
+## 2026-09-15 15:52 修「右上角的 SVG 图标歪了」（前端 `index-CVDzAW6s.js` / `index-Dr3vcraQ.css`）
+
+- 用户报障：「右上角的 svg 图标没有更新到线上吗 怎么还是"我"」「右上角的 svg 图标歪了」。
+- 先查证"没更新到线上"这个怀疑：线上包**已经**是新的 SVG（`$M` = `circle cx=12 cy=8.4 r=3.6` + `path M5.4 20a6.6 6.6 0 0 1 13.2 0`），用 `[regex]::Matches` 全量扫线上 JS 也**没有任何**字面量「我」的图标。所以不是没更新，是它**渲染出来歪了**，看着像别的字。
+- **根因**：`styles.css` 的全局 `button { padding: 10px 15px }` 同样落在 `.avatar` 上。头像圆片只有 34px，又有 `* { box-sizing: border-box }`，内容盒只剩 2px；19px 的人形图标在 grid 里被从内容盒左上角排出，实测落点 offsetLeft **16** / offsetRight **−1**、offsetTop **11** / offsetBottom **4** —— 图标整体挤到圆片右下并溢出圆边。
+- **修法**：`.avatar` 规则里把内边距清零（`padding: 0`），`display: grid` / `place-items: center` 保持不动。底部栏姓名首字圆片（`.identity .avatar`）是同一个 bug，一并修好。
+- **验证**：拿**线上 CSS** 加真实 rail 标记做几何探针（`Build/rail-icon-shot.cjs`，输出 `Build/rail-icon-report.json`）：修前 16 / −1 / 11 / 4，修后 **7.5 / 7.5 / 7.5 / 7.5**（(34−19)/2）。放大图 `Build/rail-icons-zoom.png`、真实比例 `Build/rail-topright.png` 人形图标居中。新增回归测试 `test/icon-centering.test.mjs`（2 项，删掉 `padding: 0;` 那行会失败，已 A/B 证伪）。`node --test test/*.test.mjs` **133/133**、`tsc --noEmit` 通过。
+- 发布：前端逐文件上传 `index.html` + `assets/index-CVDzAW6s.js` + `assets/index-Dr3vcraQ.css`。线上入口已是 `index-CVDzAW6s.js`；JS SHA256 `8d810b483954321b…`、CSS SHA256 `8f6da46add8052e7…` 与本地逐字节一致，线上 CSS 里能查到 `.avatar{…place-items:center;padding:0;…}`。纯前端，**未重启 `officeweb`**。
+
 ## 2026-09-15 15:40 EXE 0.1.12（含"挂断后窗口变小"的桌面侧修复）
 
 - 需求（用户）：「可以 打包一下吧」——把 0.1.11（今天 10:27）**之后**改动的桌面侧代码打进去。

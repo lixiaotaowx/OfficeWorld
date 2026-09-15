@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { useOffice } from './useOffice';
 import ScreenStage from './ScreenStage';
+import CallAlerts from './CallAlerts';
 import { colorFor } from './annotations';
 import { MicIcon, MicOffIcon, PhoneIcon, HangupIcon, ScreenIcon } from './icons';
 import './private-call.css';
@@ -14,6 +15,8 @@ export default function PrivateCallPanel({ office }: { office: ReturnType<typeof
     try { await office.respond(id, accept); } finally { setBusy(null); }
   };
   return <>
+    <CallAlerts alerts={office.callAlerts} onDismiss={office.dismissCallAlert}
+      onRetry={(alert) => { office.dismissCallAlert(alert.id); void office.request(alert.target, alert.callKind); }} />
     <div className="incoming-calls">{office.requests.map(request => <div className="incoming-call" key={request.id}>
       <section className="call-invite" role="dialog" aria-label="来电邀请">
         <div className="call-avatar"><PhoneIcon /></div>

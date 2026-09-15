@@ -59,7 +59,7 @@ test('第三人不能接受或挂断，取消邀请不能迟到接受', async ()
     const invite = await requested;
     c.emit('respond', { id: invite.id, accept: true });
     const cancel = next(b, 'request-expired'); a.emit('cancel-request', invite.id);
-    assert.equal(await cancel, invite.id);
+    assert.deepEqual(await cancel, { id: invite.id, reason: 'cancelled' });
     let created = false; a.on('session', () => { created = true; });
     b.emit('respond', { id: invite.id, accept: true });
     await new Promise(r => setTimeout(r, 80)); assert.equal(created, false);

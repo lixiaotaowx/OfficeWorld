@@ -12,10 +12,11 @@ import { createOfficeServer } from "../server.mjs";
  * and tear everything down afterwards. A fresh state file keeps the permanent
  * seat roster from leaking between runs.
  */
-export async function withServer(run) {
+export async function withServer(run, options = {}) {
   const dir = mkdtempSync(join(tmpdir(), "office-test-"));
   const { http } = createOfficeServer({ authentication: false, privatePermissions: async () => {},
-    meetingPermissions: async () => {}, closePrivateMedia: async () => {}, statePath: join(dir, "state.json") });
+    meetingPermissions: async () => {}, closePrivateMedia: async () => {}, statePath: join(dir, "state.json"),
+    ...options });
   await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));
   const port = http.address().port;
   const sockets = [];

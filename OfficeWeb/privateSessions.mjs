@@ -1,16 +1,22 @@
 import { randomUUID } from 'node:crypto';
 
 /** Every accepted pair owns one room, independent of other viewers of a screen. */
-export function createPrivateSessions(io, people, sessions, invites, end, updatePermissions = async () => {}) {
+export function createPrivateSessions(io, people, sessions, invites, end, updatePermissions = async () => {},
+  { ringMs = 30000 } = {}) {
   let tail = Promise.resolve();
   const emitSession = session => {
     for (const peer of session.peers) io.to(peer).emit('session', {
       ...session, peer: session.peers.find(id => id !== peer), initiator: peer === session.peers[0],
     });
   };
-  const expire = invite => {
+  /**
+   * Stop an invite. `reason` tells the two sides apart without guessing: `timeout` is a
+   * call nobody answered (a missed call), `cancelled` is the caller giving up and
+   * `answered` is a session being created (user, 2026-09-15).
+   */
+  const expire = (invite, reason = 'cancelled') => {
     invites.delete(invite.id);
-    for (const id of [invite.from, invite.target]) io.to(id).emit('request-expired', invite.id);
+    for (const id of [invite.from, invite.target]) io.to(id).emit('request-expired', { id: invite.id, reason });
   };
   function attach(socket) {
     socket.on('request', data => {
@@ -23,16 +29,20 @@ export function createPrivateSessions(io, people, sessions, invites, end, update
       invites.set(invite.id, invite);
       socket.emit('request-sent', invite); io.to(invite.target).emit('request', invite);
       socket.emit('notice', '请求已发送，等待对方同意（屏幕邀请包含双向语音）');
+      // Nobody answered within the ring: the caller is told to try again and the callee
+      // is told it was a missed call (user, 2026-09-15: "拨打时间30秒没人接就提示未接通，
+      // 稍后重试").
       setTimeout(() => {
         if (!invites.has(invite.id)) return;
-        expire(invite); socket.emit('notice', '请求已过期');
-      }, 45000).unref();
+        expire(invite, 'timeout');
+        socket.emit('notice', '未接通，稍后重试');
+      }, ringMs).unref();
     });
     socket.on('respond', (data, reply) => {
       const answer = value => { if (typeof reply === 'function') reply(value); };
       const invite = invites.get(data?.id);
       if (!invite || invite.target !== socket.id) return answer({ ok: false, error: "邀请已取消或过期" });
-      expire(invite);
+      expire(invite, 'answered');
       if (data.accept !== true) { io.to(invite.from).emit('notice', '对方婉拒了请求'); answer({ ok: true, accepted: false }); return; }
       tail = tail.catch(() => {}).then(async () => {
         if (!people.has(invite.from) || !people.has(invite.target)) return answer({ ok: false, error: "对方已离线" });

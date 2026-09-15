@@ -1,6 +1,7 @@
 import { createSitting } from "./sitting.mjs";
 import { createAdmin } from "./admin.mjs";
 import { createCollabAnnotations } from "./collab-annotations.mjs";
+import { createInputPresence } from "./input-presence.mjs";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { fileURLToPath } from "node:url";
@@ -193,7 +194,7 @@ export function createOfficeServer(options = {}) {
       return { id: owner.id, name: owner.name, online };
     });
   const publish = () => {
-    io.emit("people", [...people.values()]);
+    io.emit("people", inputPresence.view()); // 附带 atDesk / awayFor
     io.emit("seats", seatsView());
     // Tell each client whether anybody else could receive its workstation preview,
     // so a machine nobody is watching does not keep capturing the screen at all.
@@ -203,6 +204,7 @@ export function createOfficeServer(options = {}) {
       io.to(person.id).emit("ambient", { wanted });
     }
   };
+  const inputPresence = createInputPresence({ io, people, publish }); // 在座 / 离桌
   const admin = createAdmin({
     io, people, roster, save, publish, adminPassword, seatCount: SEAT_COUNT,
     // Somebody shown out leaves the member and chat lists and loses their session.
@@ -220,7 +222,8 @@ export function createOfficeServer(options = {}) {
       if (error?.status !== 404) console.error("私聊媒体清理失败", error);
     });
   };
-  const privateCalls = createPrivateSessions(io, people, sessions, invites, end, options.privatePermissions || updatePrivatePermissions);
+  const privateCalls = createPrivateSessions(io, people, sessions, invites, end, options.privatePermissions || updatePrivatePermissions,
+    { ringMs: options.inviteRingMs ?? 30000 });
   const annotations = createCollabAnnotations({ io, people, sessions });
   io.on("connection", (s) => {
     if (accounts) s.use((_packet, next) => {
@@ -487,8 +490,8 @@ export function createOfficeServer(options = {}) {
       for (const [id, i] of invites)
         if (i.from === s.id || i.target === s.id) {
           invites.delete(id);
-          io.to(i.target).emit("request-expired", id);
-          io.to(i.from).emit('request-expired', id);
+          io.to(i.target).emit("request-expired", { id, reason: "cancelled" });
+          io.to(i.from).emit('request-expired', { id, reason: 'cancelled' });
         }
       publish();
     });

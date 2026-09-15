@@ -10,17 +10,67 @@
 .private-call-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 13px; border-top: 1px solid #e4e9df; }
 .session-panel.private-calls .private-call-actions button { position: static; inset: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid #d9e2d5; border-radius: 11px; padding: 10px 12px; background: #f0f4eb; color: #34553e; }
 .session-panel.private-calls .private-call-actions .call-hangup { background: #fbeae5; border-color: #f0d0c6; color: #a54835; }
-.incoming-calls { display: grid; gap: 12px; max-height: 80vh; overflow: auto; position: fixed; top: 85px; right: 28px; z-index: 240; width: min(350px, calc(100vw - 32px)); }
-.call-invite { padding: 24px; border: 1px solid #d9e2d5; border-radius: 22px; background: #fbfcf8; box-shadow: 0 20px 65px #17312230; }
+/* An incoming call or a "look at my screen" invite is the one thing that must not be
+   missed in a corner, so the card stack sits in the middle of the window with a soft
+   scrim. The layer stays click-through — only the cards themselves take the pointer —
+   so the app behind is still usable while the alert waits. */
+.incoming-calls {
+  position: fixed; inset: 0; z-index: 240;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; padding: 16px; overflow: auto;
+  background: #0e1a1424;
+  pointer-events: none;
+}
+.incoming-calls > * { pointer-events: auto; }
+.call-invite { width: min(380px, calc(100vw - 32px)); padding: 24px; border: 1px solid #d9e2d5; border-radius: 22px; background: #fbfcf8; box-shadow: 0 20px 65px #17312230; }
 .call-invite h2 { font-size: 18px; line-height: 1.6; margin: 16px 0 6px; }
 .call-invite p { font-size: 13px; line-height: 1.7; color: #6c7968; }
 .call-invite .actions { display: flex; gap: 10px; margin-top: 18px; }
 .call-invite button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 1; border-radius: 12px; padding: 11px; }
 @media (max-width: 700px) {
   .session-panel.private-calls { width: auto; left: 16px; right: 16px; bottom: 18px; max-height: 52vh; }
-  .incoming-calls { top: 72px; right: 16px; }
 }
 
 .notification-setting { margin: 18px 0; }
 .notification-setting button { display: inline-flex; align-items: center; gap: 8px; }
 .notification-setting p { font-size: 12px; line-height: 1.6; color: #697663; }
+
+/* Missed-call popups: bottom-right corner, on top of everything, so a call that rang out
+   is impossible to miss (user, 2026-09-15). */
+.call-alerts {
+  position: fixed; right: 20px; bottom: 88px; z-index: 260;
+  display: flex; flex-direction: column; gap: 10px;
+  width: min(340px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.call-alerts > * { pointer-events: auto; }
+.call-alert {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px 12px;
+  padding: 14px; border-radius: 16px;
+  background: #fbfcf8; border: 1px solid #e2c9bd;
+  box-shadow: 0 18px 40px #17312238;
+  animation: call-alert-in .22s ease-out;
+}
+.call-alert.missed { border-color: #d8c48a; }
+.call-alert-icon {
+  grid-row: 1; width: 40px; height: 40px; display: grid; place-items: center;
+  border-radius: 13px; background: #fbeae5; color: #a54835;
+}
+.call-alert.missed .call-alert-icon { background: #f6eed6; color: #8a6d21; }
+.call-alert-copy { min-width: 0; }
+.call-alert-copy strong { display: block; font-size: 15px; color: #233e31; }
+.call-alert-copy small { display: block; margin-top: 3px; font-size: 12px; line-height: 1.5; color: #6c7968; }
+.call-alert-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+.call-alert-actions button {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 10px; border-radius: 11px; font-size: 12px;
+  border: 1px solid #d9e2d5; background: #f0f4eb; color: #34553e;
+}
+.call-alert-actions .primary { background: #4d7c55; border-color: #4d7c55; color: #f6fbf3; }
+@keyframes call-alert-in {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 700px) {
+  .call-alerts { right: 12px; left: 12px; bottom: 76px; width: auto; }
+}

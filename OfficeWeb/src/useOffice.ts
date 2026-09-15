@@ -4,7 +4,9 @@ import { retainPresent, sameCallStates } from './presenceResources';
 import { useDesktopPreview } from './useDesktopPreview';
 import { useMeetings } from "./useMeetings";
 import type { AnnotateMessage } from './annotations';
+import { alertForExpiry, type CallAlert } from './callAlertRules';
 import { createAnnotationChannel } from './annotationChannel';
+import { watchInputPresence } from './presenceInput';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
@@ -34,6 +36,14 @@ export function useOffice(account: Account) {
   const [hiddenContacts, setHiddenContacts] = useState<string[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [outgoing, setOutgoing] = useState<Request[]>([]);
+  // Missed-call popups; newest last, dismissed by hand or by their own timer.
+  const [callAlerts, setCallAlerts] = useState<CallAlert[]>([]);
+  const requestsRef = useRef<Request[]>([]);
+  requestsRef.current = requests;
+  const outgoingRef = useRef<Request[]>([]);
+  outgoingRef.current = outgoing;
+  const peopleRef = useRef<Person[]>([]);
+  peopleRef.current = people;
   const requestBusy = useRef(false);
   const sitSequence = useRef(0);
   const invitationIds = useRef(new Set<string>());
@@ -127,6 +137,9 @@ export function useOffice(account: Account) {
       setSharing,
     );
     media.current = m;
+    // 在座 / 离桌: watch this machine's mouse and keyboard and report the two
+    // transitions over the socket. Works in the browser as well as in the app.
+    const presence = watchInputPresence(s);
     // Any way our own share ends - explicit stop, takeover, hanging up, leaving the
     // meeting, losing the session - funnels through the media layer, which reports
     // it here so the marks and the desktop layer never outlive the share.
@@ -229,11 +242,17 @@ export function useOffice(account: Account) {
       invitationIds.current.add(r.id); setRequests((old) => [...old, r]);
     });
     s.on('request-sent', (r: Request) => setOutgoing(old => [...old.filter(x => x.id !== r.id), r]));
-    s.on('request-expired', (id: string) => setOutgoing(old => old.filter(x => x.id !== id)));
-    s.on("request-expired", (id) => {
+    // A ring nobody answered: the popup in the corner tells the caller to try again and
+    // the callee that they missed a call (user, 2026-09-15).
+    s.on("request-expired", (payload: { id: string; reason?: string } | string) => {
+      const id = typeof payload === 'string' ? payload : payload?.id;
+      const alert = alertForExpiry(payload, outgoingRef.current, requestsRef.current,
+        (socketId) => peopleRef.current.find((person) => person.id === socketId)?.name || '');
       invitationIds.current.delete(id);
       if (selectingForInvite.current === id) m.cancelScreenSelection();
+      setOutgoing((old) => old.filter((r) => r.id !== id));
       setRequests((old) => old.filter((r) => r.id !== id));
+      if (alert) setCallAlerts((old) => [...old.filter((entry) => entry.id !== alert.id), alert]);
     });
     s.on("session", (session: Session) => {
       setSessions((old) => [...old.filter(item => item.id !== session.id), session]);
@@ -258,6 +277,7 @@ export function useOffice(account: Account) {
     });
     s.connect();
     return () => {
+      presence.stop();
       clearTimeout(motionTimer);
       clearTimeout(previewTimer);
       disposeNotifications();
@@ -356,6 +376,9 @@ export function useOffice(account: Account) {
     accountId: account.id,
     requests,
     outgoing,
+    /** Missed-call popups for the bottom-right corner. */
+    callAlerts,
+    dismissCallAlert: (id: string) => setCallAlerts((old) => old.filter((entry) => entry.id !== id)),
     cancelRequest: (id: string) => socket.current?.emit('cancel-request', id),
     sessions,
     previews,

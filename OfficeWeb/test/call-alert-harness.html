@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div>
+<script type="module">
+import React from 'react'; import { createRoot } from 'react-dom/client';
+import CallAlerts from '/src/CallAlerts.tsx';
+import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/private-call.css';
+window.__dismissed = []; window.__retried = [];
+const alerts = [
+  { id: 'a1', kind: 'unanswered', name: '同事乙', target: 'peer-1', callKind: 'voice',
+    title: '未接通，稍后重试', detail: '同事乙 暂时没有接听' },
+  { id: 'a2', kind: 'missed', name: '客户丙', target: 'peer-2', callKind: 'screen',
+    title: '未接来电', detail: '客户丙 拨打过（屏幕邀请）' },
+];
+createRoot(document.getElementById('root')).render(React.createElement(CallAlerts, {
+  alerts,
+  onDismiss: (id) => { window.__dismissed.push(id); },
+  onRetry: (alert) => { window.__retried.push(alert.target); },
+}));
+window.__alertsReady = true;
+</script></body></html>
