@@ -36,9 +36,14 @@ export default function PrivateCallPanel({ office }: { office: ReturnType<typeof
       {office.sessions.map(session => {
         const state = office.callStates[session.id];
         const voice = state?.voice || '连接中';
+        const peer = office.people.find(person => person.id === session.peer);
+        // The picture on screen is the PEER's screen, so the peer is the sharer — and
+        // only a client that can host the annotation layer can show marks on it. A
+        // browser tab cannot, so we stop offering to draw there.
+        const canAnnotate = peer?.annotate === true;
         return <div key={session.id}>
           <header className="call-heading"><div className="call-avatar"><PhoneIcon /></div><div>
-            <small>私人通话</small><strong>{office.people.find(person => person.id === session.peer)?.name || '对方'}</strong>
+            <small>私人通话</small><strong>{peer?.name || '对方'}</strong>
           </div><i className={state?.connected ? 'call-live' : ''} /></header>
           <span role="status">{state?.connected ? '已连接' : '正在连接'} · 麦克风：{voice}</span>
           <span>{state?.sharing ? '正在分享你的屏幕' : office.videos[session.id] ? '正在观看对方屏幕' :
@@ -48,10 +53,11 @@ export default function PrivateCallPanel({ office }: { office: ReturnType<typeof
             scope={session.room}
             label="对方共享屏幕"
             selfColor={colorFor(office.accountId)}
+            annotatable={canAnnotate}
             onDraw={office.annotation.draw}
             onClear={office.annotation.clear}
             onUndo={office.annotation.undo}
-            hint={state?.sharing ? undefined : '可点「标注」，笔迹会画在对方的共享屏幕上'}
+            hint={state?.sharing || !canAnnotate ? undefined : '可点「标注」，笔迹会画在对方的共享屏幕上'}
             actions={<>
               <button disabled={!state?.connected || busy === session.id} onClick={async () => {
                 setBusy(session.id); try { await office.mute(session.id); } finally { setBusy(null); }

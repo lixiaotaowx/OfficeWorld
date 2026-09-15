@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 15:10 只让桌面客户端"可被标注"；顺带修掉一个白屏（前端 `index-P7GfaOee.js`，后端 `server.mjs`）
+
+- 需求（用户）：「能识别对方是网页登录不是客户端吗 这样就可以避免在网页登录者屏幕上绘制」→ 选定**方案 1：网页登录者分享屏幕时不提供标注入口**。
+- 实现（与并行会话共同完成，本次上线）：客户端 join 时上报 `annotate: Boolean(window.officeDesktop?.annotations)`（EXE=true，浏览器=false）→ `server.mjs` 存进 person（`annotate: data?.annotate === true`）并随 `people` 广播 → 通话面板只对"正在共享屏幕的那个人 `annotate === true`"渲染标注工具（`ScreenStage` 的 `annotatable={false}` 时连「标注」按钮都没有）。已放弃"查看端叠层让网页分享也可被标注"的方向，那版本地半成品（`ink-layer` 事件、客户端笔迹板、`board`/`localInk` 属性）**已全部移除**，仓库里没有残留。
+- **顺带修掉一个会白屏的 bug**：`useOffice` 里 `annotations` 的 `useMemo` 被放在了 `socket`/`media` 两个 `useRef` **之前**，工厂函数立即执行并读取它们 → 构建产物加载即 `ReferenceError: Cannot access '_e' before initialization`，整页空白（先在浏览器探针里复现，再修顺序）。若不修，这次上线就是白屏版本。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **131/131**（新增「加入时上报的能力决定别人能不能标注他的屏幕」：客户端=true、网页=false、没上报按 false，且别人也能看到该能力）；浏览器 `test/browser/screen-stage.cjs` PASS（新增 `?readonly=1` 场景：不可标注的分享者工具栏里没有「标注/撤销/清空」）、`desk-preview.cjs` PASS、`sidebar-layout.cjs` PASS。
+- 发布：前端 `index.html` + `assets/index-P7GfaOee.js`，后端 `server.mjs`（**必须一起发**，否则没有任何客户端会被标记为可标注，EXE 用户也会失去标注入口），`systemctl restart officeweb` → active。线上入口 `index-P7GfaOee.js`，JS SHA256 `ab5079cee9ff3ff67902701439684ef49772186a1e459d3cd8e8b5de919efc90`、`server.mjs` SHA256 `adc79561597120da14623fcc8d0b1d7c96c30e6d66cd80a636b9cccbaaf2f092` 与本地一致；线上包里能查到 `annotate:!!(window.officeDesktop…)` 与能力门控 `(d?.annotate)===!0`。备份 `backups/annot-gate-20260915/`。
+
 ## 2026-09-15 13:00 修「无法给访客打电话」（前端 `index-CLicjdwV.js`）
 
 - 现象（用户）：「无法给访客打电话啊 修复一下」。

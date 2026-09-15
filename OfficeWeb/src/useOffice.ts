@@ -4,7 +4,8 @@ import { retainPresent, sameCallStates } from './presenceResources';
 import { useDesktopPreview } from './useDesktopPreview';
 import { useMeetings } from "./useMeetings";
 import type { AnnotateMessage } from './annotations';
-import { useEffect, useRef, useState } from "react";
+import { createAnnotationChannel } from './annotationChannel';
+import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
 import { resolveCharacterId, type CharacterId } from "./characters";
@@ -42,41 +43,6 @@ export function useOffice(account: Account) {
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [motions, setMotions] = useState<Record<string, Motion>>({});
   const [videos, setVideos] = useState<Record<string, MediaStream>>({});
-  // Strokes are never held here: the only copy is the one the desktop layer paints
-  // onto the sharer's own screen, which the screen share then carries to everyone.
-  const annotationStroke = useRef<{ scope: string; id: string } | null>(null);
-  const annotationSeq = useRef(0);
-  const annotationLayerReady = useRef(false);
-  /** Show the desktop layer over the shared display (Electron app only). */
-  const attachAnnotationLayer = () => {
-    const bridge = window.officeDesktop?.annotations;
-    if (!bridge || annotationLayerReady.current) return;
-    annotationLayerReady.current = true;
-    void bridge.attach().then((result) => {
-      if (result && result.ok === false) setNotice(result.reason === 'window-share'
-        ? '当前共享的是一个窗口，标注只显示在共享画面上。'
-        : '这台设备无法在桌面上显示标注层。');
-    }).catch(() => { annotationLayerReady.current = false; });
-  };
-  const detachAnnotationLayer = () => {
-    annotationLayerReady.current = false;
-    // Wipe the layer's canvas before hiding it: a stale board would otherwise be
-    // shown again the next time a share starts.
-    void window.officeDesktop?.annotations?.clear().catch(() => undefined);
-    void window.officeDesktop?.annotations?.detach().catch(() => undefined);
-  };
-  /**
-   * Marks are per shared screen, so they must not survive the share: a meeting
-   * reuses its room name, and the next share there would otherwise start with the
-   * previous person's strokes still on it. The board itself lives on the sharer's
-   * desktop layer, so cleaning up means clearing that layer and telling everybody
-   * watching the same screen to drop theirs.
-   */
-  const clearShareMarks = (scopes: string[]) => {
-    if (scopes.length && socket.current?.connected)
-      for (const scope of scopes) socket.current.emit('annotate-clear', { scope });
-    detachAnnotationLayer();
-  };
   /** Scopes in which this client is currently the one sharing the screen. */
   const myShareScopes = useRef<string[]>([]);
   const sessionsRef = useRef<Session[]>([]);
@@ -113,6 +79,15 @@ export function useOffice(account: Account) {
   const name = account.name;
   const socket = useRef<Socket>();
   const media = useRef<OfficeMedia>();
+  // Built after the refs it closes over: reading `socket` inside the factory while it
+  // was still in its temporal dead zone crashed the whole page on load.
+  // Strokes are never held here: the only copy is the one the desktop layer paints
+  // onto the sharer's own screen, which the screen share then carries to everyone.
+  const annotations = useMemo(() => createAnnotationChannel({
+    socket,
+    notify: (message: string) => setNotice(message),
+    sharingScreen: () => media.current?.screen?.active === true,
+  }), []);
   const desktopPreview = useDesktopPreview(socket, connected, people.find(p => p.id === myId), setNotice);
   const meetings = useMeetings(socket, media, connected);
   // Which screens we are publishing, so the marks can be cleared for exactly those
@@ -130,7 +105,7 @@ export function useOffice(account: Account) {
   const previousMeetingRoom = useRef<string | null>(null);
   useEffect(() => {
     const previous = previousMeetingRoom.current;
-    if (previous && previous !== meetingRoom) clearShareMarks([previous]);
+    if (previous && previous !== meetingRoom) annotations.clearShareMarks([previous]);
     previousMeetingRoom.current = meetingRoom;
   }, [meetingRoom]);
   const chatClient = useRef<ReturnType<typeof attachChatClient>>();
@@ -155,7 +130,7 @@ export function useOffice(account: Account) {
     // Any way our own share ends - explicit stop, takeover, hanging up, leaving the
     // meeting, losing the session - funnels through the media layer, which reports
     // it here so the marks and the desktop layer never outlive the share.
-    m.onScreenStopped = () => clearShareMarks(myShareScopes.current);
+    m.onScreenStopped = () => annotations.clearShareMarks(myShareScopes.current);
     s.on("connect", () => {
       setPreviews({});
       setConnected(true);
@@ -163,6 +138,10 @@ export function useOffice(account: Account) {
       s.emit("join", {
         name: account.name,
         character: resolveCharacterId(account.character),
+        // Only the desktop app can paint on the sharer's real screen. A browser cannot
+        // (there is no native layer out there), so it says so and everyone else can stop
+        // offering to draw on a screen that could never show the marks.
+        annotate: Boolean(window.officeDesktop?.annotations),
       });
       s.emit("preview-allowed", receivePreviews.current);
     });
@@ -182,7 +161,7 @@ export function useOffice(account: Account) {
       m.signalingDisconnected();
       // Offline there is nothing to annotate and nobody to annotate for, so no mark
       // or desktop layer may be left behind.
-      detachAnnotationLayer();
+      annotations.detach();
       setSessions([]);
       setRequests([]); setOutgoing([]);
       invitationIds.current.clear(); selectingForInvite.current = null;
@@ -268,20 +247,14 @@ export function useOffice(account: Account) {
     });
     // Annotation board. The desktop app additionally mirrors the strokes onto the
     // display it is sharing, so the sharer sees them while working in other apps.
-    const forwardToLayer = (message: Record<string, unknown>) => {
-      const bridge = window.officeDesktop?.annotations;
-      if (!bridge || !media.current?.screen?.active) return;
-      attachAnnotationLayer();
-      void bridge.draw(message).catch(() => undefined);
-    };
     s.on("annotate", (message: AnnotateMessage) => {
-      forwardToLayer({ type: 'annotate', ...message });
+      annotations.mirror({ type: 'annotate', ...message });
     });
     s.on("annotate-clear", (message: { scope?: string }) => {
-      forwardToLayer({ type: 'clear' });
+      annotations.mirror({ type: 'clear' });
     });
     s.on("annotate-undo", (message: { id?: string; clientId?: string; scope?: string }) => {
-      void window.officeDesktop?.annotations?.draw({ type: 'undo', id: message?.id }).catch(() => undefined);
+      annotations.undoOnLayer(message?.id);
     });
     s.connect();
     return () => {
@@ -299,7 +272,7 @@ export function useOffice(account: Account) {
     if (sharing) return media.current?.stopScreen();
     try {
       await media.current?.startScreen();
-      attachAnnotationLayer();
+      annotations.attach();
     } catch {
       setNotice("未开始共享。可以重新选择窗口或屏幕。");
     }
@@ -406,31 +379,17 @@ export function useOffice(account: Account) {
     adminKick,
     share,
     shareInCall: async (id: string) => {
-      try { await media.current?.shareInCall(id); attachAnnotationLayer(); }
+      try { await media.current?.shareInCall(id); annotations.attach(); }
       catch (error) { setNotice(error instanceof Error ? error.message : '未开始共享，请重试'); }
     },
-    stopShare: () => { media.current?.stopScreen(); detachAnnotationLayer(); },
+    stopShare: () => { media.current?.stopScreen(); annotations.detach(); },
     clientId: account.id,
     setRemoteAudioMuted: (room: string, muted: boolean) => media.current?.setRemoteAudioMuted(room, muted),
-    /** Whiteboard actions for one shared screen. */
+    /** Whiteboard actions for one shared screen; the layer itself lives in the channel. */
     annotation: {
-      draw(scope: string, points: [number, number][], done = false) {
-        const active = socket.current;
-        if (!active?.connected || !points.length) return;
-        if (!annotationStroke.current || annotationStroke.current.scope !== scope)
-          annotationStroke.current = { scope, id: `st${(annotationSeq.current += 1)}` };
-        // One layer only: the relay plus the desktop layer put the stroke on the
-        // sharer's own screen, and the screen share brings it back to every viewer.
-        active.emit('annotate', { scope, stroke: annotationStroke.current.id, points, done });
-        if (done) annotationStroke.current = null;
-      },
-      clear(scope: string) {
-        socket.current?.emit('annotate-clear', { scope });
-        void window.officeDesktop?.annotations?.clear().catch(() => undefined);
-      },
-      undo(scope: string) {
-        socket.current?.emit('annotate-undo', { scope });
-      },
+      draw: annotations.draw,
+      clear: annotations.clear,
+      undo: annotations.undo,
     },
     meetings,
     respond,

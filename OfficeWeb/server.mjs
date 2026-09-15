@@ -290,6 +290,10 @@ export function createOfficeServer(options = {}) {
         // It is deliberately unreadable, and the sharer can turn it off.
         previewAllowed: true,
         sharing: false,
+        // Whether this client can host the annotation layer on its own shared screen.
+        // Declared by the client because it is a client capability: the desktop app has
+        // the native overlay, a browser tab cannot have one.
+        annotate: data?.annotate === true,
         meeting: false,
       };
       people.set(s.id, person);

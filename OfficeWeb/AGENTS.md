@@ -34,6 +34,11 @@
 
 ## 共享屏幕与标注（2026-09-15 用户报障后修订）
 
+- **只有桌面客户端能"被标注"**（2026-09-15 用户要求：识别对方是网页登录而不是客户端，避免在网页用户屏幕上画）：加入空间时每个客户端上报 `annotate`（`useOffice` 的 join 载荷：EXE 里 `window.officeDesktop.annotations` 存在 → true，浏览器 → false），服务端 `server.mjs` 存进 `person` 并随 `people` 广播；通话面板只对"**正在共享屏幕的那个人** `annotate === true`"渲染标注工具 —— `ScreenStage` 的 `annotatable={false}` 时连「标注」按钮都不出现（撤销/清空同样不给）。理由是浏览器**没有**任何办法把内容画到操作系统桌面上，给入口只会让人以为"画了却没显示"。
+  - 已知边界：判定的是**客户端能力**。EXE 用户如果共享的是**单个窗口**，桌面浮层同样挂不上（`reason: 'window-share'`，会有一句提示），此时笔迹只会出现在共享画面里、不会落到他桌面上。
+  - 反方向（让网页分享也能被标注，靠查看端把笔迹盖在画面上）**没有做**：2026-09-15 讨论后放弃了那版半成品，相关代码已全部移除（`ink-layer` 事件、客户端笔迹板、`localInk`/`board` 属性都不存在），不要以"半成品"形式留在树里。
+- **`annotations` 那个 `useMemo` 必须建在 `socket`/`media` 两个 `useRef` 之后**：工厂函数会**立即执行**并读取这两个 ref，放前面会让构建产物在页面加载时抛 `ReferenceError: Cannot access '_e' before initialization`，整页白屏（2026-09-15 实测并修复）。
+
 - **整屏（全屏）必须随视频一起结束**（用户："屏幕全屏时挂断软件也全屏了无法退出全屏，视频全屏不要影响软件"）：`ScreenStage` 卸载时（挂断、对方停止共享、退出会议、关闭放大视图）若整屏模式是本组件请求的，必须 `officeDesktop.setFullscreen(false)`；DOM 全屏同理 `exitFullscreen()`；Esc 也退出。桌面端 `chrome.cjs` 在页面导航（重载）时同样退出全屏——否则标题栏被 `html.iruler-fullscreen #iruler-desktop-chrome { display:none }` 隐藏，最大化按钮消失且没有出路。`applyFullscreenState` 退出时按窗口真实状态决定 `iruler-maximized`，避免最大化窗口被误判成非最大化而出现圆角。
 - **标注中继绝不丢点**（用户："画笔断开"）：`collab-annotations.mjs` 的 40ms 限速改为**排队补发**（`queued` + `setTimeout`），不再 `return` 丢弃；`done` 只在最后一批点之后发送；单 socket 队列上限 512 点；`annotate-clear`/`annotate-undo` 与断线都会清空队列。
 - **本机即时回显**（用户："延迟严重"）：笔迹要经过 指针 → socket → 分享者桌面浮层 → 采集 → 视频 才回来，正常几百毫秒。`ScreenStage` 因此在本机画布 `.screen-stage-ink` 上立即回显自己正在画的笔画（同坐标、同颜色 `colorFor(accountId)`），`ECHO_MS=1400ms` 后交还给画面里的真迹，避免双份墨迹；撤销/清空会同时清掉回显。

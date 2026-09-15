@@ -97,6 +97,27 @@ export function createCollabAnnotations({ io, people, sessions }) {
     entry.timer = setTimeout(() => { entry.timer = undefined; flush(socketId); }, wait);
   }
 
+  /**
+   * Send everything still queued for one socket, in order, right now.
+   *
+   * `queued` holds one entry per socket, so starting the next stroke would overwrite
+   * whatever the old one still had waiting — losing its last points and its `done`.
+   * That showed up as a gap and as a stroke the next one appeared to join, so the
+   * previous entry is always drained before the new one takes its place. Bounded by
+   * the per-socket backlog, so this is at most a handful of messages.
+   */
+  function drain(socketId) {
+    for (let guard = 0; guard < 64; guard += 1) {
+      const entry = queued.get(socketId);
+      if (!entry) return;
+      const pending = entry.points.length + (entry.done ? 1 : 0);
+      flush(socketId);
+      const after = queued.get(socketId);
+      if (!after || after !== entry) return;
+      if (after.points.length + (after.done ? 1 : 0) >= pending) return;
+    }
+  }
+
   function attach(socket) {
     socket.on("annotate", (data) => {
       const person = people.get(socket.id);
@@ -111,8 +132,8 @@ export function createCollabAnnotations({ io, people, sessions }) {
       if (!points.length && !done) return;
       let entry = queued.get(socket.id);
       if (entry && (entry.scope !== scope || entry.stroke !== stroke)) {
-        // A different stroke began: the previous one goes out now, in order.
-        flush(socket.id);
+        // A different stroke began: the previous one goes out now, completely, in order.
+        drain(socket.id);
         entry = undefined;
       }
       if (!entry) {

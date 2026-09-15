@@ -140,6 +140,24 @@ const SHOT = "../Build";
     assert.equal(afterHandover, false, "远端笔迹到达后本机回显要交还，避免双份墨迹");
     assert.deepEqual(errors, []);
 
+    // A browser sharer cannot host the annotation layer on its own screen, so the tools
+    // are withheld instead of promising marks that could never appear (user, 2026-09-15).
+    const web = await browser.newPage({ viewport: { width: 900, height: 700 } });
+    web.on("pageerror", (error) => errors.push(error.message));
+    await web.goto(`http://127.0.0.1:${port}/test/screen-stage-harness.html?readonly=1`);
+    await web.waitForFunction(() => window.__stageReady === true, null, { timeout: 30000 });
+    await web.locator(".screen-stage-expand", { hasText: "最大化" }).click();
+    await web.waitForTimeout(500);
+    const webTools = await web.evaluate(() => ({
+      labels: [...document.querySelectorAll(".screen-stage-bar button")].map((b) => b.textContent.trim()),
+      drawSurface: document.querySelectorAll(".screen-stage-draw").length,
+    }));
+    console.log("web sharer tools:", JSON.stringify(webTools));
+    assert.equal(webTools.labels.includes("标注"), false, "网页登录者分享时不给标注入口");
+    assert.equal(webTools.labels.includes("撤销"), false, "也不给撤销");
+    assert.equal(webTools.labels.includes("清空"), false, "也不给清空");
+    assert.deepEqual(errors, []);
+
     // Desktop path: there the DOM API is a no-op, so 全屏 must call the native
     // window bridge and follow the event it sends back.
     const desktop = await browser.newPage({ viewport: { width: 420, height: 700 } });
@@ -158,6 +176,27 @@ const SHOT = "../Build";
     console.log("desktop fullscreen:", JSON.stringify(desktopOn));
     assert.deepEqual(desktopOn.calls, [true], "客户端必须调用原生全屏，而不是 DOM 全屏");
     assert.equal(desktopOn.wentFullscreen, false, "桌面路径不应依赖 DOM 全屏");
+    // …and the PICTURE must fill the screen. Native full screen is a window mode, so the
+    // `:fullscreen` pseudo-class never matches: without a state class only the window
+    // grew while the video stayed at its inline `max-height: 62vh` (user, 2026-09-15:
+    // "怎么窗口全屏了 但是视频没有").
+    const filled = await desktop.evaluate(() => {
+      const stage = document.querySelector(".screen-stage");
+      const video = stage.querySelector("video");
+      const stageBox = stage.getBoundingClientRect();
+      return {
+        hasClass: stage.classList.contains("fullscreen"),
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        stage: { left: stageBox.left, top: stageBox.top, width: stageBox.width, height: stageBox.height },
+        videoHeight: video.getBoundingClientRect().height,
+      };
+    });
+    console.log("desktop fills screen:", JSON.stringify(filled));
+    assert.equal(filled.hasClass, true, "原生全屏必须给舞台加 fullscreen 类，否则没有 CSS 可依据");
+    assert.ok(Math.abs(filled.stage.width - filled.viewport.width) <= 1
+      && Math.abs(filled.stage.left) <= 1 && Math.abs(filled.stage.top) <= 1, "全屏时舞台要铺满屏幕");
+    assert.ok(filled.videoHeight > filled.viewport.height * 0.9,
+      `全屏时视频要占满高度，不能留在内联的 62vh（实测 ${Math.round(filled.videoHeight)} / ${filled.viewport.height}）`);
     // The event flipped the stage into enlarged mode, so leave through its toolbar.
     await desktop.locator(".screen-stage-bar button", { hasText: "退出全屏" }).click();
     await desktop.waitForTimeout(300);
@@ -178,8 +217,26 @@ const SHOT = "../Build";
     assert.deepEqual(afterUnmount.calls, [true, false, true, false],
       "挂断/关闭共享后必须退出全屏，否则窗口卡在全屏且没有最大化按钮");
     assert.equal(afterUnmount.stage, 0);
+
+    // Regression (user, 2026-09-15): "挂断后为啥软件还变小了". Hanging up an ORDINARY
+    // call — one that was never put whole-screen — must not ask the window to leave full
+    // screen. `setFullScreen(false)` makes Windows restore the window's saved placement,
+    // and for a window that never entered full screen that restore SHRINKS it.
+    const plain = await browser.newPage({ viewport: { width: 420, height: 700 } });
+    plain.on("pageerror", (error) => errors.push(error.message));
+    await plain.goto(`http://127.0.0.1:${port}/test/screen-stage-harness.html?desktop=1`);
+    await plain.waitForFunction(() => window.__stageReady === true, null, { timeout: 30000 });
+    await plain.waitForTimeout(800);
+    await plain.evaluate(() => window.__unmountStage());
+    await plain.waitForTimeout(300);
+    const plainCalls = await plain.evaluate(() => window.__calls);
+    console.log("desktop unmount without ever going fullscreen:", JSON.stringify(plainCalls));
+    assert.deepEqual(plainCalls, [],
+      "没进过全屏的挂断绝不能调 setFullscreen(false)——那会把窗口缩回旧的摆放尺寸");
+    await plain.close();
+
     assert.deepEqual(errors, []);
-    console.log("PASS 小窗两个按钮 / 最大化占满窗口 / 全屏占满屏幕 / 客户端走原生全屏 / 标注模式撤销清空 / 各种窗口比例映射正确 / 本机即时回显 / 挂断退出全屏");
+    console.log("PASS 小窗两个按钮 / 最大化占满窗口 / 全屏占满屏幕 / 客户端走原生全屏 / 标注模式撤销清空 / 各种窗口比例映射正确 / 本机即时回显 / 挂断退出全屏 / 普通挂断不动窗口");
   } finally {
     await browser.close();
     await vite.close();

@@ -16,6 +16,12 @@ export interface ScreenStageProps {
   hint?: string;
   /** Colour of my own ink, so the immediate local echo matches what other people see. */
   selfColor?: string;
+  /**
+   * Whether the sharer's client can host the annotation layer on its own screen. Only
+   * the desktop app can; a browser tab has no native layer out there, so offering to
+   * draw on it would promise something that can never appear.
+   */
+  annotatable?: boolean;
 }
 
 /** Points are batched so drawing stays smooth without flooding the socket. */
@@ -88,10 +94,19 @@ export default function ScreenStage(props: ScreenStageProps) {
    * leaving the meeting destroyed the video but left the app window full screen with
    * its title bar and maximise button hidden, and there was no way back (user,
    * 2026-09-15).
+   *
+   * It must also not ask to leave when it never entered. `setFullScreen(false)` makes
+   * Windows restore the window's saved placement, so firing it at a window that was
+   * never full screen SHRINKS the window — which is exactly what a hung-up ordinary
+   * call used to do (user, 2026-09-15: "挂断后为啥软件还变小了"). Hence the
+   * `askedFullscreen` gate, the same one `leaveFullscreen` uses.
    */
   useEffect(() => () => {
+    const bridge = window.officeDesktop;
+    if (bridge?.setFullscreen && askedFullscreen.current) {
+      void bridge.setFullscreen(false).catch(() => undefined);
+    }
     askedFullscreen.current = false;
-    if (window.officeDesktop?.setFullscreen) void window.officeDesktop.setFullscreen(false).catch(() => undefined);
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     clearTimeout(echo.current.timer);
   }, []);
@@ -223,9 +238,12 @@ export default function ScreenStage(props: ScreenStageProps) {
   };
 
   const enlarged = maximized || fullscreen;
+  // Absent means "not told otherwise": the desktop bridge is the only thing that can
+  // render a stroke anyway, so defaulting to the tools keeps every existing caller.
+  const canAnnotate = props.annotatable !== false;
 
   return <div ref={host}
-    className={`screen-stage${maximized ? ' maximized' : ''}${annotating ? ' annotating' : ''}`}>
+    className={`screen-stage${maximized ? ' maximized' : ''}${fullscreen ? ' fullscreen' : ''}${annotating ? ' annotating' : ''}`}>
     <video ref={video} autoPlay muted playsInline aria-label={props.label} />
     <canvas ref={ink} className="screen-stage-ink" aria-hidden="true" />
     <div className="screen-stage-draw" onPointerDown={start} onPointerMove={move}
@@ -240,9 +258,11 @@ export default function ScreenStage(props: ScreenStageProps) {
     </div>}
     {enlarged && <div className="screen-stage-bar">
       <span className="screen-stage-name"><ScreenIcon />{props.label}</span>
-      <button type="button" aria-pressed={annotating} title="在对方的共享屏幕上标注"
-        onClick={() => { setAnnotating(!annotating); drawing.current = false; }}>标注</button>
-      {annotating && <>
+      {/* Drawing needs a sharer that can actually put marks on its own screen, so the
+          tools are simply not offered to a browser sharer. */}
+      {canAnnotate && <button type="button" aria-pressed={annotating} title="在对方的共享屏幕上标注"
+        onClick={() => { setAnnotating(!annotating); drawing.current = false; }}>标注</button>}
+      {canAnnotate && annotating && <>
         <button type="button" title="撤销我画的上一条" onClick={() => {
           echo.current.points = [];
           paintEcho();
@@ -267,6 +287,9 @@ export default function ScreenStage(props: ScreenStageProps) {
     </div>}
     {enlarged && props.hint && <p className="screen-stage-hint">{props.hint}</p>}
     {annotating && enlarged && <p className="screen-stage-tip">标注中：拖动即可画线，笔迹画在对方的共享屏幕上</p>}
+    {enlarged && !canAnnotate && (
+      <p className="screen-stage-tip">对方在网页里共享屏幕，标注画不到他的屏幕上</p>
+    )}
   </div>;
 }
 

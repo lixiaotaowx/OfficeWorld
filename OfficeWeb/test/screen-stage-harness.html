@@ -23,9 +23,12 @@ ctx.fillStyle='#fff'; ctx.font='48px sans-serif'; ctx.fillText('SHARED SCREEN',8
 const stream=canvas.captureStream(5);
 // What the stage asked the relay to send, so a test can check the mapped points.
 window.__drawn=[];
+// ?readonly=1 is a sharer that cannot host the annotation layer (a browser tab).
+const sharerHasLayer = !new URLSearchParams(location.search).has('readonly');
 const root=createRoot(document.getElementById('root'));
 root.render(React.createElement(ScreenStage,{
   stream, scope:'call-harness', label:'对方共享屏幕', selfColor:'hsl(120 74% 46%)',
+  annotatable: sharerHasLayer,
   onDraw:(scope,points,done)=>window.__drawn.push({scope,points,done}),
   onClear:()=>{ window.__cleared=(window.__cleared||0)+1; }, onUndo:()=>{ window.__undone=(window.__undone||0)+1; },
   hint:'可点「标注」在画面上画线，所有人都能看到',

@@ -15,6 +15,12 @@ export interface Person {
   /** Whether this person's tiny thumbnail may show on their monitor. */
   previewAllowed: boolean;
   sharing: boolean;
+  /**
+   * Whether this client can host the annotation layer on the screen it shares.
+   * True for the desktop app, false for a browser tab — and only a client that can
+   * host it should be offered as a screen to draw on.
+   */
+  annotate?: boolean;
   meeting: boolean;
 }
 

@@ -114,3 +114,61 @@ test("会议范围只发给同一会议的成员，会议外的人不能画进�
   annotations.forget("a");
   assert.equal(typeof annotations.forget("a"), "undefined");
 });
+
+test("加入时上报的能力决定别人能不能标注他的屏幕", async () => {
+  await withServer(async ({ connect, peopleOf }) => {
+    // The desktop app hosts a real layer; a browser tab cannot. The flag travels with
+    // the person so the call panel can withhold the tools for a browser sharer
+    // (user, 2026-09-15: avoid offering to draw on a screen that cannot show it).
+    const desktop = await connect("客户端", { annotate: true });
+    const web = await connect("网页版", { annotate: false });
+    const noFlag = await connect("没上报");
+
+    const of = (socket) => peopleOf(socket).find((person) => person.id === socket.id);
+    assert.equal(of(desktop).annotate, true, "客户端要标记为可标注");
+    assert.equal(of(web).annotate, false, "网页登录必须标记为不可标注");
+    assert.equal(of(noFlag).annotate, false, "没有上报的客户端按不可标注处理");
+    // Everybody sees the flag, not just the person it belongs to.
+    const seenByWeb = peopleOf(web).find((person) => person.id === desktop.id);
+    assert.equal(seenByWeb.annotate, true, "别人也要能看到这个能力");
+  });
+});
+
+test("换笔：上一笔的尾巴与 done 必须完整先走，不能被下一笔顶掉", async () => {
+  await withServer(async ({ connect }) => {
+    const a = await connect("甲"), b = await connect("乙");
+    const waiting = next(b, "request");
+    a.emit("request", { target: b.id, kind: "voice" });
+    const request = await waiting;
+    const accepted = next(a, "session");
+    b.emit("respond", { id: request.id, accept: true });
+    const session = await accepted;
+
+    const seenB = collect(b, "annotate");
+    // A long first stroke whose backlog does NOT fit in one 40 ms flush (8 x 12 = 96
+    // points), released, and then the next stroke started immediately.
+    for (let index = 0; index < 8; index += 1)
+      a.emit("annotate", { scope: session.room, stroke: "s1",
+        points: Array.from({ length: 12 }, (_, at) => [index / 10 + at / 1000, 0.5]) });
+    a.emit("annotate", { scope: session.room, stroke: "s1", points: [], done: true });
+    a.emit("annotate", { scope: session.room, stroke: "s2", points: [[0.8, 0.2]] });
+    a.emit("annotate", { scope: session.room, stroke: "s2", points: [[0.81, 0.2]], done: true });
+    await wait(320);
+
+    const first = seenB.filter((message) => message.stroke === "s1");
+    assert.equal(first.reduce((sum, message) => sum + message.points.length, 0), 96,
+      "第一笔的 96 个点一个都不能被下一笔顶掉");
+    assert.ok(first.some((message) => message.done),
+      "第一笔的 done 必须发出，否则分享者那边会把下一笔并进同一笔、画出一条连接线");
+    assert.equal(first.at(-1).done, true, "done 必须是第一笔的最后一条");
+
+    const second = seenB.filter((message) => message.stroke === "s2");
+    assert.deepEqual(second.flatMap((message) => message.points), [[0.8, 0.2], [0.81, 0.2]],
+      "第二笔必须自成一笔");
+    assert.equal(second.at(-1).done, true);
+
+    const lastFirst = seenB.map((message) => message.stroke).lastIndexOf("s1");
+    const firstSecond = seenB.findIndex((message) => message.stroke === "s2");
+    assert.ok(lastFirst < firstSecond, "两笔的顺序不能交叉");
+  });
+});
