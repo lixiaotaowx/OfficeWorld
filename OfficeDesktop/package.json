@@ -1,6 +1,6 @@
 {
   "name": "office-world-desktop",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "iruler dream · 一起在场",
   "author": "iruler dream",
   "private": true,
@@ -8,7 +8,10 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.cjs",
-    "dist": "electron-builder --win portable --x64"
+    "icons": "powershell -ExecutionPolicy Bypass -File tools/build-icons.ps1",
+    "dist": "electron-builder --win portable --x64",
+    "dist:installer": "electron-builder --win nsis --x64",
+    "dist:all": "electron-builder --win --x64"
   },
   "devDependencies": {
     "electron": "44.3.0",
@@ -34,12 +37,33 @@
       "preview-capture.html"
     ],
     "win": {
-      "target": "portable",
+      "target": [
+        "portable",
+        "nsis"
+      ],
       "icon": "assets/icon.ico",
       "signExecutable": false
     },
     "portable": {
       "artifactName": "iruler-dream-${version}-Windows-x64.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "iruler dream",
+      "uninstallDisplayName": "iruler dream",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "differentialPackage": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "installerSidebar": "assets/installerSidebar.bmp",
+      "installerHeader": "assets/installerHeader.bmp",
+      "artifactName": "iruler-dream-Setup-${version}-x64.exe"
     }
   }
 }

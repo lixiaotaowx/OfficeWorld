@@ -11,12 +11,19 @@ const { applyWindowIcon } = require('./window-icon.cjs');
 const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 const { createDisplayStore } = require('./display-store.cjs');
 const { createPreviewCapture } = require('./preview-capture.cjs');
+const { createAutoStart, AUTOSTART_ARG } = require('./autostart.cjs');
 
 // Requested short notification tone must also play while hidden in the tray.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 const iconPath = path.join(__dirname, 'assets', 'icon.ico');
-if (process.platform === 'win32') app.setAppUserModelId('com.officeworld.desktop');
+// Deliberately NO custom AppUserModelId here. Windows resolves a taskbar button's icon
+// THROUGH the app user model id, so claiming an id that no Start-Menu shortcut is
+// registered under makes the taskbar fall back to the generic application icon — even
+// though the window icon is correct (verified with WM_GETICON: ICON_BIG 32x32 gold).
+// That is why the installer (a plain exe, no AUMID) showed the right icon while the app
+// did not. Falling back to the executable's own identity keeps the icon AND toasts
+// working, because that identity always resolves.
 
 // Keep the established profile through the display-name change.
 const profilePath = app.getPath('userData');
@@ -25,6 +32,10 @@ app.setPath('userData', profilePath);
 let mainWindow;
 let mainTray;
 const smoke = process.argv.includes('--office-smoke-test');
+// Windows starts the login item with this flag: connect quietly and stay in the tray
+// rather than throwing a window in front of whatever the person is doing at sign-in.
+const launchHidden = process.argv.includes(AUTOSTART_ARG);
+const autoStart = createAutoStart({ app });
 // Smoke runs use an isolated profile and never grant capture permissions.
 if (smoke) app.setPath('userData', path.join(app.getPath('temp'), 'office-world-smoke'));
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -34,7 +45,12 @@ else {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show(); mainWindow.focus();
   });
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => {
+    // An installed copy comes up with the machine without being asked; a portable
+    // build reports unsupported and this is a no-op.
+    if (!smoke) autoStart.ensure();
+    createWindow();
+  });
 }
 
 function createWindow() {
@@ -56,7 +72,7 @@ function createWindow() {
   });
   mainWindow = new BrowserWindow({
     width: 1440, height: 940, minWidth: 800, minHeight: 640,
-    title: 'iruler dream', transparent: true, backgroundColor: '#00000000', show: !smoke, icon: iconPath,
+    title: 'iruler dream', transparent: true, backgroundColor: '#00000000', show: !smoke && !launchHidden, icon: iconPath,
     frame: false,
     webPreferences: { session: officeSession, nodeIntegration: false, contextIsolation: true, sandbox: true,
       // A tray-hidden window must keep its socket, timers and audio live: call,
@@ -68,9 +84,11 @@ function createWindow() {
   applyWindowIcon(mainWindow, iconPath);
   installChrome(mainWindow);
   if (!smoke) {
-    try { mainTray = installTray(mainWindow, iconPath); }
+    try { mainTray = installTray(mainWindow, iconPath, { autoStart }); }
     catch (error) {
-      // Keep normal close-to-exit behavior if Windows cannot create the tray.
+      // Keep normal close-to-exit behavior if Windows cannot create the tray. A
+      // login-item launch would otherwise leave a running app with no way in.
+      if (launchHidden) mainWindow.show();
       dialog.showErrorBox('托盘不可用', `关闭窗口将退出应用。\n${error.message}`);
     }
   }

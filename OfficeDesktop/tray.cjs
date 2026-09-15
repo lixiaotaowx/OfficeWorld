@@ -1,10 +1,19 @@
 const { app, Tray, Menu, nativeImage } = require('electron');
 
+/**
+ * The notification area draws at 16 logical pixels. Handing Windows the frame a
+ * single-entry 256px .ico decodes to is what produced a blank tray icon, so the tray
+ * image is built at that size explicitly. (assets/icon.ico carries 16-256px frames
+ * for the exe, window and installer; see tools/build-icons.ps1.)
+ */
+const TRAY_ICON_PX = 16;
+
 /** Closing hides the existing webContents, preserving calls and login state. */
-function installTray(window, iconPath) {
-  const icon = nativeImage.createFromPath(iconPath);
-  if (icon.isEmpty()) throw Error('无法加载应用图标');
-  const tray = new Tray(icon);
+function installTray(window, iconPath, options = {}) {
+  const autoStart = options.autoStart;
+  const source = nativeImage.createFromPath(iconPath);
+  if (source.isEmpty()) throw Error('无法加载应用图标');
+  const tray = new Tray(source.resize({ width: TRAY_ICON_PX, height: TRAY_ICON_PX, quality: 'best' }));
   let quitting = false;
   const show = () => {
     if (window.isDestroyed()) return;
@@ -13,11 +22,24 @@ function installTray(window, iconPath) {
     window.focus();
   };
   const quit = () => { quitting = true; app.quit(); };
-  const menu = Menu.buildFromTemplate([
+  const template = [
     { label: '打开 iruler dream', click: show },
     { type: 'separator' },
-    { label: '退出 iruler dream', click: quit },
-  ]);
+  ];
+  // The app owns this registration rather than the installer, so it can be turned off
+  // here. A portable build reports unsupported and the row is left out entirely,
+  // because its executable path changes on every run.
+  if (autoStart?.supported()) {
+    template.push({
+      label: '开机自动启动',
+      type: 'checkbox',
+      checked: autoStart.enabled(),
+      click: (item) => { autoStart.set(item.checked); item.checked = autoStart.enabled(); },
+    });
+    template.push({ type: 'separator' });
+  }
+  template.push({ label: '退出 iruler dream', click: quit });
+  const menu = Menu.buildFromTemplate(template);
   tray.setToolTip('iruler dream · 一起在场');
   tray.setContextMenu(menu);
   tray.on('click', show);
@@ -39,4 +61,4 @@ function installTray(window, iconPath) {
   return { tray, menu, show, quit };
 }
 
-module.exports = { installTray };
+module.exports = { installTray, TRAY_ICON_PX };

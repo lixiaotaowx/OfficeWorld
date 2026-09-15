@@ -1,5 +1,26 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 15:40 EXE 0.1.12（含"挂断后窗口变小"的桌面侧修复）
+
+- 需求（用户）：「可以 打包一下吧」——把 0.1.11（今天 10:27）**之后**改动的桌面侧代码打进去。
+- 内容：`fullscreen.cjs` 增加 WeakSet 守护（只有本模块真的把窗口切进过全屏，才允许退出全屏；Chromium 的 `setFullScreen(false)` 会恢复窗口旧位置/尺寸，之前对**从未进过全屏**的窗口也调用一次，于是"挂断后软件变小了"）；`main.cjs` / `tray.cjs` / `window-icon.cjs` 的托盘、图标与启动相关改动；`assets/icon.ico` + 新增 `icon-256.png`、`installerHeader.bmp`、`installerSidebar.bmp` 与 `tools/build-icons.ps1`；`autostart.cjs`（开机自启）；安装器配置（NSIS：可选目录、桌面/开始菜单快捷方式）。
+- 版本：`OfficeDesktop/package.json` 0.1.11 → **0.1.12**。
+- 验证：桌面 `node --test test/*.test.cjs` **39/39** 通过（比上次多 5 项：autostart、托盘图标、annotation-paint、fullscreen 等）；打包后源码中**没有比 exe 更新的文件**；用 `--office-smoke-test` 跑打包产物：`ok=true`、`url=https://115.159.43.237/`、`electron 44.3.0`、`sandbox/contextIsolation=true/nodeIntegration=false`。
+- 产物（`Build/OfficeDesktopRelease/`，该目录被 `.gitignore` 忽略）：
+  - 免安装 `iruler-dream-0.1.12-Windows-x64.exe`，96.0 MB，SHA256 `649fcd43792fc3ec72489ee37936f56cfee31b227d250f81f292f96d36add668`
+  - 安装版 `iruler-dream-Setup-0.1.12-x64.exe`，96.5 MB，SHA256 `91d0fef8ea4f960ebaef0a18f6af22475c8049c9ebf85a2c1f09a4d61d288b51`
+- 说明：网页侧无需改动（本次只打客户端）；桌面侧这些改动是并行会话写的，已随本次打包一起提交，保证"能装到的东西在 Git 里"。
+
+## 2026-09-15 15:40 修「视野被突然裁掉一大半，刷新就好」（前端 `index-Dpusn6cO.js`）
+
+- 用户报障：「有些时候视野会被突然裁掉一大半，然后我刷新一下就好了」。
+- **根因**：`src/workstationView.ts` 的 `updateWorkstationClip()`。点工位/点成员会把相机对到那张桌子，同时开启「前景裁切」，公式是 `camera.near = depth - 1.25`（depth = 相机到 `controls.target` 的视距）。这个值**跟着视距一起长**：实测对焦后 near=1.63，滚轮缩小到 22m 时 near=**20.9**，也就是相机前 20.9m（一直到工位前 1.25m）的整个前景全部被裁掉；刷一次页面 `focusedWorkstation` 复位、near 回 0.1 才恢复。只有"先对焦工位、再缩小/拉远"才会触发，所以是"有时候"。
+- **修法**：把前景裁切**加上绝对上限** `THREE.MathUtils.clamp(depth - 1.25, 0.1, 1.25)`。要裁掉的东西（相机与桌子之间那面墙/隔断）永远在相机 1m 上下，1.25m 足够；对焦时的效果与原来一致（原来在 3m 视距下就是 1.77→现在 1.25）。
+- **验证**：真实浏览器 A/B（同机同账号，对焦工位后滚轮缩到 22m）——旧规则 `Build/ab-old.png` 里近处地面/木栅栏被整段裁掉，修好后 `Build/ab-new.png` 完整；新增 `test/browser/focus-clip.cjs`：缩到 65m 时 near 仍为 1.25（上限 1.3），沿"相机→工位"采样的 20 段前景**旧规则裁 20/20、现在 0/20**，切回总览 near 回到 0.1；截图 `Build/focus-clip-zoomed-out.png`，证据 `Build/focus-clip-evidence.json`。单测新增「the foreground clip stays bounded however far the camera pulls back」（`test/workstation-view.test.mjs`），网页单测 **131/131**、四个浏览器 harness 全过。
+- **顺带修掉一个自己埋的雷**：名字标签是 `Sprite`，而 `Sprite.raycast` 需要 `raycaster.camera`；`sceneProbe.probeMonitor` 用的是 `new Raycaster(origin, direction)`（没有 camera），于是诊断射线一撞到名字标签就抛 `Cannot read properties of null (reading 'matrixWorld')`。现在名字标签 `sprite.raycast = () => {}`（标签是覆盖层，本来就不该被拾取），并给那支诊断射线补上 `ray.camera = camera`。
+- 线上：`index-Dpusn6cO.js`（1,462,262 字节，SHA256 `8d810b483954321b8e5c9d5c77ab6ae7b57a8f91a681a46e05fcf60003b2c6a6`）与本地逐字节一致；真实浏览器打开正式站确认仍能正常启动（只有未登录的 401）。纯前端，**未重启 `officeweb`**。
+- 说明：期间树上有另一位 agent 未完成的改动，构建一度因 `ScreenStage.tsx` 引用未定义的 `canAnnotate` 而失败、随后产物在页面加载时抛 `Cannot access '_e' before initialization`（整页白屏，对方已在 15:10 条目中记录并修复）。我没有改他的文件，等修好后重新构建验证再上传。
+
 ## 2026-09-15 15:10 只让桌面客户端"可被标注"；顺带修掉一个白屏（前端 `index-P7GfaOee.js`，后端 `server.mjs`）
 
 - 需求（用户）：「能识别对方是网页登录不是客户端吗 这样就可以避免在网页登录者屏幕上绘制」→ 选定**方案 1：网页登录者分享屏幕时不提供标注入口**。

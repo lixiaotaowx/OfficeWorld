@@ -69,7 +69,7 @@ test('覆盖被共享的那台显示器，而不是主屏', () => {
   assert.equal(layer.isVisible(), true);
 });
 
-test('鼠标穿透、置顶层级、排除采集三项都设上了', () => {
+test('鼠标穿透、置顶层级、且必须被采集三项都设上了', () => {
   const layer = load();
   layer.open('1');
   const calls = layer.created[0].calls;
@@ -78,7 +78,8 @@ test('鼠标穿透、置顶层级、排除采集三项都设上了', () => {
   assert.equal(ignore[1], true);
   assert.equal(ignore[2].forward, true, '必须让点击穿透到下面的应用');
   assert.deepEqual(calls.find(([name]) => name === 'setAlwaysOnTop'), ['setAlwaysOnTop', true, 'screen-saver']);
-  assert.deepEqual(calls.find(([name]) => name === 'setContentProtection'), ['setContentProtection', true]);
+  assert.deepEqual(calls.find(([name]) => name === 'setContentProtection'), ['setContentProtection', false],
+    '标注层必须留在共享画面里，否则只能在视频上再叠一层');
   const workspaces = calls.find(([name]) => name === 'setVisibleOnAllWorkspaces');
   assert.equal(workspaces[1], true);
   assert.equal(workspaces[2].visibleOnFullScreen, true);

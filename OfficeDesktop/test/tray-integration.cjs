@@ -68,11 +68,16 @@ app.whenReady().then(async () => {
   assert.ok(after.bytes.video > before.bytes.video, 'synthetic screen continues hidden');
   assert.ok(after.ticks > before.ticks, 'renderer stays alive');
   report.checks.push({ closeHides: true, sameWebContents: true, before, after });
+  // Look the rows up by label: the tray menu also carries the launch-at-sign-in
+  // checkbox, so a hard-coded index would silently click the wrong row.
+  const openItem = tray.menu.items.find(item => item.label === '打开 iruler dream');
+  const quitItem = tray.menu.items.find(item => item.label === '退出 iruler dream');
+  assert.ok(openItem && quitItem, 'tray menu keeps its open and quit rows');
   tray.tray.emit('click');
   await wait(100);
   assert.equal(win.isVisible(), true);
   win.close();
-  tray.menu.items[0].click();
+  openItem.click();
   await wait(100);
   assert.equal(win.isVisible(), true);
   report.checks.push({ trayClickRestores: true, menuRestores: true });
@@ -82,7 +87,7 @@ app.whenReady().then(async () => {
     report.checks.push({ explicitQuitDestroysWindowAndTray: true });
     fs.writeFileSync(path.join(output, 'integration.json'), JSON.stringify(report, null, 2));
   });
-  tray.menu.items[2].click();
+  quitItem.click();
 }).catch(error => {
   fs.writeFileSync(path.join(output, 'failure.txt'), error.stack);
   app.exit(1);

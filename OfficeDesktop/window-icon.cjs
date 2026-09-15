@@ -12,7 +12,10 @@ function applyWindowIcon(window, source) {
   fs.mkdirSync(path.dirname(iconPath), { recursive: true });
   fs.copyFileSync(source, iconPath);
   const executable = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
-  window.setAppDetails({ appId: 'com.officeworld.desktop', appIconPath: iconPath,
+  // No `appId` on purpose: setting one makes Windows look the icon up through that id,
+  // and an id with no registered shortcut yields the generic application icon. Without
+  // it the window's own icon (set above) is what the taskbar and Alt-Tab use.
+  window.setAppDetails({ appIconPath: iconPath,
     appIconIndex: 0, relaunchDisplayName: 'iruler dream',
     ...(app.isPackaged ? { relaunchCommand: `"${executable}"` } : {}) });
 }
