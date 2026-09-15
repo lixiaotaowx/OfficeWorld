@@ -1,5 +1,14 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 12:35 会议室墙面显示器换成团队照片（前端 `index-B-v0-LCJ.js` + 新资源 `meeting-wall-photo.jpg`）
+
+- 需求（用户）：给了一张 AI 生成的团队合影（2732×1535，豆包 AI 生成），"把这个图片存下来放在会议室墙上的图片上"。
+- 定位：模型里会议室墙上的"画"就是那块演示屏 `Meeting / display surface`（three.js 名字 `Meeting__display_surface`，材质 `Display background`，纯深色无贴图，世界坐标约 (3.8, 1.9, −8.0)）；外框是另一个节点 `Meeting / presentation display`（材质 `Warm graphite`）。休息区/老板间那些 `abstract print frame` 是烘焙好的画，不动。
+- 改动：新增 `src/meetingWallPhoto.ts`（`findMeetingWallSurface` / `remapPanelUv` / `attachMeetingWallPhoto`），在 `OfficeScene` 载入办公室模型后调用；资源存 `public/assets/meeting-wall-photo.jpg`（1600×899、194 KB、质量 82）。
+  - 两个坑都实测踩过并修掉：① 面板 UV 来自烘焙图集（u 仅 0.125–0.875），直接贴只显示一条窄带 → 按面板局部 x/y 重做 0..1 UV；② 直接用 three.js 默认 `flipY` 会让照片上下颠倒 → `texture.flipY = false`。材质 `MeshStandardMaterial`（map + emissiveMap，emissiveIntensity 0.3）让它在偏暗的房间里像亮着的画面。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` 127/127；新增 `test/browser/meeting-wall-photo.cjs` PASS（面板存在、贴上照片且解码出 1600×899、材质名正确、外框材质未被换掉），并输出人眼可核对的两张截图 `Build/meeting-wall-photo.png`（整间会议室，画面正立在墙上）与 `Build/meeting-wall-panel.png`（面板特写，照片完整、朝向正确）。`sidebar-layout.cjs` 仍 PASS。
+- 发布：`index.html` + `assets/index-B-v0-LCJ.js` + 新资源 `assets/meeting-wall-photo.jpg`（CSS 未变，仍是 `index-BOg4IzVj.css`）。线上入口即 `index-B-v0-LCJ.js`，JS SHA256 `d8cd9c28a32e8fba811bc54d2287ad79d6d9e6f01a18f2da204a3ea3f3725c0d`、照片 SHA256 `26df107b54ea6b7bf89a8f1e3f8a0b57e29ea5c994a601268d6bcde2d9a6ea92`（HTTP 200、198983 字节）与本地一致。纯前端改动，未改后端、未重启服务。构建输出到 `Build/OfficeWebWallPhoto`（避免与并行会话的 `Build/OfficeWeb` 冲突）。
+
 ## 2026-09-15 12:00 右上角头像「我」改成 SVG 人物图标（前端 `index-C3m3vD5v.js`）
 
 - 需求（用户）：「右上角头像 我 那里改一个svg吧」。

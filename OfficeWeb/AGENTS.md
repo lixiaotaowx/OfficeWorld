@@ -39,6 +39,17 @@
 - **本机即时回显**（用户："延迟严重"）：笔迹要经过 指针 → socket → 分享者桌面浮层 → 采集 → 视频 才回来，正常几百毫秒。`ScreenStage` 因此在本机画布 `.screen-stage-ink` 上立即回显自己正在画的笔画（同坐标、同颜色 `colorFor(accountId)`），`ECHO_MS=1400ms` 后交还给画面里的真迹，避免双份墨迹；撤销/清空会同时清掉回显。
 - **映射按"画面框"换算，不按元素框**：坐标一律相对 `<video>`（`object-fit: contain` 的 letterbox 内框）归一化到 0..1，测量基准是 **video 元素自身**的矩形而不是绘制层；首帧未到时（`videoWidth=0`）退回元素框，避免第一笔被丢掉。`test/browser/screen-stage.cjs` 在 420×700 与 1280×720 两种窗口比例下校验落点命中 0.25/0.75。桌面浮层由主进程保证窗口内容区**恰好等于被共享显示器**（`place()` 先比较再 `setBounds`，页面加载完成后与 `display-metrics-changed` 时重新贴合），所以各种分辨率/缩放下 0..1 都对应同一位置。
 
+## 会议室墙面照片（2026-09-15 用户要求）
+
+- 用户给了一张 AI 生成的"团队合影"（12 个角色在办公室里，豆包 AI 生成），要求**放到会议室墙上的画面里**。
+- 模型里会议室墙面的"画"其实是那块演示屏：`Meeting / display surface`（three.js 名字 `Meeting__display_surface`，材质 `Display background`，纯深色无贴图），外框是另一个节点 `Meeting / presentation display`（材质 `Warm graphite`）。`src/meetingWallPhoto.ts` 落地这件事：
+  - `findMeetingWallSurface`：按名字同时含 meeting/display/**surface** 定位（外框是 presentation display，不会被误选）。
+  - **必须重做 UV**：那块面板的 UV 来自烘焙图集（u 只有 0.125–0.875，面板面只占其中一小块），直接用原 UV 贴照片只会显示一条窄带 —— `remapPanelUv` 按面板局部 x/y 范围重新生成 0..1 UV。
+  - `texture.flipY = false`（glTF UV 原点在左上，three.js 默认翻转会让照片上下颠倒，实测确认）。
+  - 材质用 `MeshStandardMaterial`（map + emissiveMap，emissiveIntensity 0.3）：房间偏暗，屏幕要像"亮着的画面"而不是一张海报。
+- 照片资源：`public/assets/meeting-wall-photo.jpg`（1600×899、约 194 KB，由用户提供的 2732×1535 原图缩小，质量 82）。
+- 测试：`test/browser/meeting-wall-photo.cjs`（断言面板存在、贴上照片且真的解码出 1600×899、材质名正确、外框材质未被换掉；并把相机对准墙面截图 `Build/meeting-wall-photo.png` 与面板特写 `Build/meeting-wall-panel.png` 供人眼核对）。为便于截图，`sceneProbe` 新增 `controls()`（仅 `?debug=1` 暴露）。
+
 ## 项目边界
 
 - 本目录是独立的新网页项目，原协作软件只作为参考，不直接修改。
@@ -53,7 +64,7 @@
 - `start.mjs` / `server.mjs` 是**线上** systemd 入口，必须保留；Vite 仍是构建工具与浏览器测试内建服务器的来源，不要删依赖。
 - 部署链路：本地 `npm run build` → 上传 `dist/` 与后端文件到 `ubuntu@115.159.43.237:~/officeweb/`；后端有改动再 `sudo systemctl restart officeweb`。完整命令见 `Design/Deployment.md`「重新部署」。
 - **前端（`src/`、`public/`）改动必须重新构建并上传 `dist/` 才会上服务器；后端（`server.mjs`、`livekit.mjs`、`static.mjs`）改动必须上传并重启 `officeweb` 服务才生效。**
-- 交付/汇报「界面可见」之前，先完成「构建 + 上传」，再在 https://115.159.43.237/ 上硬刷新（Ctrl+F5）确认；纯前端改动上传 `dist/` 即可（`static.mjs` 每次请求读盘、`index.html` 是 no-cache），后端改动才需要 `systemctl restart officeweb`。不要以本地服务器为准。
+- 交付/汇报「界面可见」之前，先完成「构建 + 上传」，再在 https://115.159.43.237/ 上**普通刷新（F5 / Ctrl+R）**确认；**不要用 Ctrl+F5 硬刷新**——它绕过缓存重新下载 14.89MB 的办公室模型（2026-09-15 实测），而 `index.html` 是 no-cache、bundle 名带内容哈希、模型带 `?v=`，普通刷新就一定能拿到新版本。纯前端改动上传 `dist/` 即可（`static.mjs` 每次请求读盘），后端改动才需要 `systemctl restart officeweb`。不要以本地服务器为准。
 
 ## 服务器身份与交付核验（强化，2026-09-12）
 

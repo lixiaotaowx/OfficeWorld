@@ -13,14 +13,20 @@ import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
 import { MonitorScreens } from "./monitorScreens";
 import { WORKSTATIONS } from "./seats";
 import { bakedAwareMaterial } from "./bakedMaterials";
+import { attachMeetingWallPhoto } from "./meetingWallPhoto";
 import { installSceneProbe } from "./sceneProbe";
 import { pickSceneSurface, SceneClickGesture } from "./scenePicking";
 import { SceneLoop, observeSceneVisibility } from "./sceneLoop";
 import "./avatar.css";
 import { type CharacterId } from "./characters";
 import type { Motion, Person } from "./types";
+import { NameTags } from "./nameTags";
+import { VIEWS, nameTagItems, remoteStates, type View } from "./sceneViews";
 
-export type View = "overview" | "desks" | "meeting" | "lounge";
+// The camera presets and the per-player helpers live in sceneViews.ts; this
+// module re-exports the view type so existing importers keep working.
+export type { View } from "./sceneViews";
+
 interface Props {
   renderPaused?: boolean;
   onResumeRendering?: () => void;
@@ -35,6 +41,8 @@ interface Props {
   motions: Record<string, Motion>;
   view: View;
   focusSeat: { seat: number; nonce: number } | null;
+  /** Focus the camera on one person, wherever they are standing or sitting. */
+  focusPerson: { id: string; nonce: number } | null;
   onSelect: (seat: number) => void;
   /** Same camera-only action as selecting a member in the side panel. */
   onFocusScreen: (seat: number) => void;
@@ -51,22 +59,6 @@ interface Props {
   sitSpot?: string | null;
 }
 
-/** Everyone except us is drawn from the last snapshot the server relayed. */
-function remoteStates(state: {
-  people: Person[];
-  motions: Record<string, Motion>;
-  myId: string;
-}): Map<string, RemoteState> {
-  const out = new Map<string, RemoteState>();
-  for (const person of state.people) {
-    if (person.id === state.myId) continue;
-    const motion = state.motions[person.id];
-    if (!motion) continue;
-    out.set(person.id, { ...motion, character: person.character });
-  }
-  return out;
-}
-
 /** Paint every occupied workstation's screen with its occupant's thumbnail. */
 function syncMonitors(
   monitors: MonitorScreens,
@@ -78,24 +70,6 @@ function syncMonitors(
     monitors.setPreview(workstation.index, preview ?? null);
   }
 }
-const views: Record<View, [number[], number[]]> = {
-  overview: [
-    [19, 23, 29],
-    [0.5, 0, -0.5],
-  ],
-  desks: [
-    [8, 12, 15],
-    [0.6, 0.5, 1.8],
-  ],
-  meeting: [
-    [12, 9, 5],
-    [4.1, 1, -5.8],
-  ],
-  lounge: [
-    [4, 10, 13],
-    [-6, 0, 0],
-  ],
-};
 export default function OfficeScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const latest = useRef(props);
@@ -105,7 +79,11 @@ export default function OfficeScene(props: Props) {
   const actor = useRef<OfficeAvatar>();
   const [actorState, setActorState] = useState("角色载入中…");
   const [stats, setStats] = useState("");
-  const api = useRef<{ focus: (v: View) => void; screen: (seat: number) => void }>();
+  const api = useRef<{
+    focus: (v: View) => void;
+    screen: (seat: number) => void;
+    person: (id: string) => void;
+  }>();
   const monitorsRef = useRef<MonitorScreens>();
   const remotesRef = useRef<RemoteAvatars>();
   const loopRef = useRef<SceneLoop>();
@@ -121,6 +99,9 @@ export default function OfficeScene(props: Props) {
   useEffect(() => {
     if (props.focusSeat) api.current?.screen(props.focusSeat.seat);
   }, [props.focusSeat]);
+  useEffect(() => {
+    if (props.focusPerson) api.current?.person(props.focusPerson.id);
+  }, [props.focusPerson]);
   // The app owns the character choice (the first-visit dialog sets it too), so
   // the avatar simply follows it.
   useEffect(() => {
@@ -188,9 +169,19 @@ export default function OfficeScene(props: Props) {
     });
     const remotes = new RemoteAvatars(world);
     remotesRef.current = remotes;
+    const nameTags = new NameTags();
+    const personPosition = (id: string) => {
+      const root = id === latest.current.myId ? avatar.root : remotes.objectOf(id);
+      return root
+        ? ([root.position.x, root.position.y, root.position.z] as [number, number, number])
+        : null;
+    };
     // Diagnostic hook. Available while developing and on a deployed build only
     // when explicitly asked for with ?debug=1, so it is not exposed by default.
     let removeProbe: (() => void) | undefined;
+    // Filled in below; the probe only reads it when a diagnostic asks (the scene's
+    // camera travels on its own until a view settles).
+    const controlsHolder: { current?: OrbitControls } = {};
     if (
       import.meta.env.DEV ||
       new URLSearchParams(location.search).has("debug")
@@ -202,9 +193,13 @@ export default function OfficeScene(props: Props) {
         world,
         camera,
         renderStats: () => loopRef.current?.stats,
+        nameTags: () => nameTags.info(),
+        personPosition,
+        controls: () => controlsHolder.current,
       });
     }
     const controls = new OrbitControls(camera, renderer.domElement);
+    controlsHolder.current = controls;
     controls.enableDamping = true;
     controls.mouseButtons = {
       MIDDLE: THREE.MOUSE.ROTATE,
@@ -231,8 +226,23 @@ export default function OfficeScene(props: Props) {
       },
       focus(view) {
         focusedWorkstation = false;
-        goalPosition.fromArray(views[view][0]);
-        goalTarget.fromArray(views[view][1]);
+        goalPosition.fromArray(VIEWS[view][0]);
+        goalTarget.fromArray(VIEWS[view][1]);
+        traveling = true;
+      },
+      person(id) {
+        const root = id === latest.current.myId ? avatar.root : remotes.objectOf(id);
+        if (!root) return;
+        focusedWorkstation = false;
+        goalTarget.copy(root.position);
+        goalTarget.y += 1.05;
+        // Stand off on the side the camera is already on, so the shot does not
+        // swing through the room (or through a wall) on its way there.
+        const away = camera.position.clone().sub(goalTarget);
+        away.y = 0;
+        if (away.lengthSq() < 0.04) away.set(0, 0, 1);
+        goalPosition.copy(goalTarget).addScaledVector(away.normalize(), 3.4);
+        goalPosition.y = goalTarget.y + 0.6;
         traveling = true;
       },
     };
@@ -331,6 +341,8 @@ export default function OfficeScene(props: Props) {
         });
         attachSittingSpots(gltf.scene);
         wallCutaway.attach(gltf.scene);
+        // The meeting room's wall display shows the office photo (user, 2026-09-15).
+        attachMeetingWallPhoto(gltf.scene);
         world.add(gltf.scene);
         // Thumbnails that arrived while the model was still loading.
         syncMonitors(monitors, latest.current);
@@ -431,6 +443,11 @@ export default function OfficeScene(props: Props) {
       }
       remotes.sync(remoteCache.states);
       remotes.update(dt);
+      // Names follow the characters: the tag set only changes when somebody
+      // joins, leaves or is renamed, but it is cheap enough to check per frame.
+      nameTags.sync(nameTagItems({ people, motions, myId }, avatar, remotes));
+      // Sized in CSS pixels, so the display height is what matters here.
+      nameTags.render(camera, renderer.domElement.clientHeight);
       renderer.render(world, camera);
       if (++tick % 120 === 0) {
         setStats(`${renderer.info.render.triangles.toLocaleString()} 面`);
@@ -448,6 +465,7 @@ export default function OfficeScene(props: Props) {
       removeProbe?.();
       avatar.dispose();
       remotes.dispose();
+      nameTags.dispose();
       remotesRef.current = undefined;
       stopObserving();
       loop.dispose();

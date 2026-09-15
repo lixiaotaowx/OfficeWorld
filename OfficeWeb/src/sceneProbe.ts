@@ -16,6 +16,12 @@ export interface SceneProbeOptions {
   world: THREE.Scene;
   camera: THREE.Camera;
   renderStats?: () => unknown;
+  /** Name tags currently worn, one per character. */
+  nameTags?: () => unknown;
+  /** World position of a person, for the camera-focus check. */
+  personPosition?: (id: string) => [number, number, number] | null;
+  /** Orbit controls, so a screenshot check can aim the camera at any wall. */
+  controls?: () => { target: THREE.Vector3 } | undefined;
 }
 
 /**
@@ -38,6 +44,11 @@ export function installSceneProbe(options: SceneProbeOptions) {
     __scene: world,
     /** Camera used by both member-list and physical-monitor focus checks. */
     __camera: camera,
+    /** Aim the camera at a specific spot (used by screenshot checks). */
+    controls: () => options.controls?.(),
+    /** Name tags above heads, and where any person stands. */
+    get nameTags() { return options.nameTags?.(); },
+    personPosition: (id: string) => options.personPosition?.(id) ?? null,
     probeMonitor: (seatIndex: number) => {
       const target = monitors()?.meshFor(seatIndex);
       const workstation = WORKSTATIONS[seatIndex];
