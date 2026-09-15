@@ -10,7 +10,7 @@ import { loadOfficeAsset } from './officeAsset';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OfficeAvatar } from "./OfficeAvatar";
 import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
-import { MonitorScreens } from "./monitorScreens";
+import { MonitorScreens, syncMonitors } from "./monitorScreens";
 import { WORKSTATIONS } from "./seats";
 import { bakedAwareMaterial } from "./bakedMaterials";
 import { attachMeetingWallPhoto } from "./meetingWallPhoto";
@@ -59,17 +59,6 @@ interface Props {
   sitSpot?: string | null;
 }
 
-/** Paint every occupied workstation's screen with its occupant's thumbnail. */
-function syncMonitors(
-  monitors: MonitorScreens,
-  state: { people: Person[]; previews: Record<string, string> },
-) {
-  for (const workstation of WORKSTATIONS) {
-    const occupant = state.people.find((p) => p.seat === workstation.index);
-    const preview = occupant ? state.previews[occupant.id] : undefined;
-    monitors.setPreview(workstation.index, preview ?? null);
-  }
-}
 export default function OfficeScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const latest = useRef(props);

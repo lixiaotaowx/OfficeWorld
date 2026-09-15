@@ -12,9 +12,22 @@ import * as THREE from "three";
 import { WORKSTATIONS, type Workstation } from "./seats";
 import { findMonitorSurface, fitMonitorInset } from "./monitorSurface";
 import { narrowMonitorBezel } from "./monitorBezel";
+import type { Person } from "./types";
 
 const CANVAS_WIDTH = 480;
 const CANVAS_HEIGHT = 270;
+
+/** Paint every occupied workstation's screen with its occupant's thumbnail. */
+export function syncMonitors(
+  monitors: MonitorScreens,
+  state: { people: Person[]; previews: Record<string, string> },
+) {
+  for (const workstation of WORKSTATIONS) {
+    const occupant = state.people.find((person) => person.seat === workstation.index);
+    const preview = occupant ? state.previews[occupant.id] : undefined;
+    monitors.setPreview(workstation.index, preview ?? null);
+  }
+}
 
 interface ScreenSlot {
   material: THREE.MeshStandardMaterial;
