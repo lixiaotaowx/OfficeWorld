@@ -1,5 +1,15 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 11:05 右侧面板收紧 + 去掉「DESK A-1」字样（前端 `index-CJLUOYc0.js` + `index-BcoqqEm8.css`）
+
+- 需求（用户）：「网页上把DESK A-1这个字眼去掉，还是要收紧一下右侧 不然看不见下面 还得要滚轮，in good company 这里也收紧空间」。
+- 改动：
+  - `SidePanel.tsx`：工位详情卡里的 `DESK A-1` eyebrow 整块删除（座位号在左侧工位卡片和底部状态栏里本来就有）。
+  - `directory-ui.css`：`IN GOOD COMPANY / 人与空间` 头部 padding 24/24/19 → **11/20/8**、标题 23px → 19px、在线数字 42px → 30px；标签 9px → 7px、工位标题 21/22/11 → **11/20/5**、工位卡 min-height 48 → **40px**、间距 5/8 → 3/6、详情卡 margin/padding 18/20/16 → **10/16/12**、空屏 64 → 48px、底栏 18/22 → **9/20**。**座位列表成为面板内唯一可滚动区域**（`flex:1; min-height:96px; overflow-y:auto`），工位详情与底栏固定可见。
+  - `chat-inbox.css`：会话列表/搜索/行距同步收紧（标题 17→15px、行 padding 13→9px、头像 40→34px、列表改为 `flex:1`）。
+- 验证：新增浏览器布局检查 `test/browser/sidebar-layout.cjs`，在 **1366×768** 下断言：9 个工位都在、`.detail .eyebrow` 为 null（DESK 字样已去掉）、面板 `scrollHeight-clientHeight = 0`（不需要滚轮）、工位详情与底部状态栏都在面板高度内可见；截图 `Build/sidebar-1366x768.png`。`tsc --noEmit` 通过、`node --test test/*.test.mjs` 127/127。
+- 发布：`index.html` + `assets/index-CJLUOYc0.js` + `assets/index-BcoqqEm8.css`；线上入口即这两个文件，JS SHA256 `e54029487d356a432869be0216fa492f87e33e8a0f71b46c117d000c65063d80`、CSS `e7c1567cbf119919e252d7633e0a0e45daa135a4b7f8ab447a1509d14d7aa207` 与本地一致。纯前端改动，未改后端、未重启服务。
+
 ## 2026-09-15 10:40 修两个报障：视频全屏卡住软件 + 标注映射/断线/延迟（前端 `index-BDgLeBTq.js`，后端 `collab-annotations.mjs`，EXE 0.1.11）
 
 - 用户报障：「1. 屏幕全屏时挂断软件也全屏了无法退出全屏，视频全屏不要影响软件，且软件的最大化按钮怎么能没了呢。2. 标注的屏幕映射不对，要针对各种分辨率去适配，以及画笔断开和延迟严重的问题」。

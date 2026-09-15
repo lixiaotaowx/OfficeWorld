@@ -133,9 +133,6 @@ export default function SidePanel({
             })}
           </div>
           <div className="detail">
-            <div className="eyebrow">
-              DESK {WORKSTATIONS[selected]?.label ?? selected + 1}
-            </div>
             <h3>{owner?.name || "给灵感留一个位置"}</h3>
             {/* The primary action comes before the preview on purpose: on a
                 short laptop screen the preview would push it below the fold. */}

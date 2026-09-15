@@ -1,4 +1,7 @@
-/* The directory is a calm dark address book, rather than a grid of cards. */
+/* The directory is a calm dark address book, rather than a grid of cards.
+   Spacing is deliberately tight (user, 2026-09-15: "收紧一下右侧 不然看不见下面
+   还得要滚轮"): only the seat list scrolls, so the desk detail and the footer stay
+   in view on a laptop screen. */
 .sidebar {
   width: 360px;
   border: none;
@@ -8,19 +11,19 @@
   box-shadow: none;
   scrollbar-color: #70836260 transparent;
 }
-.directory-heading { display: flex; justify-content: space-between; align-items: center; padding: 24px 24px 19px; }
+.directory-heading { display: flex; justify-content: space-between; align-items: center; padding: 11px 20px 8px; }
 .directory-heading .eyebrow { font-size: 8px; color: #94a486; letter-spacing: 1.6px; }
-.directory-heading h2 { font-size: 23px; font-weight: 400; margin: 8px 0 0; color: #e9eedb; text-shadow: none; }
+.directory-heading h2 { font-size: 19px; font-weight: 400; margin: 3px 0 0; color: #e9eedb; text-shadow: none; }
 .directory-count { text-align: right; }
-.directory-count strong { display: block; color: #d7ed9d; font: italic 42px/.9 Georgia, serif; letter-spacing: -2px; }
-.directory-count small { display: block; font-size: 9px; margin-top: 6px; color: #9bad8b; }
-.side-tabs { margin: 0 20px; padding: 0; gap: 6px; background: transparent; border: 0; }
+.directory-count strong { display: block; color: #d7ed9d; font: italic 30px/.9 Georgia, serif; letter-spacing: -1px; }
+.directory-count small { display: block; font-size: 9px; margin-top: 3px; color: #9bad8b; }
+.side-tabs { margin: 0 16px; padding: 0; gap: 6px; background: transparent; border: 0; }
 .side-tabs button {
   flex: 1;
   color: #9eae92;
   border: 1px solid #52634a;
   border-radius: 30px;
-  padding: 9px 0;
+  padding: 7px 0;
   font-size: 11px;
 }
 .side-tabs .selected { background: #d7ed9d; color: #26312b; font-weight: 600; }
@@ -28,28 +31,38 @@
 .side-tabs button:hover:not(:disabled) { color: #f1f6e5; background: #384934; }
 .side-tabs .selected:hover:not(:disabled) { color: #26312b; background: #e2f4b6; }
 .side-tabs span { color: inherit; background: #26312b15; font-size: 9px; padding: 1px 4px; }
-.side-title { padding: 21px 22px 11px; }
+.side-title { padding: 11px 20px 5px; flex: 0 0 auto; }
 .side-title h3 { font-size: 10px; font-weight: 400; color: #bbc6aa; letter-spacing: 1px; }
 .side-title > span { color: #84977a; font-size: 9px; }
-.seat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 8px; padding: 0 16px; }
+/* The only scrolling region in the people tab. */
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 6px;
+  padding: 0 14px;
+  flex: 1 1 auto;
+  min-height: 96px;
+  overflow-y: auto;
+  scrollbar-color: #70836260 transparent;
+}
 .seat {
   position: relative;
   display: grid;
-  grid-template-columns: 27px minmax(0, 1fr) 10px;
+  grid-template-columns: 25px minmax(0, 1fr) 10px;
   grid-template-rows: auto auto;
   align-items: center;
   column-gap: 6px;
   text-align: left;
   width: 100%;
   min-width: 0;
-  min-height: 48px;
-  padding: 7px 8px;
+  min-height: 40px;
+  padding: 5px 7px;
   background: transparent;
   border: 0;
   border-bottom: 1px solid #a6b28b1a;
   border-radius: 0;
   box-shadow: none;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 .seat-num { grid-column: 1; grid-row: 1; color: #92a17f; font: 12px Georgia, serif; letter-spacing: -.5px; }
 .seat-state { grid-column: 3; grid-row: 1; color: #617255; font-size: 10px; float: none; }
@@ -63,19 +76,20 @@
 .seat.mine.chosen { background: #3a4a32; box-shadow: inset 2px 0 #d7ed9d; }
 .manager-seat { margin-top: 0; border-top: 1px solid #ba94604d; border-bottom-color: #ba94604d; }
 .manager-seat .seat-num { color: #c6ab80; }
-.detail { margin: 18px 20px; padding: 16px; background: #202b25; border: 1px solid #52634460; border-radius: 14px; }
+.detail { margin: 10px 16px; padding: 12px; background: #202b25; border: 1px solid #52634460; border-radius: 14px; flex: 0 0 auto; }
 .detail .eyebrow { color: #94a67c; font-size: 8px; letter-spacing: 1px; }
-.detail h3 { color: #e0e8cf; font-size: 14px; font-weight: 400; margin: 10px 0 14px; overflow-wrap: anywhere; }
-.detail-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.detail h3 { color: #e0e8cf; font-size: 13px; font-weight: 400; margin: 4px 0 10px; overflow-wrap: anywhere; }
+.detail-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
 .detail-actions button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .detail-actions button:last-child { grid-column: 1 / -1; }
-.detail-actions button { color: #d2ddbf; background: #35442f; border: 1px solid #526a4240; font-size: 10px; padding: 9px; border-radius: 7px; }
+.detail-actions button { color: #d2ddbf; background: #35442f; border: 1px solid #526a4240; font-size: 10px; padding: 7px; border-radius: 7px; }
 .detail-actions button:hover:not(:disabled) { background: #4d633e; color: #fff; }
-.empty-screen { background: #26332a; border: 1px solid #52634450; color: #859974; font-size: 10px; height: 64px; border-radius: 8px; }
-.empty-screen > span { font-size: 21px; color: #a1b68b; }
-.side-foot { padding: 18px 22px; font-size: 9px; color: #9aac88; background: #26312b; border-top: 1px solid #a6b28b1a; letter-spacing: .5px; }
+.empty-screen { background: #26332a; border: 1px solid #52634450; color: #859974; font-size: 10px; height: 48px; border-radius: 8px; margin-top: 9px; }
+.empty-screen > span { font-size: 18px; color: #a1b68b; }
+.screen-preview { margin-top: 9px; }
+.side-foot { padding: 9px 20px; font-size: 9px; color: #9aac88; background: #26312b; border-top: 1px solid #a6b28b1a; letter-spacing: .5px; flex: 0 0 auto; }
 .side-foot .dot { background: #bfd58c; width: 5px; height: 5px; box-shadow: none; }
-.chat { padding-top: 15px; }
+.chat { padding-top: 8px; }
 .chat > small { margin: 0 8px; color: #8fa07f; font-size: 9px; line-height: 1.7; }
 .messages { padding: 16px 20px; min-height: 140px; }
 .chat-empty { margin: auto 0; padding: 32px 0; color: #dbe6c8; font-size: 17px; font-weight: 400; }
