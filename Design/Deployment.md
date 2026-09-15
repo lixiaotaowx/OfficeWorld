@@ -1,12 +1,20 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 12:00 右上角头像「我」改成 SVG 人物图标（前端 `index-C3m3vD5v.js`）
+
+- 需求（用户）：「右上角头像 我 那里改一个svg吧」。
+- 改动：`src/icons.tsx` 新增 `PersonIcon`（与其它图标同一套 `stroke=currentColor` 风格：头 + 肩），`App.tsx` 顶栏的 `.avatar` 按钮由文字「我」改为 `<PersonIcon width={19} height={19} />`；`title`/`aria-label`（退出登录）不变，颜色自动跟随 `.avatar` 的 `color`。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` 127/127；用真实构建产物在 1366×768 截图核对右上角（`Build/avatar-corner.png`，人物图标正常、无文字）；`test/browser/sidebar-layout.cjs` 仍 PASS。
+- 发布：`index.html` + `assets/index-C3m3vD5v.js`（CSS 未变，仍是 `index-BOg4IzVj.css`）；线上入口即 `index-C3m3vD5v.js`，JS SHA256 `79f7f9c20a556591a70e105b9ce1235e2f56d14ff42719124f95bd1abaf48aa9` 与本地一致；线上包里能查到人物图标路径、且头像按钮里不再有「我」字。纯前端改动，未改后端、未重启服务。构建输出到 `Build/OfficeWebAvatar`（避免与并行会话的 `Build/OfficeWeb` 冲突）。
+
 ## 2026-09-15 11:38 名字改为屏幕固定大小；首次载入慢的实测与修复（前端 `index-C3HxeGVb.js` + `index-BOg4IzVj.css`）
 
 - 需求（用户）：① 头顶名字要「针对显示器显示固定大小」；② 刷新后模型有时加载很慢，找出阻碍并解决。
 - **① 名字改成屏幕空间固定尺寸**：`SpriteMaterial.sizeAttenuation = false`——three 会把 scale 乘上视距，正好抵消透视；`NameTags.render(camera, 画布高度)` 每帧按 `TAG_PIXELS = 24` CSS 像素反算 `scale = px · 2tan(fov/2) / 高度`。因此远近一样大，换窗口尺寸或 fov 也不变（此前是世界尺寸 0.22m：近景偏大、远景偏小）。测试断言：`screenSpace = true`、远景与近景两次 `pixels ≈ 24`、两次 `scaleY` 完全相同。
 - **② 加载慢的实测阻碍**（本机隔离服务器，网络≈0，单独看 CPU/解码）：
   - 网络面：默认加载 `office-balanced-gpu.glb` = **14.89MB**（GPU 压缩版；它是为把解码图像内存从 ~464MB 压到 ~5MB 才成为默认的）+ 人物 1.67MB + JS 包 1.46MB。
-  - CPU 面（同一份代码对照）：KTX2 转码 worker 上限 2（旧值）→ 办公室就绪（monitors 可探测）**3317ms**；改成按机器核心数（`min(8, max(2, cores-1))`，draco 与 KTX2 都改）→ **2012 / 2170ms**（两次复测），**少约 1.1–1.2 秒**。130+ 张贴图原本一次只转两张，多核闲置。
+  - CPU 面（同一份代码对照，**转码器齐备的干净构建**、本机、各跑 3 次）：KTX2/draco worker 上限 2（旧值）→ 办公室就绪（monitors 可探测）**3270 / 3437 / 3500ms**；改成按机器核心数（`min(8, max(2, cores-1))`，draco 与 KTX2 都改）→ **2286 / 2304 / 2143ms**（另两次 2245 / 1988），**少约 1.1–1.3 秒（≈35%）**。130+ 张贴图原本一次只转两张，多核闲置。
+  - **过程中的一个大坑（已加防护）**：中途测到过 3317→2012ms 的一组数据，后来发现那次的本地产物是**残缺的**——`Build/OfficeWeb/assets/basis/` 两个转码器缺失（0 字节）。原因是两个 agent 同时 `vite build` 到同一个 `outDir`，`emptyOutDir` 把对方刚拷进去的文件删了。缺失是**静默**的：浏览器里 KTX2 转码失败，代码回退去下备用模型，看起来只是"慢"，而线上 `dist` 因为 scp 不删文件反而是好的——**本地测的和线上跑的不是同一套资源**。现在 `npm run build` 之后自动跑 `test/public-parity.mjs`（package.json 的 `postbuild`）核对 `public/` 与产物逐文件大小，不一致就让构建失败。
   - 试过并**放弃**：在文档里预取 draco/basis 解码器。加载器是在 worker 里取这些文件的，不会复用文档级预取——实测被下载两次，办公室反而晚 ~250ms 完成；原因已写在 `officeAsset.ts` 注释里，防止以后又"顺手优化"回去。
   - **重要纠正**：`Ctrl+F5` 硬刷新会绕过缓存重新下这 15MB。而 `index.html` 是 no-cache、bundle 名带内容哈希、模型带 `?v=`，**普通刷新（F5）就一定能拿到新版本**。此前文档让人「硬刷新确认」，等于每次都强制重下整个模型，已把 `OfficeWeb/AGENTS.md` 与本文「重新部署」改为普通刷新。
 - 验证：网页单测 **127/127**、`tsc --noEmit`、`vite build` 通过；三个真实浏览器 harness（`default-view`、`character-setting`、`visitor-labels`）全过。`visitor-labels.cjs` 另修一处测试自身问题：后台窗口的定时器会被节流，访客走到沙发的模拟因此慢十倍，改为先让访客页在前台走完再切换（见 `Design/TODO.md`）。
@@ -422,6 +430,10 @@ sudo journalctl -u officeweb -f     # 日志
 ```powershell
 cd OfficeWeb
 npm run build                       # 产物在 ..\Build\OfficeWeb，本地不存在 OfficeWeb\dist
+# 构建结束会自动跑 postbuild = test/public-parity.mjs，核对 public\ 与产物逐文件
+# 大小。必须看到「public/ 与构建产物一致」再往下走——两个 agent 同时构建到同一个
+# outDir 时 emptyOutDir 会删掉对方刚拷进去的文件（2026-09-15 实际发生过：basis\
+# 转码器变 0 字节，浏览器里静默回退到备用模型，只表现为"加载慢"）。
 # 构建会把 public\ 全量拷进产物。两个零引用资源（office.glb 17.9MB、
 # office-white.glb 5.0MB）已于 2026-09-14 从 public\ 删除，新构建不再包含；
 # 若在历史构建目录里看到它们，照下面这行清理即可。
