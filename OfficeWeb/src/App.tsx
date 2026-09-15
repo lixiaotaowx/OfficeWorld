@@ -15,6 +15,7 @@ import {
   SettingsIcon,
   MembersIcon,
   OverviewIcon,
+  PersonIcon,
   ScreenIcon,
   PreviewIcon,
 } from "./icons";
@@ -191,7 +192,9 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
           >
             <SettingsIcon />
           </button>
-          <button className="avatar" title={`${account.name} · 退出登录`} aria-label="退出登录" onClick={onLogout}>我</button>
+          <button className="avatar" title={`${account.name} · 退出登录`} aria-label="退出登录" onClick={onLogout}>
+            <PersonIcon width={19} height={19} />
+          </button>
         </div>
       </header>
       <div className="workspace">

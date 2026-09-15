@@ -17,6 +17,11 @@ export function PreviewIcon(props: IconProps) {
   return <Svg {...props}><path d="M2 12s3-6 10-6 10 6 10 6-3 6-10 6S2 12 2 12Z" /><circle cx="12" cy="12" r="2.5" /></Svg>;
 }
 
+/** "Me": head and shoulders, used where the top-right chip used to say 我. */
+export function PersonIcon(props: IconProps) {
+  return <Svg {...props}><circle cx="12" cy="8.4" r="3.6" /><path d="M5.4 20a6.6 6.6 0 0 1 13.2 0" /></Svg>;
+}
+
 function Svg(props: IconProps) {
   return (
     <svg
