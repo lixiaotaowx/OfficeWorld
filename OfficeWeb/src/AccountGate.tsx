@@ -58,16 +58,27 @@ export default function AccountGate() {
     } finally { setRoleBusy(false); }
   }
   useEffect(() => {
-    const ended = (event: Event) => {
+    const ended = async (event: Event) => {
       stopRestore.current?.();
-      // AGENTS.md: being displaced clears the saved desktop login, so the next
-      // launch cannot silently sign back in and fight the newer client.
-      void window.officeDesktop?.clearLogin().catch(() => {});
-      setUser(null); setMode("login"); setPassword("");
-      setError(window.officeDesktop ? "" : (event as CustomEvent<string>).detail || "登录已失效，请重新登录");
+      const detail = (event as CustomEvent<{ message?: string; forget?: boolean }>).detail || {};
+      if (detail.forget === true) {
+        // Only a deliberate exit forgets the account (see logout below).
+        await window.officeDesktop?.clearLogin().catch(() => {});
+        setPassword("");
+      } else {
+        // Displaced by another device, an expired session or a revoked cookie: keep the
+        // saved account and hand the form back already filled in, so coming back is one
+        // click instead of retyping. Clearing it here is what made the desktop app look
+        // like it never remembered anything (user, 2026-09-15).
+        const saved = await window.officeDesktop?.readLogin().catch(() => null);
+        if (saved) { setName(saved.name); setPassword(saved.password); }
+      }
+      setUser(null); setMode("login");
+      setError(window.officeDesktop ? "" : detail.message || "登录已失效，请重新登录");
     };
-    window.addEventListener("office-session-ended", ended);
-    return () => window.removeEventListener("office-session-ended", ended);
+    const onEnded = (event: Event) => { void ended(event); };
+    window.addEventListener("office-session-ended", onEnded);
+    return () => window.removeEventListener("office-session-ended", onEnded);
   }, []);
   useEffect(() => {
     stopRestore.current = restoreLogin<Account>({ user: setUser, loading: setLoading, error: setError,
@@ -78,11 +89,10 @@ export default function AccountGate() {
     event.preventDefault(); setBusy(true); setError("");
     stopRestore.current?.();
     try {
-      // Remember the user's input even if the network or authentication fails.
-      if (window.officeDesktop) {
-        const saved = await window.officeDesktop.saveLogin({ name, password });
-        if (!saved) throw Error("无法保存本地登录信息，请重试");
-      }
+      // Remember the user's input even if the network or authentication fails. A machine
+      // that cannot encrypt the file still gets to log in - refusing here would lock
+      // somebody out of their own account (user, 2026-09-15).
+      if (window.officeDesktop) await window.officeDesktop.saveLogin({ name, password }).catch(() => false);
       const r = await fetch(`/api/auth/${mode}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, password }),

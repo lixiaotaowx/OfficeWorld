@@ -166,11 +166,16 @@ export function useOffice(account: Account) {
       });
       s.emit("preview-allowed", receivePreviews.current);
     });
-    const sessionEnded = (message: string) => window.dispatchEvent(
-      new CustomEvent("office-session-ended", { detail: message }));
-    s.on("session-replaced", sessionEnded);
+    // Leaving the office must NOT cost the saved password (user, 2026-09-15: "客户端
+    // 老是记不住用户账号和密码"). Only an explicit logout clears it; every other way
+    // a session can end - displaced by another device, revoked cookie, shown out by an
+    // administrator - hands the person back to the login form with the account and
+    // password already filled in.
+    const sessionEnded = (message: string, forget = false) => window.dispatchEvent(
+      new CustomEvent("office-session-ended", { detail: { message, forget } }));
+    s.on("session-replaced", () => sessionEnded("账号已在其他地方登录，请重新登录"));
     s.on("connect_error", (error) => {
-      if (error.message === "请先登录") sessionEnded("登录已失效，账号可能已在其他地方登录，请重新登录");
+      if (error.message === "请先登录") sessionEnded("登录已失效，请重新登录");
       else setNotice("连接失败，正在重试…");
     });
     s.on("disconnect", (reason) => {
@@ -211,9 +216,9 @@ export function useOffice(account: Account) {
       }, MOTION_FLUSH_MS);
     });
     s.on("notice", setNotice);
-    // Being shown out means leaving the space: the server revokes the session and
-    // closes the socket, so return to the login screen instead of sitting in a dead
-    // office (and clear a saved desktop login, or the EXE would log straight back in).
+    // Being shown out means leaving the space now: the server has revoked the session
+    // and closed the socket, so return to the login screen instead of sitting in a
+    // dead office. The saved account stays, so the next launch still remembers it.
     s.on("kicked", (info: { message?: string }) =>
       sessionEnded(info?.message || "你被管理员请出了空间，请重新登录"),
     );

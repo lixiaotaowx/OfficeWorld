@@ -1,0 +1,31 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div>
+<script>
+// AccountGate on its own, with a stubbed desktop bridge: this harness is about what
+// the gate does with the SAVED account when a session ends, nothing else.
+window.__calls = [];
+window.__saved = { name: '小文杰', password: 'pw-1234' };
+window.officeDesktop = {
+  readLogin: async () => window.__saved,
+  saveLogin: async value => { window.__saved = value; window.__calls.push(['save', value.name]); return true; },
+  clearLogin: async () => { window.__calls.push(['clear']); window.__saved = null; return true; },
+};
+// The restore login is made to fail, so the gate stays on the form and the test can
+// read what it prefilled without pulling the whole office (socket.io, three.js) in.
+window.fetch = async input => {
+  const url = String(input && input.url ? input.url : input);
+  window.__calls.push(['fetch', url.replace(location.origin, '')]);
+  if (url.includes('/api/auth/login'))
+    return new Response(JSON.stringify({ error: '测试环境不登录' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } });
+  if (url.includes('/api/auth/me'))
+    return new Response(JSON.stringify({ user: null }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } });
+  return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+};
+</script>
+<script type="module">
+import React from 'react'; import { createRoot } from 'react-dom/client';
+import AccountGate from '/src/AccountGate.tsx';
+import '/src/styles.css'; import '/src/account.css';
+createRoot(document.getElementById('root')).render(React.createElement(AccountGate, {}));
+</script></body></html>

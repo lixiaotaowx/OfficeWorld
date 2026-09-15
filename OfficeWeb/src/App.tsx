@@ -35,16 +35,37 @@ function Stream({ stream }: { stream: MediaStream }) {
 export default function App({ account, onLogout }: { account: Account; onLogout: () => void }) {
   const office = useOffice(account);
   const [focusSeat, setFocusSeat] = useState<{ seat: number; nonce: number } | null>(null);
+  // The camera can also be pointed at a person: a visitor holds no desk, so the
+  // directory focuses them instead. Only one of the two targets is ever active.
+  const [focusPerson, setFocusPerson] = useState<{ id: string; nonce: number } | null>(null);
+  function focusPersonInScene(id: string) {
+    setRenderPaused(false);
+    setFocusSeat(null);
+    setFocusPerson({ id, nonce: Date.now() });
+  }
   // The open workstations are what a visitor comes for, so that is the camera
   // position the office opens on. 空间总览 stays one click away on the rail.
   const [view, setView] = useState<View>("desks");
-  function chooseView(next: View) { setRenderPaused(false); setFocusSeat(null); setView(next); }
+  function chooseView(next: View) {
+    setRenderPaused(false); setFocusSeat(null); setFocusPerson(null); setView(next);
+  }
   const [selected, setSelected] = useState(0);
   const [tab, setTab] = useState<"people" | "chat">("people");
   const [help, setHelp] = useState(false);
   const [renderPaused, setRenderPaused] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
+  // Whether this machine has the account saved, so "it forgot me again" can be checked
+  // from inside the app instead of guessed at (user, 2026-09-15).
+  const [remembered, setRemembered] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!help || !window.officeDesktop) return;
+    let alive = true;
+    void window.officeDesktop.readLogin()
+      .then((saved) => { if (alive) setRemembered(!!saved); })
+      .catch(() => { if (alive) setRemembered(false); });
+    return () => { alive = false; };
+  }, [help]);
   useEffect(() => {
     const openNotification = (event: Event) => {
       const section = (event as CustomEvent<string>).detail;
@@ -224,10 +245,14 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               motions={office.motions}
               view={view}
               focusSeat={focusSeat}
+              focusPerson={focusPerson}
               picking={showPicker}
               onPick={(seat) => void pickSeat(seat)}
               onSelect={setSelected}
-              onFocusScreen={(seat) => { setRenderPaused(false); setSelected(seat); setFocusSeat({ seat, nonce: Date.now() }); }}
+              onFocusScreen={(seat) => {
+                setRenderPaused(false); setSelected(seat); setFocusPerson(null);
+                setFocusSeat({ seat, nonce: Date.now() });
+              }}
               renderPaused={renderPaused}
               onResumeRendering={() => setRenderPaused(false)}
               // While our screen is being watched the 3D view must keep painting even
@@ -316,8 +341,13 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
             contacts={office.contacts}
             hiddenContacts={office.hiddenContacts}
             onTab={setTab}
-            onSelect={(seat) => { setRenderPaused(false); setSelected(seat); setFocusSeat({ seat, nonce: Date.now() }); }}
+            onSelect={(seat) => {
+              setRenderPaused(false); setSelected(seat); setFocusPerson(null);
+              setFocusSeat({ seat, nonce: Date.now() });
+            }}
             onOpenDesks={() => {}}
+            onFocusPerson={focusPersonInScene}
+            focusedPerson={focusPerson?.id ?? null}
             onRequest={office.request}
             onMessage={office.chat}
             onFile={office.sendChatFile}
@@ -339,6 +369,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
           <section className="modal settings-modal">
             <h2>设置</h2>
             <CharacterSetting value={character} onChange={chooseCharacter} />
+            {window.officeDesktop && <p className="settings-note">
+              登录记忆：<strong>{remembered === null ? "检查中…" : remembered
+                ? "已保存，下次启动自动登录" : "未保存（只有主动退出登录才会清除）"}</strong>
+            </p>}
             <NotificationSetting />
             <label className="settings-row">
               <span>暂停三维画面（语音、共享和聊天继续）</span>

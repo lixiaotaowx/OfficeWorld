@@ -1,5 +1,50 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 11:38 名字改为屏幕固定大小；首次载入慢的实测与修复（前端 `index-C3HxeGVb.js` + `index-BOg4IzVj.css`）
+
+- 需求（用户）：① 头顶名字要「针对显示器显示固定大小」；② 刷新后模型有时加载很慢，找出阻碍并解决。
+- **① 名字改成屏幕空间固定尺寸**：`SpriteMaterial.sizeAttenuation = false`——three 会把 scale 乘上视距，正好抵消透视；`NameTags.render(camera, 画布高度)` 每帧按 `TAG_PIXELS = 24` CSS 像素反算 `scale = px · 2tan(fov/2) / 高度`。因此远近一样大，换窗口尺寸或 fov 也不变（此前是世界尺寸 0.22m：近景偏大、远景偏小）。测试断言：`screenSpace = true`、远景与近景两次 `pixels ≈ 24`、两次 `scaleY` 完全相同。
+- **② 加载慢的实测阻碍**（本机隔离服务器，网络≈0，单独看 CPU/解码）：
+  - 网络面：默认加载 `office-balanced-gpu.glb` = **14.89MB**（GPU 压缩版；它是为把解码图像内存从 ~464MB 压到 ~5MB 才成为默认的）+ 人物 1.67MB + JS 包 1.46MB。
+  - CPU 面（同一份代码对照）：KTX2 转码 worker 上限 2（旧值）→ 办公室就绪（monitors 可探测）**3317ms**；改成按机器核心数（`min(8, max(2, cores-1))`，draco 与 KTX2 都改）→ **2012 / 2170ms**（两次复测），**少约 1.1–1.2 秒**。130+ 张贴图原本一次只转两张，多核闲置。
+  - 试过并**放弃**：在文档里预取 draco/basis 解码器。加载器是在 worker 里取这些文件的，不会复用文档级预取——实测被下载两次，办公室反而晚 ~250ms 完成；原因已写在 `officeAsset.ts` 注释里，防止以后又"顺手优化"回去。
+  - **重要纠正**：`Ctrl+F5` 硬刷新会绕过缓存重新下这 15MB。而 `index.html` 是 no-cache、bundle 名带内容哈希、模型带 `?v=`，**普通刷新（F5）就一定能拿到新版本**。此前文档让人「硬刷新确认」，等于每次都强制重下整个模型，已把 `OfficeWeb/AGENTS.md` 与本文「重新部署」改为普通刷新。
+- 验证：网页单测 **127/127**、`tsc --noEmit`、`vite build` 通过；三个真实浏览器 harness（`default-view`、`character-setting`、`visitor-labels`）全过。`visitor-labels.cjs` 另修一处测试自身问题：后台窗口的定时器会被节流，访客走到沙发的模拟因此慢十倍，改为先让访客页在前台走完再切换（见 `Design/TODO.md`）。
+- 线上：`index-C3HxeGVb.js`（1,460,686 字节，SHA256 `931382f6352ec4898fa07129b64702a10a873f25532855e13523c0a8cd692ece`）+ `index-BOg4IzVj.css`（55,661 字节，SHA256 `df76d90efd20b0996969d9b67524cce62c2714515cd5b9f17d5453b5d15d025c`），与本地 `Build/OfficeWeb` 逐字节一致；线上包含 `sizeAttenuation` 与 `hardwareConcurrency` 两处新逻辑。纯前端，**未重启 `officeweb`**。
+- **未做（要更快就得动资产，需你确认）**：① 预转码成 GPU 就绪格式（BC7 等）→ 加载时零转码；② 降低纹理分辨率 → 转码量按像素数下降。两者都会牺牲当前 GPU 压缩版换来的显存/画质收益。
+
+## 2026-09-15 11:40 修「客户端老是记不住账号和密码」（前端 `index-C3HxeGVb.js` + `index-BOg4IzVj.css`）
+
+- 用户报障：「严重的问题 客户端老是记不住用户账号和密码」。
+- 根因：桌面端保存的登录信息（`%APPDATA%\office-world-desktop\login.enc`，本机实测存在且当天 10:04 刚写过）**只要会话结束就被删掉**——`AccountGate` 的 `office-session-ended` 处理里无条件 `clearLogin()`。而"会话结束"包括最常见的两种情况：同一账号在**浏览器**登录（服务端按既定规则撤销旧会话，`session-replaced`）和 Cookie 会话失效（`connect_error: 请先登录`）。于是每次在网页上登一次同一个账号，EXE 就把密码忘掉、下次启动要重新输入；EXE 启动再自动登录又把浏览器顶下线，两边互相顶号，感受就是"老是记不住"。
+- 修复：
+  - `useOffice`：`office-session-ended` 的 detail 改为 `{ message, forget }`；**被顶下线、会话失效、被管理员请出都是 `forget:false`**。
+  - `AccountGate`：只有 `forget === true`（主动退出登录）才 `clearLogin()`；否则保留保存的账号并**从 `readLogin()` 把姓名和密码填回表单**，回来只要点一下「进入办公室」。`submit()` 里本机加密不可用（`saveLogin` 返回 false）不再抛错阻断登录，只是这次记不住。
+  - `App` 设置里新增一行「登录记忆：已保存／未保存」，可在应用内直接确认。
+- 验证：新增 `test/browser/login-memory.cjs` + `test/login-memory-harness.html`（只挂 `AccountGate`、桩掉桌面桥）：表单带出保存的姓名与密码、`forget:false` 时 **0 次 clearLogin** 且账号仍在、`forget:true` 时恰好 1 次且密码被清空；`tsc --noEmit` 通过；`node --test test/*.test.mjs` 127/127。
+- 发布：`index.html` + `assets/index-C3HxeGVb.js` + `assets/index-BOg4IzVj.css`（并发会话正在占用 `Build/OfficeWeb`，本次构建输出到 `Build/OfficeWebLoginFix`）；线上入口即这两个文件，JS SHA256 `931382f6352ec4898fa07129b64702a10a873f25532855e13523c0a8cd692ece`、CSS `df76d90efd20b0996969d9b67524cce62c2714515cd5b9f17d5453b5d15d025c` 与本地一致。纯前端改动，未改后端、未重启服务；**EXE 无需重新构建**。
+- 遗留（已告知用户，待其决定）：同一账号在 EXE 与浏览器同时登录仍会互相顶号（这是之前明确要求的单会话规则）；若要两边并存，需要放开"新登录撤销旧会话"。
+
+## 2026-09-15 11:07 访客进右侧列表（异色 + 点击对焦人物）与全角色头顶名字（前端 `index-BzFXjOZU.js` + `index-CCVeF8Qd.css`）
+
+- 需求（用户）：访客进来之后也要在右侧工位列表那边显示、用不同颜色；点一下能聚焦到人物；并且给所有角色头顶写上自己的名字，UI 要合理。
+- **访客行**：`SidePanel` 在工位网格之后新增「访客」区（`.visitor-strip`，琥珀底 `#332c1e` + 字 `#f2dda9` + 琥珀圆点），与绿色工位行（`#405a40`）明确区分；每行显示姓名与「访客 · 在公共区沙发」/「我 · 在公共区沙发」，点一下触发新的 `onFocusPerson`。访客没有工位，所以列表里不能只提供「聚焦工位」这一种动作。
+- **点击聚焦到人**：`App.tsx` 新增 `focusPerson` 状态（与 `focusSeat` 互斥，切视角/点工位都会清掉），`OfficeScene` 新增 `api.person(id)`——把镜头瞄到该角色胸口高度，并在**当前相机那一侧**退开 3.4m，避免镜头绕场景或穿墙；远端角色位置由新增的 `RemoteAvatars.objectOf(id)` 提供。
+- **头顶名字**：新增 `src/nameTags.ts`。canvas 画药丸 → `CanvasTexture` → 挂在角色 root 上的 `Sprite`，随模型走、零逐帧开销；三名一套配色与右侧列表一致（自己=青柠底深字、成员=象牙底深字、访客=琥珀底深棕字），`depthTest:false` 保证被桌面/显示器/植物挡住也读得到，带投影阴影以免象牙色贴在浅色墙上消失；7→34m 由不透明淡到 0.38；挂点按姿态变（站立 2.02m、坐下 1.52m）；标签世界高度 0.22m（先做 0.27m，近景过大，已收小）。
+- 验证：网页单测 **127/127**、`tsc --noEmit`、`vite build` 通过。新增 `test/browser/visitor-labels.cjs`（隔离服务器 + 两个真实浏览器上下文）：员工端 `.visitor-strip` 恰好一行、背景与文字色都与工位行不同（实测 `rgb(51,44,30)` vs `rgb(64,90,64)`）；点击该行后镜头落到距本人 **4.0–4.1m**（点击前 >6m）；`__officeDebug.nameTags` 两名角色各一条，自己 `kind=me`、访客 `kind=visitor`，挂点 `y≥1.4`；访客自己那屏该行带 `mine` 且显示「我 ·」，自己 `kind=me`、成员 `kind=employee`。截图 `Build/name-tags-desks.png`（默认开放工位视角下两条名字）、`Build/visitor-sidebar.png`（右侧访客行）、`Build/visitor-focus.png`（点访客后的近景），证据 `Build/visitor-labels-evidence.json`。
+- **顺带修好**：新加的身份选择页（`AccountGate` 的 `RoleChoice`：账号 `role` 为空时拦在场景之前）让 `test/browser/default-view.cjs` 与 `character-setting.cjs` 卡在等场景上；两个用例补上 `/api/auth/role` 选择身份后恢复通过。这不是本次改动引入的，是它们没跟上身份流程。
+- 线上：`index-BzFXjOZU.js`（1,459,591 字节，SHA256 `12e69d7bf06df522bc125230cdc171d9722ad5d98a3b9ac28f9b46452a258746`）+ `index-CCVeF8Qd.css`（55,557 字节，SHA256 `ef261f82cb615f906910e1a254e3361d2638eda0c483f67340d420b1e4b0452c`），与本地 `Build/OfficeWeb` 逐字节一致；线上 JS 含名字标签字体串（`600 42px`）、线上 CSS 含 `.visitor-strip` 与琥珀底色。纯前端，**未重启 `officeweb`**。
+- 拆文件（用户 500 行硬上限）：本批改动后 `src/OfficeScene.tsx` 达到 **546 行**，已把视角预设 `VIEWS`、`remoteStates`、`nameTagItems` 抽到新的 `src/sceneViews.ts`，并在 `OfficeScene` 原地 `export type { View }` 保持既有导入不变；现为 **492 行**。`src/nameTags.ts` 181 行、`SidePanel.tsx` 226 行。
+
+## 2026-09-15 11:10 全屏只放大了窗口、视频没放大（前端 `index-ClFhEJ4r.js` + `index-C9mQAzGE.css`）
+
+- 用户报障：「怎么窗口全屏了 但是视频没有」——客户端点「全屏」后**窗口**进了全屏，共享画面仍留在内联的小框（`max-height: 62vh`）里。
+- 根因：`ScreenStage` 的 className 只拼了 `maximized` / `annotating`，**从来没有 `fullscreen`**；而 CSS 里给全屏用的只有 `:fullscreen` 伪类。桌面端的整屏是**原生窗口模式**（DOM Fullscreen API 在那种无边框透明窗口里是空操作），伪类永远不匹配 → 于是只有窗口变了。浏览器端走的是 DOM 全屏，所以一直看不出这个问题。
+- 改法：`ScreenStage.tsx` 补上 `fullscreen` 类；`screen-stage.css` 新增 `.screen-stage.fullscreen`（`fixed; inset:0; display:flex` 居中）与 `.fullscreen video { width/height:100% }`，底部药丸按钮条的居中规则也一并挂到 `.fullscreen`。规则声明在 `.maximized` 之后，两个类同时存在时整屏优先。
+- 验证：扩展现有浏览器测试 `test/browser/screen-stage.cjs` 的桌面路径——点全屏后必须 `classList.contains("fullscreen")`、舞台矩形等于视口矩形、**视频高度 > 90% 视口高度**。实测 `{"hasClass":true,"viewport":{"width":420,"height":700},"stage":{"left":0,"top":0,"width":420,"height":700},"videoHeight":700}`（修前是 62vh≈434）。该脚本 PASS、`tsc --noEmit` 通过、`node --test test/*.test.mjs` 127/127。
+- 发布：`index.html` + `assets/index-ClFhEJ4r.js` + `assets/index-C9mQAzGE.css`，JS/CSS SHA256 与本地一致；线上实测含 `.screen-stage.fullscreen{`，并且**同时包含并行会话的右侧面板收紧改动**（线上 JS 已无 `DESK `、CSS 已含 `11px 20px 8px`），没有覆盖对方的工作。纯前端，未改后端、未重启服务。备份 `backups/stage-fullscreen-20260915/`。
+- 边界：本次动到 `ScreenStage.tsx` 与 `screen-stage.css`（另一个对话的活跃文件），只加了全屏类与对应 CSS，未触碰其本机回显 / 坐标映射逻辑。
+
 ## 2026-09-15 11:05 右侧面板收紧 + 去掉「DESK A-1」字样（前端 `index-CJLUOYc0.js` + `index-BcoqqEm8.css`）
 
 - 需求（用户）：「网页上把DESK A-1这个字眼去掉，还是要收紧一下右侧 不然看不见下面 还得要滚轮，in good company 这里也收紧空间」。
