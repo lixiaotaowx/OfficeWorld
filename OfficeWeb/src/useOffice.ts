@@ -4,7 +4,7 @@ import { retainPresent, sameCallStates } from './presenceResources';
 import { useDesktopPreview } from './useDesktopPreview';
 import { useMeetings } from "./useMeetings";
 import type { AnnotateMessage } from './annotations';
-import { alertForExpiry, type CallAlert } from './callAlertRules';
+import { alertForExpiry, withCallAlert, type CallAlert } from './callAlertRules';
 import { createAnnotationChannel } from './annotationChannel';
 import { watchInputPresence } from './presenceInput';
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -252,7 +252,7 @@ export function useOffice(account: Account) {
       if (selectingForInvite.current === id) m.cancelScreenSelection();
       setOutgoing((old) => old.filter((r) => r.id !== id));
       setRequests((old) => old.filter((r) => r.id !== id));
-      if (alert) setCallAlerts((old) => [...old.filter((entry) => entry.id !== alert.id), alert]);
+      if (alert) setCallAlerts((old) => withCallAlert(old, alert));
     });
     s.on("session", (session: Session) => {
       setSessions((old) => [...old.filter(item => item.id !== session.id), session]);

@@ -50,6 +50,14 @@ const assert = require("node:assert/strict");
     assert.deepEqual(layout.buttons, ["再拨一次", "知道了"]);
     await page.screenshot({ path: resolve("../Build/call-alerts.png") });
 
+    // They stay: a missed call is read after coming back to the machine, so nothing may
+    // fade on its own (user, 2026-09-15: "未接来电是否一直显示 只可以手动关闭").
+    await page.waitForTimeout(13000);
+    const still = await page.evaluate(() =>
+      [...document.querySelectorAll(".call-alert")].map((card) => card.textContent.replace(/\s+/g, " ").trim()));
+    console.log("after 13s:", JSON.stringify(still));
+    assert.equal(still.length, 2, "13 秒后两张未接来电提示仍在（不能自动消失）");
+
     // 再拨一次 redials that person, 知道了 dismisses just that card.
     await page.locator(".call-alert").first().getByRole("button", { name: "再拨一次" }).click();
     await page.locator(".call-alert").nth(1).getByRole("button", { name: "知道了" }).click();

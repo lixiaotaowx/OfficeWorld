@@ -22,6 +22,19 @@ export interface ExpiryPayload {
   reason?: string;
 }
 
+/**
+ * How many missed calls stay stacked in the corner. A missed call is easy to miss in a
+ * workspace you glance at, so these do **not** fade on their own: they wait until somebody
+ * reads them (user, 2026-09-15: "未接来电是否一直显示 只可以手动关闭"). The oldest falls
+ * off only when the stack would grow past this.
+ */
+export const MAX_CALL_ALERTS = 5;
+
+/** Add a popup: newest last, one entry per call, never more than MAX_CALL_ALERTS. */
+export function withCallAlert(alerts: CallAlert[], alert: CallAlert): CallAlert[] {
+  return [...alerts.filter((entry) => entry.id !== alert.id), alert].slice(-MAX_CALL_ALERTS);
+}
+
 /** One popup for an expired invite, or null when it should stay quiet. */
 export function alertForExpiry(payload: ExpiryPayload | string, outgoing: Request[] = [],
   incoming: Request[] = [], nameOf: (id: string) => string = () => ''): CallAlert | null {

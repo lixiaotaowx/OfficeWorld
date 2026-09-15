@@ -48,8 +48,20 @@
 
 - 需求（用户）：「添加一个未接电话提示，明显一点的弹窗在程序右下角以及拨打时间30秒没人接就提示未接通，稍后重试」。
 - **振铃 30 秒**：`privateSessions.mjs` 的 `ringMs = 30000`（`createOfficeServer({ inviteRingMs })` 可注入，测试用短值）。到点 `expire(invite, 'timeout')` 给双方发 `request-expired { id, reason }`，发起方另收 notice「未接通，稍后重试」。`reason` 现在是 `timeout | cancelled | answered`（`server.mjs` 断线清理发 `cancelled`）——**协议是 `{ id, reason }` 对象，不是裸 id**；客户端解析器要同时容忍旧的裸字符串（当 `cancelled`）。
-- **弹窗只认 `timeout`**：`src/callAlertRules.ts` 的 `alertForExpiry` 是纯规则（我拨的 →「未接通，稍后重试」；别人拨给我的 →「未接来电」），取消/挂断/婉拒/已接听一律不弹，避免"自己取消也报未接"。视图 `src/CallAlerts.tsx` 固定在右下角（`.call-alerts`），12 秒自动消失，带「再拨一次」「知道了」。窗口在托盘里看不见页面，所以 `officeNotifications.ts` 对 `timeout` 额外发一次桌面/系统通知。
+- **弹窗只认 `timeout`**：`src/callAlertRules.ts` 的 `alertForExpiry` 是纯规则（我拨的 →「未接通，稍后重试」；别人拨给我的 →「未接来电」），取消/挂断/婉拒/已接听一律不弹，避免"自己取消也报未接"。视图 `src/CallAlerts.tsx` 固定在右下角（`.call-alerts`），带「再拨一次」「知道了」。窗口在托盘里看不见页面，所以 `officeNotifications.ts` 对 `timeout` 额外发一次桌面/系统通知。
+- **一直显示，只能手动关**（2026-09-15 用户追加：「未接来电是否一直显示 只可以手动关闭」）：卡片**没有**任何自动消失的计时器（`CallAlerts.tsx` 里不许再出现 `setTimeout/setInterval`，`test/call-alerts.test.mjs` 有一条断言守着），点「知道了」或「再拨一次」才消失；堆叠上限 `MAX_CALL_ALERTS = 5`，用 `withCallAlert()` 追加（同一通电话只留一条、最新的在最后、超上限挤掉最旧的）。刷新页面不保留（要保留得另存本机，用户没要）。
 - 规则与视图分离、服务器只发事实（`reason`），文案由客户端决定：新增原因值时不要改服务器文案，先想清楚"这个原因该不该弹"。
+
+## 在座 / 离桌（2026-09-15 用户要求）
+
+- 需求（用户）：「检测鼠标的移动和键盘的输入…如果在座就在头顶的名字卡片上显示一个绿点，在成员列表也展示一个绿点，如果离桌就显示红点，并记录离座时间分钟为单位，当触及小时，就用小时作为单位…最好是不更新客户端在网页解决」。
+- **只在网页实现，不需要更新 EXE 就能上线**（EXE 加载的就是同一个站点）：`src/presenceInput.ts` 监听 `pointermove / pointerdown / keydown / wheel / touchstart`（capture + passive），`AWAY_AFTER_MS` 内没有任何输入算离桌（当前 **10 秒**）。**只发状态翻转**（`input-state { atDesk, idleMs }`），不要在每个鼠标事件里发消息；页面打开默认在座，`connect` 后重新声明一次（重连不能把人一直留在绿点）。
+- **在别的软件里干活也算在座（2026-09-15 用户追问后补的）**：网页只能看见**发到本窗口**的输入，所以浏览器里"在 Word 里打字"确实会被判离桌——这是平台限制，除非用客户端。EXE 里换用 **Windows 全局空闲时间**：`desktop-bridge.cjs` 的 `office:system-idle`（`powerMonitor.getSystemIdleTime()` 秒 + `getSystemIdleState(1)` 的 `active/idle/locked`），`desktop-preload.cjs` 暴露 `systemIdle()`，`presenceInput.ts` 有 `desktopIdle` 时每 2 秒（`IDLE_POLL_MS`，要比阈值密）轮询一次：空闲秒数 < 阈值就算在座（本地 DOM 输入仍给即时反应），`locked` 立刻算离桌，轮询失败退回本页输入判定。**老 EXE 没有这个能力时自动退回纯 DOM 检测**，网页与客户端可以各自发版。
+- **阈值 10 秒、时长只用一个单位（2026-09-15 用户追加）**：`AWAY_AFTER_MS = 10_000`（"不操作10秒就算是离座"）；`awayLabel` 是**秒 → 分钟 → 小时单一单位**：「离座 55 秒」→「离座 2 分钟」→「离座 1 小时」/「1.5 小时」（≥10 小时取整），**不要**拼成「1 小时 5 分钟」。客户端上报时带 `idleMs`（已经安静了多久），服务端 `input-presence.mjs` 的 `idleOf()` 用它**回拨离座起点**（夹在 0～24 小时），所以刚变红显示的是真实的「离座 10 秒」；桌面端 `IDLE_POLL_MS = 2 秒`，必须比阈值密。
+- **离座时钟在服务端**（`input-presence.mjs`）：记 `awaySince`，广播 `atDesk` + `awayFor`（推送那刻已离座毫秒数），内部时间戳不外发；**缺字段一律算在座**（`person.atDesk !== false`），这样旧版客户端与检测不到输入的浏览器不会被误标红；只在翻转时 `publish()`。`server.mjs` 只是把 `people` 广播换成 `inputPresence.view()`。
+- **时长文案**（`src/awayTime.ts`）：客户端用 `awayFor + (now - 收到 payload 的时刻)`，**不要比较双方时钟**；列表的 1 秒心跳只在有人离桌时才跑。
+- 显示：头顶名字卡片（`nameTags.ts`）左侧一个点（`#3f9d4f` 在座 / `#cf4a38` 离桌，名字右移让开），`atDesk` 变了才重画 canvas；成员列表 `.seat-state` 绿/红 + `.away-label`「离座 N 秒 / N 分钟 / N 小时」，访客条与详情卡同样显示。
+- 边界：**浏览器**只看得见发到本窗口的输入，在别的程序里敲键盘仍会被判离桌（平台限制，网页层面无解）；**EXE** 已用系统空闲时间解决（见上一条）。放宽阈值就改 `AWAY_AFTER_MS` 一个常量。
 
 ## 会议室墙面照片（2026-09-15 用户要求）
 

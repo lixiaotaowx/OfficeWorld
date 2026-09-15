@@ -1,5 +1,37 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 19:45 未接来电改为「一直显示，只能手动关」（前端 `index-BXrLyfgG.js`，CSS 无改动）
+
+- 用户追问：「未接来电是否一直显示 只可以手动关闭」→ 在我给的选项里选了「**一直显示，只能手动关**」（原实现是 12 秒自动消失）。
+- 实现：`src/CallAlerts.tsx` 删掉自动消失的 `useEffect` / `ALERT_MS` 常量，卡片只留「知道了」「再拨一次」两个出口（组件变成纯展示，44 行）；入栈逻辑搬到纯规则 `withCallAlert(list, alert)` + `MAX_CALL_ALERTS = 5`（同一通电话只留一条、最新的在最后、超过 5 张挤掉最旧的），`useOffice` 用它入栈，便于单测。
+- 验证：`node --test test/*.test.mjs` **157/157**（新增「未接来电一直显示，只有『知道了』才关掉」：`CallAlerts.tsx` 源码里**不许出现 `setTimeout`/`setInterval`**、去重、上限 5、最旧的被挤掉）；浏览器 `test/browser/call-alerts.cjs` 增加一条**等 13 秒后两张卡仍在**的断言（旧实现 12 秒就消失，这条会失败）——实测仍在，截图 `Build/call-alerts.png`；`tsc --noEmit` 通过。
+- 发布：纯前端，逐文件上传 `index.html` + `assets/index-BXrLyfgG.js`（CSS 无改动，仍是 `index-IILK1dyr.css`），**未重启 `officeweb`**。线上入口 `index-BXrLyfgG.js`，JS SHA256 `3ddd04f9f1aa553df94ebe242306e8eacddd383856fe9dbd5b2bc98ef93c10d9` 与本地逐字节一致；线上包内仍有「未接通，稍后重试 / 未接来电 / 再拨一次 / 知道了」。
+- 边界：刷新页面后未接来电不保留（用户没选「刷新后仍在」那一项，那就得另存本机）；托盘里的 Windows 系统通知由系统管理，无法"一直显示"，能一直挂着的是程序内右下角这张卡。
+
+## 2026-09-15 19:15 在座 / 离桌（补）：客户端改用 Windows 全局空闲时间，在别的软件里干活也算在座（前端 `index-B7SWfW_n.js`；EXE 0.1.13）
+
+- 用户追问：「必须点击网页再网页操作才算回来座位吗 我要是不在这个软件呢 比如在别的软件 你不叫回座位吗」——上一版只看网页收到的输入，在 Word／别的程序里打字确实会被判成离桌。
+- **网页层面无解**（浏览器看不到别的程序的输入），所以在客户端里补上：`desktop-bridge.cjs` 新增 `office:system-idle`（`powerMonitor.getSystemIdleTime()` + `getSystemIdleState(1)` → `active/idle/locked`），`desktop-preload.cjs` 暴露 `systemIdle()`；网页 `presenceInput.ts` 有这条能力时每 5 秒问一次（`IDLE_POLL_MS`）：**空闲秒数 < 2 分钟就算在座**（本页 DOM 输入仍给即时反应），**锁屏立刻算离桌**，轮询失败或老 EXE 自动退回纯 DOM 检测——网页与客户端可以各自发版。
+- 实测（本机 Electron 44.3.0 / Windows 10 19045）：`Build/idle-times-check.cjs` → `{"seconds":0,"state":"active"}`；`Build/idle-bridge-check.cjs`（真 sandbox preload + 真 IPC，加载桌面端 preload/main 模块）→ `{"seconds":7,"state":"idle"}`、无 preload 错误。
+- 测试：`OfficeDesktop` **40/40**（新增「在座 / 离桌：把 Windows 全局的空闲时间交给页面，而不是只看本窗口」）；`OfficeWeb` **155/155**（`presence-input` 新增三条：在别的软件里干活也算在座、系统空闲与锁屏判定、轮询失败退回本地判定）、`tsc --noEmit` 通过。
+- 发布：前端上传 `index.html` + `assets/index-B7SWfW_n.js`（CSS 未变，仍是 `index-IILK1dyr.css`），纯前端**未重启 officeweb**；线上 JS 与本地逐字节一致且含 `systemIdle`。桌面端 **0.1.13**：免安装 `iruler-dream-0.1.13-Windows-x64.exe`（96.0 MB，SHA256 `56b0be934f947afe…`）、安装版 `iruler-dream-Setup-0.1.13-x64.exe`（96.5 MB，SHA256 `a226b35a12c0e4bf…`）；打包产物 `--office-smoke-test` → `ok=true`、`url=https://115.159.43.237/`、electron 44.3.0、sandbox/contextIsolation=true、nodeIntegration=false；打包时间之后没有更新的桌面源码。
+- 待用户安装：网页部分刷新即生效；「在别的软件里干活也算在座」需要装 **0.1.13**（建议装回同一目录 `C:\Program Files\iruler dream`）。已知遗留：`test/desktop-bridge-integration.cjs` 是**过期**的（`installDesktopBridge(() => win)` 没传 `displays`，在 `office:displays` 就抛错，本次未修），新的 IPC 由 `Build/idle-bridge-check.cjs` 覆盖。
+
+- 用户追加（19:40）：「不操作10秒就算是离座 显示离座时间就好了比如离座55秒 然后一会又离座2分钟，时间长了比如离座1小时，都是只要一个单位」→ `AWAY_AFTER_MS` 从 2 分钟改成 **10 秒**；`awayLabel` 改成**秒 → 分钟 → 小时，只有一个单位**（<60 秒「离座 55 秒」，<60 分钟「离座 2 分钟」，之后「离座 1 小时」/「1.5 小时」，≥10 小时取整）；客户端上报 `idleMs`（已经安静了多久），服务端 `idleOf()` 用它**把离座起点回拨**（夹在 0～24 小时），这样刚变红就显示真实的「离座 10 秒」而不是「1 秒」；桌面端轮询 `IDLE_POLL_MS` 5 秒 → **2 秒**（必须比 10 秒阈值密，否则红点迟到）。
+- 发布（19:45）：前端 `index.html` + `assets/index-DD8lehBP.js`（CSS 未变，仍是 `index-IILK1dyr.css`），纯前端**未重启 officeweb**；线上 JS 与本地逐字节一致，线上包里能查到三段单位 `离座 ${Math.max(1,e)} 秒 … ${t} 分钟 … 小时` 与 `{atDesk,idleMs}`。测试：网页 **156/156**、`tsc --noEmit` 通过、浏览器 `desk-presence-dots.cjs` PASS（截图 `Build/desk-presence-away-label.png` 里是「离座 1 秒」）。**这一次不需要新 EXE**：阈值与单位都在网页里；但「在别的软件里干活也算在座」仍要 0.1.13。
+
+## 2026-09-15 18:55 在座 / 离桌：键鼠活跃检测 → 名字卡片与成员列表的绿点/红点 + 离座时长（前端 `index-J_xQsCMi.js` / `index-IILK1dyr.css`，后端 `server.mjs` + `input-presence.mjs`）
+
+- 需求（用户）：「检测鼠标的移动和键盘的输入…在座就在头顶的名字卡片上显示绿点、成员列表也显示绿点，离桌显示红点，并记录离座时间分钟为单位，触及小时就用小时…最好不更新客户端，在网页解决」。
+- **纯网页实现，不用重装 EXE**：`src/presenceInput.ts` 监听 `pointermove / pointerdown / keydown / wheel / touchstart`（capture + passive），**2 分钟**（`AWAY_AFTER_MS`）毫无输入算离桌；只有状态**翻转**才发 `input-state { atDesk }`（鼠标每动一下都发消息是不可能的）。开页面默认「在座」，`connect` 时重新声明一次，掉线重连后不会被当成一直在座。
+- **离座时钟在服务端**：`input-presence.mjs` 记 `awaySince`，广播时给 `atDesk` 与 `awayFor`（推送那一刻已离座多少毫秒），内部时间戳不外发；**没上报过的客户端一律算在座**（旧版 EXE、检测不到输入的浏览器不会被标红）；只在翻转时 `publish()`，重复上报不广播。
+- **离座时长**（`src/awayTime.ts`）：客户端把 `awayFor` 加上 payload 到达后经过的时间（不比较双方时钟）。不足一小时显示「离座 N 分钟」，满一小时显示「离座 1.5 小时」（≥10 小时取整）。成员列表用 1 秒心跳刷新，只有真的有人离桌时才跑这个 timer。
+- **显示**：头顶名字卡片（`nameTags.ts`）在药丸左侧画点（在座 `#3f9d4f` / 离桌 `#cf4a38`，名字右移让开），只在 `atDesk` 变化时重画 canvas；成员列表工位行 `.seat-state` 绿/红 + `.away-label`「离座 N 分钟」，访客条与详情卡同样显示。
+- **已知边界（已跟用户说明）**：网页只能看到**发到本窗口**的输入，在别的程序里连着敲 2 分钟也会算离桌；想放宽改 `src/presenceInput.ts` 的 `AWAY_AFTER_MS` 一个常量即可。
+- 测试：新增 `test/away-time.test.mjs`、`test/presence-input.test.mjs`、`test/input-presence.test.mjs`、`test/name-tag-presence.test.mjs`、`test/desk-presence.test.mjs`（真服务器 + 真 socket 端到端）；浏览器 `test/browser/desk-presence-dots.cjs`（真页面 + 真服务器：绿点 → 上报离桌 → 成员列表红点与「离座 N 分钟」+ 名字卡片红点 → 回绿），截图 `Build/desk-presence.png`、放大 `Build/desk-presence-tags.png`。`node --test test/*.test.mjs` **152/152**、`tsc --noEmit` 通过。
+- 发布：前端 `index.html` + `assets/index-J_xQsCMi.js` + `assets/index-IILK1dyr.css`，后端 `server.mjs` + `input-presence.mjs`，`systemctl restart officeweb` → active；线上 JS/CSS（`2fc5234e…` / `9ce1c559…`）与本地逐字节一致，线上 JS 里能查到 `input-state`、`pointermove`，线上 CSS 里有 `.away-label`；`Build/live-boot-check.cjs` 打开正式站：登录页正常渲染、没有页面错误（只有未登录必然的一次 401）。
+- 提醒下一位：`server.mjs` 现在**正好 500 行**（本次只加了 import 与 `createInputPresence` 两行）。再往里加东西之前，请先按职责拆出一块，别贴着上限堆。
+
 ## 2026-09-15 18:30 未接电话提示：右下角弹窗 + 振铃 30 秒没人接就提示（前端 `index-J_xQsCMi.js` / `index-IILK1dyr.css`，后端 `server.mjs` + `privateSessions.mjs` + `input-presence.mjs`）
 
 - 需求（用户）：「添加一个未接电话提示，明显一点的弹窗在程序右下角以及拨打时间30秒没人接就提示未接通，稍后重试」。

@@ -1,9 +1,5 @@
-import { useEffect } from 'react';
 import { HangupIcon, PhoneIcon } from './icons';
 import type { CallAlert } from './callAlertRules';
-
-/** How long a missed-call popup stays before it fades on its own. */
-const ALERT_MS = 12000;
 
 /**
  * Missed-call popups, stacked in the bottom-right corner of the window.
@@ -12,6 +8,10 @@ const ALERT_MS = 12000;
  * caller never noticed and the callee could not tell whether somebody had tried
  * (user, 2026-09-15). These sit above everything, name the person, and let the caller
  * dial again in one click.
+ *
+ * They stay until somebody clicks 知道了: a missed call is exactly the kind of thing a
+ * person notices only after coming back to the machine, so a timer would defeat the point
+ * (user, 2026-09-15: "未接来电是否一直显示 只可以手动关闭").
  */
 export default function CallAlerts({ alerts, onDismiss, onRetry }: {
   alerts: CallAlert[];
@@ -29,10 +29,6 @@ function CallAlertCard({ alert, onDismiss, onRetry }: {
   onDismiss: (id: string) => void;
   onRetry: (alert: CallAlert) => void;
 }) {
-  useEffect(() => {
-    const timer = setTimeout(() => onDismiss(alert.id), ALERT_MS);
-    return () => clearTimeout(timer);
-  }, [alert.id, onDismiss]);
   return <section className={`call-alert ${alert.kind}`} role="alert">
     <div className="call-alert-icon"><HangupIcon /></div>
     <div className="call-alert-copy">
