@@ -211,3 +211,35 @@ test("管理员请出＝离开空间：断开连接并撤销会话", async () =>
     assert.equal(after.hidden.includes(kickedId), false);
   }, { adminPassword: "test-admin" });
 });
+
+test("成员可以给访客打电话，访客也能反过来邀请成员", async () => {
+  await withAuthServer(async ({ post, enter }) => {
+    const guest = await post("register", { name: "客户辛", password: "1" });
+    await post("role", { role: "visitor" }, guest.cookie);
+    const visitor = await enter(guest.cookie, "客户辛");
+    const owner = await post("register", { name: "同事壬", password: "1" });
+    await post("role", { role: "employee" }, owner.cookie);
+    const member = await enter(owner.cookie, "同事壬");
+    assert.equal(visitor.me().role, "visitor");
+
+    // A visitor holds no desk, but nothing about calling may depend on that.
+    const invite = new Promise((resolve) => visitor.socket.once("request", resolve));
+    member.socket.emit("request", { target: visitor.socket.id, kind: "voice" });
+    const request = await invite;
+    assert.equal(request.from, member.socket.id, "访客必须收到成员的来电");
+    assert.equal(request.kind, "voice");
+
+    const session = new Promise((resolve) => member.socket.once("session", resolve));
+    const answer = await visitor.socket.emitWithAck("respond", { id: request.id, accept: true });
+    assert.equal(answer.ok, true, "访客同意后必须建立通话");
+    const created = await session;
+    assert.match(created.room, /^call-/);
+    assert.equal(created.peers.includes(visitor.socket.id), true);
+    assert.equal(created.peers.includes(member.socket.id), true);
+
+    // The other direction: a visitor inviting a member reaches them too.
+    const back = new Promise((resolve) => member.socket.once("request", resolve));
+    visitor.socket.emit("request", { target: member.socket.id, kind: "voice" });
+    assert.equal((await back).from, visitor.socket.id, "成员必须收到访客的来电");
+  });
+});

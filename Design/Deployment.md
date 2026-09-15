@@ -1,5 +1,13 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-15 13:00 修「无法给访客打电话」（前端 `index-CLicjdwV.js`）
+
+- 现象（用户）：「无法给访客打电话啊 修复一下」。
+- 根因：**不是服务端限制**——`privateSessions.mjs` 的 `request` 只检查双方在线、不是自己、kind 合法，跟身份无关。问题在右侧面板：详情卡原来只跟着**选中的工位**（`onlinePerson = people.find(p => p.seat === selected)`），访客没有工位，于是三个通话按钮永远是 disabled，也没有别的入口。
+- 修复（`src/SidePanel.tsx`）：卡片改为跟着**被点中的人**——`focused`（`focusedPerson`）优先，其次才是该工位的人；目标是别人时三个动作都可用（请求观看对方屏幕 / 分享我的屏幕给对方 / 邀请语音）。访客还会显示「访客 · 在公共区沙发」小标，空屏区提示「点上面的按钮即可通话」。成员与工位原有行为不变（点工位会清掉人物焦点）。
+- 验证：`tsc --noEmit` 通过；`node --test test/*.test.mjs` **128/128**（新增「成员可以给访客打电话，访客也能反过来邀请成员」：成员邀请 → 访客收到来电 → 同意后建立 `call-` 会话，双向都通）；浏览器 `test/browser/desk-preview.cjs` PASS 并新增断言——点访客行后详情卡为「客户乙 / 访客 · 在公共区沙发 / 三个按钮全部可用」，截图 `Build/visitor-call-card.png`。`sidebar-layout.cjs` 仍 PASS。
+- 发布：`index.html` + `assets/index-CLicjdwV.js`（CSS 未变，仍是 `index-BOg4IzVj.css`）；线上入口即 `index-CLicjdwV.js`，JS SHA256 `35dd683a5cdf487558a4a93eb3047789434eaadacbfebcd8ab813b0fb9e84fe4` 与本地一致，线上包里能查到「访客 · 在公共区沙发」与「点上面的按钮即可通话」。纯前端改动，未改后端、未重启服务。
+
 ## 2026-09-15 12:35 会议室墙面显示器换成团队照片（前端 `index-B-v0-LCJ.js` + 新资源 `meeting-wall-photo.jpg`）
 
 - 需求（用户）：给了一张 AI 生成的团队合影（2732×1535，豆包 AI 生成），"把这个图片存下来放在会议室墙上的图片上"。

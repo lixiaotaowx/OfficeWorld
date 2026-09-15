@@ -29,6 +29,10 @@ interface Props extends ChatFileActions {
   onTab: (tab: "people" | "chat") => void;
   onSelect: (seat: number) => void;
   onOpenDesks: () => void;
+  /** Point the camera at a person — visitors hold no desk to focus instead. */
+  onFocusPerson: (id: string) => void;
+  /** Whoever the camera was last pointed at, so the row can stay highlighted. */
+  focusedPerson: string | null;
   onRequest: (target: string, kind: "screen" | "voice", offer?: boolean) => void;
 }
 
@@ -51,14 +55,24 @@ export default function SidePanel({
   onTab,
   onSelect,
   onOpenDesks,
+  onFocusPerson,
+  focusedPerson,
   onRequest,
   onFile,
   loadFile,
 }: Props) {
   const [unread, setUnread] = useState(0);
+  // Guests of the office: they sit in the public area instead of at a desk, so
+  // they would otherwise be missing from the directory altogether.
+  const visitors = people.filter((person) => person.role === "visitor");
   // The desk's permanent owner (may be offline), and its online person if any.
   const onlinePerson = people.find((p) => p.seat === selected);
   const owner = seats[selected] || (onlinePerson && { id: onlinePerson.clientId, name: onlinePerson.name, online: true });
+  // A visitor holds no desk, so the card has to follow the person the directory
+  // focused - otherwise there is no way to call them at all (user, 2026-09-15).
+  const focused = focusedPerson ? people.find((person) => person.id === focusedPerson) : undefined;
+  const target = focused || onlinePerson;
+  const callable = target && target.id !== myId ? target : undefined;
   return (
     <aside id="office-side-panel" className="sidebar" hidden={!panelOpen}>
       <div className="directory-heading">
@@ -132,47 +146,76 @@ export default function SidePanel({
               );
             })}
           </div>
+          {visitors.length > 0 && (
+            <>
+              <div className="side-title">
+                <h3>访客</h3>
+                <span>公共区沙发 · {visitors.length} 位</span>
+              </div>
+              <div className="visitor-strip">
+                {visitors.map((guest) => (
+                  <button
+                    key={guest.id}
+                    aria-pressed={guest.id === focusedPerson}
+                    title="把镜头对到这个人"
+                    className={"visitor" + (guest.id === focusedPerson ? " chosen" : "") +
+                      (guest.id === myId ? " mine" : "")}
+                    onClick={() => onFocusPerson(guest.id)}
+                  >
+                    <span className="visitor-dot" aria-hidden="true" />
+                    <strong>{guest.name}</strong>
+                    <small>
+                      {guest.id === myId ? "我 · " : "访客 · "}
+                      {guest.sittingSpot ? "在公共区沙发" : "在空间里"}
+                    </small>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div className="detail">
-            <h3>{owner?.name || "给灵感留一个位置"}</h3>
+            {target?.role === "visitor" && <span className="eyebrow">访客 · 在公共区沙发</span>}
+            <h3>{target?.name || owner?.name || "给灵感留一个位置"}</h3>
             {/* The primary action comes before the preview on purpose: on a
                 short laptop screen the preview would push it below the fold. */}
             <div className="detail-actions">
               {/* A desk belongs to whoever picked it, so there is no take-over
                   button and none to give it up either. Seat actions (return to
-                  it, stand up) live with the avatar controls under the scene. */}
+                  it, stand up) live with the avatar controls under the scene.
+                  A visitor has no desk, so these act on whoever is focused. */}
               <button
-                disabled={
-                  !onlinePerson || onlinePerson.id === myId
-                }
-                onClick={() => onlinePerson && onRequest(onlinePerson.id, "screen")}
+                disabled={!callable}
+                onClick={() => callable && onRequest(callable.id, "screen")}
               >
                 请求观看对方屏幕
               </button>
-              <button disabled={!onlinePerson || onlinePerson.id === myId}
-                onClick={() => onlinePerson && onRequest(onlinePerson.id, 'screen', true)}>
+              <button disabled={!callable}
+                onClick={() => callable && onRequest(callable.id, 'screen', true)}>
                 分享我的屏幕给对方
               </button>
               <button
-                disabled={!onlinePerson || onlinePerson.id === myId}
-                onClick={() => onlinePerson && onRequest(onlinePerson.id, "voice")}
+                disabled={!callable}
+                onClick={() => callable && onRequest(callable.id, "voice")}
               >
                 邀请语音
               </button>
             </div>
-            {onlinePerson && previews[onlinePerson.id] ? (
+            {callable && previews[callable.id] ? (
               <img
                 className="screen-preview"
-                src={previews[onlinePerson.id]}
-                alt="工位屏幕的低清预览"
+                src={previews[callable.id]}
+                alt="对方屏幕的低清预览"
               />
             ) : (
               <div className="empty-screen">
                 <span>▱</span>
-                {owner
-                  ? onlinePerson
-                    ? "尚未共享屏幕"
-                    : "对方离线，工位已保留"
-                  : "这个工位暂时无人"}
+                {target
+                  ? target === focused
+                    ? "点上面的按钮即可通话"
+                    : "尚未共享屏幕"
+                  : owner
+                    ? "对方离线，工位已保留"
+                    : "这个工位暂时无人"}
               </div>
             )}
           </div>

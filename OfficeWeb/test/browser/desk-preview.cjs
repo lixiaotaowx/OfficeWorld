@@ -137,6 +137,22 @@ const readSeat = (page, seat) => page.evaluate(index => {
     report.guest = await readSeat(guest.page, BOSS_SEAT);
     report.guestErrors = guest.errors;
     report.bossAfterGuest = await readSeat(boss.page, BOSS_SEAT);
+
+    // A visitor must be callable: focusing the visitor row has to point the detail card
+    // (and its voice / screen actions) at them, since they hold no desk (user,
+    // 2026-09-15: "无法给访客打电话").
+    await boss.page.locator(".visitor-strip .visitor").first().click();
+    await boss.page.waitForTimeout(700);
+    report.visitorCard = await boss.page.evaluate(() => {
+      const detail = document.querySelector(".detail");
+      return {
+        name: detail.querySelector("h3")?.textContent?.trim() || null,
+        eyebrow: detail.querySelector(".eyebrow")?.textContent?.trim() || null,
+        actions: [...detail.querySelectorAll(".detail-actions button")]
+          .map((button) => ({ label: button.textContent.trim(), disabled: button.disabled })),
+      };
+    });
+    await boss.page.screenshot({ path: path.resolve("Build/visitor-call-card.png") });
     // A visitor is seated on a sofa by the server and must never be asked to click a
     // chair (user, 2026-09-15); the bottom bar should say where they are sitting.
     report.guestPicker = await guest.page.locator(".seat-picker-hint").count();
@@ -196,6 +212,12 @@ const readSeat = (page, seat) => page.evaluate(index => {
       "被请出的人必须从聊天会话列表消失");
     assert.equal(report.bossBackAtLogin, 1, "被请出的人要回到登录页，不能留在空间里");
     assert.equal(report.memberPicker, 1, "没有工位的成员仍然要能选座");
+    assert.equal(report.visitorCard?.name, "客户乙", "点访客时要选中这位访客");
+    assert.match(report.visitorCard?.eyebrow || "", /访客/, "卡片要说明他是访客");
+    assert.deepEqual(report.visitorCard?.actions.map((action) => action.disabled), [false, false, false],
+      "访客的三个通话按钮都要可用");
+    assert.deepEqual(report.visitorCard?.actions.map((action) => action.label),
+      ["请求观看对方屏幕", "分享我的屏幕给对方", "邀请语音"]);
     assert.deepEqual(report.bossErrors, []);
     assert.deepEqual(report.guestErrors, []);
     assert.deepEqual(report.memberErrors, []);
