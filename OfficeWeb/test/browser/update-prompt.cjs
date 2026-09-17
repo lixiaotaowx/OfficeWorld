@@ -93,18 +93,17 @@ const assert = require("node:assert/strict");
     assert.equal(await ready.evaluate(() => window.__installed), 1, "点了要真的去启动安装器");
     await ready.close();
 
-    // 4. 老客户端（没有更新桥）：送去下载说明页，并写清文件在哪、怎么装
+    // 4. 老客户端（没有更新桥）：点一下就下载，只留一行提示（用户要求越简单越好）
     const old = await open("?old=1&stage=browser");
     const fallback = await old.evaluate(() => ({
       text: document.querySelector(".update-prompt").textContent.replace(/\s+/g, " ").trim(),
       buttons: [...document.querySelectorAll(".update-prompt button")].map(b => b.textContent.trim()),
     }));
     console.log("old client:", JSON.stringify(fallback));
-    assert.match(fallback.text, /已在浏览器打开下载页/);
-    assert.match(fallback.text, /在文件夹中显示/, "要告诉用户去哪儿找文件");
-    assert.match(fallback.text, /iruler-dream-Setup-0\.1\.14-x64\.exe/, "要写出安装包文件名");
-    assert.match(fallback.text, /一键更新/, "要说明装完这版以后就不用手动装了");
-    assert.deepEqual(fallback.buttons, ["重新打开下载页", "复制下载地址", "稍后"]);
+    assert.match(fallback.text, /已开始下载 0\.1\.14 安装包/);
+    assert.match(fallback.text, /「下载」文件夹双击安装/);
+    assert.match(fallback.text, /iruler-dream-Setup-0\.1\.14-x64\.exe/);
+    assert.deepEqual(fallback.buttons, ["重新下载", "复制下载地址", "稍后"]);
     await old.getByRole("button", { name: "复制下载地址" }).click();
     assert.equal(await old.evaluate(() => window.__copied), 1);
     await old.screenshot({ path: resolve("../Build/update-old-client.png") });

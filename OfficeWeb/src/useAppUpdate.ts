@@ -5,7 +5,7 @@
 // 客户端退出，安装器覆盖安装。浏览器里没有客户端，只能给一个直接下载的链接。
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  describeUpdate, formatBytes, isNewerVersion, progressPercent, AUTO_INSTALL_SECONDS, DOWNLOAD_PAGE,
+  describeUpdate, formatBytes, isNewerVersion, progressPercent, AUTO_INSTALL_SECONDS,
   type UpdateCopy, type UpdateManifest, type UpdateStage,
 } from './updateRules';
 
@@ -100,11 +100,11 @@ export function useAppUpdate(): AppUpdate {
     setError(undefined);
     const absolute = new URL(manifest.url, location.origin).href;
     if (!bridge?.downloadUpdate) {
-      // No update bridge in this client (0.1.13 and older): the desktop app forwards an
-      // http(s) URL to the system browser, which is the only place a download can happen.
-      // Send it to the download PAGE, so the user gets the file, the file name and the
-      // three steps for installing it (user, 2026-09-17: "老版本用户下载了找不到文件位置").
-      window.open(new URL(DOWNLOAD_PAGE, location.origin).href, '_blank', 'noopener');
+      // No update bridge in this client (0.1.13 and older): the desktop app forwards the
+      // http(s) URL to the system browser and that is as far as it goes. One click, the
+      // download starts, the user finds the file themselves — no walkthrough page
+      // (user, 2026-09-17: "下载后让他自己去找吧").
+      window.open(absolute, '_blank', 'noopener');
       setStage('browser');
       return;
     }

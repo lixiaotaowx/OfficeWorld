@@ -10,7 +10,7 @@ const source = readFileSync(new URL('../src/updateRules.ts', import.meta.url), '
 const compiled = ts.transpileModule(source, { compilerOptions: {
   target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
 } }).outputText;
-const { compareVersions, isNewerVersion, formatBytes, progressPercent, describeUpdate, DOWNLOAD_PAGE } =
+const { compareVersions, isNewerVersion, formatBytes, progressPercent, describeUpdate } =
   await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 
 const manifest = { version: '0.1.14', url: '/download/iruler-dream-Setup-0.1.14-x64.exe',
@@ -70,36 +70,31 @@ test('有新版本才提示：文案、按钮、能不能自动更新', () => {
   assert.match(old.detail, /客户端太旧/);
 });
 
-test('老客户端走浏览器下载：给的是下载说明页，说清文件去哪了、怎么装', () => {
-  // 用户报障「老版本人家用户下载了找不到文件位置」——网页没法打开文件夹也没法运行 exe，
-  // 所以把它送到 /download/ 说明页，并写清文件名与「在文件夹中显示」（2026-09-17）。
+test('老客户端：点一下就下载，找不到文件是自己的事（用户要求越简单越好）', () => {
+  // 用户先后两次反馈：「旧客户端下载好了没有弹出文件夹/安装」→ 做了说明页 →
+  // 「你这个引导也更麻烦了…下载后让他自己去找吧」。所以只保留一行提示（2026-09-17）。
   const browser = describeUpdate(manifest, undefined, 'browser');
-  assert.match(browser.title, /已在浏览器打开下载页/);
-  assert.match(browser.title, /0\.1\.14/);
-  assert.match(browser.detail, /下载安装包/);
+  assert.match(browser.title, /已开始下载 0\.1\.14 安装包/);
+  assert.match(browser.detail, /「下载」文件夹双击安装/);
   assert.equal(browser.automatic, false);
-  assert.equal(browser.action, '重新打开下载页');
+  assert.equal(browser.action, '重新下载');
   assert.equal(browser.secondary, '复制下载地址');
-  assert.match(browser.hint, /在文件夹中显示/, '要告诉用户去哪儿找文件');
-  assert.match(browser.hint, /iruler-dream-Setup-0\.1\.14-x64\.exe/, '要把安装包文件名写出来');
-  assert.match(browser.hint, /96\.5 MB/);
-  assert.match(browser.hint, /一键更新/, '要说明装完之后就不用再手动装了');
-  assert.equal(DOWNLOAD_PAGE, '/download/');
+  assert.equal(browser.hint, 'iruler-dream-Setup-0.1.14-x64.exe（96.5 MB）', '只留文件名和大小');
+  assert.doesNotMatch(browser.hint, /在文件夹中显示|Ctrl|Win/, '不要再塞操作步骤');
+  const hook = readFileSync(new URL('../src/useAppUpdate.ts', import.meta.url), 'utf8');
+  assert.match(hook, /window\.open\(absolute, '_blank', 'noopener'\)/, '老客户端直接下载安装包，不绕页面');
 });
 
-test('下载说明页：读同一份 latest.json，写明三步安装与文件名', () => {
+test('站点上的下载说明页仍然可用（发给同事的直链）', () => {
+  // 页面不再被客户端自动打开，但保留为可以直接发出去的链接。
   const page = readFileSync(new URL('../public/download/index.html', import.meta.url), 'utf8');
   assert.match(page, /\/download\/latest\.json/, '页面的版本信息来自推送命令写的清单');
   assert.match(page, /cache: 'no-store'/, '不能被缓存骗过去');
   assert.match(page, /在文件夹中显示/, '要教用户怎么找到文件');
   assert.match(page, /Ctrl \+ J/, '浏览器的下载列表也要提');
   assert.match(page, /Win \+ E/, '资源管理器的路径也要提');
-  assert.match(page, /下载<\/b>/, '要说「下载」文件夹');
   assert.match(page, /manifest\.url/, '下载按钮指向清单里的安装包');
   assert.match(page, /link\.click\(\)/, '打开页面就自动开始下载，少点一次');
-  const hook = readFileSync(new URL('../src/useAppUpdate.ts', import.meta.url), 'utf8');
-  assert.match(hook, /window\.open\(new URL\(DOWNLOAD_PAGE, location\.origin\)\.href/,
-    '老客户端要打开下载说明页，而不是直接把 exe 丢给浏览器');
 });
 
 test('网页读取的位置、跳过记录、进度通道都与客户端约定一致', () => {
