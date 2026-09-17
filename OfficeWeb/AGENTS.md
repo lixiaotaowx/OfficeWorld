@@ -44,6 +44,21 @@
 - **本机即时回显**（用户："延迟严重"）：笔迹要经过 指针 → socket → 分享者桌面浮层 → 采集 → 视频 才回来，正常几百毫秒。`ScreenStage` 因此在本机画布 `.screen-stage-ink` 上立即回显自己正在画的笔画（同坐标、同颜色 `colorFor(accountId)`），`ECHO_MS=1400ms` 后交还给画面里的真迹，避免双份墨迹；撤销/清空会同时清掉回显。
 - **映射按"画面框"换算，不按元素框**：坐标一律相对 `<video>`（`object-fit: contain` 的 letterbox 内框）归一化到 0..1，测量基准是 **video 元素自身**的矩形而不是绘制层；首帧未到时（`videoWidth=0`）退回元素框，避免第一笔被丢掉。`test/browser/screen-stage.cjs` 在 420×700 与 1280×720 两种窗口比例下校验落点命中 0.25/0.75。桌面浮层由主进程保证窗口内容区**恰好等于被共享显示器**（`place()` 先比较再 `setBounds`，页面加载完成后与 `display-metrics-changed` 时重新贴合），所以各种分辨率/缩放下 0..1 都对应同一位置。
 
+## 屏幕共享的清晰度（2026-09-15 用户报障后修订）
+
+- 报障（用户）：「视频接通后需要等待很久才变清晰…另外会有突然变糊的情况也改善一下」。
+- **根因**：LiveKit 对 1080p 屏幕共享默认发**三层 simulcast**（`computeVideoEncodings` 里 `screenShareSimulcastLayers` 未设时给 `[low, mid, original]`），对端先订阅低层、等带宽估计升上来才变清晰，任何一次抖动又切回低层 = "突然变糊"；默认目标码率只有 2.5 Mbps，而 `x-google-start-bitrate` 取目标的 90%，目标小就爬坡十几秒。
+- **现在的设置（不要随手改回默认）**：`mediaRooms.ts` 的 Room 里 `publishDefaults.screenShareSimulcastLayers: []`（空数组 = 只发一层，`presets.length === 0` 的分支）+ `screenShareEncoding: { maxBitrate: 5_000_000, maxFramerate: 15 }`；采集时 `contentHint = 'text'`（`screenSwitch.ts` 的 `captureSelectedScreen()`，会议走 `createScreenTracks({ contentHint: 'text' })`）；屏幕轨的 `degradationPreference` 由 LiveKit 默认给 `maintain-resolution`（掉帧不掉清晰度）。`media.ts` 的私聊采集必须复用 `captureSelectedScreen()`，别在别处另起一套 `getDisplayMedia`（`test/screen-quality.test.mjs` 有断言守着）。
+- 代价：单层之后弱网对端会卡顿而不是自动变糊。真要照顾弱网，加回一层低清（`screenShareSimulcastLayers: [ScreenSharePresets.h720fps5]`）——但那会把"先糊后清晰"带回来，别默认这么做。
+
+## 切换共享/预览用的屏幕（2026-09-15 用户要求）
+
+- 需求（用户）：「右键自己显示会切换屏幕…在屏幕会议和视频聊天中可以切换屏分享的屏幕也是实时变化过去，除了右键屏幕，右键成员列表中的自己也可以」。
+- **两个入口、一个菜单**：画面里右键自己的显示器（`monitorContext.ts` → `App` 的 `screenMenu`）和成员列表里右键自己那一行（`SidePanel` 的 `.seat-grid .seat.mine` / 自己那条访客）打开的都是 `MonitorContextMenu`；菜单状态住在 `App.tsx`，`OfficeScene` 只负责把点击坐标交上去。**只有客户端才有这块菜单**（浏览器没有可切换的物理屏幕，`window.officeDesktop` 不存在时右键走原生菜单）。
+- **换屏 = 重新采集 + 原地换轨**（`src/screenSwitch.ts`）：桌面端 `permissions.cjs` 的 `setDisplayMediaRequestHandler` 没有选择窗口，每次 `getDisplayMedia` 都跟着"当前选中的显示器"，所以换屏就是再采集一次；然后 `LocalTrack.replaceTrack()` 把**已发布的轨原地换掉**——不重协商、不断线、不用重新同意。`media.ts` 的 `switchScreenDisplay()` 先问会议（`meetingScreenShare.ts` 的 `switchDisplay()`），再换私聊那条；`useOffice` 监听 `office-display-changed` 触发。低清工位预览仍然由 `useDesktopPreview` 自己重抓一帧。
+- 换轨时必须自己收尾：LiveKit 只 detach 旧轨、**不会停它**（`providedByUser` 被置 true），所以要显式 `previous.stop()`；换之前先把旧轨的 `onended` 清空，否则"主动停掉旧采集"会被当成"用户停止共享"而走 `stopScreen()`。低清缩略图循环已拆到 `src/screenThumbnails.ts`（300px / 6 秒 / JPEG 0.55）。
+- 测试：`test/screen-switch.test.mjs`（原地换轨、每间一份克隆、共享已结束时收掉新采集）、`test/meeting-screen-switch.test.mjs`、`test/screen-thumbnails.test.mjs`、浏览器 `test/browser/screen-menu.cjs`；真实 Electron 授权链路由 `Build/screen-switch-capture-check.cjs` 覆盖（用合成显示器，不抓用户桌面）。
+
 ## 未接电话提示（2026-09-15 用户要求）
 
 - 需求（用户）：「添加一个未接电话提示，明显一点的弹窗在程序右下角以及拨打时间30秒没人接就提示未接通，稍后重试」。
@@ -61,7 +76,8 @@
 - **离座时钟在服务端**（`input-presence.mjs`）：记 `awaySince`，广播 `atDesk` + `awayFor`（推送那刻已离座毫秒数），内部时间戳不外发；**缺字段一律算在座**（`person.atDesk !== false`），这样旧版客户端与检测不到输入的浏览器不会被误标红；只在翻转时 `publish()`。`server.mjs` 只是把 `people` 广播换成 `inputPresence.view()`。
 - **时长文案**（`src/awayTime.ts`）：客户端用 `awayFor + (now - 收到 payload 的时刻)`，**不要比较双方时钟**；列表的 1 秒心跳只在有人离桌时才跑。
 - 显示：头顶名字卡片（`nameTags.ts`）左侧一个点（`#3f9d4f` 在座 / `#cf4a38` 离桌，名字右移让开），`atDesk` 变了才重画 canvas；成员列表 `.seat-state` 绿/红 + `.away-label`「离座 N 秒 / N 分钟 / N 小时」，访客条与详情卡同样显示。
-- 边界：**浏览器**只看得见发到本窗口的输入，在别的程序里敲键盘仍会被判离桌（平台限制，网页层面无解）；**EXE** 已用系统空闲时间解决（见上一条）。放宽阈值就改 `AWAY_AFTER_MS` 一个常量。
+- **底部栏要显示"谁在判定"**（2026-09-17 用户报障「离座检测不管用 鼠标需要去到软件里面才行」后加）：`presenceInput.ts` 的 `usesSystemIdle()` + 纯函数 `deskSensorLabel()`，`useOffice` 暴露 `deskSensorLabel`，`App.tsx` 在「我的工位预览：…」旁边多一行「**离座检测：系统空闲（客户端）**」或「**离座检测：仅本窗口输入（浏览器）**」。这次报障的真因就是**本机装的客户端是 0.1.11**（asar 里既没有 `office:system-idle` 也没有 `systemIdle`），于是静默退回纯 DOM 判定 —— 以后先看这一行，不要靠猜。
+- 边界：**浏览器**只看得见发到本窗口的输入，在别的程序里敲键盘仍会被判离桌（平台限制，网页层面无解）；**EXE ≥ 0.1.13** 才有 `powerMonitor` 系统空闲桥（0.1.11／0.1.12 装的都是旧版，会自动退回纯 DOM 判定，用户看到的现象就是"鼠标必须进软件"）。放宽阈值就改 `AWAY_AFTER_MS` 一个常量。`node Build/which-client.cjs` 可以直接对比"已安装的客户端"和"刚打出来的客户端"的 `version` 与 `system-idle` 支持。
 
 ## 会议室墙面照片（2026-09-15 用户要求）
 

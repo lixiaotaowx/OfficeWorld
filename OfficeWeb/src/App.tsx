@@ -1,5 +1,6 @@
 import NotificationSetting from './NotificationSetting';
 import PrivateCallPanel from "./PrivateCallPanel";
+import MonitorContextMenu from "./MonitorContextMenu";
 import { useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
 import SeatPicker from "./SeatPicker";
@@ -55,6 +56,8 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const [help, setHelp] = useState(false);
   const [renderPaused, setRenderPaused] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
+  // 切换"共享 / 预览"用哪块屏幕的菜单，右键自己的显示器或成员列表里的自己都会打开它。
+  const [screenMenu, setScreenMenu] = useState<{ x: number; y: number } | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   // Whether this machine has the account saved, so "it forgot me again" can be checked
   // from inside the app instead of guessed at (user, 2026-09-15).
@@ -266,6 +269,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               onSit={office.sitSpot}
               // The office may seat us itself: a visiting client is placed on a sofa.
               sitSpot={office.people.find((person) => person.id === office.myId)?.sittingSpot ?? null}
+              onOpenScreenMenu={setScreenMenu}
             />
             <div className="bottom-bar">
               <div className="identity">
@@ -302,6 +306,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
                 <small className="preview-state" role="status"
                   title="本机屏幕是否正在采集并显示在自己的工位显示器上">
                   {office.previewReason}
+                </small>
+                <small className="preview-state" role="status"
+                  title="在座 / 离桌怎么判定：客户端问 Windows 的全局空闲时间，所以在别的软件里工作也算在座；浏览器只能看见发到本窗口的输入，换到别的软件就会被判离桌">
+                  {office.deskSensorLabel}
                 </small>
                 {!window.officeDesktop && !office.sharing && <button
                   className="primary" disabled={!office.connected || insecure || mySeat === null}
@@ -355,6 +363,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
             onMessage={office.chat}
             onFile={office.sendChatFile}
             loadFile={office.loadChatFile}
+            onOpenScreenMenu={setScreenMenu}
           />
         </main>
         <footer role="status">
@@ -363,6 +372,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
         </footer>
       </div>
       <PrivateCallPanel office={office} />
+      {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
       <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} />
       {office.videos['local-screen'] && Object.values(office.callStates).some(call => call.connected && call.sharing) &&
         !meetingOpen && !office.meetings.sharing &&

@@ -1,5 +1,39 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-17 12:20 查明「离座检测不管用，鼠标要进软件才算」= 装的是 0.1.11 客户端；底部栏显示判定方式（前端 `index-AihhNAtS.js`）
+
+- 用户报障：「离座检测不管用 鼠标需要去到软件里面才行，我在别的软件工作的话那就没有意义了」。
+- **先查证再改代码**（`Build/which-client.cjs` 直接读 asar）：本机**已安装**的 `C:\Program Files\iruler dream` 是 **0.1.11**（asar 时间 09-15 14:21，`office:system-idle` 与 `systemIdle` **都不存在**）；已经打好的 `Build/OfficeDesktopRelease/win-unpacked` 是 **0.1.13**（`office:system-idle`、`systemIdle` 都在，烟囱测试 `ok:true`、URL 正确）。也就是说：网页侧"问 Windows 全局空闲时间"的代码早就在线上了（线上包里有 `systemIdle`/`input-state`/`idleMs`），但**装在他机器上的客户端太旧、没有这个桥**，所以自动退回"只看本窗口输入"——正好就是"鼠标必须进软件"的现象。
+- **结论：这是客户端版本问题，不是判定逻辑 bug**。修法 = 装 `Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.13-x64.exe`（0.1.13 起才有 `powerMonitor` 系统空闲桥；桌面源码最后改动 09-15 19:09 < 打包 19:10/19:12，所以 0.1.13 就是当前桌面代码）。
+- **顺带把"怎么判定"显示出来**（这次如果不显示，下次还得再查一遍）：`src/presenceInput.ts` 新增 `usesSystemIdle()` 与纯函数 `deskSensorLabel()`，`useOffice` 暴露 `deskSensorLabel`，`App.tsx` 底部栏在「我的工位预览：…」旁边多一行 —— 客户端显示「**离座检测：系统空闲（客户端）**」，浏览器显示「**离座检测：仅本窗口输入（浏览器）**」（鼠标悬停有解释）。用户一眼就能看出自己装的是不是带桥的客户端。
+- 验证：`node --test test/*.test.mjs` **158/158**（`test/presence-input.test.mjs` 新增「底部栏要能看出谁在判定」：有 `desktopIdle` 时 `usesSystemIdle()` 为真、没有为假，两个文案、`App.tsx` 真的渲染 `office.deskSensorLabel`、`useOffice` 真的问了桥）；`tsc --noEmit` 通过；桌面 `npm test` **40/40**。
+- 发布：纯前端，逐文件上传 `index.html` + `assets/index-AihhNAtS.js`。线上入口 `index-AihhNAtS.js`，JS SHA256 `be4bf700844cc60492f6715d31a6ddccb0779be3f6ab39405875dafd3c260573` 与本地逐字节一致；**未重启 `officeweb`**。
+- 边界照旧：**浏览器**没有任何办法看到别的程序的输入（平台限制），只有客户端能。`Build/which-client.cjs` 可以随时对比"已安装的客户端"和"新打出来的客户端"里的 `version` 与 `system-idle` 支持。
+
+## 2026-09-15 20:45 屏幕共享更快变清晰、不再突然变糊（前端 `index-BnYubJZw.js`）
+
+- 报障（用户）：「视频接通后需要等待很久才变清晰，我希望快一些，另外会有突然变糊的情况也改善一下」。
+- **根因（读 livekit-client 2.17.2 源码确认）**：屏幕共享默认是**三层 simulcast**（`computeVideoEncodings`：1080p 且 `screenShareSimulcastLayers` 未设时给 `[low, mid, original]`）。对端一开始只订阅到低层，等带宽估计升上去才切到高清——这就是"很久才清晰"；之后任何一次带宽抖动又会把它切回低层——这就是"突然变糊"。另外默认目标码率只有 **2.5 Mbps**（`ScreenSharePresets.h1080fps15`），而 LiveKit 用**目标的 90%** 作为 `x-google-start-bitrate`，目标小 ⇒ 起步码率低 ⇒ 前十几秒都在爬坡。
+- **改法（纯网页，客户端不用重装）**：
+  - `mediaRooms.ts` 的 Room 参数里设 `publishDefaults.screenShareSimulcastLayers: []` —— 空数组会让 LiveKit 走"单层"分支（`presets.length === 0` → 只发 `original`），对端**第一帧就是全清晰那一层**，也不再存在"被切回低层"；
+  - `screenShareEncoding: { maxBitrate: 5_000_000, maxFramerate: 15 }`（原来 2.5 Mbps）—— 起步码率跟着变成 4.5 Mbps；
+  - 采集时设 `contentHint = 'text'`（`screenSwitch.ts` 的 `captureSelectedScreen()`；会议那条给 `createScreenTracks({ contentHint: 'text' })`）—— 同样码率下文字更清楚；
+  - 清晰度的兜底不变：LiveKit 对屏幕轨默认 `degradationPreference: 'maintain-resolution'`（2.17.2 的 `getDefaultDegradationPreference`），带宽不够时**掉帧、不掉清晰度**；
+  - `media.ts` 的私聊采集改为复用 `captureSelectedScreen()`，两条路径不会再各自漂移（顺手把 `media.ts` 从 499 行降到 496 行）。
+- 取舍（要跟用户说清）：弱网对端现在会**卡顿**而不是自动变糊（单层没法再降级）；将来若发现有人网络太差，可以加回一层低清（`screenShareSimulcastLayers: [ScreenSharePresets.h720fps5]`）。
+- 验证：`node --test test/*.test.mjs` **175/175**（新增 `screen-quality` 4 项：单层、≥4 Mbps、`contentHint='text'`、两条采集路径一致；`meeting-screen-switch` 的期望参数同步更新）、`tsc --noEmit` 通过。
+- 发布：前端 `index.html` + `assets/index-BnYubJZw.js`（CSS 未变），纯前端**未重启 officeweb**；线上 JS 与本地逐字节一致，线上包里能查到 `maxBitrate:5e6`、`screenShareSimulcastLayers`、`contentHint`；`Build/live-boot-check.cjs` 打开正式站无页面错误。
+
+## 2026-09-15 20:20 换屏也能换"正在共享的屏幕"：会议/视频通话里实时切过去，成员列表里右键自己也能换（前端 `index-vb-0HrVn.js`）
+
+- 需求（用户）：「现在右键自己显示会切换屏幕，这是很不错的…在屏幕会议和视频聊天中可以切换屏分享的屏幕也是实时变化过去，除了右键屏幕，右键成员列表中的自己也可以」。
+- 原来只切**低清工位预览**（右键显示器 → `MonitorContextMenu` → `office:display-select` → `office-display-changed` → `useDesktopPreview` 重抓一帧）。正在共享的高清画面绑在旧屏幕上，不会跟着走。
+- **做法（纯网页，客户端不用重装）**：桌面端本来就没有自己的选屏窗口——每次 `getDisplayMedia` 都跟着"当前选中的显示器"（`permissions.cjs` 的 `setDisplayMediaRequestHandler`）。所以换屏就是**再采集一次**，然后 `LocalTrack.replaceTrack()` **原地换轨**：房间不重协商、参会者不断线、不用重新同意。新增 `src/screenSwitch.ts`（`captureSelectedScreen` / `swapScreenTrack` / `switchLiveScreen`）；`media.ts` 的 `switchScreenDisplay()` 先问会议（`meetingScreenShare.ts` 新增 `switchDisplay()`），再把自己的私聊共享换过去；`useOffice` 监听 `office-display-changed` 调它。旧采集在换轨后由我们停掉（LiveKit 只 detach 不停），换之前先清掉旧轨的 `onended`，否则会被当成"用户停止共享"。
+- **成员列表入口**：`.seat-grid .seat.mine` 与访客条里自己那一行加 `onContextMenu`；菜单状态从 `OfficeScene` 提到 `App.tsx`（`screenMenu`），画面里右键显示器和列表里右键自己打开的是同一个菜单，菜单文案改成「共享与预览 · 切换屏幕」。
+- **顺带按 500 行规则拆出一块**：`media.ts` 因为这次改动到 507 行，于是把工位缩略图循环拆成 `src/screenThumbnails.ts`（300px / 6 秒 / JPEG 0.55 行为不变，新增 4 项测试守着），`media.ts` 回到 499 行。提醒下一位：`media.ts` 只剩 1 行余量，再动它请先拆。
+- 验证：网页 `node --test test/*.test.mjs` **171/171**（新增 `screen-switch` 5 项、`meeting-screen-switch` 5 项、`screen-thumbnails` 4 项；`annotation-cleanup.test.mjs` 的依赖白名单补了 `screenSwitch`）、`tsc --noEmit` 通过；浏览器 `test/browser/screen-menu.cjs`（真实页面 + 假桌面桥：右键别人的工位不弹、右键自己的弹出两块屏幕、选中后 `selectDisplay('22')` 被调用且广播了 `office-display-changed`）**PASS**，截图 `Build/screen-menu.png`；`desk-presence-dots.cjs` 回归 PASS。真实 Electron（`Build/screen-switch-capture-check.cjs`，用合成显示器以免抓用户桌面）：**点菜单 → await 选屏 IPC → 再 getDisplayMedia，采集请求没有被权限拦下**（合成显示器读不到画面，得到预期的 `NotReadableError`；对照组里"没有手势"那次也是 `NotReadableError`，所以这条只证明"没被拒授权"，不证明"手势一定还在"——如实记录）。
+- 发布：前端 `index.html` + `assets/index-vb-0HrVn.js`（CSS 未变），纯前端**未重启 officeweb**；线上 JS 与本地逐字节一致，线上包里能查到 `replaceTrack`、`office-display-changed`、`onContextMenu`；`Build/live-boot-check.cjs` 打开正式站无页面错误。
+
 ## 2026-09-15 19:45 未接来电改为「一直显示，只能手动关」（前端 `index-BXrLyfgG.js`，CSS 无改动）
 
 - 用户追问：「未接来电是否一直显示 只可以手动关闭」→ 在我给的选项里选了「**一直显示，只能手动关**」（原实现是 12 秒自动消失）。

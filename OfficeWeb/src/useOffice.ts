@@ -6,7 +6,7 @@ import { useMeetings } from "./useMeetings";
 import type { AnnotateMessage } from './annotations';
 import { alertForExpiry, withCallAlert, type CallAlert } from './callAlertRules';
 import { createAnnotationChannel } from './annotationChannel';
-import { watchInputPresence } from './presenceInput';
+import { watchInputPresence, deskSensorLabel } from './presenceInput';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
@@ -38,6 +38,9 @@ export function useOffice(account: Account) {
   const [outgoing, setOutgoing] = useState<Request[]>([]);
   // Missed-call popups; newest last, dismissed by hand or by their own timer.
   const [callAlerts, setCallAlerts] = useState<CallAlert[]>([]);
+  // Whether Windows itself answers "is somebody at this machine" (desktop app) or only
+  // this window's own input can (browser). Shown in the footer (user, 2026-09-15).
+  const [systemIdleSensor, setSystemIdleSensor] = useState(false);
   const requestsRef = useRef<Request[]>([]);
   requestsRef.current = requests;
   const outgoingRef = useRef<Request[]>([]);
@@ -109,6 +112,15 @@ export function useOffice(account: Account) {
     if (meetings.sharing && meetings.active?.room) mine.push(meetings.active.room);
     myShareScopes.current = mine;
   }, [sessions, meetings.sharing, meetings.active?.room]);
+  // 换屏（右键画面里的显示器，或成员列表里的自己）不只换低清预览：正在进行的屏幕
+  // 共享也要实时切到新屏幕，会议与私聊各自把已发布的轨原地换掉（用户 2026-09-15）。
+  useEffect(() => {
+    const onDisplayChanged = () => {
+      void media.current?.switchScreenDisplay().catch(() => undefined);
+    };
+    window.addEventListener('office-display-changed', onDisplayChanged);
+    return () => window.removeEventListener('office-display-changed', onDisplayChanged);
+  }, []);
   // Leaving a meeting must drop its marks too: the room name is reused, so a later
   // share there would otherwise start with the previous strokes on it.
   const meetingRoom = meetings.active?.room ?? null;
@@ -140,6 +152,7 @@ export function useOffice(account: Account) {
     // 在座 / 离桌: watch this machine's mouse and keyboard and report the two
     // transitions over the socket. Works in the browser as well as in the app.
     const presence = watchInputPresence(s);
+    setSystemIdleSensor(presence.usesSystemIdle());
     // Any way our own share ends - explicit stop, takeover, hanging up, leaving the
     // meeting, losing the session - funnels through the media layer, which reports
     // it here so the marks and the desktop layer never outlive the share.
@@ -379,6 +392,8 @@ export function useOffice(account: Account) {
     /** Missed-call popups for the bottom-right corner. */
     callAlerts,
     dismissCallAlert: (id: string) => setCallAlerts((old) => old.filter((entry) => entry.id !== id)),
+    /** How 在座 / 离桌 is judged here; the footer shows it so the mode is never a guess. */
+    deskSensorLabel: deskSensorLabel(systemIdleSensor),
     cancelRequest: (id: string) => socket.current?.emit('cancel-request', id),
     sessions,
     previews,
