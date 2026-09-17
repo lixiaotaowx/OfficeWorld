@@ -64,6 +64,9 @@ export function progressPercent(received: number | undefined, total: number | un
   return Math.max(0, Math.min(100, Math.round((Number(received) / Number(total)) * 100)));
 }
 
+/** Where old clients send the system browser: a page that explains the install. */
+export const DOWNLOAD_PAGE = '/download/';
+
 /** What the prompt should say; `title`/`detail` are shown verbatim. */
 export interface UpdateCopy {
   title: string;
@@ -98,15 +101,18 @@ export function describeUpdate(manifest: UpdateManifest | null, currentVersion: 
     manifest.notes,
   ].filter(Boolean);
   if (stage === 'browser') {
-    // The client has no update bridge (0.1.13 and older): the browser saved the file and
-    // nothing here can run it, so say exactly where it went (user, 2026-09-17).
+    // The client has no update bridge (0.1.13 and older): all it can do is hand an http(s)
+    // URL to the system browser, and a browser cannot open a folder or run an exe. So it
+    // gets the download PAGE, which spells out where the file lands and how to install it
+    // (user, 2026-09-17: "老版本人家用户下载了找不到文件位置").
     return {
-      title: `正在下载 ${manifest.version} 安装包`,
-      detail: ['下载完成后到系统的「下载」文件夹双击安装'].filter(Boolean).join(' · '),
-      action: '重新下载',
+      title: `已在浏览器打开下载页（${manifest.version}）`,
+      detail: '请在打开的页面里点「下载安装包」，然后按页面上的三步安装',
+      action: '重新打开下载页',
       secondary: '复制下载地址',
       automatic: false,
-      hint: `安装包：${fileName}${size ? '（' + size + '）' : ''}；装好这一版之后就能在软件里一键更新`,
+      hint: `下载完成后：点浏览器右上角刚下载的文件名 →「在文件夹中显示」→ 双击安装。` +
+        `文件名：${fileName}${size ? '（' + size + '）' : ''}；装好这一版之后就能在软件里一键更新`,
     };
   }
   const phase = stage === 'downloading' ? '正在下载…'

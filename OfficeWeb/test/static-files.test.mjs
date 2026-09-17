@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseRange, serveStatic } from "../static.mjs";
@@ -53,6 +53,29 @@ test("完整请求返回 200、长度与可续传标记", async () => {
       assert.equal(response.headers.get("content-length"), "1000");
       assert.equal(response.headers.get("accept-ranges"), "bytes");
       assert.equal((await response.text()).length, 1000);
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("目录地址（/download/）返回它自己的 index.html，而不是 App 外壳", async () => {
+  // 老客户端下载更新时会把浏览器指到 /download/，那里必须有真实的下载说明页（2026-09-17）。
+  const root = fixture();
+  mkdirSync(join(root, "download"), { recursive: true });
+  writeFileSync(join(root, "download", "index.html"), "<!doctype html><title>下载</title>安装步骤");
+  try {
+    await withServer(root, async (url) => {
+      for (const path of ["/download/", "/download/index.html"]) {
+        const response = await fetch(`${url}${path}`);
+        assert.equal(response.status, 200, path);
+        assert.match(response.headers.get("content-type"), /text\/html/);
+        assert.match(await response.text(), /安装步骤/, path + " 必须拿到下载说明页");
+      }
+      // 目录里没有 index.html 时仍然拒绝，而不是回落到 App。
+      mkdirSync(join(root, "empty"), { recursive: true });
+      const missing = await fetch(`${url}/empty/`);
+      assert.equal(missing.status, 404);
     });
   } finally {
     rmSync(root, { recursive: true, force: true });

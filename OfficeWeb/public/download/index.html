@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>iruler dream 客户端下载与安装</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 64px;
+    font: 15px/1.6 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    color: #1d2a1f; background: #f3f5f0;
+  }
+  main { max-width: 640px; margin: 0 auto; }
+  .card { background: #fff; border: 1px solid #dbe3d6; border-radius: 16px; padding: 26px; box-shadow: 0 18px 40px rgba(24, 44, 30, .08); }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .sub { margin: 0 0 18px; color: #5b6b5e; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 0 0 18px; color: #5b6b5e; font-size: 13px; }
+  .meta b { color: #1d2a1f; font-weight: 600; }
+  a.button, button.button {
+    display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer;
+    padding: 13px 22px; border-radius: 12px; font-size: 16px; text-decoration: none;
+    background: #3f9d4f; color: #fff; font-weight: 600;
+  }
+  a.button:hover, button.button:hover { background: #368843; }
+  .state { margin: 12px 0 0; font-size: 13px; color: #2f7a3d; min-height: 20px; }
+  h2 { font-size: 15px; margin: 24px 0 10px; }
+  ol { margin: 0; padding-left: 22px; }
+  ol li { margin-bottom: 8px; }
+  code, .path { background: #eef2ea; border-radius: 6px; padding: 2px 6px; font-family: Consolas, monospace; font-size: 13px; }
+  .warn { margin-top: 20px; padding: 12px 14px; border-radius: 10px; background: #fdf5e6; color: #8a5a1d; font-size: 13px; }
+  .hash { word-break: break-all; font-size: 12px; color: #7b8a7d; }
+</style>
+</head>
+<body>
+<main>
+  <section class="card">
+    <h1>iruler dream 客户端</h1>
+    <p class="sub">下载并安装最新版。安装会覆盖旧版本，不会丢掉登录信息。</p>
+    <p class="meta" id="meta"><span>正在读取版本信息…</span></p>
+    <a class="button" id="download" href="#" download>下载安装包</a>
+    <p class="state" id="state"></p>
+
+    <h2>下载完成后怎么安装</h2>
+    <ol>
+      <li>等下载完成 —— 浏览器右上角会出现刚下载的文件名（Edge/Chrome 的下载气泡）。</li>
+      <li>点那个文件名旁边的「<b>在文件夹中显示</b>」；找不到气泡就按 <b>Ctrl + J</b> 打开下载列表，或打开
+        「此电脑 → 下载」文件夹。</li>
+      <li>双击 <span class="path" id="filename">iruler-dream-Setup.exe</span>，一路下一步，装完会自动打开新版。</li>
+    </ol>
+    <div class="warn">
+      还是找不到文件？按 <b>Win + E</b> 打开资源管理器，左侧点「<b>下载</b>」，文件就在里面，
+      大小约 <b id="size">96 MB</b>。
+    </div>
+    <p class="hash" id="hash"></p>
+  </section>
+</main>
+<script>
+  // 版本信息来自推送命令写下的 download/latest.json（与客户端看到的是同一份）。
+  const state = document.getElementById('state');
+  const link = document.getElementById('download');
+  const meta = document.getElementById('meta');
+  const hash = document.getElementById('hash');
+  const bytes = value => (!value ? '' : (value / 1048576).toFixed(1) + ' MB');
+  const started = () => {
+    state.textContent = '已开始下载。下载完成后按上面的步骤 2、3 安装。';
+    link.textContent = '重新下载安装包';
+  };
+
+  fetch('/download/latest.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(response => (response.ok ? response.json() : Promise.reject(Error('HTTP ' + response.status))))
+    .then(manifest => {
+      const file = manifest.file || manifest.url.split('/').pop();
+      link.href = manifest.url;
+      link.setAttribute('download', file);
+      document.getElementById('filename').textContent = file;
+      if (manifest.size) document.getElementById('size').textContent = bytes(manifest.size);
+      meta.innerHTML = ['<span>最新版本 <b>' + manifest.version + '</b></span>',
+        manifest.size ? '<span>大小 <b>' + bytes(manifest.size) + '</b></span>' : '',
+        manifest.releasedAt ? '<span>发布于 <b>' + new Date(manifest.releasedAt).toLocaleString('zh-CN') + '</b></span>' : '',
+      ].filter(Boolean).join('');
+      if (manifest.notes) meta.insertAdjacentHTML('beforeend', '<span>更新说明 <b>' + manifest.notes + '</b></span>');
+      hash.textContent = manifest.sha256 ? 'SHA256 ' + manifest.sha256 : '';
+      // 直接打开下载，省一次点击；失败也有按钮兜底。
+      setTimeout(() => { link.click(); started(); }, 1200);
+    })
+    .catch(() => {
+      meta.innerHTML = '<span>暂时读不到版本信息，请直接点下面的按钮下载。</span>';
+      link.href = '/download/';
+    });
+
+  link.addEventListener('click', started);
+</script>
+</body>
+</html>

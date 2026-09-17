@@ -1,5 +1,20 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-17 13:20 老版本用户"下载了找不到文件"：改成打开浏览器里的下载说明页（前端 `index-D4lK25Xr.js` + 新增 `download/index.html`；后端 `static.mjs` 支持目录首页）
+
+- 用户报障（第二轮，讲的是**别人的老版本客户端**）：「老版本人家用户下载了找不到文件位置…你搞新的有啥意义」。
+- **先查证旧客户端到底能干什么**（`@electron/asar` 直接读已安装 0.1.13 的 asar）：
+  - `desktop-preload.cjs` 暴露的只有 `focusWindow / alert / onAlertOpen / displays / selectDisplay / previewFrame / setPreviewActive / systemIdle / saveLogin / readLogin / clearLogin / setFullscreen / onFullscreenChange / annotations`；
+  - `chrome.cjs` 的 `dream:action` 只有 reload / browser / quit / zoom* / fullscreen / devices / microphone / permissions / minimize / maximize / close；
+  - `main.cjs` 的 `setWindowOpenHandler`：本站 URL 在窗口内打开，**其它 http(s) 交给 `shell.openExternal`（系统默认浏览器）**，其余 scheme 一律 deny。
+  - 结论：**旧客户端没有任何"打开文件夹/运行文件"的能力**，而且 `file://` 会被 deny。它唯一能做的是把 http(s) 地址丢给系统浏览器 —— 所以文件落在浏览器的下载目录里，软件这边当然"什么都不弹"。
+- **改法（不需要用户更新客户端就生效，因为网页是线上的）**：
+  - 老客户端点「下载更新」时不再把 **exe 直链**丢给浏览器，而是打开**下载说明页** `https://115.159.43.237/download/`：页面自动开始下载（也可手动点），显示版本/大小/发布说明/SHA256，并写明**三步**：「等下载完 → 点浏览器右上角刚下载的文件名里的「在文件夹中显示」（找不到就 Ctrl+J 看下载列表）→ 双击 `iruler-dream-Setup-x.y.z-x64.exe` 安装」，外加「还是找不到？Win+E → 左侧『下载』」。
+  - 软件内卡片同步改成：「已在浏览器打开下载页（0.1.16）· 请在打开的页面里点『下载安装包』，然后按页面上的三步安装」+ 文件名与大小 +「装好这一版之后就能在软件里一键更新」，按钮「重新打开下载页 / 复制下载地址 / 稍后」。
+  - 页面放在 `public/download/index.html`（随前端构建进 `dist/download/`，与安装器同一个目录）；`static.mjs` 增加**目录首页**支持（`/download/` → `/download/index.html`），否则目录地址会回落到 App 外壳。
+- 验证：`test/static-files.test.mjs` 新增"目录地址返回自己的 index.html，没有 index.html 时仍 404"；`test/update-rules.test.mjs` 新增"下载说明页：读同一份 latest.json，写明三步安装与文件名"与老客户端文案断言；浏览器 `update-prompt.cjs` 四个阶段 PASS；`node --test test/*.test.mjs` **183/183**。线上实测：`/download/` → 200 `text/html`（含「在文件夹中显示」「Win + E」），`/download/index.html` → 200，`latest.json` = 0.1.16，入口 `index-D4lK25Xr.js`（SHA256 `35867e383c6b62ca0c752f3bf30d461dc2d20d3b580ed9cee6ce192381db092e`）与本地一致；`officeweb` 重启后 active。
+- **仍然要说清的边界**：任何 ≤0.1.13 的客户端都**不可能**自己运行安装器（Windows 也不允许程序无提示替换正在运行的自己），第一次升级必须人工双击安装包；0.1.14 起才是"一键更新"。给同事可以直接发这条链接：`https://115.159.43.237/download/`（不用登录，任何浏览器都能打开）。
+
 ## 2026-09-17 13:10 修「旧客户端下载好了既没弹文件夹也没弹安装」：老客户端说清怎么手动装；新客户端下完自动弹安装器 + 「打开文件夹」（前端 `index-CVVBXBXa.js`；客户端 0.1.16）
 
 - 用户报障：「旧客户端选择位置之后下载好了没有弹出文件夹，或者没有弹出安装」。

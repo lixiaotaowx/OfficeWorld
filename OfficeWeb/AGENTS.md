@@ -87,7 +87,11 @@
 - **客户端侧（≥0.1.14）**：`OfficeDesktop/update.cjs` 用 Electron 的 `net.fetch`（走 Chromium 网络栈，自带会话证书处理）流式下载到 `%TEMP%\iruler-dream-update\`，每 250ms 通过 `office:update-progress` 推字节数/百分比；下完**校验 sha256**，不符/不完整就删文件报错；`office:update-install` 交 `shell.openPath` 打开安装器并 **1.2 秒后 `app.quit()`**——不退出，安装器覆盖不了正在运行的文件。安全边界：只允许 `trusted()` 的本站地址、路径必须落在更新目录内、>512MB 直接拒收；三个 handler 都过既有的可信来源门。
 - **网页侧**：`src/updateRules.ts`（纯规则：`compareVersions` 按段比数字、`isNewerVersion`、`formatBytes`、`progressPercent`、`describeUpdate` 出文案）+ `src/useAppUpdate.ts`（读 `/download/latest.json?t=…`、问 `appVersion()`、订阅进度、「稍后」按版本记 localStorage、6 小时复查一次）+ `src/UpdatePrompt.tsx`（右下角卡片、`role=progressbar` 进度条、下载更新/立即安装/稍后）。
 - **下完自动弹安装器**（2026-09-17 用户："然后安装器打开覆盖安装"）：`ready` 阶段**3 秒后自己调用 `installUpdate`**（`AUTO_INSTALL_SECONDS`），卡片同时给「立即安装 / 打开文件夹 / 稍后安装」；「打开文件夹」走 `office:update-reveal` → `shell.showItemInFolder`，别再让用户自己去找安装包。
-- **老客户端（<0.1.14）走 `browser` 阶段，不许假装能自动装**（用户报障「旧客户端选择位置之后下载好了没有弹出文件夹，或者没有弹出安装」）：网页打不开文件夹也运行不了 exe，所以文案必须写明「下载完成后到系统的「下载」文件夹双击安装」+ 安装包文件名与大小 + 「装好这一版之后就能在软件里一键更新」，按钮给「复制下载地址」。**任何"看似自动、实际没反应"的写法都不要留**。
+- **老客户端（<0.1.14）走 `browser` 阶段，不许假装能自动装**（用户报障「旧客户端选择位置之后下载好了没有弹出文件夹，或者没有弹出安装」「老版本人家用户下载了找不到文件位置」）：
+  - 查证过旧客户端（0.1.13）的能力边界：`main.cjs` 的 `setWindowOpenHandler` 把**非本站的 http(s)** 交给 `shell.openExternal`（系统浏览器），**其它 scheme 一律 deny**；preload 与 `dream:action` 都没有"打开文件夹/运行文件"。所以老客户端**不可能**自己安装，第一次必须人工双击。
+  - 因此点「下载更新」时打开的是**下载说明页** `https://115.159.43.237/download/`（`public/download/index.html`，随前端构建进 `dist/download/`）：自动开始下载 + 版本/大小/SHA256 + 三步安装（浏览器右上角文件名 →「在文件夹中显示」／Ctrl+J → 双击）+「Win+E → 下载」。卡片文案同步写清这三步。
+  - **`static.mjs` 支持目录首页**（`/download/` → `/download/index.html`）；没有这一条，目录地址会回落到 App 外壳（`test/static-files.test.mjs` 有断言）。
+  - 给同事的直接入口：`https://115.159.43.237/download/`（不用登录）。**任何"看似自动、实际没反应"的写法都不要留**。
 - **老客户端照样弹提示**（没有 `appVersion`/`downloadUpdate` 时 `automatic=false`）。
 - **`~/officeweb/dist/download/` 是部署产物，不是仓库内容**：重传前端时**不要** `scp -r` 或清空 `dist`，否则会把安装器删掉（一个约 100MB；服务器上会越攒越多，请留意磁盘，目前 0.1.14～0.1.16 三个约 290MB）。
 - **底部栏显示「客户端 0.1.16」**（2026-09-17 随 0.1.15 起）：`useAppUpdate` 把 `appVersion()` 的结果作为 `currentVersion` 暴露给 `App.tsx`。上一轮"装的 0.1.11 却以为是最新"就是这么被误判的——以后先看底部栏这一行。

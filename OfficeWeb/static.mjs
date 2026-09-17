@@ -92,7 +92,7 @@ export async function serveStatic(root, req, res) {
   if (pathname === "/") pathname = "/index.html";
   // Resolve inside the root only; anything escaping it is refused.
   const rootPath = resolve(root);
-  const file = resolve(join(rootPath, normalize(pathname)));
+  let file = resolve(join(rootPath, normalize(pathname)));
   if (file !== rootPath && !file.startsWith(rootPath + sep)) return false;
 
   let info;
@@ -101,7 +101,17 @@ export async function serveStatic(root, req, res) {
   } catch {
     return false;
   }
-  if (!info.isFile()) return false;
+  // A directory URL such as /download/ serves its own index.html; without this it would
+  // fall through to the app shell, which is not what a plain link should get.
+  if (!info.isFile()) {
+    file = join(file, "index.html");
+    try {
+      info = await stat(file);
+    } catch {
+      return false;
+    }
+    if (!info.isFile()) return false;
+  }
 
   const extension = extname(file).toLowerCase();
   const type = TYPES[extension] || "application/octet-stream";
