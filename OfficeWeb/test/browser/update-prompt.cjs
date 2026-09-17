@@ -77,7 +77,7 @@ const assert = require("node:assert/strict");
     await downloading.screenshot({ path: resolve("../Build/update-downloading.png") });
     await downloading.close();
 
-    // 3. 下载完成：按钮变成「立即安装」，点了就走安装
+    // 3. 下载完成：自己打开安装器（3 秒），也能先看看文件夹
     const ready = await open("?stage=ready");
     const done = await ready.evaluate(() => ({
       text: document.querySelector(".update-prompt").textContent.replace(/\s+/g, " ").trim(),
@@ -85,19 +85,38 @@ const assert = require("node:assert/strict");
     }));
     console.log("ready:", JSON.stringify(done));
     assert.match(done.text, /下载完成/);
-    assert.deepEqual(done.buttons, ["立即安装", "稍后"]);
+    assert.match(done.text, /自动启动安装程序/, "下完不用再点一次，自己会弹安装");
+    assert.deepEqual(done.buttons, ["立即安装", "打开文件夹", "稍后安装"]);
+    await ready.getByRole("button", { name: "打开文件夹" }).click();
+    assert.equal(await ready.evaluate(() => window.__revealed), 1, "要能弹出安装包所在文件夹");
     await ready.getByRole("button", { name: "立即安装" }).click();
     assert.equal(await ready.evaluate(() => window.__installed), 1, "点了要真的去启动安装器");
     await ready.close();
 
-    // 4. 老客户端（没有版本桥）：提示还在，但说明要手动安装
-    const old = await open("?old=1");
-    const fallback = await old.evaluate(() => document.querySelector(".update-prompt").textContent.replace(/\s+/g, " ").trim());
+    // 4. 老客户端（没有更新桥）：说清楚文件下到哪、怎么装，别再假装能自动安装
+    const old = await open("?old=1&stage=browser");
+    const fallback = await old.evaluate(() => ({
+      text: document.querySelector(".update-prompt").textContent.replace(/\s+/g, " ").trim(),
+      buttons: [...document.querySelectorAll(".update-prompt button")].map(b => b.textContent.trim()),
+    }));
     console.log("old client:", JSON.stringify(fallback));
-    assert.match(fallback, /有新版本 0\.1\.14/);
-    assert.match(fallback, /不支持自动更新/);
+    assert.match(fallback.text, /正在下载 0\.1\.14/);
+    assert.match(fallback.text, /下载/, "要告诉用户下载到哪了");
+    assert.match(fallback.text, /iruler-dream-Setup-0\.1\.14-x64\.exe/, "要写出安装包文件名");
+    assert.match(fallback.text, /一键更新/, "要说明装完这版以后就不用手动装了");
+    assert.deepEqual(fallback.buttons, ["重新下载", "复制下载地址", "稍后"]);
+    await old.getByRole("button", { name: "复制下载地址" }).click();
+    assert.equal(await old.evaluate(() => window.__copied), 1);
     await old.screenshot({ path: resolve("../Build/update-old-client.png") });
     await old.close();
+
+    // 5. 老客户端还没点下载时：仍然提示，但按钮是「下载更新」而不是假装能自动装
+    const oldIdle = await open("?old=1");
+    const idle = await oldIdle.evaluate(() => document.querySelector(".update-prompt").textContent.replace(/\s+/g, " ").trim());
+    assert.match(idle, /有新版本 0\.1\.14/);
+    assert.match(idle, /不支持自动更新/);
+    await oldIdle.screenshot({ path: resolve("../Build/update-old-idle.png") });
+    await oldIdle.close();
 
     assert.deepEqual(errors, []);
     console.log("PASS 更新提示：右下角弹出、进度条、立即安装、老客户端手动提示");

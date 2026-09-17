@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
   appVersion: () => ipcRenderer.invoke('office:app-version'),
   /** Download the installer (progress arrives on `onUpdateProgress`), then run it. */
   downloadUpdate: (url, sha256) => ipcRenderer.invoke('office:update-download', url, sha256),
+  /** Show the finished installer in Explorer. */
+  revealUpdate: file => ipcRenderer.invoke('office:update-reveal', file),
   installUpdate: file => ipcRenderer.invoke('office:update-install', file),
   onUpdateProgress(callback) {
     const listener = (_event, payload) => callback(payload || {});

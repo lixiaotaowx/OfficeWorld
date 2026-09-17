@@ -40,6 +40,8 @@ declare global {
         Promise<{ ok: boolean; file: string; size: number; sha256: string }>;
       /** Run the downloaded installer; the app quits so it can overwrite itself. */
       installUpdate?(file: string): Promise<{ ok: boolean; file: string }>;
+      /** Show the finished installer in Explorer. */
+      revealUpdate?(file: string): Promise<{ ok: boolean; file: string }>;
       onUpdateProgress?(callback: (payload: UpdateProgress) => void): () => void;
       saveLogin(value: { name: string; password: string }): Promise<boolean>;
       readLogin(): Promise<{ name: string; password: string } | null>;

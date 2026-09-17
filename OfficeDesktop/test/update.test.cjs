@@ -19,7 +19,7 @@ function streamOf(buffer, slices = 4) {
 
 function harness({ bytes = Buffer.alloc(64, 7), sha256, status = 200, contentLength } = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'office-update-'));
-  const progress = [], opened = [], quit = [];
+  const progress = [], opened = [], quit = [], revealed = [];
   const digest = sha256 ?? crypto.createHash('sha256').update(bytes).digest('hex');
   const net = { fetch: async (url, options) => {
     assert.equal(options.cache, 'no-store');
@@ -30,12 +30,13 @@ function harness({ bytes = Buffer.alloc(64, 7), sha256, status = 200, contentLen
   } };
   const updater = createUpdater({
     electron: {}, net, directory,
-    shell: { openPath: async file => { opened.push(file); return ''; } },
+    shell: { openPath: async file => { opened.push(file); return ''; },
+      showItemInFolder: file => { revealed.push(file); } },
     app: { getPath: () => os.tmpdir(), quit: () => quit.push(true) },
     onProgress: payload => progress.push(payload),
     now: (() => { let t = 0; return () => (t += 1000); })(),
   });
-  return { updater, directory, progress, opened, quit, digest, bytes,
+  return { updater, directory, progress, opened, quit, revealed, digest, bytes,
     url: OFFICE_URL + 'download/iruler-dream-Setup-1.2.3-x64.exe',
     cleanup: () => fs.rmSync(directory, { recursive: true, force: true }) };
 }
@@ -105,5 +106,19 @@ test('安装：打开安装器然后退出；目录外的路径不认', async ()
     await new Promise(resolve => setTimeout(resolve, 10));
     assert.deepEqual(h.quit, [true], '启动安装器后要退出，安装器才能覆盖正在运行的文件');
     await assert.rejects(h.updater.install(path.join(os.tmpdir(), 'elsewhere.exe')), /路径不可信/);
+  } finally { h.cleanup(); }
+});
+
+test('弹出文件夹：在资源管理器里定位安装包；文件不在或路径越界都拒绝', async () => {
+  // 用户报障「下载好了没有弹出文件夹」——新客户端把安装包所在文件夹直接弹出来（2026-09-17）。
+  const h = harness();
+  try {
+    const result = await h.updater.download(h.url, h.digest);
+    const shown = await h.updater.reveal(result.file);
+    assert.equal(shown.ok, true);
+    assert.deepEqual(h.revealed, [result.file]);
+    fs.rmSync(result.file, { force: true });
+    await assert.rejects(h.updater.reveal(result.file), /不存在/);
+    await assert.rejects(h.updater.reveal('C:/Windows/system32/cmd.exe'), /路径不可信/);
   } finally { h.cleanup(); }
 });

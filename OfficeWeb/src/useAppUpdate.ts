@@ -5,7 +5,7 @@
 // 客户端退出，安装器覆盖安装。浏览器里没有客户端，只能给一个直接下载的链接。
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  describeUpdate, formatBytes, isNewerVersion, progressPercent,
+  describeUpdate, formatBytes, isNewerVersion, progressPercent, AUTO_INSTALL_SECONDS,
   type UpdateCopy, type UpdateManifest, type UpdateStage,
 } from './updateRules';
 
@@ -30,8 +30,14 @@ export interface AppUpdate {
   start(): Promise<void>;
   /** Run the downloaded installer and quit. */
   install(): Promise<void>;
+  /** Show the downloaded installer in Explorer. */
+  reveal(): Promise<void>;
+  /** Copy the installer URL, for a client that cannot install by itself. */
+  copyLink(): Promise<void>;
   /** Hide this version until a newer one appears. */
   later(): void;
+  /** True once the download finished and the installer is about to open by itself. */
+  autoInstall: boolean;
 }
 
 function readSkipped(): string {
@@ -45,6 +51,9 @@ export function useAppUpdate(): AppUpdate {
   const [progress, setProgress] = useState({ received: 0, total: 0, percent: null as number | null });
   const [error, setError] = useState<string>();
   const file = useRef<string>();
+  /** Pending "open the installer by itself" timer, cancelled by 稍后安装. */
+  const autoTimer = useRef<ReturnType<typeof setTimeout>>();
+  const installRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const bridge = typeof window === 'undefined' ? undefined : window.officeDesktop;
 
   // The installed version, and the download progress the main process pushes back.
@@ -79,7 +88,11 @@ export function useAppUpdate(): AppUpdate {
     };
     void load();
     const timer = setInterval(() => void load(), RECHECK_MS);
-    return () => { live = false; clearInterval(timer); };
+    return () => {
+      live = false;
+      clearInterval(timer);
+      if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = undefined; }
+    };
   }, []);
 
   const start = useCallback(async () => {
@@ -87,8 +100,10 @@ export function useAppUpdate(): AppUpdate {
     setError(undefined);
     const absolute = new URL(manifest.url, location.origin).href;
     if (!bridge?.downloadUpdate) {
-      // No client to install anything: hand the file to the browser instead.
+      // No update bridge in this client (0.1.13 and older): hand the file to the browser
+      // and say where it lands, because nothing here can open or run it.
       window.open(absolute, '_blank', 'noopener');
+      setStage('browser');
       return;
     }
     setStage('downloading');
@@ -96,6 +111,9 @@ export function useAppUpdate(): AppUpdate {
       const result = await bridge.downloadUpdate(absolute, manifest.sha256);
       file.current = result?.file;
       setStage('ready');
+      // The user asked for "下载进度条，然后安装器打开": the installer opens by itself a
+      // few seconds after the download, with 稍后安装 as the escape hatch.
+      autoTimer.current = setTimeout(() => { void installRef.current?.(); }, AUTO_INSTALL_SECONDS * 1000);
     } catch (failure) {
       setStage('failed');
       setError(failure instanceof Error ? failure.message : '下载失败，请稍后重试');
@@ -103,6 +121,7 @@ export function useAppUpdate(): AppUpdate {
   }, [bridge, manifest]);
 
   const install = useCallback(async () => {
+    if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = undefined; }
     if (!file.current || !bridge?.installUpdate) return;
     setStage('installing');
     try {
@@ -112,8 +131,25 @@ export function useAppUpdate(): AppUpdate {
       setError(failure instanceof Error ? failure.message : '无法启动安装程序');
     }
   }, [bridge]);
+  installRef.current = install;
+
+  /** Show the installer in Explorer, for people who would rather run it themselves. */
+  const reveal = useCallback(async () => {
+    if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = undefined; }
+    if (!file.current || !bridge?.revealUpdate) return;
+    try { await bridge.revealUpdate(file.current); }
+    catch { /* an old client without reveal still has 立即安装 */ }
+  }, [bridge]);
+
+  const copyLink = useCallback(async () => {
+    if (!manifest) return;
+    const absolute = new URL(manifest.url, location.origin).href;
+    try { await navigator.clipboard.writeText(absolute); }
+    catch { window.prompt('复制下载地址', absolute); }
+  }, [manifest]);
 
   const later = useCallback(() => {
+    if (autoTimer.current) { clearTimeout(autoTimer.current); autoTimer.current = undefined; }
     if (manifest?.version) {
       try { localStorage.setItem(SKIP_KEY, manifest.version); } catch { /* private mode */ }
     }
@@ -124,7 +160,8 @@ export function useAppUpdate(): AppUpdate {
   const effective: UpdateStage = manifest && currentVersion && !isNewerVersion(manifest.version, currentVersion)
     ? 'current' : stage;
   const copy = stage === 'failed'
-    ? { title: '更新下载失败', detail: error || '请稍后重试', action: '重试', automatic: Boolean(bridge?.downloadUpdate) }
+    ? { title: '更新下载失败', detail: error || '请稍后重试', action: '重试',
+        automatic: Boolean(bridge?.downloadUpdate), secondary: undefined, hint: undefined }
     : describeUpdate(manifest, currentVersion, effective);
 
   return {
@@ -135,7 +172,8 @@ export function useAppUpdate(): AppUpdate {
     received: progress.received,
     total: progress.total,
     error,
-    start, install, later,
+    autoInstall: effective === 'ready',
+    start, install, reveal, copyLink, later,
   };
 }
 

@@ -115,6 +115,19 @@ function createUpdater(dependencies = {}) {
   }
 
   /**
+   * Show the downloaded installer in Explorer, so "where did the file go?" never comes
+   * up (user, 2026-09-17: "下载好了没有弹出文件夹，或者没有弹出安装").
+   */
+  async function reveal(file) {
+    if (typeof file !== 'string' || !path.resolve(file).startsWith(path.resolve(updateDir()))) {
+      throw Error('安装包路径不可信');
+    }
+    if (!files.existsSync(file)) throw Error('安装包不存在，请重新下载');
+    shell.showItemInFolder(file);
+    return { ok: true, file };
+  }
+
+  /**
    * Open the downloaded installer and quit, so the installer can replace the files it
    * is running from. The delay lets the page paint "正在启动安装程序" first.
    */
@@ -130,7 +143,7 @@ function createUpdater(dependencies = {}) {
     return { ok: true, file };
   }
 
-  return { download, install, directory: updateDir };
+  return { download, install, reveal, directory: updateDir };
 }
 
 module.exports = { createUpdater, safeFileName, MAX_UPDATE_BYTES, PROGRESS_INTERVAL_MS };

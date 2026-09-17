@@ -24,6 +24,7 @@ export type UpdateStage =
   | 'downloading'
   | 'ready'         // downloaded and verified, waiting for the user
   | 'installing'
+  | 'browser'       // no update bridge: the browser took the download over
   | 'failed';
 
 /** Numeric parts of a version string; anything unparsable counts as zeros. */
@@ -70,7 +71,14 @@ export interface UpdateCopy {
   action: string;
   /** True when this client can download and run the installer by itself. */
   automatic: boolean;
+  /** Optional second button, e.g. 打开文件夹 / 复制下载地址. */
+  secondary?: string;
+  /** Shown when the button cannot do the whole job by itself. */
+  hint?: string;
 }
+
+/** How long the finished download waits before the installer opens on its own. */
+export const AUTO_INSTALL_SECONDS = 3;
 
 /**
  * Turn the manifest + this client's version into the sentence the user reads. Returns
@@ -79,22 +87,36 @@ export interface UpdateCopy {
 export function describeUpdate(manifest: UpdateManifest | null, currentVersion: string | undefined,
   stage: UpdateStage): UpdateCopy | null {
   if (!manifest?.version) return null;
-  if (stage !== 'available' && stage !== 'downloading' && stage !== 'ready' && stage !== 'installing') return null;
+  const known: UpdateStage[] = ['available', 'downloading', 'ready', 'installing', 'browser'];
+  if (!known.includes(stage)) return null;
   const automatic = Boolean(currentVersion);
-  const heading = currentVersion ? `发现新版本 ${manifest.version}` : `有新版本 ${manifest.version}`;
+  const fileName = manifest.file || manifest.url.split('/').pop() || '';
   const size = formatBytes(manifest.size);
-  const parts = [
+  const base = [
     currentVersion ? `当前 ${currentVersion}` : '当前客户端太旧，无法自动更新',
     size,
     manifest.notes,
   ].filter(Boolean);
+  if (stage === 'browser') {
+    // The client has no update bridge (0.1.13 and older): the browser saved the file and
+    // nothing here can run it, so say exactly where it went (user, 2026-09-17).
+    return {
+      title: `正在下载 ${manifest.version} 安装包`,
+      detail: ['下载完成后到系统的「下载」文件夹双击安装'].filter(Boolean).join(' · '),
+      action: '重新下载',
+      secondary: '复制下载地址',
+      automatic: false,
+      hint: `安装包：${fileName}${size ? '（' + size + '）' : ''}；装好这一版之后就能在软件里一键更新`,
+    };
+  }
   const phase = stage === 'downloading' ? '正在下载…'
-    : stage === 'ready' ? '下载完成，可以安装了'
+    : stage === 'ready' ? `下载完成，${AUTO_INSTALL_SECONDS} 秒后自动启动安装程序`
       : stage === 'installing' ? '正在启动安装程序…' : '';
   return {
-    title: heading,
-    detail: [...parts, phase].filter(Boolean).join(' · '),
+    title: currentVersion ? `发现新版本 ${manifest.version}` : `有新版本 ${manifest.version}`,
+    detail: [...base, phase].filter(Boolean).join(' · '),
     action: stage === 'ready' || stage === 'installing' ? '立即安装' : '下载更新',
+    secondary: stage === 'ready' ? '打开文件夹' : undefined,
     automatic,
   };
 }

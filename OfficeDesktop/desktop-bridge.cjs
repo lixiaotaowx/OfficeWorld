@@ -168,6 +168,7 @@ function installDesktopBridge(getWindow, dependencies = {}) {
   });
   handle('office:app-version', () => app.getVersion());
   handle('office:update-download', (url, sha256) => updater.download(url, sha256));
+  handle('office:update-reveal', file => updater.reveal(file));
   handle('office:update-install', file => updater.install(file));
 }
 module.exports = { installDesktopBridge };

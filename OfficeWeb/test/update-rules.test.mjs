@@ -56,15 +56,33 @@ test('有新版本才提示：文案、按钮、能不能自动更新', () => {
 
   const downloading = describeUpdate(manifest, '0.1.13', 'downloading');
   assert.match(downloading.detail, /正在下载/);
+  assert.equal(downloading.secondary, undefined, '下载中不给多余按钮');
   const ready = describeUpdate(manifest, '0.1.13', 'ready');
   assert.equal(ready.action, '立即安装');
   assert.match(ready.detail, /下载完成/);
+  assert.match(ready.detail, /自动启动安装程序/, '下完要自己打开安装器，不是等用户再点一次');
+  assert.equal(ready.secondary, '打开文件夹', '下载完成要能弹出所在文件夹');
 
   // 老客户端（0.1.13 及以前）没有版本桥：提示还在，但只能手动装。
   const old = describeUpdate(manifest, undefined, 'available');
   assert.equal(old.automatic, false);
   assert.match(old.title, /有新版本 0\.1\.14/);
   assert.match(old.detail, /客户端太旧/);
+});
+
+test('老客户端走浏览器下载：要说清文件去哪了、怎么装', () => {
+  // 用户报障「旧客户端选择位置之后下载好了没有弹出文件夹，或者没有弹出安装」——
+  // 网页没法打开文件夹也没法运行 exe，所以必须把话说明白（2026-09-17）。
+  const browser = describeUpdate(manifest, undefined, 'browser');
+  assert.match(browser.title, /正在下载 0\.1\.14/);
+  assert.match(browser.detail, /下载/, '要告诉用户文件落在哪');
+  assert.match(browser.detail, /双击安装/);
+  assert.equal(browser.automatic, false);
+  assert.equal(browser.secondary, '复制下载地址');
+  assert.match(browser.hint, /iruler-dream-Setup-0\.1\.14-x64\.exe/, '要把安装包文件名写出来');
+  assert.match(browser.hint, /96\.5 MB/);
+  assert.match(browser.hint, /一键更新/, '要说明装完之后就不用再手动装了');
+  assert.equal(describeUpdate(manifest, undefined, 'browser').action, '重新下载');
 });
 
 test('网页读取的位置、跳过记录、进度通道都与客户端约定一致', () => {
@@ -74,12 +92,15 @@ test('网页读取的位置、跳过记录、进度通道都与客户端约定�
   assert.match(hook, /bridge\?\.appVersion\?\.\(\)/, '要问客户端自己的版本');
   assert.match(hook, /bridge\.downloadUpdate\(absolute, manifest\.sha256\)/, '下载要带哈希校验');
   assert.match(hook, /bridge\.installUpdate\(file\.current\)/, '下完要能启动安装器');
+  assert.match(hook, /bridge\.revealUpdate\(file\.current\)/, '要能弹出安装包所在文件夹');
+  assert.match(hook, /autoTimer\.current = setTimeout/, '下载完成要自动打开安装器');
+  assert.match(hook, /navigator\.clipboard\.writeText\(absolute\)/, '老客户端要能复制下载地址');
   assert.match(hook, /onUpdateProgress/, '进度来自主进程推送');
   assert.match(hook, /localStorage\.setItem\(SKIP_KEY, manifest\.version\)/, '「稍后」按版本记');
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
   assert.match(app, /客户端 \{update\.currentVersion\}/, '底部栏要显示装的是哪个版本');
   const preload = readFileSync(new URL('../../OfficeDesktop/desktop-preload.cjs', import.meta.url), 'utf8');
-  for (const channel of ['office:app-version', 'office:update-download', 'office:update-install']) {
+  for (const channel of ['office:app-version', 'office:update-download', 'office:update-install', 'office:update-reveal']) {
     assert.ok(preload.includes(channel), '预加载要暴露 ' + channel);
   }
   assert.match(preload, /onUpdateProgress\(callback\)/, '预加载要暴露进度订阅');
