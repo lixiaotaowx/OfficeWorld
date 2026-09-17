@@ -60,6 +60,7 @@ function fixture() {
     if (name === 'electron') return electron;
     if (name === './policy.cjs') return policy;
     if (name === './update.cjs') return require('../update.cjs');
+    if (name === './preview-idle.cjs') return require('../preview-idle.cjs');
     if (name === './fullscreen.cjs') return require('../fullscreen.cjs');
     if (name === 'node:path') return require(name);
     if (name === 'node:fs') return {
@@ -84,9 +85,16 @@ function fixture() {
     focus() { this.focused = true; this.raised++; },
     flashFrame(value) { this.flashed = value; },
     setAlwaysOnTop(value) { this.onTop.push(value); } };
-  context.module.exports.installDesktopBridge(() => win, { displays });
+  // A stand-in for the long-lived capture stream, so the idle gate can be observed.
+  const stops = [];
+  const previewCapture = {
+    stop: async () => { stops.push(Date.now()); return true; },
+    attachedTo: () => '',
+    isSupported: () => false,
+  };
+  context.module.exports.installDesktopBridge(() => win, { displays, previewCapture });
   return { call: (name, ...args) => handlers['office:' + name](event, ...args),
-    event, state, files, calls, handlers, wc, displays, displayFile, win, sent, toasts, timers };
+    event, state, files, calls, handlers, wc, displays, displayFile, win, sent, toasts, timers, stops };
 }
 
 test('自动低清只枚举屏幕、维持比例，双屏切换与断开回退', async () => {
@@ -221,4 +229,26 @@ test('应用内更新：版本可查、只从本网站下载、安装包路径�
   assert.equal(typeof f.handlers['office:update-install'], 'function');
   await assert.rejects(f.call('update-download', 'https://evil.example.com/x.exe'), /不是本软件的服务器/);
   await assert.rejects(f.call('update-install', 'C:/Windows/system32/cmd.exe'), /路径不可信/);
+});
+
+test('离开电脑（系统空闲超过 60 秒）就停掉采集，别挡息屏', async () => {
+  const f = fixture();
+  // vm 里造出来的对象原型不同，深比较前先过一遍 JSON。
+  const state = async () => JSON.parse(JSON.stringify(await f.call('preview-state')));
+  // 人在：照常给帧，也不去打扰采集流。
+  f.state.idleSeconds = 30;
+  assert.match(String(await f.call('preview-frame')), /^data:image\/jpeg/);
+  assert.deepEqual(f.stops, [], '人在电脑前不该停采集');
+  assert.deepEqual(await state(), { paused: false, idleSeconds: 30, awayAfter: 60, attached: false });
+
+  // 离开：不给帧，并且把常驻采集流停掉——DISPLAY 请求才会释放，屏幕才能熄。
+  f.state.idleSeconds = 61;
+  assert.equal(await f.call('preview-frame'), null);
+  assert.equal(f.stops.length, 1, '离开时必须停掉采集流');
+  assert.deepEqual(await state(), { paused: true, idleSeconds: 61, awayAfter: 60, attached: false });
+
+  // 回来：立刻恢复给帧。
+  f.state.idleSeconds = 0;
+  assert.match(String(await f.call('preview-frame')), /^data:image\/jpeg/);
+  assert.equal((await state()).paused, false);
 });

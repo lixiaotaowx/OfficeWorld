@@ -61,6 +61,24 @@ test("状态行说得出为什么没有画面", () => {
   assert.match(previewReason({ ...idle, mayBroadcast: false }), /访客/);
   assert.match(previewReason({ ...idle, failed: true }), /采集失败/);
   assert.match(previewReason(idle), /准备中/);
+  // 离开电脑时采集被暂停：状态行要说清"是为了让屏幕能熄"，而不是看起来像坏了。
+  assert.match(previewReason({ ...idle, paused: true }), /已暂停/);
+  assert.match(previewReason({ ...idle, paused: true }), /屏幕/);
+  assert.match(previewReason({ ...idle, paused: true, failed: true }), /已暂停/, "暂停优先于失败");
+  assert.match(previewReason({ ...idle, active: true, paused: true }), /采集中/, "有帧就是在采集");
+});
+
+test("暂停来自主进程，页面只看状态、不自己猜", () => {
+  const client = readFileSync(new URL("../src/useDesktopPreview.ts", import.meta.url), "utf8");
+  assert.match(client, /bridge!\.previewState\?\.\(\)/, "要问主进程是不是因为离开而暂停");
+  assert.match(client, /state\?\.paused/, "按主进程的回答决定状态");
+  const desktop = readFileSync(new URL("../src/desktop.d.ts", import.meta.url), "utf8");
+  assert.match(desktop, /previewState\?\(\)/, "桥接类型里要有 previewState");
+  const preload = readFileSync(new URL("../../OfficeDesktop/desktop-preload.cjs", import.meta.url), "utf8");
+  assert.match(preload, /previewState: \(\) => ipcRenderer\.invoke\('office:preview-state'\)/);
+  const bridge = readFileSync(new URL("../../OfficeDesktop/desktop-bridge.cjs", import.meta.url), "utf8");
+  assert.match(bridge, /createPreviewIdleGate/, "空闲判定在主进程里");
+  assert.match(bridge, /if \(idleGate\.check\(\)\) return null/, "离开时不出帧");
 });
 
 test("释放采集的那条调用存在，且默认按“开启”渲染", () => {

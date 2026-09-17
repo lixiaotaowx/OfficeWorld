@@ -1,5 +1,23 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-17 21:55 离开电脑就暂停工位预览采集，别再挡息屏（前端 `index-D8ot_KOa.js`；客户端 0.1.17）
+
+- 用户先问「可不可以不影响电脑电源管理的几分钟就息屏」，查清后要求：「**离开就暂停采集 不要耽误息屏**」。
+- **先实测**（`Build/sleep-request-check.cjs`、`Build/capture-release-check.cjs`，真 Electron + `powercfg /requests`）：
+  - 只开窗口：DISPLAY **无**（不挡）；
+  - 页面**播放视频**：DISPLAY **无**（播放视频只保留 SYSTEM 请求，不挡息屏）；
+  - **正在采集桌面**：DISPLAY `[PROCESS] electron.exe | Native desktop capture` —— **会挡**；
+  - **停止采集后**：DISPLAY 回到 **无** —— 所以"停流"确实能让屏幕按电源计划熄灭，这条链路成立。
+  结论：Chromium 采集桌面时会申请屏幕常亮（OBS 之类同理），Electron 没有"能采集但不申请常亮"的开关，只能**在不该采集的时候停掉采集流**。
+- 实现（判定放在主进程，页面只读状态）：
+  - 新增 `OfficeDesktop/preview-idle.cjs`：`createPreviewIdleGate()`，`AWAY_PAUSE_SECONDS = 60`，用 `powerMonitor.getSystemIdleTime()`；空闲跨过阈值的那一次翻转调用 `onChange(true)` → `previewCapture.stop()`；读不到空闲时间一律当 0（宁可继续采集，也不莫名停掉别人的预览）。
+  - `desktop-bridge.cjs`：`office:preview-frame` 在暂停时**直接返回 null**（不给帧、也不重新附着采集）；新增 `office:preview-state` → `{ paused, idleSeconds, awayAfter, attached }`；`desktop-preload.cjs` 暴露 `previewState()`。
+  - 网页：`useDesktopPreview` 收到 null 帧时问一次 `previewState()`，确认是"离开"就置 `paused`（不算失败、不弹提示、不发预览），状态行显示「**我的工位预览：已暂停（你离开超过 1 分钟，屏幕才能熄灭）**」；有帧时自动清掉这个状态。`previewGate.previewReason` 新增 `paused`（优先于"采集失败"）。
+  - 阈值 60 秒 ≤ 系统关屏超时，所以不会把关屏往后拖；共享屏幕走的是另一条采集（`getDisplayMedia`），**不受影响**，正在共享时屏幕仍然是亮的（本来就该亮）。
+- 验证：桌面 `npm test` **60/60**（新增 `test/preview-idle.test.cjs` 6 项 + 桥接里"离开就停采集、回来恢复"1 项）；网页 `node --test test/*.test.mjs` **184/184**（状态行与"暂停来自主进程"断言）；客户端烟囱测试 `ok:true`。
+- 发布：客户端 `iruler-dream-Setup-0.1.17-x64.exe`，101,243,090 字节，SHA256 `8977208096941492a6fa6383fe5e5ef32759375bc560ec83752e81555f14f0fd`，`latest.json` 已是 0.1.17（`publish:update` 自动核验通过）；前端 `index.html` + `assets/index-D8ot_KOa.js`（SHA256 `64085f16524bb26f1f49d9a4685b527775c1d0c1f0c5e0394dae51deed5a694c`，与本地一致）。
+- 另附：那台 VPS **没有任何限速**（`tc qdisc` 只有默认队列），实测客户端同一条代码路径下 96.6MB 用 8.8 秒（11.5 MB/s）；用户遇到的"下载慢"更可能来自共用这台机器的另一个服务占带宽、他本机的系统代理 `127.0.0.1:7890`、或 Defender 扫描正在写入的安装包。
+
 ## 2026-09-17 13:35 按用户要求回退：老客户端点更新直接下载，不再跳说明页（前端 `index-DpJlq-wq.js`）
 
 - 用户反馈（第三轮）：「你这个引导也更麻烦了 算了还是刚才那样吧 下载后让他自己去找吧」。

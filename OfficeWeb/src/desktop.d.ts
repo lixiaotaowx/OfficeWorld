@@ -24,9 +24,14 @@ declare global {
       onAlertOpen?(callback: (section: string) => void): () => void;
       displays(): Promise<DesktopDisplay[]>;
       selectDisplay(id: string): Promise<boolean>;
-      previewFrame(): Promise<string>;
+      previewFrame(): Promise<string | null>;
       /** false releases the capture stream while nobody can receive the preview. */
       setPreviewActive?(active: boolean): Promise<boolean>;
+      /**
+       * 采集是不是因为"人不在电脑前"被暂停了。暂停时 Chromium 的 DISPLAY 常亮请求
+       * 会被释放，显示器才能按电源计划熄灭（用户 2026-09-17：离开就暂停采集）。
+       */
+      previewState?(): Promise<{ paused?: boolean; idleSeconds?: number; awayAfter?: number; attached?: boolean } | null>;
       /**
        * Seconds since the last mouse/keyboard input **anywhere in Windows**, plus
        * 'active' | 'idle' | 'locked'. Lets the page keep somebody green while they

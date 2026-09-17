@@ -7,6 +7,8 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
   connected: boolean, person: Person | undefined, notice: (text: string) => void) {
   const [active, setActive] = useState(false);
   const [failed, setFailed] = useState(false);
+  /** 人不在电脑前时主进程会暂停采集（好让屏幕熄灭），状态行要说清这件事。 */
+  const [paused, setPaused] = useState(false);
   // Whether anybody else can receive previews right now. It no longer gates the
   // capture (your own monitor must always show your own screen); it is kept so the
   // status line can say that nobody is watching yet.
@@ -43,9 +45,22 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
       try {
         const image = await bridge!.previewFrame();
         if (stopped || !channel!.connected) return;
+        if (!image) {
+          // 主进程因为"人不在电脑前"暂停了采集：不出帧、也不算失败，屏幕这才能熄。
+          const state = await bridge!.previewState?.().catch(() => undefined);
+          if (state?.paused) {
+            setPaused(true);
+            setActive(false);
+            setFailed(false);
+            channel!.emit('ambient-sharing', false);
+            return;
+          }
+          return;
+        }
         channel!.emit('ambient-sharing', true);
         channel!.emit('preview', image);
         setActive(true);
+        setPaused(false);
         setFailed(false);
         warned = false;
       } catch {
@@ -80,5 +95,5 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
       setActive(false);
     };
   }, [eligible, connected, person?.id]);
-  return { active, reason: previewReason({ active, desktop, connected, seated, mayBroadcast, failed, watched }) };
+  return { active, reason: previewReason({ active, desktop, connected, seated, mayBroadcast, failed, watched, paused }) };
 }

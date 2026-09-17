@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
   previewFrame: () => ipcRenderer.invoke('office:preview-frame'),
   /** false releases the capture stream while nobody can receive the preview. */
   setPreviewActive: active => ipcRenderer.invoke('office:preview-active', active === true),
+  /** 采集是不是因为"人不在电脑前"被暂停了（暂停时屏幕才能按电源计划熄灭）。 */
+  previewState: () => ipcRenderer.invoke('office:preview-state'),
   saveLogin: value => ipcRenderer.invoke('office:login-save', value),
   readLogin: () => ipcRenderer.invoke('office:login-read'),
   clearLogin: () => ipcRenderer.invoke('office:login-clear'),

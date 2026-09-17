@@ -30,8 +30,11 @@ export function previewIntervalMs(focused: boolean, visible: boolean) {
 export function previewReason(input: {
   active: boolean; desktop: boolean; connected: boolean; seated: boolean;
   mayBroadcast: boolean; failed: boolean; watched: boolean;
+  /** 人不在电脑前，采集被暂停，好让屏幕按电源计划熄灭（用户 2026-09-17）。 */
+  paused?: boolean;
 }) {
   if (input.active) return input.watched ? '我的工位预览：采集中' : '我的工位预览：采集中（暂时没人看）';
+  if (input.paused) return '我的工位预览：已暂停（你离开超过 1 分钟，屏幕才能熄灭）';
   if (!input.desktop) return '我的工位预览：浏览器需点「授权工位预览」';
   if (!input.connected) return '我的工位预览：连接中…';
   if (!input.seated) return '我的工位预览：还没有工位';

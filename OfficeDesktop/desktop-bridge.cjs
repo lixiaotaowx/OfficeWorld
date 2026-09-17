@@ -2,6 +2,7 @@ const { ipcMain, desktopCapturer, screen, safeStorage, app, Notification, powerM
 const fs = require('node:fs');
 const path = require('node:path');
 const { createUpdater } = require('./update.cjs');
+const { createPreviewIdleGate } = require('./preview-idle.cjs');
 const { trusted } = require('./policy.cjs');
 const { setWindowFullscreen } = require('./fullscreen.cjs');
 
@@ -38,13 +39,28 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     await previewCapture?.stop().catch(() => {});
     return true;
   });
+  // 离开电脑（系统空闲超过阈值）就停掉常驻采集流，屏幕才能按电源计划熄灭。
+  // Windows 上采集桌面会让 Chromium 申请 DISPLAY 常亮（2026-09-17 实测 powercfg）。
+  const idleGate = createPreviewIdleGate({
+    powerMonitor,
+    onChange: paused => { if (paused) void previewCapture?.stop().catch(() => {}); },
+  });
   handle('office:preview-active', active => {
     // The page reports whether anybody could receive its preview; when nobody can,
     // the capture stream is released instead of quietly running forever.
-    if (active === false) void previewCapture?.stop().catch(() => {});
+    if (active === false) { idleGate.check(); void previewCapture?.stop().catch(() => {}); }
     return Boolean(previewCapture?.attachedTo());
   });
+  handle('office:preview-state', () => ({
+    paused: idleGate.paused(),
+    idleSeconds: Math.round(idleGate.idleSeconds()),
+    awayAfter: idleGate.awaySeconds,
+    attached: Boolean(previewCapture?.attachedTo()),
+  }));
   handle('office:preview-frame', async () => {
+    // 人不在电脑前：不给帧。流已经在状态翻转时停掉了（见上面 onChange），
+    // 所以这里不要重复 stop，也不要在这条路径上重新附着采集。
+    if (idleGate.check()) return null;
     // Preferred path: one long-lived small capture stream, so a frame costs a few
     // milliseconds instead of re-capturing every display (~552ms measured).
     if (previewCapture?.isSupported()) {
