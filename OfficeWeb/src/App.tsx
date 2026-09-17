@@ -315,6 +315,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
                   title="在座 / 离桌怎么判定：客户端问 Windows 的全局空闲时间，所以在别的软件里工作也算在座；浏览器只能看见发到本窗口的输入，换到别的软件就会被判离桌">
                   {office.deskSensorLabel}
                 </small>
+                {update.currentVersion && <small className="preview-state" role="status"
+                  title="已安装的客户端版本；有更新时右下角会弹出提示">
+                  客户端 {update.currentVersion}
+                </small>}
                 {!window.officeDesktop && !office.sharing && <button
                   className="primary" disabled={!office.connected || insecure || mySeat === null}
                   title="授权浏览器采集屏幕，用于自己的工位小预览"

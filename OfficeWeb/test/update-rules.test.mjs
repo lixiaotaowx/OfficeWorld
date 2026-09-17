@@ -76,6 +76,8 @@ test('网页读取的位置、跳过记录、进度通道都与客户端约定�
   assert.match(hook, /bridge\.installUpdate\(file\.current\)/, '下完要能启动安装器');
   assert.match(hook, /onUpdateProgress/, '进度来自主进程推送');
   assert.match(hook, /localStorage\.setItem\(SKIP_KEY, manifest\.version\)/, '「稍后」按版本记');
+  const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  assert.match(app, /客户端 \{update\.currentVersion\}/, '底部栏要显示装的是哪个版本');
   const preload = readFileSync(new URL('../../OfficeDesktop/desktop-preload.cjs', import.meta.url), 'utf8');
   for (const channel of ['office:app-version', 'office:update-download', 'office:update-install']) {
     assert.ok(preload.includes(channel), '预加载要暴露 ' + channel);

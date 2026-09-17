@@ -19,6 +19,8 @@ const SKIP_KEY = 'iruler-update-skipped';
 export interface AppUpdate {
   /** What the prompt should show, or null when there is nothing to show. */
   copy: UpdateCopy | null;
+  /** The installed client's version, when it reports one (≥0.1.14 does). */
+  currentVersion?: string;
   stage: UpdateStage;
   percent: number | null;
   received: number;
@@ -127,6 +129,7 @@ export function useAppUpdate(): AppUpdate {
 
   return {
     copy: effective === 'skipped' || effective === 'current' ? null : copy,
+    currentVersion,
     stage: effective,
     percent: progress.percent,
     received: progress.received,
