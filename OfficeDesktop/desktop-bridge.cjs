@@ -1,6 +1,7 @@
-const { ipcMain, desktopCapturer, screen, safeStorage, app, Notification } = require('electron');
+const { ipcMain, desktopCapturer, screen, safeStorage, app, Notification, powerMonitor } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { createUpdater } = require('./update.cjs');
 const { trusted } = require('./policy.cjs');
 const { setWindowFullscreen } = require('./fullscreen.cjs');
 
@@ -120,6 +121,17 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     return true;
   });
   handle('office:login-clear', () => { fs.rmSync(credentials, { force: true }); return true; });
+  // 在座 / 离桌: how long ago the user touched the mouse or keyboard **anywhere in
+  // Windows**, not just in this window. Working in Word or on another screen still
+  // counts as sitting at the desk (user, 2026-09-15), which the page cannot see on
+  // its own. `state` is 'active' | 'idle' | 'locked' | 'unknown'.
+  handle('office:system-idle', () => {
+    try {
+      return { seconds: powerMonitor.getSystemIdleTime(), state: powerMonitor.getSystemIdleState(1) };
+    } catch {
+      return null; // No power monitor on this platform: the page falls back to its own input watch.
+    }
+  });
   // Native full screen. The DOM Fullscreen API is a no-op inside this window
   // (frameless + transparent), and its enter/leave events do not fire either, so the
   // requested state is applied and reported here rather than awaited from the window.
@@ -143,5 +155,19 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     if (!annotationLayer || !annotationLayer.isOpen()) return false;
     return annotationLayer.push({ type: 'clear' });
   });
+  // In-app update (user, 2026-09-17). The page asks for its own version, downloads the
+  // installer the site published (progress goes back over IPC), then starts it and quits.
+  const updater = createUpdater({
+    // The bridge already holds this window's Electron `app`; handing it over keeps the
+    // update folder, the version and the quit in one place.
+    app,
+    onProgress: payload => {
+      const window = getWindow();
+      if (window && !window.isDestroyed()) window.webContents.send('office:update-progress', payload);
+    },
+  });
+  handle('office:app-version', () => app.getVersion());
+  handle('office:update-download', (url, sha256) => updater.download(url, sha256));
+  handle('office:update-install', file => updater.install(file));
 }
 module.exports = { installDesktopBridge };

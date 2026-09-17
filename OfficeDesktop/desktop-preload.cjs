@@ -10,6 +10,22 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
     return () => ipcRenderer.removeListener('office:alert-open', listener);
   },
   displays: () => ipcRenderer.invoke('office:displays'),
+  /**
+   * Seconds since the last mouse/keyboard input **anywhere in Windows**, plus
+   * 'active' | 'idle' | 'locked'. The page uses it so somebody working in another
+   * program still counts as 在座, and a locked screen counts as 离桌.
+   */
+  systemIdle: () => ipcRenderer.invoke('office:system-idle'),
+  /** Installed version, so the page can tell whether a newer one was published. */
+  appVersion: () => ipcRenderer.invoke('office:app-version'),
+  /** Download the installer (progress arrives on `onUpdateProgress`), then run it. */
+  downloadUpdate: (url, sha256) => ipcRenderer.invoke('office:update-download', url, sha256),
+  installUpdate: file => ipcRenderer.invoke('office:update-install', file),
+  onUpdateProgress(callback) {
+    const listener = (_event, payload) => callback(payload || {});
+    ipcRenderer.on('office:update-progress', listener);
+    return () => ipcRenderer.removeListener('office:update-progress', listener);
+  },
   selectDisplay: id => ipcRenderer.invoke('office:display-select', id),
   previewFrame: () => ipcRenderer.invoke('office:preview-frame'),
   /** false releases the capture stream while nobody can receive the preview. */

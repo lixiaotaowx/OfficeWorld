@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div>
+<script type="module">
+// Harness for the update prompt: renders it with a fake AppUpdate object, so the browser
+// test can drive stage by stage (available → downloading → ready) and screenshot each.
+import React from 'react'; import { createRoot } from 'react-dom/client';
+import UpdatePrompt from '/src/UpdatePrompt.tsx';
+import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/update.css';
+
+const params = new URLSearchParams(location.search);
+const stage = params.get('stage') || 'available';
+window.__started = 0; window.__installed = 0; window.__later = 0;
+const base = {
+  stage,
+  percent: stage === 'downloading' ? 42.5 : null,
+  received: stage === 'downloading' ? 43_000_000 : 0,
+  total: 101_200_000,
+  copy: params.get('old') === '1'
+    ? { title: '有新版本 0.1.14', detail: '当前客户端太旧，无法自动更新 · 96.5 MB · 修好了离座检测',
+        action: stage === 'ready' ? '立即安装' : '下载更新', automatic: false }
+    : { title: '发现新版本 0.1.14',
+        detail: ['当前 0.1.13', '96.5 MB', '修好了离座检测',
+          stage === 'downloading' ? '正在下载…' : stage === 'ready' ? '下载完成，可以安装了' : '']
+          .filter(Boolean).join(' · '),
+        action: stage === 'ready' ? '立即安装' : '下载更新', automatic: true },
+  error: undefined,
+  start: async () => { window.__started += 1; },
+  install: async () => { window.__installed += 1; },
+  later: () => { window.__later += 1; },
+};
+createRoot(document.getElementById('root')).render(React.createElement(UpdatePrompt, { update: base }));
+window.__updateReady = true;
+</script></body></html>

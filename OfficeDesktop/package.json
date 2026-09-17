@@ -1,6 +1,6 @@
 {
   "name": "office-world-desktop",
-  "version": "0.1.12",
+  "version": "0.1.14",
   "description": "iruler dream · 一起在场",
   "author": "iruler dream",
   "private": true,
@@ -11,7 +11,8 @@
     "icons": "powershell -ExecutionPolicy Bypass -File tools/build-icons.ps1",
     "dist": "electron-builder --win portable --x64",
     "dist:installer": "electron-builder --win nsis --x64",
-    "dist:all": "electron-builder --win --x64"
+    "dist:all": "electron-builder --win --x64",
+    "publish:update": "node tools/publish-update.mjs"
   },
   "devDependencies": {
     "electron": "44.3.0",

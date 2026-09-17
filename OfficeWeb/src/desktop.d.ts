@@ -5,6 +5,15 @@ export interface DesktopDisplay {
   height?: number;
   selected: boolean;
 }
+
+/** One progress report from the desktop download; `percent` is null when unknown. */
+export interface UpdateProgress {
+  phase?: string;
+  received?: number;
+  total?: number;
+  percent?: number | null;
+}
+
 declare global {
   interface Window {
     officeDesktop?: {
@@ -18,6 +27,20 @@ declare global {
       previewFrame(): Promise<string>;
       /** false releases the capture stream while nobody can receive the preview. */
       setPreviewActive?(active: boolean): Promise<boolean>;
+      /**
+       * Seconds since the last mouse/keyboard input **anywhere in Windows**, plus
+       * 'active' | 'idle' | 'locked'. Lets the page keep somebody green while they
+       * work in another program, which a web page cannot see by itself.
+       */
+      systemIdle?(): Promise<{ seconds?: number; state?: string } | null>;
+      /** Installed client version, so the page can tell whether a newer one exists. */
+      appVersion?(): Promise<string>;
+      /** Download the published installer; progress arrives on `onUpdateProgress`. */
+      downloadUpdate?(url: string, sha256?: string):
+        Promise<{ ok: boolean; file: string; size: number; sha256: string }>;
+      /** Run the downloaded installer; the app quits so it can overwrite itself. */
+      installUpdate?(file: string): Promise<{ ok: boolean; file: string }>;
+      onUpdateProgress?(callback: (payload: UpdateProgress) => void): () => void;
       saveLogin(value: { name: string; password: string }): Promise<boolean>;
       readLogin(): Promise<{ name: string; password: string } | null>;
       clearLogin(): Promise<boolean>;

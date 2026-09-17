@@ -1,5 +1,24 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-17 12:50 应用内自动更新：一条命令推安装器 + 网页弹提示 + 进度条 + 覆盖安装（前端 `index-BZ2aCnT5.js` / `index-Cuvm_341.css`；客户端 0.1.14；服务器新增 `~/officeweb/dist/download/`）
+
+- 需求（用户）：「搞一个推送的功能 直接用命令推送到我的服务器安装器，然后网页检测到新版本就弹出更新软件的提示，然就是下载进度条，然后安装器打开覆盖安装」。
+- **发布端（一条命令）**：`OfficeDesktop/tools/publish-update.mjs`，`npm run publish:update -- --notes "更新说明"`。取 `Build/OfficeDesktopRelease` 里与 `package.json` 版本一致的安装器 → 流式算 sha256 → `scp` 到 `~/officeweb/dist/download/` → 写并上传 `latest.json` → **从公网核验**（HEAD 大小一致、`Range: bytes=0-1048575` 前 1MB 哈希与本地一致并确认 `Accept-Ranges`、线上 `latest.json` 已是新版本）。`--verify full` 会整包重下核对；`--dry-run` 只看要做什么。
+- **客户端（0.1.14）**：`update.cjs` 用 Electron 的 `net.fetch` 流式下载到 `%TEMP%\iruler-dream-update\`，每 250ms 通过 `office:update-progress` 把字节数/百分比推给页面，下完校验 sha256（不符就删掉），`installUpdate` 交给 `shell.openPath` 打开安装器并 **1.2 秒后退出**——安装器才能覆盖正在运行的文件。`desktop-preload.cjs` 暴露 `appVersion` / `downloadUpdate` / `installUpdate` / `onUpdateProgress`，全部走既有的**可信来源**门（只有本网站的页面能调）。只允许从本站下载（`trusted()`），路径必须落在更新目录内，且拒收 >512MB。
+- **网页**：`updateRules.ts`（纯规则：版本按段比数字、`formatBytes`、`percent`、`describeUpdate`）+ `useAppUpdate.ts`（读 `/download/latest.json?t=…`，问客户端 `appVersion()`，订阅进度，「稍后」按版本记在 localStorage）+ `UpdatePrompt.tsx`（右下角卡片、进度条 `role=progressbar`、「下载更新 / 立即安装 / 稍后」）。老客户端（<0.1.14，没有 `appVersion`/`downloadUpdate`）照样弹提示，但文案是「当前客户端不支持自动更新」，点下载走浏览器直接下载安装包。
+- **验证**：桌面 `npm test` **52/52**（新增 `test/update.test.cjs` 6 项：进度、写盘、校验失败删文件、下载不完整、体积上限、只信任本网站与目录外路径拒绝；`test/publish-update.test.cjs` 5 项：参数、清单结构、哈希、默认安装器、服务器与密钥沿用部署文档）；网页 `node --test test/*.test.mjs` 里本次相关 **17/17**（新增 `test/update-rules.test.mjs` 4 项）；浏览器 `test/browser/update-prompt.cjs` PASS（截图 `Build/update-available.png`、`update-downloading.png`、`update-old-client.png`：右下角、42.5% 进度条宽度、按钮禁用状态、老客户端文案）。打包后烟囱测试 `ok:true`。
+- **已发布的这一版**：`iruler-dream-Setup-0.1.14-x64.exe`，101,239,425 字节，SHA256 `92ef0bc72f05e166a5185985399e13434fef046d5cf1c1173dd720dee32288b4`，线上 `https://115.159.43.237/download/iruler-dream-Setup-0.1.14-x64.exe`，`download/latest.json` 已是 0.1.14；前端上传 `index.html` + `assets/index-BZ2aCnT5.js` + `assets/index-Cuvm_341.css`（线上哈希与本地一致）。
+- **注意**：装在本机的是 **0.1.13**（没有更新桥），所以这一次仍需手动装 0.1.14；从 0.1.14 起才是"点一下就更新"。`node Build/which-client.cjs` 可以对比"已装的"和"刚打的"客户端各支持哪些能力。
+- 坑：`~/officeweb/dist/download/` 是**部署产物目录**，不是仓库内容；以后重传前端不要 `scp -r` 或清空 `dist`，否则会把安装器删掉（占用约 100MB，服务器磁盘要留意）。
+
+## 2026-09-17 12:35 屏幕共享改两层（720p 垫底 + 1080p）并把 LiveKit 切到 send-side BWE（前端 `index-CIFNV6CQ.js`；VPS `/etc/livekit/livekit.yaml`）
+
+- 用户追问：「为什么不能还是三层把速度提快呢 从低到高快速过去不能吗 非要写死吗」→ 选定**加回一层 720p 垫底**，并且「直接更新服务器就行，不要管人」。上一版（20:45）是单层 1080p：**第一帧就清晰、抖动不掉清晰度**，但弱网对端没有可降级的那一路。
+- 网页（`mediaRooms.ts`）：`publishDefaults.screenShareSimulcastLayers: [ScreenSharePresets.h720fps15]` —— **一个 preset ⇒ 正好两层**（源码 `presets.length === 1` 走 `[low, original]`）：720p@15 1.5 Mbps 垫底 + 1080p@15 5 Mbps 顶层，总上行约 6.5 Mbps；顶层码率、`contentHint = 'text'`、屏幕轨默认的 `maintain-resolution` 都不变。**为什么不做三层**：默认三层里最低那层是 q 层（很小），对端先订阅它就是"很久才清晰"；而且层数本身不是清晰度开关——**选哪一层由 LiveKit 服务器按接收端带宽估计决定**，页面里只能声明"我要最高层"（我们已 `adaptiveStream: false` ⇒ `VideoQuality.HIGH`），没有任何开关能命令它立刻给顶层。所以正确做法是"把垫底层做得看得清 + 顶层码率给足"。
+- 服务器：`/etc/livekit/livekit.yaml` 的 `rtc.congestion_control` 加 `enabled: true` + `use_send_side_bwe: true`（按发送端带宽估计选层，比 SFU 探测接收端快；字段路径按 livekit v1.8.4 的 `pkg/config/config.go` 核对过）。回滚点 `/etc/livekit/livekit.yaml.bak-20260915-bwe`（改动脚本 `Build/livekit-bwe-apply.sh`，幂等）；`systemctl restart livekit` → **active**，`ss` 显示 7880 与 TURN 55000 都在听，日志 `starting LiveKit server ... version 1.8.4`、TURN 正常启动；`Build/livekit-api-check.mjs`（在服务器上跑，`RoomServiceClient.listRooms()`）返回正常、officeweb 仍 active。
+- 验证：`node --test test/*.test.mjs` **176/176**（`screen-quality` 改成断言"两层、垫底层 ≥720p、垫底码率 ≥1 Mbps"；`media-lifecycle` 的 livekit 桩补上 `ScreenSharePresets`，否则 `Cannot read properties of undefined (reading 'h720fps15')`）、`tsc --noEmit` 通过。线上当前服务的就是 `index-CIFNV6CQ.js`（12:18 构建，与本地逐字节一致，包内含 `h720fps15`；同时也带着并行会话 12:20 的"离座检测"文案）。
+- **顺带说明**：导出服务器配置时我的脱敏正则只匹配了顶格的 key，没盖住"两个空格缩进"的情况，**LiveKit 的 API key/secret 被打印在这个会话里了**。要轮换的话：改 `/etc/livekit/livekit.yaml` 的 keys → 同步改 `/home/ubuntu/officeweb/.env` 的 `LIVEKIT_API_KEY/SECRET` → 重启 `livekit` 与 `officeweb`（我没擅自轮换，因为会中断正在进行的通话）。
+
 ## 2026-09-17 12:20 查明「离座检测不管用，鼠标要进软件才算」= 装的是 0.1.11 客户端；底部栏显示判定方式（前端 `index-AihhNAtS.js`）
 
 - 用户报障：「离座检测不管用 鼠标需要去到软件里面才行，我在别的软件工作的话那就没有意义了」。

@@ -1,0 +1,63 @@
+/* Update prompt: bottom-right, like the missed-call cards, but with the download
+   progress the desktop process reports (user, 2026-09-17). */
+.update-prompt {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 300;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(63, 157, 79, .55);
+  background: var(--panel, #ffffff);
+  color: var(--text, #1d2a1f);
+  box-shadow: 0 18px 42px rgba(16, 32, 20, .28);
+  animation: update-prompt-in .22s ease-out;
+}
+
+@keyframes update-prompt-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.update-prompt .update-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(63, 157, 79, .14);
+  color: #2f7a3d;
+}
+
+.update-body { display: grid; gap: 6px; min-width: 0; }
+.update-title { font-size: 15px; }
+.update-detail { color: var(--muted, #5b6b5e); line-height: 1.45; }
+
+.update-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(29, 42, 31, .12);
+  overflow: hidden;
+}
+
+.update-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3f9d4f, #7cc06a);
+  transition: width .18s linear;
+}
+
+.update-bytes { color: var(--muted, #5b6b5e); font-variant-numeric: tabular-nums; }
+
+.update-actions { display: flex; gap: 8px; margin-top: 2px; }
+.update-actions button { white-space: nowrap; }
+.update-hint { color: #a4622b; }
+
+@media (max-width: 560px) {
+  .update-prompt { right: 8px; left: 8px; bottom: 8px; width: auto; }
+}

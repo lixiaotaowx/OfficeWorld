@@ -1,6 +1,8 @@
 import NotificationSetting from './NotificationSetting';
 import PrivateCallPanel from "./PrivateCallPanel";
 import MonitorContextMenu from "./MonitorContextMenu";
+import UpdatePrompt from "./UpdatePrompt";
+import { useAppUpdate } from "./useAppUpdate";
 import { useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
 import SeatPicker from "./SeatPicker";
@@ -36,6 +38,8 @@ function Stream({ stream }: { stream: MediaStream }) {
 }
 export default function App({ account, onLogout }: { account: Account; onLogout: () => void }) {
   const office = useOffice(account);
+  // 有新版本就弹提示、下载、启动安装器（用户 2026-09-17）。
+  const update = useAppUpdate();
   const [focusSeat, setFocusSeat] = useState<{ seat: number; nonce: number } | null>(null);
   // The camera can also be pointed at a person: a visitor holds no desk, so the
   // directory focuses them instead. Only one of the two targets is ever active.
@@ -372,6 +376,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
         </footer>
       </div>
       <PrivateCallPanel office={office} />
+      <UpdatePrompt update={update} />
       {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
       <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} />
       {office.videos['local-screen'] && Object.values(office.callStates).some(call => call.connected && call.sharing) &&

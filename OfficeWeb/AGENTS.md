@@ -48,8 +48,9 @@
 
 - 报障（用户）：「视频接通后需要等待很久才变清晰…另外会有突然变糊的情况也改善一下」。
 - **根因**：LiveKit 对 1080p 屏幕共享默认发**三层 simulcast**（`computeVideoEncodings` 里 `screenShareSimulcastLayers` 未设时给 `[low, mid, original]`），对端先订阅低层、等带宽估计升上来才变清晰，任何一次抖动又切回低层 = "突然变糊"；默认目标码率只有 2.5 Mbps，而 `x-google-start-bitrate` 取目标的 90%，目标小就爬坡十几秒。
-- **现在的设置（不要随手改回默认）**：`mediaRooms.ts` 的 Room 里 `publishDefaults.screenShareSimulcastLayers: []`（空数组 = 只发一层，`presets.length === 0` 的分支）+ `screenShareEncoding: { maxBitrate: 5_000_000, maxFramerate: 15 }`；采集时 `contentHint = 'text'`（`screenSwitch.ts` 的 `captureSelectedScreen()`，会议走 `createScreenTracks({ contentHint: 'text' })`）；屏幕轨的 `degradationPreference` 由 LiveKit 默认给 `maintain-resolution`（掉帧不掉清晰度）。`media.ts` 的私聊采集必须复用 `captureSelectedScreen()`，别在别处另起一套 `getDisplayMedia`（`test/screen-quality.test.mjs` 有断言守着）。
-- 代价：单层之后弱网对端会卡顿而不是自动变糊。真要照顾弱网，加回一层低清（`screenShareSimulcastLayers: [ScreenSharePresets.h720fps5]`）——但那会把"先糊后清晰"带回来，别默认这么做。
+- **现在的设置（不要随手改回默认）**：`mediaRooms.ts` 的 Room 里 `publishDefaults.screenShareSimulcastLayers: [ScreenSharePresets.h720fps15]` —— **一个 preset ⇒ 正好两层**（`presets.length === 1` 走 `[low, original]`）：720p@15 1.5 Mbps 垫底 + 1080p@15 5 Mbps 顶层，总上行约 6.5 Mbps。另有 `screenShareEncoding: { maxBitrate: 5_000_000, maxFramerate: 15 }`（目标码率定高，`x-google-start-bitrate` 才会高）；采集时 `contentHint = 'text'`（`screenSwitch.ts` 的 `captureSelectedScreen()`，会议走 `createScreenTracks({ contentHint: 'text' })`）；屏幕轨的 `degradationPreference` 由 LiveKit 默认给 `maintain-resolution`（掉帧不掉清晰度）。`media.ts` 的私聊采集必须复用 `captureSelectedScreen()`，别在别处另起一套 `getDisplayMedia`（`test/screen-quality.test.mjs` 有断言守着）。
+- **层数不等于清晰度开关**（2026-09-15 用户追问「为什么不能还是三层把速度提快，非要写死吗」）：看的人拿哪一层由 **LiveKit 服务器**按**接收端带宽估计**决定，页面里只能"声明我要最高层"（我们已 `adaptiveStream: false` ⇒ `VideoQuality.HIGH`），**没有任何开关能命令它立刻给顶层**。所以做法是：把垫底层做成**看得清的 720p**（而不是默认那种很小的 q 层）+ 顶层码率给足，这样"升层"几乎看不出来，抖动最多掉到 720p 或掉帧，不会糊成一团。
+- **服务器侧（改的是 VPS，不是仓库）**：`/etc/livekit/livekit.yaml` 的 `rtc.congestion_control` 加了 `use_send_side_bwe: true`（按发送端带宽估计选层，比 SFU 探测接收端更快；字段路径与 livekit v1.8.4 的 `pkg/config/config.go` 核对过）。回滚点 `/etc/livekit/livekit.yaml.bak-20260915-bwe`；改完 `systemctl restart livekit` → active，TURN 55000 与 7880 都在听，API 用 `Build/livekit-api-check.mjs` 验过（listRooms 正常）。这个实例和另一个应用共用，用户已明确同意"直接更新，不用管别人"。
 
 ## 切换共享/预览用的屏幕（2026-09-15 用户要求）
 
@@ -78,6 +79,15 @@
 - 显示：头顶名字卡片（`nameTags.ts`）左侧一个点（`#3f9d4f` 在座 / `#cf4a38` 离桌，名字右移让开），`atDesk` 变了才重画 canvas；成员列表 `.seat-state` 绿/红 + `.away-label`「离座 N 秒 / N 分钟 / N 小时」，访客条与详情卡同样显示。
 - **底部栏要显示"谁在判定"**（2026-09-17 用户报障「离座检测不管用 鼠标需要去到软件里面才行」后加）：`presenceInput.ts` 的 `usesSystemIdle()` + 纯函数 `deskSensorLabel()`，`useOffice` 暴露 `deskSensorLabel`，`App.tsx` 在「我的工位预览：…」旁边多一行「**离座检测：系统空闲（客户端）**」或「**离座检测：仅本窗口输入（浏览器）**」。这次报障的真因就是**本机装的客户端是 0.1.11**（asar 里既没有 `office:system-idle` 也没有 `systemIdle`），于是静默退回纯 DOM 判定 —— 以后先看这一行，不要靠猜。
 - 边界：**浏览器**只看得见发到本窗口的输入，在别的程序里敲键盘仍会被判离桌（平台限制，网页层面无解）；**EXE ≥ 0.1.13** 才有 `powerMonitor` 系统空闲桥（0.1.11／0.1.12 装的都是旧版，会自动退回纯 DOM 判定，用户看到的现象就是"鼠标必须进软件"）。放宽阈值就改 `AWAY_AFTER_MS` 一个常量。`node Build/which-client.cjs` 可以直接对比"已安装的客户端"和"刚打出来的客户端"的 `version` 与 `system-idle` 支持。
+
+## 应用内自动更新（2026-09-17 用户要求）
+
+- 需求（用户）：「搞一个推送的功能 直接用命令推送到我的服务器安装器，然后网页检测到新版本就弹出更新软件的提示，然就是下载进度条，然后安装器打开覆盖安装」。
+- **发布就一条命令**：`cd OfficeDesktop && npm run publish:update -- --notes "更新说明"`。`tools/publish-update.mjs` 取 `Build/OfficeDesktopRelease` 里与 `package.json` 版本一致的安装器 → 流式算 sha256/大小 → `scp` 到 VPS 的 `~/officeweb/dist/download/` → 生成并上传 `latest.json` → **从公网核验**（HEAD 大小、`Range: bytes=0-1048575` 前 1MB 哈希与本地一致且 `Accept-Ranges` 在、线上 `latest.json` 已是新版本）。`--verify full` 整包重下核对，`--dry-run` 只看动作，`--file` 指定别的安装器。**发版顺序：先 `npm run dist:all` 打包 → 再 publish**（脚本按版本号找文件，找不到会提示先打包）。
+- **客户端侧（≥0.1.14）**：`OfficeDesktop/update.cjs` 用 Electron 的 `net.fetch`（走 Chromium 网络栈，自带会话证书处理）流式下载到 `%TEMP%\iruler-dream-update\`，每 250ms 通过 `office:update-progress` 推字节数/百分比；下完**校验 sha256**，不符/不完整就删文件报错；`office:update-install` 交 `shell.openPath` 打开安装器并 **1.2 秒后 `app.quit()`**——不退出，安装器覆盖不了正在运行的文件。安全边界：只允许 `trusted()` 的本站地址、路径必须落在更新目录内、>512MB 直接拒收；三个 handler 都过既有的可信来源门。
+- **网页侧**：`src/updateRules.ts`（纯规则：`compareVersions` 按段比数字、`isNewerVersion`、`formatBytes`、`progressPercent`、`describeUpdate` 出文案）+ `src/useAppUpdate.ts`（读 `/download/latest.json?t=…`、问 `appVersion()`、订阅进度、「稍后」按版本记 localStorage、6 小时复查一次）+ `src/UpdatePrompt.tsx`（右下角卡片、`role=progressbar` 进度条、下载更新/立即安装/稍后）。**老客户端照样弹提示**（没有 `appVersion`/`downloadUpdate` 时 `automatic=false`，文案「当前客户端不支持自动更新」，点下载走浏览器直接下载安装器）。
+- **`~/officeweb/dist/download/` 是部署产物，不是仓库内容**：重传前端时**不要** `scp -r` 或清空 `dist`，否则会把安装器删掉（一个约 100MB，注意服务器磁盘）。
+- 验证：`OfficeDesktop/test/update.test.cjs`（进度、写盘、校验失败删文件、下载不完整、体积上限、只信本站/目录内路径）、`test/publish-update.test.cjs`（参数、清单、哈希、默认安装器、服务器与密钥）；`OfficeWeb/test/update-rules.test.mjs`（版本比较、文案、约定字段）、`test/browser/update-prompt.cjs`（右下角、进度条宽度、按钮、老客户端文案）；真机网络自检 `Build/update-flow-check.cjs`（用真 Electron `net.fetch` 从正式站把已发布安装器下完并核对哈希，不运行安装器）。
 
 ## 会议室墙面照片（2026-09-15 用户要求）
 

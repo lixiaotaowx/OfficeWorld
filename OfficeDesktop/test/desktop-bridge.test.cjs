@@ -23,7 +23,7 @@ function fixture() {
     isDestroyed: () => false,
     executeJavaScript(script) { this.scripts.push(script); return Promise.resolve(true); } };
   const event = { sender: wc, senderFrame: frame };
-  const state = { displays: ['11', '22'], encrypted: true };
+  const state = { displays: ['11', '22'], encrypted: true, idleSeconds: 42, idleState: 'active' };
   const thumbnail = id => ({
     isEmpty: () => false, getSize: () => ({ width: 1920, height: 1080 }),
     resize: size => ({ toJPEG: quality => {
@@ -32,8 +32,14 @@ function fixture() {
   });
   const electron = {
     Notification: FakeNotification,
-    app: { getPath: () => 'test-profile' },
+    app: { getPath: () => 'test-profile', getVersion: () => '0.1.14' },
     ipcMain: { handle: (name, fn) => { handlers[name] = fn; } },
+    // Windows-wide input idle time: what tells the page that somebody working in
+    // Word is still sitting at their desk (user, 2026-09-15).
+    powerMonitor: {
+      getSystemIdleTime: () => state.idleSeconds,
+      getSystemIdleState: threshold => { assert.equal(threshold, 1); return state.idleState; },
+    },
     screen: { getAllDisplays: () => state.displays.map(id => ({ id, size: { width: 1920, height: 1080 } })),
       getPrimaryDisplay: () => ({ id: '11' }) },
     desktopCapturer: { getSources: async options => {
@@ -53,6 +59,7 @@ function fixture() {
     require(name) {
     if (name === 'electron') return electron;
     if (name === './policy.cjs') return policy;
+    if (name === './update.cjs') return require('../update.cjs');
     if (name === './fullscreen.cjs') return require('../fullscreen.cjs');
     if (name === 'node:path') return require(name);
     if (name === 'node:fs') return {
@@ -113,6 +120,18 @@ test('仅可信主窗口调用；登录信息加密保存、删除，不可加�
   f.state.encrypted = false;
   assert.equal(f.call('login-save', { name: '测试', password: '1' }), false);
   assert.equal(f.files.size, 0);
+});
+
+test('在座 / 离桌：把 Windows 全局的空闲时间交给页面，而不是只看本窗口', async () => {
+  const f = fixture();
+  const idle = await f.call('system-idle');
+  assert.equal(idle.seconds, 42);
+  assert.equal(idle.state, 'active');
+  f.state.idleSeconds = 0;
+  f.state.idleState = 'locked';
+  const locked = await f.call('system-idle');
+  assert.equal(locked.seconds, 0);
+  assert.equal(locked.state, 'locked', '锁屏要如实上报，页面据此立刻标离桌');
 });
 
 test('全屏走窗口原生能力，因为 DOM 全屏与它的事件在这个窗口里都不可靠', () => {
@@ -188,4 +207,18 @@ test('来电与会议走主进程原生弹窗并抢到前台，普通聊天只�
   f.event.senderFrame.url = policy.OFFICE_URL;
   assert.equal(f.call('alert', null), true);
   assert.equal(f.toasts.length, 3);
+});
+
+test('应用内更新：版本可查、只从本网站下载、安装包路径受限', async () => {
+  const f = fixture();
+  assert.equal(await f.call('app-version'), '0.1.14');
+  f.event.senderFrame.url = 'https://example.com';
+  assert.throws(() => f.call('app-version'), /Untrusted/);
+  f.event.senderFrame.url = policy.OFFICE_URL;
+  // Both update handlers are async and reach the real updater, whose first job is to
+  // refuse anything that is not this software's own server.
+  assert.equal(typeof f.handlers['office:update-download'], 'function');
+  assert.equal(typeof f.handlers['office:update-install'], 'function');
+  await assert.rejects(f.call('update-download', 'https://evil.example.com/x.exe'), /不是本软件的服务器/);
+  await assert.rejects(f.call('update-install', 'C:/Windows/system32/cmd.exe'), /路径不可信/);
 });
