@@ -92,7 +92,7 @@
   - 现在只做一件事：`window.open(安装包直链)` 直接开始下载；卡片就一行「已开始下载 0.1.16 安装包 · 下载完成后到系统的「下载」文件夹双击安装」+ 文件名与大小，按钮「重新下载 / 复制下载地址 / 稍后」。**不要再塞步骤说明、不要再跳到说明页**。
   - `public/download/index.html`（`https://115.159.43.237/download/`）仍然保留，作为**可以直接发给同事的直链**（页面上有三步说明），但客户端不再自动打开它；`static.mjs` 支持目录首页这条能力也是通用的。
 - **老客户端照样弹提示**（没有 `appVersion`/`downloadUpdate` 时 `automatic=false`）。
-- **`~/officeweb/dist/download/` 是部署产物，不是仓库内容**：重传前端时**不要** `scp -r` 或清空 `dist`，否则会把安装器删掉（一个约 100MB；服务器上会越攒越多，请留意磁盘，目前 0.1.14～0.1.16 三个约 290MB）。
+- **`~/officeweb/dist/download/` 是部署产物，不是仓库内容**：重传前端时**不要** `scp -r` 或清空 `dist`，否则会把安装器删掉（一个约 100MB；服务器上会越攒越多，请留意磁盘，目前 0.1.14～0.1.18 五个约 490MB）。旧版本的安装器可以删掉腾地方。
 - **底部栏显示「客户端 0.1.16」**（2026-09-17 随 0.1.15 起）：`useAppUpdate` 把 `appVersion()` 的结果作为 `currentVersion` 暴露给 `App.tsx`。上一轮"装的 0.1.11 却以为是最新"就是这么被误判的——以后先看底部栏这一行。
 - **发布顺序**：改完代码 → `npm run dist:all`（OfficeDesktop）→ `npm run publish:update`（推送）→ 前端 `npm run build` 并上传。想让已经装了最新版的用户看到更新提示，必须**再发一版**（装的就是最新的自然不提示）；0.1.15 就是这么发的：0.1.14 的用户第一次就能完整看到"弹提示 → 进度条 → 覆盖安装"。
 - 验证：`OfficeDesktop/test/update.test.cjs`（进度、写盘、校验失败删文件、下载不完整、体积上限、只信本站/目录内路径）、`test/publish-update.test.cjs`（参数、清单、哈希、默认安装器、服务器与密钥）；`OfficeWeb/test/update-rules.test.mjs`（版本比较、文案、约定字段）、`test/browser/update-prompt.cjs`（右下角、进度条宽度、按钮、老客户端文案）；真机网络自检 `Build/update-flow-check.cjs`（用真 Electron `net.fetch` 从正式站把已发布安装器下完并核对哈希，不运行安装器）。
