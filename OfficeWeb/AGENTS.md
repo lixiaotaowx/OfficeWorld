@@ -97,6 +97,16 @@
 - **发布顺序**：改完代码 → `npm run dist:all`（OfficeDesktop）→ `npm run publish:update`（推送）→ 前端 `npm run build` 并上传。想让已经装了最新版的用户看到更新提示，必须**再发一版**（装的就是最新的自然不提示）；0.1.15 就是这么发的：0.1.14 的用户第一次就能完整看到"弹提示 → 进度条 → 覆盖安装"。
 - 验证：`OfficeDesktop/test/update.test.cjs`（进度、写盘、校验失败删文件、下载不完整、体积上限、只信本站/目录内路径）、`test/publish-update.test.cjs`（参数、清单、哈希、默认安装器、服务器与密钥）；`OfficeWeb/test/update-rules.test.mjs`（版本比较、文案、约定字段）、`test/browser/update-prompt.cjs`（右下角、进度条宽度、按钮、老客户端文案）；真机网络自检 `Build/update-flow-check.cjs`（用真 Electron `net.fetch` 从正式站把已发布安装器下完并核对哈希，不运行安装器）。
 
+## 任务栏头像条（dock，2026-09-17 用户要求）
+
+- 需求（用户）：「贴 Windows 任务栏、永远置顶、无边框，锁定在任务栏的图标右侧…紧贴右侧托盘左边」+ 头像悬停看缩略图 + 卡片上三个按钮直接通话。设计与文件分工见 `../Design/Taskbar_Dock_20260917.md`。
+- **铁律：小窗只做「显示 + 遥控」**。主窗口是唯一 socket 与媒体拥有者；服务器 `join` 会把同一 `clientId` 的旧 socket 踢掉（`server.mjs` 270-276 行），所以**小窗绝不能自己连 socket 或碰媒体**，否则会把主窗口顶下线、成员列表出现两个"我"。`test/dock-rules.test.mjs` 里有断言守着（`dock.tsx` 里不许出现 socket.io/useOffice/getDisplayMedia 等）。
+- **窗口**：`dock-window.cjs`（无边框/透明/`alwaysOnTop('screen-saver')`/`skipTaskbar`/`focusable:false`/与主窗口同会话）+ `taskbar-position.cjs`（纯几何）。`dock.html` + `src/dock.tsx` 是独立入口，**不加载 three.js**（约 3KB）；主窗口用 `useDockBridge` 每秒推状态、悬停时把最近一帧交过去（**不需要新协议**）。
+- **放置规则**：默认离屏幕右端 220 DIP（托盘宽度是估的，可拖动并记住偏移），头像条在任务栏里竖直居中；窗口比头像条高（悬停卡片的空间）、也比它宽（卡片宽度），**窗口右边缘与头像条右边缘对齐**，所以卡片永远在窗口内不被裁。任务栏在哪条边、多厚、自动隐藏都由 `bounds`/`workArea` 之差推断，每 2.5 秒复查。
+- **必须跟着藏**：任务栏自动隐藏时藏（否则鼠标碰不到底边、任务栏再也弹不出来）、自己共享屏幕时藏（免得被一起共享出去）、窗口进全屏时藏；托盘菜单「显示任务栏头像条」可手动关。
+- **点击穿透**：透明区域默认 `setIgnoreMouseEvents(true, { forward: true })`，页面用 `dockRules.dockInteractive()` 判断指针是否在头像条/卡片上，在才接管点击——不然会盖住别人钉在任务栏上的图标。
+- **显示谁**：在线的人（去掉自己），排序 未接来电 → 未读 → 正在共享 → 在座 → 名字，最多 16 个；**访客/浏览器登录/没工位的人永远没有缩略图**（规则如此），卡片显示「此人不广播屏幕预览」。三个按钮走的是和右侧详情卡同一条邀请通道（看对方屏幕 / `offer:true` 分享我的 / 语音），点完主进程把办公室窗口抬到前面。
+
 ## 会议室墙面照片（2026-09-15 用户要求）
 
 - 用户给了一张 AI 生成的"团队合影"（12 个角色在办公室里，豆包 AI 生成），要求**放到会议室墙上的画面里**。

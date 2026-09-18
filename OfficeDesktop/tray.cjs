@@ -38,6 +38,16 @@ function installTray(window, iconPath, options = {}) {
     });
     template.push({ type: 'separator' });
   }
+  // 任务栏头像条的开关：它贴在任务栏上，用户随时能关掉（托盘里再打开）。
+  if (options.dock) {
+    template.push({
+      label: '显示任务栏头像条',
+      type: 'checkbox',
+      checked: options.dock.enabled?.() !== false,
+      click: (item) => { options.dock.set?.(item.checked); item.checked = options.dock.enabled?.() !== false; },
+    });
+    template.push({ type: 'separator' });
+  }
   template.push({ label: '退出 iruler dream', click: quit });
   const menu = Menu.buildFromTemplate(template);
   tray.setToolTip('iruler dream · 一起在场');

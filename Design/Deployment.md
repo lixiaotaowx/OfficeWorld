@@ -1,5 +1,20 @@
 # OfficeWeb 部署（VPS 115.159.43.237）
 
+## 2026-09-18 10:55 任务栏头像条（dock）：贴任务栏看在线同事、悬停看缩略图、可直接通话（前端 `main-C3jZuwtg.js` / `dock-XauI8cGZ.js`；客户端 0.1.18）
+
+- 需求（用户）：先讨论可行性，最后定「方案 B：独立小浮窗」+「悬停用最近一帧」+「只显示在线的人」+「贴右侧托盘左边」+「任务栏自动隐藏时跟着藏」+「尽量像任务栏图标」。
+- **架构铁律（有测试守着）**：小窗只做「显示 + 遥控」。主窗口是唯一 socket 与媒体拥有者——服务器 `join` 会把同一 `clientId` 的旧 socket 踢掉（`server.mjs` 270-276），小窗若自己连 socket 会把主窗口顶下线。数据流：主窗口 --IPC--> 主进程 `dock-bridge.cjs` --> 小窗；点击反向走同一条路。
+- 新增/改动：`OfficeDesktop/taskbar-position.cjs`（纯几何：边/厚度/自动隐藏/放置/拖动夹紧）、`dock-window.cjs`（建窗、跟随、拖动记忆、按人数调宽、点击穿透开关）、`dock-bridge.cjs`（中转 + 双向可信来源校验）、`desktop-dock-preload.cjs`（只暴露 state/onState/requestPreview/onPreview/action/drag/setInteractive）、`preview-*` 无改动；网页端 `dock.html` + `src/dock.tsx` + `dock.css`（独立入口约 3KB，**不加载 three.js**）+ `src/dockRules.ts`（谁显示/排序/占位文案/穿透命中）+ `src/useDockBridge.ts`（主窗口每秒推状态、悬停给帧、接点击发起邀请）+ `vite.config.ts` 多入口 + `ChatInbox`/`SidePanel` 把"每人未读"报上来。
+- 关键实现细节：窗口 = 头像条(44 高) + 卡片空间(210)，宽度 = max(人数*38+34, 340)，**窗口右边缘与头像条右边缘对齐**（卡片永远落在窗口内不被裁）；透明区域默认 `setIgnoreMouseEvents(true, {forward:true})`，页面命中判定后才接管点击（否则会盖住任务栏上别人的图标）；任务栏自动隐藏/自己共享屏幕/窗口全屏时自动隐藏；托盘菜单新增「显示任务栏头像条」开关。
+- 验证：
+  - 桌面 `npm test` **87/87**（新增 `taskbar-position` 10 项、`dock-window` 10 项、`dock-bridge` 8 项：建窗参数、四条边、自动隐藏、拖动记忆、宽度、点击穿透、只有两个窗口能说话、状态清洗）。
+  - 网页 `node --test test/*.test.mjs` **191/191**（新增 `dock-rules` 8 项，含"小窗里不许出现 socket.io/useOffice/getDisplayMedia"这条铁律断言）。
+  - 浏览器 `test/browser/dock.cjs` PASS：一排头像、徽标（在座绿点/离座红点/共享标/未读数字/未接来电 !）、悬停缩略图、三个按钮各走一次、访客占位文案、空状态、隐藏状态、点击穿透开关（截图 `Build/dock-strip.png`、`dock-hover-card.png`、`dock-no-preview.png`）。
+  - **真机自检** `Build/dock-check.cjs`（真 Electron + 真任务栏）：窗口 `1240,826 460x254`、`edge=bottom`、页面从 `https://115.159.43.237/dock.html` 加载、3 个头像与拖动把手渲染出来、悬停卡片带图且在窗口内（`rect 16,25`）；并截屏 `Build/dock-taskbar-crop.png` 供人眼核对——头像条确实压在任务栏上、紧贴托盘左边。
+- 发布：客户端 `iruler-dream-Setup-0.1.18-x64.exe`（101,247,616 字节，SHA256 `73f06605e3e873e0cc05c01bc0f255c0a6a41d8bf5d4eb8781d00c74ffaa6d41`，`publish:update` 自动核验通过，`latest.json` 已是 0.1.18；打包后烟囱测试 `ok:true`，asar 里含四个 dock 模块）；前端 `index.html` / `dock.html` + `assets/main-C3jZuwtg.js`（SHA256 `83f99a97d58dbb8bab37976b713ce477bbf04b30155ef1de8124785c05a21c0f`）、`assets/dock-XauI8cGZ.js`（`52f1a3daa8bb5bee33be470417aafdc94a6dcb3532cd175e0033bf784ef2e9fa`）、`main-Cuvm_341.css`、`dock-_G-RqDVc.css`、`icons-DBo0eNci.js`，线上与本地哈希逐字节一致。
+- 注意：多入口之后**入口文件名变了**（`main-*` / `dock-*` / `icons-*`，不再是 `index-*`），以后重传前端要按 `index.html`、`dock.html` 里的引用逐文件上传；`dist/download/` 仍不能清。
+- 设计文档：`Design/Taskbar_Dock_20260917.md`。
+
 ## 2026-09-17 21:55 离开电脑就暂停工位预览采集，别再挡息屏（前端 `index-D8ot_KOa.js`；客户端 0.1.17）
 
 - 用户先问「可不可以不影响电脑电源管理的几分钟就息屏」，查清后要求：「**离开就暂停采集 不要耽误息屏**」。

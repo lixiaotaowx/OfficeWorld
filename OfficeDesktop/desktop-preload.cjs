@@ -34,6 +34,22 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
   setPreviewActive: active => ipcRenderer.invoke('office:preview-active', active === true),
   /** 采集是不是因为"人不在电脑前"被暂停了（暂停时屏幕才能按电源计划熄灭）。 */
   previewState: () => ipcRenderer.invoke('office:preview-state'),
+  /** 任务栏头像条：把在线状态推给主进程（它转发给小窗）。 */
+  dockState: payload => ipcRenderer.invoke('office:dock-publish', payload),
+  /** 把某个人的最近一帧交给头像条。 */
+  dockPreview: payload => ipcRenderer.invoke('office:dock-preview', payload),
+  /** 头像条上点了按钮（看屏幕/分享我的/语音）。 */
+  onDockCommand(callback) {
+    const listener = (_event, payload) => callback(payload || {});
+    ipcRenderer.on('office:dock-command', listener);
+    return () => ipcRenderer.removeListener('office:dock-command', listener);
+  },
+  /** 头像条悬停某个人，想马上要一帧。 */
+  onDockPreviewWant(callback) {
+    const listener = (_event, personId) => callback(String(personId || ''));
+    ipcRenderer.on('office:dock-preview-want', listener);
+    return () => ipcRenderer.removeListener('office:dock-preview-want', listener);
+  },
   saveLogin: value => ipcRenderer.invoke('office:login-save', value),
   readLogin: () => ipcRenderer.invoke('office:login-read'),
   clearLogin: () => ipcRenderer.invoke('office:login-clear'),

@@ -3,6 +3,7 @@ import PrivateCallPanel from "./PrivateCallPanel";
 import MonitorContextMenu from "./MonitorContextMenu";
 import UpdatePrompt from "./UpdatePrompt";
 import { useAppUpdate } from "./useAppUpdate";
+import { useDockBridge } from "./useDockBridge";
 import { useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
 import SeatPicker from "./SeatPicker";
@@ -40,6 +41,23 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const office = useOffice(account);
   // 有新版本就弹提示、下载、启动安装器（用户 2026-09-17）。
   const update = useAppUpdate();
+  // 头像条要的"每人多少条未读"（总数在 SidePanel 里显示）。
+  const [unreadByPerson, setUnreadByPerson] = useState<Record<string, number>>({});
+  // 任务栏头像条：把在线状态与缩略图推给那个小窗，并接收它的点击（用户 2026-09-17）。
+  useDockBridge({
+    enabled: Boolean(window.officeDesktop?.dockState),
+    people: office.people,
+    myId: office.myId,
+    previews: office.previews,
+    unread: unreadByPerson,
+    missed: new Set(office.callAlerts.map(alert => alert.target)),
+    sharing: office.sharing,
+    onCommand: (kind, personId) => {
+      // 看对方屏幕 / 把我的屏幕给他 / 语音通话——和右侧详情卡上的三个按钮同一条路。
+      if (kind === 'call') office.request(personId, 'voice');
+      else office.request(personId, 'screen', kind === 'share');
+    },
+  });
   const [focusSeat, setFocusSeat] = useState<{ seat: number; nonce: number } | null>(null);
   // The camera can also be pointed at a person: a visitor holds no desk, so the
   // directory focuses them instead. Only one of the two targets is ever active.
@@ -372,6 +390,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
             onFile={office.sendChatFile}
             loadFile={office.loadChatFile}
             onOpenScreenMenu={setScreenMenu}
+            onUnread={(_count, byPerson) => setUnreadByPerson(byPerson)}
           />
         </main>
         <footer role="status">

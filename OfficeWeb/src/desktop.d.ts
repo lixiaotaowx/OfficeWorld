@@ -14,6 +14,12 @@ export interface UpdateProgress {
   percent?: number | null;
 }
 
+/** 头像条的点击：看对方屏幕 / 把我的屏幕给他 / 语音通话。 */
+export interface DockCommand {
+  kind: 'watch' | 'share' | 'call';
+  personId: string;
+}
+
 declare global {
   interface Window {
     officeDesktop?: {
@@ -61,6 +67,29 @@ declare global {
         draw(message: unknown): Promise<boolean>;
         clear(): Promise<boolean>;
       };
+      /** 任务栏头像条：把在线状态推给主进程（由它转发给那个小窗）。 */
+      dockState?(payload: unknown): Promise<boolean>;
+      /** 把某个人的最近一帧交给头像条。 */
+      dockPreview?(payload: { id: string; image: string }): Promise<boolean>;
+      /** 头像条上点了按钮（看屏幕 / 分享我的 / 语音）。 */
+      onDockCommand?(callback: (payload: DockCommand) => void): () => void;
+      /** 头像条悬停某个人，想马上要一帧。 */
+      onDockPreviewWant?(callback: (personId: string) => void): () => void;
+    };
+    /**
+     * 头像条那个小窗自己的桥。它只有显示与遥控能力：没有 socket、没有媒体、
+     * 没有文件系统（见 OfficeDesktop/desktop-dock-preload.cjs）。
+     */
+    officeDock?: {
+      state?(): Promise<unknown>;
+      onState?(callback: (state: unknown) => void): () => void;
+      requestPreview?(personId: string): Promise<boolean>;
+      onPreview?(callback: (payload: { id: string; image: string }) => void): () => void;
+      action?(kind: DockCommand['kind'], personId: string): Promise<boolean>;
+      drag?(dx: number, dy: number): Promise<unknown>;
+      /** 指针是否在头像条/卡片上：不在时窗口把点击透给任务栏。 */
+      setInteractive?(value: boolean): Promise<boolean>;
+      onVisibility?(callback: (payload: { visible: boolean; reason?: string }) => void): () => void;
     };
   }
 }

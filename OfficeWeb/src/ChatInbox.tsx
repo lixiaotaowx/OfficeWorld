@@ -17,7 +17,8 @@ interface Props extends ChatFileActions {
   /** Accounts shown out of the space: their threads are not offered at all. */
   hidden: string[];
   onMessage: (text: string, recipientId?: string) => Promise<boolean>;
-  onUnread: (count: number) => void;
+  /** 未读总数，以及按人分开的未读数（头像条要在每个人的头像上点红点）。 */
+  onUnread: (count: number, byPerson: Record<string, number>) => void;
 }
 export const conversationKey = (message: Message, accountId: string) =>
   !message.recipientId ? 'public' : message.senderId === accountId ? message.recipientId : message.senderId || '';
@@ -73,7 +74,14 @@ export default function ChatInbox(props: Props) {
     });
   }, [visible, active, last, accountId, read]);
   const unread = threads.reduce((sum, t) => sum + t.unread, 0);
-  useEffect(() => props.onUnread(unread), [unread, props.onUnread]);
+  const unreadRows = threads.filter(t => t.id !== 'public' && t.unread > 0);
+  const unreadKey = unreadRows.map(t => `${t.id}:${t.unread}`).join(',');
+  useEffect(() => {
+    const byPerson: Record<string, number> = {};
+    for (const thread of unreadRows) byPerson[thread.id] = thread.unread;
+    props.onUnread(unread, byPerson);
+    // 只有"谁有多少未读"真的变了才重推，避免每秒晃动主窗口与头像条。
+  }, [unread, unreadKey, props.onUnread]);
   async function send(event: React.FormEvent) {
     event.preventDefault();
     if (!active || sending || !props.connected) return;

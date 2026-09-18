@@ -1,10 +1,11 @@
 // The right-hand sidebar: member seats, the selected desk's detail, and chat.
 //
 // Extracted from App.tsx, which was approaching the project's 500 line ceiling.
-import { useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import type { ChatFileActions } from "./ChatPanel";
 import ChatInbox from "./ChatInbox";
 import { WORKSTATIONS } from "./seats";
+import { awayLabel, awayMilliseconds, isAtDesk } from "./awayTime";
 import type { Message, Person, SeatOwner, ChatContact } from "./types";
 
 interface Props extends ChatFileActions {
@@ -34,6 +35,10 @@ interface Props extends ChatFileActions {
   /** Whoever the camera was last pointed at, so the row can stay highlighted. */
   focusedPerson: string | null;
   onRequest: (target: string, kind: "screen" | "voice", offer?: boolean) => void;
+  /** 右键自己的那一行：和右键画面里的显示器一样，切换共享/预览用的屏幕。 */
+  onOpenScreenMenu?: (point: { x: number; y: number }) => void;
+  /** 未读总数与按人分开的未读数：头像条要在每个人的头像上点红点。 */
+  onUnread?: (count: number, byPerson: Record<string, number>) => void;
 }
 
 export default function SidePanel({
@@ -60,8 +65,33 @@ export default function SidePanel({
   onRequest,
   onFile,
   loadFile,
+  onOpenScreenMenu,
+  onUnread,
 }: Props) {
   const [unread, setUnread] = useState(0);
+  // The server only sends `awayFor` (how long somebody had already been away)
+  // when the `people` payload is pushed, so remember when that payload arrived
+  // and add the time since. A one-second clock only runs while somebody is away.
+  const pushedAt = useRef(Date.now());
+  const [clock, setClock] = useState(() => Date.now());
+  const anyoneAway = people.some((person) => !isAtDesk(person));
+  useEffect(() => {
+    pushedAt.current = Date.now();
+  }, [people]);
+  useEffect(() => {
+    if (!anyoneAway) return;
+    const id = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [anyoneAway]);
+  /** "离座 6 分钟" / "离座 3.5 小时" for somebody who is not at their machine. */
+  const awayText = (person: Person) =>
+    awayLabel(awayMilliseconds(person, pushedAt.current, clock));
+  // 只有客户端才有这块菜单（浏览器没有可切换的物理屏幕）。
+  const ownScreenMenu = (event: MouseEvent) => {
+    if (!window.officeDesktop || !onOpenScreenMenu) return;
+    event.preventDefault();
+    onOpenScreenMenu({ x: event.clientX, y: event.clientY });
+  };
   // Guests of the office: they sit in the public area instead of at a desk, so
   // they would otherwise be missing from the directory altogether.
   const visitors = people.filter((person) => person.role === "visitor");
@@ -108,6 +138,8 @@ export default function SidePanel({
               const online = people.find((x) => x.seat === i);
               const occupant = seats[i] || (online && { id: online.clientId, name: online.name, online: true });
               const isOnline = !!online || occupant?.online === true;
+              // 在座 / 离桌: only a client that is here can be away from its desk.
+              const away = !!online && !isAtDesk(online);
               return (
                 <button
                   key={i}
@@ -122,14 +154,17 @@ export default function SidePanel({
                     onSelect(i);
                     onOpenDesks();
                   }}
+                  onContextMenu={mine ? ownScreenMenu : undefined}
+                  title={mine ? "右键：切换共享/预览用的屏幕" : undefined}
                 >
                   <span className="seat-num">{workstation.id === "Manager" ? "09" : workstation.label}</span>
-                  <span className="seat-state" aria-hidden="true">
+                  <span className={"seat-state" + (isOnline ? (away ? " away" : " at-desk") : "")} aria-hidden="true">
                     {isOnline ? "●" : "○"}
                   </span>
                   <strong>{occupant?.name || (workstation.id === "Manager" ? "老板工位" : "空闲工位")}</strong>
                   <small>
                     {occupant && <span className="presence-label">{isOnline ? "在线" : "离线"}</span>}
+                    {away && <span className="away-label">{awayText(online!)}</span>}
                     {mine
                       ? "这是我的工位"
                       : online?.sharing
@@ -157,16 +192,18 @@ export default function SidePanel({
                   <button
                     key={guest.id}
                     aria-pressed={guest.id === focusedPerson}
-                    title="把镜头对到这个人"
                     className={"visitor" + (guest.id === focusedPerson ? " chosen" : "") +
                       (guest.id === myId ? " mine" : "")}
                     onClick={() => onFocusPerson(guest.id)}
+                    onContextMenu={guest.id === myId ? ownScreenMenu : undefined}
+                    title={guest.id === myId ? "右键：切换共享/预览用的屏幕" : "把镜头对到这个人"}
                   >
-                    <span className="visitor-dot" aria-hidden="true" />
+                    <span className={"visitor-dot" + (isAtDesk(guest) ? "" : " away")} aria-hidden="true" />
                     <strong>{guest.name}</strong>
                     <small>
                       {guest.id === myId ? "我 · " : "访客 · "}
                       {guest.sittingSpot ? "在公共区沙发" : "在空间里"}
+                      {!isAtDesk(guest) && <> · {awayText(guest)}</>}
                     </small>
                   </button>
                 ))}
@@ -176,6 +213,9 @@ export default function SidePanel({
           <div className="detail">
             {target?.role === "visitor" && <span className="eyebrow">访客 · 在公共区沙发</span>}
             <h3>{target?.name || owner?.name || "给灵感留一个位置"}</h3>
+            {target && !isAtDesk(target) && (
+              <span className="away-label">{awayText(target)}</span>
+            )}
             {/* The primary action comes before the preview on purpose: on a
                 short laptop screen the preview would push it below the fold. */}
             <div className="detail-actions">
@@ -224,7 +264,8 @@ export default function SidePanel({
       <ChatInbox accountId={accountId} messages={messages} contacts={contacts} people={people}
         seats={seats} connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
         visitor={visitor} hidden={hiddenContacts}
-        onFile={onFile} loadFile={loadFile} onUnread={setUnread} />
+        onFile={onFile} loadFile={loadFile}
+        onUnread={(count, byPerson) => { setUnread(count); onUnread?.(count, byPerson); }} />
       <div className="side-foot">
         <span className="dot" /> 各自专注，随时连接。
       </div>

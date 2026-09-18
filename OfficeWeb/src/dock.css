@@ -1,0 +1,174 @@
+/* 任务栏头像条：外观照着任务栏图标做（同高、同圆角、悬停高亮），
+   窗口本身是透明无边框置顶小窗（见 OfficeDesktop/dock-window.cjs）。 */
+html, body { background: transparent; }
+
+.dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: 10px;
+  /* 和任务栏一样的那种半透明深色底；浅色主题下 Windows 会给任务栏浅底，这里跟随系统。 */
+  background: rgba(32, 32, 32, .82);
+  color: #f2f2f2;
+  font: 12px/1 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(12px);
+  user-select: none;
+}
+
+/* 任务栏在屏幕上方时，头像条贴在窗口顶部，卡片朝下画。 */
+.dock.edge-top { top: 0; bottom: auto; }
+.dock.edge-top .dock-card { bottom: auto; top: calc(100% + 8px); }
+
+.dock-grip {
+  cursor: grab;
+  opacity: .5;
+  font-size: 12px;
+  padding: 0 2px;
+  /* 让小窗能被拖动：这一段交给窗口管理器当标题栏用。 */
+  -webkit-app-region: drag;
+}
+
+.dock-empty { opacity: .7; padding: 0 6px; white-space: nowrap; }
+
+/* ---- 头像 ---- */
+.dock-avatar {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .08);
+  cursor: pointer;
+  overflow: visible;
+}
+
+.dock-avatar:hover, .dock-avatar:focus-visible { background: rgba(255, 255, 255, .22); outline: none; }
+
+.dock-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+  display: block;
+}
+
+.dock-initial {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: #3f6d4a;
+  color: #fff;
+  font-size: 15px;
+}
+
+.dock-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(32, 32, 32, .9);
+}
+.dock-dot.here { background: #3f9d4f; }
+.dock-dot.away { background: #cf4a38; }
+
+.dock-sharing {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #2f7a3d;
+  color: #fff;
+}
+.dock-sharing svg { width: 10px; height: 10px; }
+
+.dock-unread {
+  position: absolute;
+  right: -4px;
+  top: -5px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: #d9453a;
+  color: #fff;
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+}
+
+/* ---- 悬停卡片 ---- */
+.dock-card {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 10px;
+  min-width: 260px;
+  border-radius: 12px;
+  background: rgba(28, 28, 28, .96);
+  color: #f5f5f5;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
+  animation: dock-card-in .16s ease-out;
+}
+
+@keyframes dock-card-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.dock-shot {
+  display: grid;
+  place-items: center;
+  width: 240px;
+  height: 135px;
+  border-radius: 8px;
+  background: #f2f2ef;
+  color: #4a4a4a;
+  overflow: hidden;
+}
+
+.dock-shot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.dock-shot-empty { font-size: 13px; text-align: center; padding: 0 12px; line-height: 1.5; }
+
+.dock-card-actions { display: grid; gap: 8px; align-content: start; }
+.dock-card-actions button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: #6b4b7a;
+  color: #fff;
+  cursor: pointer;
+}
+.dock-card-actions button:hover { background: #7d5a8d; }
+
+.dock-card-name {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  opacity: .8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

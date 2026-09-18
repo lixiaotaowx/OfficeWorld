@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>头像条 harness</title>
+<style>html, body, #root { margin: 0; height: 100%; background: #1f1f1f; overflow: hidden; }</style></head>
+<body><div id="root"></div>
+<script>
+// 假的主进程桥：让浏览器里能单独把头像条画出来（真实环境里这些通道由 Electron 提供）。
+window.__want = []; window.__actions = []; window.__hidden = 0; window.__interactive = [];
+const STATE = {
+  people: [
+    { id: 'p1', name: '同事乙', character: 'man_suit', atDesk: true, sharing: true, hasPreview: true, unread: 0, missed: false },
+    { id: 'p2', name: '客户丙', character: 'woman_casual', atDesk: false, sharing: false, hasPreview: false, unread: 3, missed: false },
+    { id: 'p3', name: '小李', character: '', atDesk: true, sharing: false, hasPreview: true, unread: 0, missed: true },
+  ],
+  sharing: false, missed: 1, hidden: false,
+};
+window.officeDock = {
+  state: async () => STATE,
+  onState: callback => { window.__pushState = callback; return () => {}; },
+  requestPreview: personId => { window.__want.push(personId); return Promise.resolve(true); },
+  onPreview: callback => { window.__pushPreview = callback; return () => {}; },
+  action: (kind, personId) => { window.__actions.push([kind, personId]); return Promise.resolve(true); },
+  setInteractive: value => { window.__interactive.push(value); return Promise.resolve(value); },
+  onVisibility: () => () => {},
+};
+window.__dockState = STATE;
+</script>
+<script type="module" src="/src/dock.tsx"></script>
+<script type="module">window.__dockReady = true;</script>
+</body></html>

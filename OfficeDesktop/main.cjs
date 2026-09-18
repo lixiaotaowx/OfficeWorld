@@ -12,6 +12,8 @@ const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 const { createDisplayStore } = require('./display-store.cjs');
 const { createPreviewCapture } = require('./preview-capture.cjs');
 const { createAutoStart, AUTOSTART_ARG } = require('./autostart.cjs');
+const { createDockWindow } = require('./dock-window.cjs');
+const { installDockBridge } = require('./dock-bridge.cjs');
 
 // Requested short notification tone must also play while hidden in the tray.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -31,6 +33,7 @@ app.setName('iruler dream');
 app.setPath('userData', profilePath);
 let mainWindow;
 let mainTray;
+let dockWindow;
 const smoke = process.argv.includes('--office-smoke-test');
 // Windows starts the login item with this flag: connect quietly and stay in the tray
 // rather than throwing a window in front of whatever the person is doing at sign-in.
@@ -84,7 +87,8 @@ function createWindow() {
   applyWindowIcon(mainWindow, iconPath);
   installChrome(mainWindow);
   if (!smoke) {
-    try { mainTray = installTray(mainWindow, iconPath, { autoStart }); }
+    try { mainTray = installTray(mainWindow, iconPath, { autoStart,
+      dock: { enabled: () => dockWindow?.enabled() !== false, set: value => dockWindow?.setEnabled(value) } }); }
     catch (error) {
       // Keep normal close-to-exit behavior if Windows cannot create the tray. A
       // login-item launch would otherwise leave a running app with no way in.
@@ -93,6 +97,21 @@ function createWindow() {
     }
   }
   if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer, displays, previewCapture });
+  // 任务栏头像条：贴任务栏的小挂件，只显示 + 遥控，状态由主窗口推过来。
+  if (!smoke) {
+    const dockFile = path.join(profilePath, 'dock.json');
+    const dockStore = {
+      read: () => { try { return JSON.parse(fs.readFileSync(dockFile, 'utf8')); } catch { return {}; } },
+      write: value => { try { fs.writeFileSync(dockFile, JSON.stringify(value)); } catch { /* 位置记不住不影响用 */ } },
+    };
+    dockWindow = createDockWindow({ url: new URL('dock.html', OFFICE_URL).href, store: dockStore });
+    installDockBridge({ dock: dockWindow, getWindow: () => mainWindow });
+    dockWindow.ensure();
+    // 整屏（全屏）时把自己藏起来，别盖在别人的演示/游戏上。
+    mainWindow.on('enter-full-screen', () => dockWindow?.setVisible(false, 'fullscreen'));
+    mainWindow.on('leave-full-screen', () => dockWindow?.setVisible(true));
+    app.on('before-quit', () => dockWindow?.destroy());
+  }
   contents.setWindowOpenHandler(({ url }) => {
     if (trusted(url)) void contents.loadURL(url);
     else if (/^https?:/.test(url)) void shell.openExternal(url);
