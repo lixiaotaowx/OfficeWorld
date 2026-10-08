@@ -40,7 +40,10 @@ Say "npm run build exit=$LASTEXITCODE"
 
 Say "npm test start"
 npm test 2>&1 | Select-Object -Last 45 | ForEach-Object { Say "  $_" }
-Say "npm test exit=$LASTEXITCODE"
+$testExit = $LASTEXITCODE
+Say "npm test exit=$testExit"
 Pop-Location
 
+if ($testExit -ne 0) { Say "RESULT: FAILED (tests)"; exit 1 }
+Say "RESULT: OK - clone, install, build and unit tests all passed on a clean tree"
 Say "DONE"
