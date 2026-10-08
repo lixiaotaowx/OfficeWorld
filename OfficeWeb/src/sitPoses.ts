@@ -5,6 +5,7 @@
 // and the torso/head are pitched, so the same code drives the local avatar and
 // every remote player identically.
 import * as THREE from "three";
+import { findBone } from "./characterModel";
 
 export type SitPoseId =
   | "standard"
@@ -199,8 +200,9 @@ function aimBone(
   desired: V3,
 ) {
   // GLTFLoader sanitizes Blender names: "UpperLeg.L" becomes "UpperLegL".
-  const bone = bones.get(name) ?? bones.get(name.replaceAll(".", "")),
-    child = bones.get(childName) ?? bones.get(childName.replaceAll(".", ""));
+  // findBone 还负责在尺子角色的 Mixamo 命名（mixamorig:LeftUpLeg）里找到同一根骨头。
+  const bone = findBone(bones, name),
+    child = findBone(bones, childName);
   if (!bone || !child || !bone.parent) return;
   root.updateMatrixWorld(true);
   // Feet in this pack are independent rig controls, not shin children.
@@ -226,7 +228,7 @@ function pitchBone(
   name: string,
   angle: number,
 ) {
-  const bone = bones.get(name);
+  const bone = findBone(bones, name);
   if (!bone || !bone.parent || Math.abs(angle) < 1e-4) return;
   root.updateMatrixWorld(true);
   const axis = new THREE.Vector3(1, 0, 0)
@@ -253,8 +255,8 @@ export function applySitPose(
   resetToRest(bones, rest);
   root.updateMatrixWorld(true);
   const feet = ["L", "R"].map((side) => {
-    const foot = bones.get(`Foot${side}`) ?? bones.get(`Foot.${side}`);
-    const shin = bones.get(`LowerLeg${side}`) ?? bones.get(`LowerLeg.${side}`);
+    const foot = findBone(bones, `Foot${side}`);
+    const shin = findBone(bones, `LowerLeg${side}`);
     if (!foot || !shin) return null;
     return {
       foot, shin, side,

@@ -22,16 +22,16 @@
 | 文件 | 职责 |
 |---|---|
 | `OfficeDesktop/taskbar-position.cjs` | 纯几何：任务栏在哪条边、多厚、自动隐藏、窗口/头像条放哪、拖动偏移与夹紧 |
-| `OfficeDesktop/dock-window.cjs` | 建窗（无边框/透明/置顶 screen-saver/不进任务栏/不抢焦点）、跟随任务栏、拖动记忆、按人数调宽、点击穿透开关 |
-| `OfficeDesktop/dock-bridge.cjs` | 主进程中转 + 双向可信来源校验（只有办公室窗口与 dock 窗口能说话） |
-| `OfficeDesktop/desktop-dock-preload.cjs` | 小窗的桥：只暴露 state/onState/requestPreview/onPreview/action/drag/setInteractive |
-| `OfficeWeb/dock.html` + `src/dock.tsx` + `src/dock.css` | 小窗页面：一排头像 + 悬停卡片（约 3KB JS，**不加载 three.js**） |
-| `OfficeWeb/src/dockRules.ts` | 纯规则：显示谁、怎么排序、谁能有预览、占位文案、点击穿透的命中判定 |
+| `OfficeDesktop/dock-window.cjs` | 建窗（无边框/透明/置顶 screen-saver/不进任务栏/不抢焦点）、跟随任务栏、拖动记忆、按人数与页面报的宽度调整窗口大小（`applyLayout`） |
+| `OfficeDesktop/dock-bridge.cjs` | 主进程中转 + 双向可信来源校验（只有办公室窗口与 dock 窗口能说话）+ 人头字段白名单清洗 |
+| `OfficeDesktop/desktop-dock-preload.cjs` | 小窗的桥：只暴露 state/onState/requestPreview/onPreview/action/drag/layout |
+| `OfficeWeb/dock.html` + `src/dock.tsx` + `src/dock.css` | 小窗页面：一排头像 + 悬停卡片（约 3.7KB JS，**不加载 three.js**） |
+| `OfficeWeb/src/dockRules.ts` | 纯规则：显示谁、怎么排序、谁能有预览、占位文案 |
 | `OfficeWeb/src/useDockBridge.ts` | 主窗口侧：每秒推状态、悬停时给帧、接点击去发起邀请 |
 
 ## 行为
 
-- **谁显示**：当前在线的人（成员 + 访客），去掉自己；排序：未接来电 → 未读 → 正在共享 → 在座 → 名字。最多 16 个。
+- **谁显示**：当前在线的人 + 我自己（我在最左、带一圈白边）；排序：未接来电 → 未读 → 正在共享 → 在座 → 名字。最多 16 个。
 - **预览从哪来**：直接用主窗口已经在收的低清帧（悬停时才传，不悬停不传图），所以**没有协议改动**。
   访客、浏览器登录、没工位的人**永远没有预览**（规则如此），卡片上显示「此人不广播屏幕预览」。
 - **三个按钮**：看对方屏幕（`request(target,'screen')`）、把我的屏幕给他（`offer: true`）、
@@ -40,5 +40,16 @@
   拖动后记住偏移（`dock.json`），任务栏换边/换屏/改高度/改 DPI 都会重新贴回去。
 - **自动隐藏**：任务栏自动隐藏时跟着藏（否则鼠标碰不到底边、任务栏再也弹不出来）；
   自己共享屏幕时藏（免得被一起共享出去）；窗口进全屏时藏；托盘菜单「显示任务栏头像条」可手动关。
-- **点击穿透**：窗口比头像条大（卡片空间 + 卡片宽度），透明区域默认 `setIgnoreMouseEvents(true, {forward:true})`，
-  页面用 `dockInteractive()` 判断指针是否在头像条/卡片上，在才接管点击——否则会盖住别人钉在任务栏上的图标。
+- **鼠标**（2026-09-18 改，用户报「弹出的窗口我无法点击 快速消失了」）：**不用点击穿透**。
+  窗口始终接收鼠标事件，尺寸跟着状态走——没人悬停时窗口**就是头像条本身**（一个像素都不多占
+  任务栏），悬停卡片打开时才向上长高一个卡片空间、并宽到至少放得下卡片；页面用
+  `officeDock.layout({ expanded, stage, width })` 把"卡片开没开 + 舞台亮没亮 + 条子实际多宽"
+  报给主进程。原来那套 `setIgnoreMouseEvents(true, {forward:true})` + 页面命中判定
+  （`dockInteractive()`）已全部删除：实测 ignore+forward 状态下页面**一条 mousemove 都收不到**，
+  卡片既出不来也点不动。
+- **「有人来看我了」**（2026-09-18）：有人在他自己的小窗里悬停我的头像时，我这边
+  ① 所有屏幕四周闪一圈绿光（`OfficeDesktop/preview-glow.cjs`，独立覆盖层窗口）；
+  ② 头像条上**他的头像**蹦出来，条子上方开一个 320×380 的小舞台，用 three.js 渲染
+  **他那套角色模型**演一段动作库里的 `Wave`（招手）——站在任务栏上、很大、3.6 秒后自动收起。
+  three.js 是**按需加载**的（`import('./dockStage')`），平时那一页还是 6 KB。
+

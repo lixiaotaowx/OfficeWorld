@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import {
+  findBone,
   loadCharacter,
   releaseCharacter,
+  setCharacterAppearance,
   type LoadedCharacter,
 } from "./characterModel";
-import type { CharacterId } from "./characters";
+import { DEFAULT_APPEARANCE, type Appearance } from "./look";
 import { AutoSitPose } from "./autoSitPose";
 import {
   applySitPose,
@@ -13,15 +15,36 @@ import {
   STANDING_POSE,
   type SitPoseId,
 } from "./sitPoses";
-import { findPath, segmentWalkable } from "./navigation";
+import { findPath, pathLength, traverse } from "./navigation";
+import { advancePath } from './avatarPath';
 import { SEAT_HEIGHT } from "./seats";
 import { sittingSpot, type SittingSpot } from "./sittingSpots";
 import { groundSeatedFeet } from "./seatedFeet";
 import { placeSeatedHands } from "./seatedHands";
 import { snapStandingPose } from './standingPose';
+import { updateSeatedAnimation } from './seatedAnimation';
 
 /** Seconds for sitting down. Standing up is an immediate pose change. */
 const SIT_TRANSITION = 0.9;
+/** 步行 / 跑步速度（m/s）：尺子角色的腿只有 24+13cm，走快了才不显得"板子在飘"。 */
+const WALK_SPEED = 1.65;
+const RUN_SPEED = 3.1;
+/** 路径比这还长就跑起来（点击远处地面时不必慢慢挪）。 */
+const RUN_DISTANCE = 4;
+
+/** 坐姿几何的诊断读数（`src/sitDiagnostics.ts` 也用它）。 */
+export interface SitDiagnostics {
+  sitBlend: number;
+  sitTarget: number;
+  seatHeight: number;
+  seatedOffset: number | null;
+  seatedClipHip: number;
+  usingSeatedClip: boolean;
+  restHipHeight: number;
+  groundY: number;
+  modelY: number;
+  hasHips: boolean;
+}
 
 export class OfficeAvatar {
   root = new THREE.Group();
@@ -30,6 +53,7 @@ export class OfficeAvatar {
   private mixer?: THREE.AnimationMixer;
   private idle?: THREE.AnimationAction;
   private walk?: THREE.AnimationAction;
+  private run?: THREE.AnimationAction;
   private current?: THREE.AnimationAction;
   private path: THREE.Vector3[] = [];
   private bones = new Map<string, THREE.Bone>();
@@ -51,6 +75,14 @@ export class OfficeAvatar {
   private hasReservation = false;
   private seatHeight = SEAT_HEIGHT;
   private poseTime = 0;
+  /** 坐姿下髋部相对模型原点的高度，加载后实测一次（见 measureSeatedOffset）。 */
+  private seatedOffset: number | null = null;
+  /** 已授权的坐姿动作（`坐姿打字_Type`）；有它就用它，没有才退回程序化摆姿势。 */
+  private seatedClip?: THREE.AnimationAction;
+  /** 当前移动速度（m/s）：决定放走路还是跑步循环。 */
+  private speed = 0;
+  /** 坐姿动作里髋部自身的世界高度（实测），用来把工位高度对齐过去。 */
+  private seatedClipHip = 0;
 
   constructor(
     private world: THREE.Scene,
@@ -94,12 +126,12 @@ export class OfficeAvatar {
     this.keys.delete(e.code);
   };
   private blur = () => this.keys.clear();
-  async load(id: CharacterId) {
+  async load(appearance: Appearance = DEFAULT_APPEARANCE) {
     this.stand();
     const token = ++this.token;
     this.report("角色载入中…");
     try {
-      const loaded = await loadCharacter(id);
+      const loaded = await loadCharacter(appearance);
       if (this.disposed || token !== this.token) {
         releaseCharacter(loaded);
         return;
@@ -113,31 +145,46 @@ export class OfficeAvatar {
       this.mixer = loaded.mixer;
       this.idle = loaded.idle;
       this.walk = loaded.walk;
+      this.run = loaded.run;
       this.bones = loaded.bones;
       this.root.add(loaded.model);
       this.current = undefined;
       this.sitBlend = 0;
       this.sitTarget = 0;
       this.sitting = false;
+      this.seatedOffset = null;   // 换了模型，坐姿偏移要重新实测
       this.play(false);
       this.report("已就绪 · 点击地面行走");
     } catch {
       this.report("角色加载失败，请刷新重试");
     }
   }
+  /**
+   * 换配色/换配件：模型、动画、坐姿全不动，只改材质与配件显隐。
+   * 捏人面板每点一下都会走这里，所以绝不能重新加载模型。
+   */
+  applyAppearance(appearance: Appearance) {
+    if (this.character) setCharacterAppearance(this.character, appearance);
+    else void this.load(appearance);
+  }
   /** Choose which seated pose to hold once sitting. */
   setPose(pose: SitPoseId) {
+    if (pose !== this.seatedPose) this.seatedOffset = null;   // 换姿势要重量偏移
     this.seatedPose = pose;
   }
-  private play(moving: boolean) {
-    const next = moving ? this.walk : this.idle;
+  private play(moving: boolean, running = false) {
+    // 长距离移动用跑步循环（用户 2026-09-23：「动作库都可以直接用」）：这块板子腿很短，
+    // 走完整间办公室太慢；跑步那条是自带的循环动作，接上就能用。
+    const next = moving ? (running && this.run ? this.run : this.walk) : this.idle;
     if (!next || this.current === next) return;
     this.current?.fadeOut(0.18);
     next.reset().fadeIn(0.18).play();
     this.current = next;
   }
-  /** Stop the movement clips so the procedural seated pose owns the bones. */
+  /** Stop the movement clips so the seated pose (授权动作或程序化) owns the bones. */
   private stopClips() {
+    // 坐姿动作本身就是 `this.current`，不能连它一起停掉。
+    if (this.current === this.seatedClip) return;
     this.current?.stop();
     this.current = undefined;
   }
@@ -151,7 +198,7 @@ export class OfficeAvatar {
     // Switch straight to the chair's walkway position, clear of its geometry.
     if (this.seatedAt !== null) {
       const seat = this.seatedAt;
-      this.root.position.set(seat.stand.x, 0, seat.stand.z);
+      this.root.position.set(seat.stand.x, seat.stand.y ?? 0, seat.stand.z);
     }
     this.path = [];
     this.sitBlend = 0;
@@ -178,7 +225,7 @@ export class OfficeAvatar {
     const accepted = await this.reserve(id);
     if (request !== this.sitRequest || this.disposed || !accepted) return false;
     this.stand(false);
-    const target = new THREE.Vector3(seat.stand.x, 0, seat.stand.z);
+    const target = new THREE.Vector3(seat.stand.x, seat.stand.y ?? 0, seat.stand.z);
     this.path = findPath(this.root.position, target);
     if (!this.path.length) {
       this.stand();
@@ -205,13 +252,58 @@ export class OfficeAvatar {
       pose.hipDrop * eased
     );
   }
+  /**
+   * 坐姿下"髋部相对模型原点"的高度**实测一次**。
+   *
+   * 不能再靠 `seatHeight - restHipHeight` 这种差值：姿势会把腿折起来，髋部相对模型原点
+   * 的位置**随骨架而变**。旧角色（Quaternius）下那个差值刚好成立，换成尺子角色（Mixamo）
+   * 后坐姿反而把整个人抬高了 0.58m（实测：站姿髋 0.601 → 坐姿 1.178）。
+   * 所以：把坐姿摆到模型上量一次，之后每帧都用这个偏移把髋部放到工位高度。
+   */
+  private measureSeatedOffset(): number | null {
+    const character = this.character;
+    if (!character) return null;
+    const model = character.model;
+    const previousY = model.position.y;
+    const previousRootY = this.root.position.y;
+    try {
+      // 先把 root 归零，量到的就是"相对模型原点"的纯几何偏移。
+      this.root.position.y = 0;
+      model.position.y = 0;
+      applySitPose(this.root, this.bones, character.rest, SIT_POSES[this.seatedPose], 0);
+      this.root.updateMatrixWorld(true);
+      const hips = findBone(this.bones, "Hips");
+      if (!hips) return null;
+      return hips.getWorldPosition(new THREE.Vector3()).y;
+    } catch {
+      return null;
+    } finally {
+      model.position.y = previousY;
+      this.root.position.y = previousRootY;
+      this.root.updateMatrixWorld(true);
+    }
+  }
+  private stopSeatedClip() {
+    if (!this.seatedClip) return;
+    this.seatedClip.fadeOut(0.25);
+    if (this.current === this.seatedClip) this.current = undefined;
+  }
   private poseSit(dt: number) {
     if (!this.model || !this.character) return;
+    if (this.sitBlend >= .999) {
+      const seated = updateSeatedAnimation(this.character, this.seatHeight, dt);
+      if (seated) {
+        this.current = this.seatedClip = seated.action;
+        this.seatedClipHip = seated.hip;
+        return;
+      }
+    }
     const pose = blendPoses(
       STANDING_POSE,
       SIT_POSES[this.seatedPose],
       this.sitBlend,
     );
+    // 先用（可能是程序化的）姿势把骨骼摆好：起身/落座是插值过渡，那一段继续用它。
     applySitPose(
       this.root,
       this.bones,
@@ -219,11 +311,27 @@ export class OfficeAvatar {
       pose,
       (this.poseTime += dt),
     );
+    if (this.sitBlend >= 0.999) {
+      // 没有坐姿动作（别的模型）才退回程序化 + IK。
+      this.stopSeatedClip();
+      if (this.seatedOffset === null) this.seatedOffset = this.measureSeatedOffset();
+      const target = this.hipHeight(this.sitBlend);
+      const localHips = this.seatedOffset
+        ?? (this.character.restHipHeight - this.character.groundY);
+      // root 的 y 是这个人脚下的地面高度；模型偏移 = 目标髋高 - 该姿势下髋部相对原点的高度。
+      this.model.position.y = target - localHips;
+      groundSeatedFeet(this.root, this.character, this.seatedPose);
+      if (this.seatedAt?.workstation !== undefined) {
+        placeSeatedHands(this.root, this.character, this.seatedPose);
+      }
+      return;
+    }
+    // 过渡中（坐下 / 起身）
+    this.stopSeatedClip();
     const target = this.hipHeight(this.sitBlend);
-    this.model.position.y =
-      this.character.groundY + (target - this.character.restHipHeight);
-    if (this.sitBlend >= 0.999) groundSeatedFeet(this.root, this.character, this.seatedPose);
-    if (this.sitBlend >= 0.999 && this.seatedAt?.workstation !== undefined) placeSeatedHands(this.root, this.character, this.seatedPose);
+    const localHips = this.seatedOffset
+      ?? (this.character.restHipHeight - this.character.groundY);
+    this.model.position.y = target - localHips;
   }
   update(elapsed?: number) {
     const dt = Math.min(elapsed ?? this.clock.getDelta(), 0.1);
@@ -253,31 +361,25 @@ export class OfficeAvatar {
       if (this.keys.has("KeyA") || this.keys.has("ArrowLeft"))
         direction.sub(right);
       direction.normalize();
+      // 按 Shift 跑（尺子腿短，走太慢）；路径行走也按距离自动跑。
+      const speed = this.keys.has("ShiftLeft") || this.keys.has("ShiftRight")
+        ? RUN_SPEED : WALK_SPEED;
+      this.speed = speed;
       const next = this.root.position
         .clone()
-        .addScaledVector(direction, dt * 1.65);
-      if (segmentWalkable(this.root.position.x, this.root.position.z, next.x, next.z)) {
-        this.root.position.copy(next);
+        .addScaledVector(direction, dt * speed);
+      const supported = traverse(this.root.position, next);
+      if (supported) {
+        this.root.position.copy(supported);
         moving = direction.lengthSq() > 0;
       }
       if (moving) this.root.rotation.set(0, Math.atan2(direction.x, direction.z), 0);
     } else if (!this.sitBlend && !this.sitTarget && this.path.length && this.model) {
-      let remaining = dt * 1.65;
+      // 路很长就跑：先量整条路的长度（点击远处地面时不必让一块板子慢慢挪）。
+      const speed = pathLength(this.root.position, this.path) > RUN_DISTANCE ? RUN_SPEED : WALK_SPEED;
+      this.speed = speed;
       const frameStart = this.root.position.clone();
-      while (this.path.length && remaining > 0) {
-        const direction = this.path[0].clone().sub(this.root.position);
-        direction.y = 0;
-        const distance = direction.length();
-        if (distance <= remaining) {
-          this.root.position.x = this.path[0].x;
-          this.root.position.z = this.path[0].z;
-          remaining -= distance;
-          this.path.shift();
-        } else {
-          this.root.position.addScaledVector(direction, remaining / distance);
-          remaining = 0;
-        }
-      }
+      advancePath(this.root.position, this.path, dt * speed);
       const traveled = this.root.position.clone().sub(frameStart);
       moving = traveled.lengthSq() > 0.00000001;
       if (moving) {
@@ -290,7 +392,7 @@ export class OfficeAvatar {
       if (!this.path.length && this.pendingSeat !== null) {
         const spot = this.pendingSeat, seat = spot.chair;
         this.seatHeight = spot.height;
-        this.root.position.set(seat.x, 0, seat.z);
+        this.root.position.set(seat.x, seat.y ?? 0, seat.z);
         this.root.rotation.set(0, seat.angle, 0);
         this.sitTarget = 1;
         this.seatedAt = spot;
@@ -299,7 +401,9 @@ export class OfficeAvatar {
     }
     this.moving = moving;
     this.sitting = this.sitTarget === 1 && this.sitBlend >= 0.999;
-    const nextPose = this.autoPose.update(dt, this.sitting && this.seatedAt?.workstation !== undefined, this.seatedPose);
+    const nextPose = this.seatedClip?.isRunning()
+      ? undefined   // 用授权动作时不切姿势变体（动作里已经是坐姿了）
+      : this.autoPose.update(dt, this.sitting && this.seatedAt?.workstation !== undefined, this.seatedPose);
     if (nextPose) this.setPose(nextPose);
     const controlling = this.sitBlend > 0.001 || this.sitTarget === 1;
     if (controlling && this.model) {
@@ -311,7 +415,8 @@ export class OfficeAvatar {
       this.poseSit(dt);
     } else if (this.model) {
       if (this.current === undefined) this.play(false);
-      this.play(moving);
+      this.play(moving, this.speed > WALK_SPEED + 0.01);
+      this.speed = moving ? this.speed : 0;
       this.mixer?.update(dt);
       this.model.position.y = this.character?.groundY ?? 0;
     }
@@ -341,6 +446,23 @@ export class OfficeAvatar {
     window.removeEventListener("blur", this.blur);
   }
 
+  /** 坐姿几何的诊断读数（`?debug=1` 的探针用它查"坐到椅子上没有"）。
+   *  实现细节在 `sitPoses.ts` / `seatedFeet.ts`，这里只把数字拼出来。 */
+  sitDiagnostics(): SitDiagnostics {
+    return {
+      sitBlend: +this.sitBlend.toFixed(3),
+      sitTarget: this.sitTarget,
+      seatHeight: +this.seatHeight.toFixed(3),
+      seatedOffset: this.seatedOffset === null ? null : +this.seatedOffset.toFixed(3),
+      seatedClipHip: +this.seatedClipHip.toFixed(3),
+      usingSeatedClip: Boolean(this.seatedClip?.isRunning()),
+      restHipHeight: +(this.character?.restHipHeight ?? 0).toFixed(3),
+      groundY: +(this.character?.groundY ?? 0).toFixed(3),
+      modelY: +(this.model?.position.y ?? 0).toFixed(3),
+      hasHips: Boolean(findBone(this.bones, "Hips")),
+    };
+  }
+
   /** Current motion state, broadcast so other players can see this avatar. */
   getState() {
     const q = this.root.quaternion;
@@ -348,12 +470,17 @@ export class OfficeAvatar {
     const heading = Math.atan2(2 * (q.x * q.z + q.w * q.y), 1 - 2 * (q.x * q.x + q.y * q.y));
     return {
       x: this.root.position.x,
+      y: this.root.position.y,
       z: this.root.position.z,
       rot: heading,
       sitting: this.sitting,
       sittingSpot: (this.seatedAt ?? this.pendingSeat)?.id ?? null,
       moving: this.moving,
+      /** 长距离/Shift 时在跑：远端据此放跑步循环，不然我跑着他还在慢慢走。 */
+      running: this.moving && this.speed > WALK_SPEED + 0.01,
       pose: this.seatedPose,
     };
   }
 }
+
+

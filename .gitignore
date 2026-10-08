@@ -82,3 +82,13 @@ OfficeWeb/accounts.json*
 OfficeWeb/state.json*
 
 OfficeWeb/chat-data/
+OfficeWeb/build-world.json*
+!AssetSources/BoxWorld/BoxWorld_Parts.blend
+
+# ---- Scratch files that must never be committed ----
+# Local server log, editor/OS temp copies (Foo.cjs~RF1234.TMP), and the
+# per-machine screenshot drop used while iterating on the dock.
+OfficeWeb/debug.log
+*.TMP
+*~RF*.TMP
+OfficeWeb/Build/

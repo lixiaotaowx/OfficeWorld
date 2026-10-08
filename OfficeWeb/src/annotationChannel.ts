@@ -8,6 +8,7 @@
 // annotated — there is no layer out there to paint on (`person.annotate` says which
 // clients have one, and the call panel only offers the tools for those).
 import type { Socket } from 'socket.io-client';
+import type { AnnotateMessage } from './annotations';
 
 export interface AnnotationChannelOptions {
   /** The live socket, so a finished share can clear its board for everybody. */
@@ -27,6 +28,8 @@ export function createAnnotationChannel({ socket, notify, sharingScreen }: Annot
   let ready = false;
   let stroke: { scope: string; id: string } | null = null;
   let sequence = 0;
+  /** 上一次共享所在的会议房间：房间名会被复用，换房间就得把旧墨收掉。 */
+  let meetingRoom: string | null = null;
 
   const channel = {
     /** Show the desktop layer over the shared display (Electron app only). */
@@ -61,7 +64,12 @@ export function createAnnotationChannel({ socket, notify, sharingScreen }: Annot
     mirror(message: Record<string, unknown>) {
       if (!layer() || !sharingScreen()) return;
       channel.attach();
-      void layer()?.draw(message).catch(() => undefined);
+      // 清空必须走专门那条桥（`office:annotation-clear`）：中继用的
+      // `office:annotation-push` 在客户端里只放行 annotate/undo，`{type:'clear'}`
+      // 会被静默拒掉 —— 于是别人点「清空」永远到不了分享者的浮层，屏幕上的笔迹
+      // 一直留着（用户 2026-09-22 报障「标注清空不管用」）。这条路不需要更新客户端。
+      if (message.type === 'clear') void layer()?.clear().catch(() => undefined);
+      else void layer()?.draw(message).catch(() => undefined);
     },
     /** An undo travels straight to the layer, like the relayed strokes do. */
     undoOnLayer(id?: string) {
@@ -86,6 +94,23 @@ export function createAnnotationChannel({ socket, notify, sharingScreen }: Annot
     },
     undo(scope: string) {
       socket.current?.emit('annotate-undo', { scope });
+    },
+    /**
+     * socket 上跟这块画布有关的三条消息。它们**只落到分享者自己的桌面浮层**上：
+     * 别人的画面里已经有这些笔迹了（笔迹是画在分享的那块屏幕上、再随视频传出去的）。
+     */
+    attachSocket(active: Socket) {
+      active.on('annotate', (message: AnnotateMessage) => channel.mirror({ type: 'annotate', ...message }));
+      active.on('annotate-clear', () => channel.mirror({ type: 'clear' }));
+      active.on('annotate-undo', (message: { id?: string }) => channel.undoOnLayer(message?.id));
+    },
+    /**
+     * 离开会议必须把它那块画布上的笔迹一起收掉：房间名会被复用，下一次共享不能带着
+     * 上一次的墨（用户 2026-09-15）。
+     */
+    trackMeetingRoom(room: string | null) {
+      if (meetingRoom && meetingRoom !== room) channel.clearShareMarks([meetingRoom]);
+      meetingRoom = room;
     },
   };
   return channel;

@@ -1,0 +1,39 @@
+# Line endings: the repo stores LF, everywhere, for every text file.
+#
+# Without this, core.autocrlf=true (the Windows default) made the working copy
+# CRLF while the blobs stayed LF. That is how one tree ended up with mixed
+# endings, and it makes "the file on my machine" differ byte-for-byte from
+# "the file in the repo" — which matters here, because the deploy process
+# compares SHA-256 of built assets and the web server reads source directly.
+# Tell git "no conversion" for these paths so a clone on Windows behaves the
+# same as on Linux.
+*.cjs   text eol=lf
+*.mjs   text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.py    text eol=lf
+*.ps1   text eol=lf
+*.sh    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.txt   text eol=lf
+
+# Binary assets: never touch them, never try to diff them as text.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.bmp   binary
+*.ico   binary
+*.glb   binary
+*.ktx2  binary
+*.wasm  binary
+*.docx  binary
+*.exe   binary
+
+# Generated files that should not fight over whitespace in a merge.
+package-lock.json  -diff linguist-generated

@@ -47,12 +47,14 @@ export function useDesktopPreview(socket: MutableRefObject<Socket | undefined>,
         if (stopped || !channel!.connected) return;
         if (!image) {
           // 主进程因为"人不在电脑前"暂停了采集：不出帧、也不算失败，屏幕这才能熄。
+          // **但不能发 `ambient-sharing:false`**：那在服务端等于"停止广播"，会把最后一张
+          // 画面清成 null，别人的显示器（和自己桌上那块）就黑了。用户要的是"离开就停采集，
+          // 但屏幕上继续显示离开前的最后一张"（2026-09-18）。暂停期间什么都不说即可。
           const state = await bridge!.previewState?.().catch(() => undefined);
           if (state?.paused) {
             setPaused(true);
             setActive(false);
             setFailed(false);
-            channel!.emit('ambient-sharing', false);
             return;
           }
           return;

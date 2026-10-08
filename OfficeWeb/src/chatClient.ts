@@ -1,7 +1,7 @@
 import type { Socket } from "socket.io-client";
 import type { Message, ChatContact } from "./types";
 import { openChatArchive, readArchive, saveArchive, mergeMessages } from "./chatLocal";
-import { AttachmentGoneError, createAttachmentCache, uploadChatFile } from "./chatAttachments";
+import { AttachmentGoneError, PREFETCH_MAX_BYTES, createAttachmentCache, uploadChatFile } from "./chatAttachments";
 
 type Page = { ok: boolean; error?: string; messages: Message[]; cursor: string; more: boolean };
 
@@ -41,8 +41,15 @@ export function attachChatClient(socket: Socket, accountId: string,
   }
   const show = (messages: Message[]) => {
     if (!disposed) update(old => mergeMessages(old, messages));
-    for (const message of messages) if (message.attachment && !loadFile.isGone(message.attachment.id))
-      pendingFiles.set(message.attachment.id, message.attachment);
+    for (const message of messages) {
+      const attachment = message.attachment;
+      if (!attachment || loadFile.isGone(attachment.id)) continue;
+      // **只后台预取小附件**（图片预览和"离线也能看"靠它）。上限提到 2 GB 之后，
+      // "所有附件都自动收"会在打开聊天时静默拉几个 GB；大文件改成点了「下载」才走
+      // （落到接收文件夹、有进度条和「打开 / 打开文件夹」，用户 2026-09-21 要求）。
+      if (attachment.size > PREFETCH_MAX_BYTES) continue;
+      pendingFiles.set(attachment.id, attachment);
+    }
     void saveFiles();
   };
   const storageError = () => {

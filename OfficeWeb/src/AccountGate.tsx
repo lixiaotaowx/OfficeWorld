@@ -6,7 +6,12 @@ import "./styles.css";
 import "./account.css";
 
 export type Role = "employee" | "visitor";
-export interface Account { id: string; name: string; character: string; role?: Role | "" }
+export interface Account {
+  id: string; name: string; appearance?: unknown;
+  /** 这个账号捏过角色没有（服务端记）。false/缺失 = 登录后要弹一次捏人面板。 */
+  lookConfirmed?: boolean;
+  role?: Role | "";
+}
 
 /** Asked once on the way in: a colleague, or somebody visiting the office. */
 function RoleChoice({ busy, error, choose }: {
@@ -36,13 +41,21 @@ function RoleChoice({ busy, error, choose }: {
 export default function AccountGate() {
   const [user, setUser] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "reset-password">("login");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [roleBusy, setRoleBusy] = useState(false);
+  const [recoveryEnabled, setRecoveryEnabled] = useState(false);
   const stopRestore = useRef<() => void>();
+  useEffect(() => {
+    let closed = false;
+    void fetch('/api/auth/me').then(response => response.json()).then(data => {
+      if (!closed) setRecoveryEnabled(data.recoveryEnabled === true);
+    }).catch(() => {});
+    return () => { closed = true; };
+  }, []);
   /** Chosen once, on the way in; the server remembers it from then on. */
   async function chooseRole(role: Role) {
     if (!user || roleBusy) return;
@@ -89,10 +102,7 @@ export default function AccountGate() {
     event.preventDefault(); setBusy(true); setError("");
     stopRestore.current?.();
     try {
-      // Remember the user's input even if the network or authentication fails. A machine
-      // that cannot encrypt the file still gets to log in - refusing here would lock
-      // somebody out of their own account (user, 2026-09-15).
-      if (window.officeDesktop) await window.officeDesktop.saveLogin({ name, password }).catch(() => false);
+      // Rejected or interrupted requests must never overwrite a known-good login.
       const r = await fetch(`/api/auth/${mode}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, password }),
@@ -134,16 +144,20 @@ export default function AccountGate() {
     </section>
     <form className="account-card" onSubmit={submit}>
       <span className="eyebrow">MAKE ROOM FOR GOOD WORK</span>
-      <h2>{loading ? "正在恢复登录…" : mode === "login" ? "欢迎回来" : "认识一下"}</h2>
-      <p>{mode === "login" ? "用姓名和密码回到办公室。" : "注册后，选择你的角色和专属工位。"}</p>
+      <h2>{loading ? "正在恢复登录…" : mode === "login" ? "欢迎回来" : mode === "reset-password" ? "找回密码" : "认识一下"}</h2>
+      <p>{mode === "login" ? "用姓名和密码回到办公室。" : mode === "reset-password"
+        ? "确认你的姓名，输入新密码即可修改并进入办公室。" : "注册后，选择你的角色和专属工位。"}</p>
       <div className="account-tabs">
-        <button type="button" aria-pressed={mode === "login"} onClick={() => { setMode("login"); setError(""); }}>登录</button>
-        <button type="button" aria-pressed={mode === "register"} onClick={() => { setMode("register"); setError(""); }}>注册</button>
+        <button type="button" disabled={busy} aria-pressed={mode === "login"} onClick={() => { setMode("login"); setError(""); }}>登录</button>
+        <button type="button" disabled={busy} aria-pressed={mode === "register"} onClick={() => { setMode("register"); setError(""); }}>注册</button>
       </div>
       <label>姓名<input autoComplete="username" value={name} onChange={e => setName(e.target.value)} minLength={2} maxLength={24} required placeholder="同事认识你的名字" /></label>
-      <label>密码<input type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={1} maxLength={16} required placeholder="输入密码（1–16 个字符）" /></label>
+      <label>{mode === "reset-password" ? "新密码" : "密码"}<input type="password" autoComplete={mode !== "login" ? "new-password" : "current-password"} value={password} onChange={e => setPassword(e.target.value)} minLength={1} maxLength={16} required placeholder="输入密码（1–16 个字符）" /></label>
+      {mode === "login" && recoveryEnabled && <button type="button" className="account-recovery" disabled={busy} onClick={() => {
+        stopRestore.current?.(); setLoading(false); setMode("reset-password"); setPassword(""); setError("");
+      }}>找回密码</button>}
       <p className="account-error" role="alert">{error}</p>
-      <button className="primary account-submit" disabled={busy || loading}>{busy ? "请稍候…" : mode === "login" ? "进入办公室 →" : "注册并进入 →"}</button>
+      <button className="primary account-submit" disabled={busy || loading}>{busy ? "请稍候…" : mode === "login" ? "进入办公室 →" : mode === "reset-password" ? "修改密码并进入 →" : "注册并进入 →"}</button>
       <small>姓名作为登录名；同名可加团队简称区分。<br />{window.officeDesktop ? "默认记住账号和密码，下次启动自动登录。" : "登录状态保留 30 天，公共电脑用完请退出。"}</small>
     </form>
   </main>;

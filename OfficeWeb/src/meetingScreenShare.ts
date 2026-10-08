@@ -1,6 +1,7 @@
 import { Track, type LocalTrack } from 'livekit-client';
 import type { Socket } from 'socket.io-client';
 import type { MediaRooms } from './mediaRooms';
+import { swapScreenTrack } from './screenSwitch';
 import { waitForScreenPermission } from './screenPermission';
 
 type Capture = { lease: string; tracks: LocalTrack[]; cancelled: boolean };
@@ -42,13 +43,38 @@ export class MeetingScreenShare {
     // already-free room must not wipe marks that belong to somebody else's screen.
     if (capture) this.onStopped?.();
   }
+  /**
+   * 会议里换屏：重新采集当前选中的显示器（桌面端每次采集都取选中的那块），
+   * 把画面原地换到已经发布的轨上——参会者不断线、不用重新同意
+   * （用户 2026-09-15：会议与视频聊天里切换屏幕也要实时切过去）。
+   */
+  async switchDisplay(): Promise<boolean> {
+    let switched = false;
+    for (const [name, capture] of [...this.captures]) {
+      if (capture.cancelled) continue;
+      const room = this.rooms.get(name);
+      if (room?.state !== 'connected') continue;
+      try {
+        const tracks = await room.localParticipant.createScreenTracks({ audio: false,
+          resolution: { width: 1920, height: 1080, frameRate: 15 }, contentHint: 'text' });
+        const next = tracks[0]?.mediaStreamTrack;
+        tracks.slice(1).forEach(track => track.stop());
+        if (!next) continue;
+        // 发布轨接管 next；上面那个包装不能再 stop，否则会把刚交出去的轨掐掉。
+        if (await swapScreenTrack(room, next)) switched = true;
+        else next.stop();
+      } catch { /* 一次换屏失败不该弄断已经在跑的共享 */ }
+    }
+    return switched;
+  }
+
   async start(name: string) {
     const room = this.rooms.get(name);
     if (room?.state !== 'connected') throw Error('会议媒体尚未连接');
     const generation = (this.generations.get(name) || 0) + 1;
     this.generations.set(name, generation);
     const tracks = await room.localParticipant.createScreenTracks({ audio: false,
-      resolution: { width: 1920, height: 1080, frameRate: 15 } });
+      resolution: { width: 1920, height: 1080, frameRate: 15 }, contentHint: 'text' });
     const capture: Capture = { lease: crypto.randomUUID(), tracks, cancelled: false };
     const valid = () => !capture.cancelled && this.currentRoom() === name &&
       this.generations.get(name) === generation && this.rooms.get(name) === room;

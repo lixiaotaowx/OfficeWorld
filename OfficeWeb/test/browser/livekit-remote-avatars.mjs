@@ -1,6 +1,6 @@
 // Remote avatars: one real browser client must be able to see the other one
 // standing, walking and sitting in the 3D office.
-// Requires the signaling server (3108), Vite (5188) and global Playwright.
+// Requires a site to drive (OFFICE_APP_URL, default 127.0.0.1:5188) and global Playwright.
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 let chromium;
@@ -63,25 +63,27 @@ try {
     seen ? JSON.stringify(seen) : "没有远端角色",
   );
 
-  // Default character matches what the other client joined with.
+  // Default appearance matches what the other client joined with: `kind` is the
+  // appearance fingerprint, and the default colour is 原色 (kraft).
   check(
     "远端角色外观跟随对方选择",
-    seen?.[0]?.kind === "woman_casual",
+    seen?.[0]?.kind?.startsWith("kraft|"),
     seen?.[0]?.kind,
   );
 
-  // Switch A to a male avatar and confirm B renders that change.
-  const before = (await avatarIds(b))?.[0];
-  await a.selectOption("select[aria-label='选择角色']", "man_casual_2");
+  // Switch A to another colour in the settings dialog and confirm B renders it.
+  await a.locator('button[aria-label="设置"]').click();
+  await a.locator('.character-setting .color-grid button[aria-label="藏蓝"]').click();
+  await a.getByRole("button", { name: "关闭", exact: true }).click();
   const switched = await waitFor(async () => {
     const list = await avatarIds(b);
-    return list?.[0]?.kind === "man_casual_2" ? list[0] : null;
+    return list?.[0]?.kind?.startsWith("navy|") ? list[0] : null;
   }, 15000);
-  check("对方切换角色后我这边也跟着换", Boolean(switched), switched?.kind);
+  check("对方换配色后我这边也跟着换", Boolean(switched), switched?.kind);
 
   // Walk A around; B's copy must follow and end up at the same place.
-  // Blur whatever got focus from the select above, otherwise the avatar's
-  // key handler ignores the events as "typing into a form field".
+  // Blur whatever got focus from the settings dialog above, otherwise the
+  // avatar's key handler ignores the events as "typing into a form field".
   await a.evaluate(() => {
     const active = document.activeElement;
     if (active && active.blur) active.blur();

@@ -1,5 +1,7 @@
 import type { Socket } from "socket.io-client";
 import type { ChatAttachment, Message } from "./types";
+// 下载期限的规则住在 fileTransferRules（聊天下载和头像直传共用同一条通道，规则只留一份）。
+import { downloadTimeoutMs } from "./fileTransferRules";
 
 /**
  * A copy that the server no longer has (it keeps files for seven days) or that
@@ -14,6 +16,28 @@ export interface AttachmentLoader {
   isGone(id: string): boolean;
 }
 
+/**
+ * 单个聊天文件的上限：2 GB（用户 2026-09-21 要求，原为 20 MB）。
+ * 服务端 `chat-files.mjs` 的 `MAX_FILE_SIZE` **必须和这个数一样**——那边才是硬门，这里只是早点报错。
+ */
+export const MAX_CHAT_FILE_BYTES = 2 * 1024 ** 3;
+
+/**
+ * 超过这个大小就不往 IndexedDB 里塞：浏览器的存储配额经不起几个 GB，
+ * `put` 要么失败、要么卡住好几秒；缓存本来就只是"下次不用重下"的便利——
+ * 服务器保留 7 天，跳过缓存不会让下载失败，只是下次要重新拉一遍。
+ */
+export const CACHE_MAX_BYTES = 256 * 1024 * 1024;
+
+/**
+ * **后台自动预取**的上限：只有不超过这个大小的附件才会在后台悄悄抓下来缓存 + 判断是不是图片。
+ *
+ * 原来是"所有附件都在后台自动收"，上限提到 2 GB 之后那就成了灾难——打开一次聊天会静默拉几个 GB。
+ * 超过这个大小的附件改成**点了「下载」才走**（走 `fileTransfer` 那条通道，落到接收文件夹，
+ * 有进度条和「打开 / 打开文件夹」，用户 2026-09-21 要求）。聊天图片基本都在这个尺寸以内。
+ */
+export const PREFETCH_MAX_BYTES = 4 * 1024 * 1024;
+
 export function createAttachmentCache(database: () => Promise<IDBDatabase>): AttachmentLoader {
   const inflight = new Map<string, Promise<Blob>>();
   const gone = new Set<string>();
@@ -27,7 +51,7 @@ export function createAttachmentCache(database: () => Promise<IDBDatabase>): Att
     if (saved) return saved;
     if (gone.has(attachment.id)) throw new AttachmentGoneError("服务器副本已过期，此设备未保存该文件");
     const response = await fetch(`/api/chat/files/${encodeURIComponent(attachment.id)}`,
-      { credentials: "same-origin", signal: AbortSignal.timeout(60000) });
+      { credentials: "same-origin", signal: AbortSignal.timeout(downloadTimeoutMs(attachment.size)) });
     if (response.status === 404 || response.status === 410) {
       gone.add(attachment.id);
       throw new AttachmentGoneError("服务器副本已过期，此设备未保存该文件");
@@ -35,6 +59,8 @@ export function createAttachmentCache(database: () => Promise<IDBDatabase>): Att
     if (!response.ok) throw Error("文件接收失败，请重试");
     const blob = await response.blob();
     if (blob.size !== attachment.size) throw new AttachmentGoneError("文件无法完整接收，可能已损坏");
+    // 大文件不进 IndexedDB（见 CACHE_MAX_BYTES）：直接把手里的 Blob 交出去下载。
+    if (blob.size > CACHE_MAX_BYTES) return blob;
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("files", "readwrite");
       tx.objectStore("files").put(blob, attachment.id);
@@ -57,7 +83,7 @@ export function createAttachmentCache(database: () => Promise<IDBDatabase>): Att
 
 export async function uploadChatFile(socket: Socket, file: File,
   progress: (percent: number) => void, recipientId?: string): Promise<Message> {
-  if (!file.size || file.size > 20 * 1024 * 1024) throw Error("单个文件需为 1 字节至 20 MB");
+  if (!file.size || file.size > MAX_CHAT_FILE_BYTES) throw Error("单个文件需为 1 字节至 2 GB");
   if (file.name.length > 200) throw Error("文件名不超过 200 字");
   const requestId = crypto.randomUUID();
   let offset = 0;

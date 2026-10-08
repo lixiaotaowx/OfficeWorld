@@ -8,8 +8,10 @@ const { setWindowFullscreen } = require('./fullscreen.cjs');
 
 function installDesktopBridge(getWindow, dependencies = {}) {
   const annotationLayer = dependencies.annotationLayer;
+  const previewGlow = dependencies.previewGlow;
   const displays = dependencies.displays;
   const previewCapture = dependencies.previewCapture;
+  const fileTransfer = dependencies.fileTransfer;
   const credentials = path.join(app.getPath('userData'), 'login.enc');
   /** Preview edge and JPEG quality; the stream is configured with these once. */
   const PREVIEW_MAX_EDGE = 300;
@@ -164,8 +166,19 @@ function installDesktopBridge(getWindow, dependencies = {}) {
   handle('office:annotation-push', message => {
     if (!annotationLayer || !annotationLayer.isOpen()) return false;
     if (!message || typeof message !== 'object') return false;
-    if (!['annotate', 'undo'].includes(message.type)) return false;
+    // 'clear' 也是这块画布上的一条指令（浮层 receive() 里有 clear 分支）。以前只放行
+    // annotate/undo，中继过来的清空就被静默丢掉，别人点「清空」不起作用。
+    if (!['annotate', 'undo', 'clear'].includes(message.type)) return false;
     return annotationLayer.push(message);
+  });
+  // 「有人来看我了」：主窗口收到服务端转来的"谁在看你"，就让所有屏幕闪一圈绿光。
+  // 自己在共享屏幕时不闪（`sharing` 由页面报上来，头像条那条路也是这么报的）——那一圈
+  // 光会被一起共享出去，看的人只会觉得画面脏了。
+  handle('office:preview-glow', payload => {
+    if (!previewGlow) return false;
+    if (payload?.sharing === true || payload?.on === false) { previewGlow.hide(); return false; }
+    // `fade` 是"亮起来用多久"：鼠标停一下是慢慢亮 2 秒，打电话过来是立刻亮（用户 2026-09-20）。
+    return previewGlow.flash({ fade: payload?.fade }) > 0;
   });
   handle('office:annotation-clear', () => {
     if (!annotationLayer || !annotationLayer.isOpen()) return false;
@@ -186,5 +199,23 @@ function installDesktopBridge(getWindow, dependencies = {}) {
   handle('office:update-download', (url, sha256) => updater.download(url, sha256));
   handle('office:update-reveal', file => updater.reveal(file));
   handle('office:update-install', file => updater.install(file));
+  // 文件直传（用户 2026-09-22）：页面只拿得到"它自己拖进来/自己收到的那个文件"的句柄，
+  // 真实路径与写盘都留在主进程里。接收一定落在设置里的接收文件夹内。
+  if (fileTransfer) {
+    handle('office:file-settings', () => fileTransfer.settings());
+    handle('office:file-choose-folder', () => fileTransfer.chooseFolder());
+    handle('office:file-open-folder', folder => fileTransfer.openFolder(folder));
+    handle('office:file-send-open', target => fileTransfer.openSend(target));
+    handle('office:file-send-read', (id, offset, length) => fileTransfer.readSend(id, offset, length));
+    handle('office:file-send-close', id => fileTransfer.closeSend(id));
+    handle('office:file-receive-open', input => fileTransfer.openReceive(input));
+    handle('office:file-receive-write', (id, bytes) => fileTransfer.writeReceive(id, bytes));
+    handle('office:file-receive-end', id => fileTransfer.endReceive(id));
+    handle('office:file-receive-cancel', id => fileTransfer.cancelReceive(id));
+    // 系统级进度条：任务栏按钮上的那一条（两端都调它）。
+    handle('office:file-progress', value => fileTransfer.progress(value));
+    handle('office:file-open', target => fileTransfer.openPath(target));
+    handle('office:file-reveal', target => fileTransfer.revealPath(target));
+  }
 }
 module.exports = { installDesktopBridge };

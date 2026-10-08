@@ -45,7 +45,7 @@ test("位置会被夹在建筑范围内", async () => {
     const seen = [];
     b.on("motion", (m) => seen.push(m));
     await wait(50);
-    move(a, { x: 9999, z: -9999, rot: 0, moving: true });
+    move(a, { x: Number.MAX_VALUE, z: -Number.MAX_VALUE, rot: 0, moving: true });
     await wait(200);
     assert.equal(seen.length, 1);
     assert.equal(seen[0].x, MOTION_BOUNDS.maxX);
@@ -111,16 +111,24 @@ test("未进入空间的连接不能广播移动", async () => {
   });
 });
 
-test("角色选择会随 people 广播出去", async () => {
+test("外观（配色 + 配件）会随 people 广播出去", async () => {
   await withServer(async ({ connect, peopleOf }) => {
-    const a = await connect("甲", { character: "man_casual_2" });
-    assert.equal(peopleOf(a)[0].character, "man_casual_2");
-    a.emit("character", "woman_casual");
+    const rose = { color: "rose", accessories: { glasses: "black", hair: "long", beard: "none", hat: "beret" } };
+    const a = await connect("甲", { appearance: rose });
+    assert.deepEqual(peopleOf(a)[0].appearance, rose);
+    const sage = { color: "sage", accessories: { glasses: "none", hair: "bob", beard: "none", hat: "none" } };
+    a.emit("appearance", sage);
     await wait(150);
-    assert.equal(peopleOf(a)[0].character, "woman_casual");
+    assert.deepEqual(peopleOf(a)[0].appearance, sage);
     // Unknown ids are sanitised back to the default rather than relayed.
-    a.emit("character", "bogus-id");
+    a.emit("appearance", { color: "bogus-id", accessories: { glasses: "nope", hair: 7, beard: null, hat: {} } });
     await wait(150);
-    assert.equal(peopleOf(a)[0].character, "woman_casual");
+    const fallback = peopleOf(a)[0].appearance;
+    assert.equal(fallback.color, "kraft", "认不出的配色回默认");
+    // 默认外观是**一个配件都不戴**（用户 2026-09-28：「默认角色所有配件都没有」），
+    // 所以"认不出的配件"回退成 none 是对的；关键是必须回退到 DEFAULT_APPEARANCE 本身。
+    assert.deepEqual(fallback.accessories,
+      { glasses: "none", hair: "none", beard: "none", hat: "none" },
+      "认不出的配件要回退到 DEFAULT_APPEARANCE，不是各槽位第一项（两者恰好都是 none）");
   });
 });

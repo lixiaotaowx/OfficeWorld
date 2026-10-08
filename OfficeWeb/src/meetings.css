@@ -16,8 +16,14 @@
 .meeting-invitations button { margin-right: 8px; }
 .meeting-error, .meeting-confirm { background: #f8eae3; padding: 12px; border-radius: 10px; }
 .meeting-confirm button { margin-right: 8px; }
-.meeting-notification { position: fixed; bottom: 30px; right: 30px; z-index: 20; background: #315b45; color: white; padding: 16px 22px; box-shadow: var(--shadow-md); }
+/* Same rule as the call invite: a meeting invite, or "somebody is sharing", belongs in
+   the middle of the window rather than in a corner. Offset a little above centre so it
+   cannot land on top of a centred call card. */
+.meeting-notification { position: fixed; left: 50%; top: calc(50% - 150px); transform: translateX(-50%); z-index: 240; background: #315b45; color: white; padding: 16px 22px; border-radius: 14px; box-shadow: var(--shadow-md); }
 .meeting-streams video { width: 100%; max-height: 380px; background: #17251e; border-radius: 10px; }
+/* 会议的共享画面改用和私聊一样的画布（ScreenStage），尺寸与圆角交给它自己管，
+   否则这条 max-height 会跟 .screen-stage video 抢样式（用户 2026-09-22）。 */
+.meeting-streams .screen-stage video { max-height: 62vh; border-radius: 0; }
 .meeting-presence { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 40px); padding: 12px 16px; background: #264b38; color: #fff; border: 1px solid #8cac7a; border-radius: 14px; box-shadow: 0 8px 24px #14241d30; }
 .meeting-presence div { display: grid; gap: 4px; }
 .meeting-presence strong { font-size: 15px; }

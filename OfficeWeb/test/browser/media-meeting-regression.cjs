@@ -69,7 +69,12 @@ const BASE = 'http://127.0.0.1:3200';
   check('main toolbar microphone controls current meeting with panel collapsed');
   async function screen(sender,receiver){
    await sender.getByRole('button',{name:'共享屏幕到会议',exact:true}).click();
-   await receiver.waitForFunction(()=>document.querySelector('video[aria-label="会议共享画面"]')?.videoWidth>0,null,{timeout:30000});
+   await receiver.waitForFunction(()=>document.querySelector('.screen-stage video')?.videoWidth>0,null,{timeout:30000});
+   // 会议的共享画面现在和私聊用同一个画布（ScreenStage）：能最大化/全屏放大
+   // （用户 2026-09-21：「视频会议的屏幕分享和私人要保持一样，可以放大观看」）。
+   const controls=await receiver.evaluate(()=>[...document.querySelectorAll('.screen-stage-bar button')].map(b=>b.textContent.trim()));
+   assert.ok(controls.some(t=>t.includes('最大化')),'会议共享画面要能放大，实际按钮：'+JSON.stringify(controls));
+   assert.ok(controls.some(t=>t.includes('全屏')),'会议共享画面要能全屏');
    const before=await receiver.evaluate(()=>window.__stats());
    await until(receiver, now=>now.some(n=>n.kind==='video'&&n.frames>(before.find(r=>r.kind==='video')?.frames??0)), 'decoded frames');
    evidence.samples.push(await receiver.evaluate(()=>window.__stats()));
@@ -77,12 +82,12 @@ const BASE = 'http://127.0.0.1:3200';
   for(let i=0;i<3;i++){
    await screen(a,b);
    await a.getByRole('button',{name:'停止会议共享',exact:true}).last().click();
-   await b.getByLabel('会议共享画面').waitFor({state:'detached'});
+   await b.locator('.screen-stage').waitFor({state:'detached'});
   }
-  check('screen start/stop/restart three cycles, remote decoded frames');
+  check('screen start/stop/restart three cycles, remote decoded frames, 放大/全屏 按钮在');
   await screen(b,a);await a.screenshot({path:'Build/media-receiver.png'});
   await b.evaluate(()=>{const t=window.__capture.at(-1).getVideoTracks()[0];t.stop();t.dispatchEvent(new Event('ended'));});
-  await a.getByLabel('会议共享画面').waitFor({state:'detached'});
+  await a.locator('.screen-stage').waitFor({state:'detached'});
   check('reverse sharing and system-ended cleanup');
   await b.getByRole('button',{name:'离开会议',exact:true}).click();
   await b.getByRole('button',{name:'确认离开',exact:true}).click(); await b.waitForTimeout(300);

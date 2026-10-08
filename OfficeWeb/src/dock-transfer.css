@@ -1,0 +1,32 @@
+/* ---- 文件直传（用户 2026-09-22）----
+   把文件拖到某个头像上就开始发，不需要对方同意，直接进对方设置好的接收文件夹。
+   拖拽经过时那个头像要明显亮起来，不然"松手会不会发出去"全靠猜。 */
+.dock-avatar.dropping {
+  box-shadow: inset 0 0 0 2px #6fd0a8, 0 0 0 3px rgba(111, 208, 168, .45);
+  filter: brightness(1.18) saturate(1.15);
+  transform: translateY(-1px);
+}
+.dock-avatar.mine.dropping { box-shadow: inset 0 0 0 2px #cf6a55; }
+
+/* 正在传的文件：头像条**里面**底下那一条细线（不动窗口尺寸，任务栏上别的东西不受影响）。
+   左右留白跟 `.dock-frame` 一致，免得线头从半圆收口里戳出去。 */
+.dock-progress {
+  position: absolute;
+  left: calc(var(--dock-h) * .4); right: calc(var(--dock-h) * .4);
+  bottom: 2px; height: 3px; border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .22);
+  pointer-events: none;
+}
+.dock-progress > i {
+  display: block; height: 100%; border-radius: inherit;
+  background: #6fd0a8;
+  transition: width .18s linear;
+}
+/* 发出去是青色、收进来是绿色（"我发"和"我收"一眼能分）。 */
+.dock-progress.send > i { background: #63b6e8; }
+.dock-progress.failed > i { background: #d4634c; }
+.dock-progress.done > i { background: #7bd88f; }
+
+
+

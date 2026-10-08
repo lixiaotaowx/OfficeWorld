@@ -4,7 +4,7 @@
 // hung-up ordinary call used to do (user, 2026-09-15: "挂断后为啥软件还变小了").
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { setWindowFullscreen } = require('../fullscreen.cjs');
+const { setWindowFullscreen, isWindowFullscreen } = require('../fullscreen.cjs');
 
 function fakeWindow({ fullscreen = false, maximized = false } = {}) {
   const calls = [];
@@ -64,4 +64,22 @@ test('被忽略的退出请求仍要通知页面与渲染进程，而不是静�
     '页面要被告知已经不在全屏');
   assert.ok(win.calls.some(call => call[0] === 'office:fullscreen-changed' && call[1] === false),
     '渲染进程也要收到状态通知');
+});
+
+test('"算不算整屏"不能只看 isFullScreen()：自己请求过的也算（用户 2026-09-22「头像会消失找不到」）', () => {
+  // 真机实测：页面调 setFullscreen(true) 之后页面类加上了、窗口也铺满了屏幕，但
+  // `isFullScreen()` 在这个无边框透明窗口上**仍然返回 false**。头像条"整屏时藏起来"如果只看它，
+  // 就永远不藏；反过来只看事件，事件不来时又会永久藏着。
+  const lying = fakeWindow();
+  lying.isFullScreen = () => false;          // 就是这台机器上的真实表现
+  assert.equal(isWindowFullscreen(lying), false, '没进过整屏就是 false');
+  setWindowFullscreen(lying, true);
+  assert.equal(isWindowFullscreen(lying), true, '自己请求过整屏 → 必须是 true（哪怕 isFullScreen 撒谎）');
+  setWindowFullscreen(lying, false);
+  assert.equal(isWindowFullscreen(lying), false, '退出整屏后要立刻恢复 false');
+  // 外面进的整屏（F11/系统）也要认。
+  const external = fakeWindow({ fullscreen: true });
+  assert.equal(isWindowFullscreen(external), true);
+  assert.equal(isWindowFullscreen(undefined), false);
+  assert.equal(isWindowFullscreen({ isDestroyed: () => true }), false, '销毁的窗口不算');
 });

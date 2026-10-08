@@ -1,11 +1,13 @@
 // Browser verification harness for the LiveKit media path.
 //
 // Requires three things, so it is kept out of `npm test`:
-//   1. the signaling server:  npm run server        (port 3108)
-//   2. the Vite dev server:   npm run dev           (port 5188)
+//   1. a site to drive:      OFFICE_APP_URL (defaults to http://127.0.0.1:5188/)
+//   2. that site's signaling server, at the same origin
 //   3. Playwright with Chromium installed globally
 //
 // Run from OfficeWeb:  npm run test:browser
+// The former local-run shortcuts (`npm run server` / `npm run dev`) were removed
+// on 2026-09-14, so set OFFICE_APP_URL to the site under test.
 //
 // It drives two real browser clients, then queries the LiveKit server directly
 // to confirm both actually joined the room and published audio.

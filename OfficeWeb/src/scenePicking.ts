@@ -29,6 +29,7 @@ export function pickSceneSurface(hits: THREE.Intersection[]) {
     if (typeof node.userData.monitorSeat === 'number') {
       return { kind: 'monitor' as const, seat: node.userData.monitorSeat as number, hit };
     }
+    if (typeof node.userData.seat === 'number') return {kind:'seat' as const,seat:node.userData.seat as number,hit};
     const spots = node.userData.sittingSpots as { id: string; chair: { x: number; z: number } }[] | undefined;
     if (spots?.length) {
       const closest = [...spots].sort((a, b) =>

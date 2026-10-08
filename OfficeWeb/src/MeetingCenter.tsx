@@ -1,19 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Person } from './types';
 import type { useMeetings } from './useMeetings';
 import './meetings.css';
 import { MicIcon, MicOffIcon, ScreenIcon, HangupIcon, MembersIcon, CloseIcon } from './icons';
 import SharingPreview, { SharingVideo } from './SharingPreview';
+import ScreenStage from './ScreenStage';
+import { colorFor } from './annotations';
 
 type Client = ReturnType<typeof useMeetings>;
-function SharedScreen({ stream }: { stream: MediaStream }) {
-  const video = useRef<HTMLVideoElement>(null);
-  useEffect(() => { if (video.current) video.current.srcObject = stream; }, [stream]);
-  return <video ref={video} autoPlay muted playsInline controls aria-label="会议共享画面" />;
+/** 画布上的三个动作；和私聊走的是同一条通道（annotationChannel）。 */
+export interface MeetingAnnotation {
+  draw: (scope: string, points: [number, number][], done: boolean) => void;
+  clear: (scope: string) => void;
+  undo: (scope: string) => void;
 }
-export default function MeetingCenter({ client, people, accountId, open, onClose, onOpen, videos }: {
+export default function MeetingCenter({ client, people, accountId, open, onClose, onOpen, videos, annotation }: {
   client: Client; people: Person[]; accountId: string; open: boolean;
   onClose: () => void; onOpen: () => void; videos: Record<string, MediaStream>;
+  annotation: MeetingAnnotation;
 }) {
   const [title, setTitle] = useState('办公室讨论');
   const [selected, setSelected] = useState<string[]>([]);
@@ -82,8 +86,20 @@ export default function MeetingCenter({ client, people, accountId, open, onClose
             <figcaption>正在共享到会议 · 我的屏幕</figcaption>
             <SharingVideo stream={localStream} label="我正在共享的屏幕" />
           </figure>}
-          <div className="meeting-streams">{remoteStreams
-            .map(([key, stream]) => <SharedScreen key={key} stream={stream} />)}</div>
+          {/* 会议的共享画面和私聊用同一个画布：能最大化/全屏放大看，也能标注
+              （用户 2026-09-22：「视频会议的屏幕分享和私人要保持一样，可以放大观看
+              可以标记，目前没有」）。键的后缀是共享者（LiveKit identity = socket id），
+              所以查得到他的名字、也能判断他的客户端能不能显示标注。 */}
+          <div className="meeting-streams">{remoteStreams.map(([key, stream]) => {
+            const sharer = people.find(p => p.id === key.slice(active.room.length + 1));
+            const canAnnotate = sharer?.annotate === true;
+            return <ScreenStage key={key} stream={stream} scope={active.room}
+              label={`${sharer?.name || '同事'}的共享屏幕`}
+              selfColor={colorFor(accountId)}
+              annotatable={canAnnotate}
+              onDraw={annotation.draw} onClear={annotation.clear} onUndo={annotation.undo}
+              hint={canAnnotate ? '可点「标注」，笔迹会画在对方的共享屏幕上' : undefined} />;
+          })}</div>
           <div className="meeting-controls">
             <button disabled={busy} onClick={() => void run(client.toggleMic)}>{client.mic ? <MicIcon /> : <MicOffIcon />}{client.mic ? '静音' : '开启麦克风'}</button>
             <button disabled={busy} onClick={() => void run(client.toggleShare)}><ScreenIcon />{client.sharing ? '停止会议共享' : '共享屏幕到会议'}</button>

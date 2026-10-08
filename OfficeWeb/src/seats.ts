@@ -24,11 +24,12 @@ export interface Workstation {
   /** Short human label, e.g. "A-1". */
   label: string;
   /** Where the avatar sits, and which way it faces. */
-  chair: { x: number; z: number; angle: number };
+  chair: { x: number; y?: number; z: number; angle: number };
   /** Where the avatar stands before sitting down. */
-  stand: { x: number; z: number };
+  stand: { x: number; y?: number; z: number };
   /** Centre of the monitor surface, for the shared-screen thumbnail. */
   display: XYZ;
+  displayScale?: [number,number];
 }
 
 const SEAT_ROWS: Array<{
@@ -92,10 +93,10 @@ export const chairSeats = WORKSTATIONS.map((s) => ({
 }));
 
 export function workstationAt(index: number) {
-  return WORKSTATIONS[index];
+  return WORKSTATIONS.find(s=>s.index===index);
 }
 
 /** Seat held by a participant, or -1 when they are not at a desk. */
 export function seatOfSeatId(id: string) {
-  return WORKSTATIONS.findIndex((s) => s.id === id);
+  return WORKSTATIONS.find((s) => s.id === id)?.index ?? -1;
 }

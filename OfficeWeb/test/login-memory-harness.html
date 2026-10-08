@@ -3,22 +3,28 @@
 // AccountGate on its own, with a stubbed desktop bridge: this harness is about what
 // the gate does with the SAVED account when a session ends, nothing else.
 window.__calls = [];
-window.__saved = { name: '小文杰', password: 'pw-1234' };
+// Test-only storage emulates the native encrypted file across page reloads.
+window.__saved = JSON.parse(sessionStorage.getItem('qa-login') || 'null') || { name: '小文杰', password: 'pw-1234' };
 window.officeDesktop = {
   readLogin: async () => window.__saved,
-  saveLogin: async value => { window.__saved = value; window.__calls.push(['save', value.name]); return true; },
-  clearLogin: async () => { window.__calls.push(['clear']); window.__saved = null; return true; },
+  saveLogin: async value => { window.__saved = value; sessionStorage.setItem('qa-login', JSON.stringify(value)); window.__calls.push(['save', value.name]); return true; },
+  clearLogin: async () => { window.__calls.push(['clear']); window.__saved = null; sessionStorage.removeItem('qa-login'); return true; },
 };
 // The restore login is made to fail, so the gate stays on the form and the test can
 // read what it prefilled without pulling the whole office (socket.io, three.js) in.
-window.fetch = async input => {
+window.fetch = async (input, init) => {
   const url = String(input && input.url ? input.url : input);
   window.__calls.push(['fetch', url.replace(location.origin, '')]);
+  if (url.includes('/api/auth/reset-password')) {
+    const { name } = JSON.parse(init.body);
+    return new Response(JSON.stringify({ user: { id: 'memory-test', name, role: '' } }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
   if (url.includes('/api/auth/login'))
     return new Response(JSON.stringify({ error: '测试环境不登录' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } });
   if (url.includes('/api/auth/me'))
-    return new Response(JSON.stringify({ user: null }),
+    return new Response(JSON.stringify({ user: null, recoveryEnabled: true }),
       { status: 401, headers: { 'Content-Type': 'application/json' } });
   return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
 };

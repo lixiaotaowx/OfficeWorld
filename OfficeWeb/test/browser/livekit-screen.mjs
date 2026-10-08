@@ -1,6 +1,6 @@
 // Screen-share verification: one client shares, another is approved and then
 // receives the real LiveKit video track. Requires the same setup as
-// livekit-browser.mjs (signaling server, Vite dev server, Playwright).
+// livekit-browser.mjs (a site via OFFICE_APP_URL, Playwright).
 import { createRequire } from "node:module";
 import { RoomServiceClient } from "livekit-server-sdk";
 import { livekit } from "../../livekit.mjs";

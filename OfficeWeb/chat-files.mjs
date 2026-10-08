@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { canReadChat, recipientFor, publishChat } from './chat-access.mjs';
 
-export const MAX_FILE_SIZE = 20 * 1024 * 1024;
+/** 单个聊天文件上限：2 GB（用户 2026-09-21 要求，原为 20 MB）。
+ *  **这里和网页侧 `src/chatAttachments.ts` 的 `MAX_CHAT_FILE_BYTES` 必须一致**，服务端这份是硬门。
+ *  注意这些文件是**存在 VPS 上**的（`chat-data/`，保留 7 天，见 `chat-store.mjs` 的 `RETENTION`），
+ *  所以上限调大等于磁盘占用变大——`df -h /` 过一眼再决定发多大的东西。 */
+export const MAX_FILE_SIZE = 2 * 1024 ** 3;
 const CHUNK = 128 * 1024;
 const validId = id => typeof id === "string" && /^[a-zA-Z0-9-]{1,80}$/.test(id);
 
@@ -58,7 +62,7 @@ export function createChatFiles(directory, store) {
           if (data.offset !== 0 || !Number.isSafeInteger(data.size) ||
               data.size < 1 || data.size > MAX_FILE_SIZE ||
               typeof data.name !== "string" || !data.name.trim() || data.name.length > 200)
-            throw Error("文件需为 1 字节至 20 MB，文件名不超过 200 字");
+            throw Error("文件需为 1 字节至 2 GB，文件名不超过 200 字");
           if (pending.size >= 20) throw Error("上传繁忙，请稍后重试");
           upload = { id: randomUUID(), owner: person.clientId, socketId: socket.id,
             requestId: data.requestId, name: data.name.replace(/[\\/\x00-\x1f\x7f]/g, "_"),

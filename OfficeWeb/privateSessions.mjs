@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 
 /** Every accepted pair owns one room, independent of other viewers of a screen. */
 export function createPrivateSessions(io, people, sessions, invites, end, updatePermissions = async () => {},
-  { ringMs = 30000 } = {}) {
+  { ringMs = 30000, publish = () => {} } = {}) {
   let tail = Promise.resolve();
   const emitSession = session => {
     for (const peer of session.peers) io.to(peer).emit('session', {
       ...session, peer: session.peers.find(id => id !== peer), initiator: peer === session.peers[0],
     });
+    // 通话的成立/改变要广播一次 `people`：头像条靠它知道谁在通话里（用户 2026-09-23）。
+    publish();
   };
   /**
    * Stop an invite. `reason` tells the two sides apart without guessing: `timeout` is a

@@ -1,4 +1,13 @@
 import * as THREE from "three";
+import { buildNavigationActive, buildPath, buildTraverse } from './buildNavigation';
+
+export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
+  if (buildNavigationActive()) {
+    const point = buildTraverse(start, target.x, target.z);
+    return point ? new THREE.Vector3(point.x, point.y, point.z) : null;
+  }
+  return segmentWalkable(start.x,start.z,target.x,target.z) ? target : null;
+}
 
 // Seat transforms live in seats.ts so the ring markers, the avatar and the
 // monitor thumbnail all agree. Re-exported here for existing importers.
@@ -32,7 +41,11 @@ const obstacles = [
   return [a + insetX, b - insetX, c + insetZ, d - insetZ];
 });
 const CLEARANCE = 0.02;
+let buildObstacles: number[][] | null = null;
+export function setBuildObstacles(next: number[][] | null) { buildObstacles = next; }
 export function walkable(x: number, z: number) {
+  if (buildObstacles) return Math.abs(x) < 14.7 && Math.abs(z) < 11.7 &&
+    !buildObstacles.some(([a,b,c,d]) => x > a && x < b && z > c && z < d);
   return (
     x > -9.5 &&
     x < 10.4 &&
@@ -55,10 +68,23 @@ export function segmentWalkable(ax: number, az: number, bx: number, bz: number) 
   return true;
 }
 const STEP = 0.28;
+
+/** How long the whole remaining path is, from `start` through every waypoint. */
+export function pathLength(start: THREE.Vector3, path: THREE.Vector3[]): number {
+  let total = 0;
+  const from = start.clone();
+  for (const point of path) {
+    total += from.distanceTo(point);
+    from.copy(point);
+  }
+  return total;
+}
+
 export function findPath(
   start: THREE.Vector3,
   target: THREE.Vector3,
 ): THREE.Vector3[] {
+  if (buildNavigationActive()) return buildPath(start,target).map(p => new THREE.Vector3(p.x,p.y,p.z));
   if (!walkable(target.x, target.z)) return [];
   const key = (x: number, z: number) => `${x},${z}`;
   let sx = Math.round(start.x / STEP),

@@ -13,3 +13,33 @@
 .chat-image-dialog { max-width: 94vw; max-height: 92vh; padding: 12px; border: 0; border-radius: 8px; }
 .chat-image-dialog img { display: block; max-width: 88vw; max-height: 80vh; object-fit: contain; }
 .chat-image-dialog::backdrop { background: #000b; }
+
+/* ---- 聊天附件的下载（用户 2026-09-21：要进度条、要落到设置里的接收文件夹、完事要有「打开」等按钮）----
+   下载本身复用文件直传那条通道，所以这里的进度条和传输卡片是同一份数据。 */
+.chat-file-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chat-file-actions button, .chat-file-actions a {
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .08);
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.chat-file-actions button:hover, .chat-file-actions a:hover { background: rgba(255, 255, 255, .16); }
+.chat-file-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .18);
+  overflow: hidden;
+}
+.chat-file-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3f9d4f, #7cc06a);
+  transition: width .18s linear;
+}
+.chat-file-bar.failed > i { background: #c45842; }
+

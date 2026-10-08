@@ -1,0 +1,41 @@
+.call-floating-panels {
+  position: fixed; right: 12px; bottom: 100px; z-index: 130;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  width: max-content; max-width: calc(100vw - 24px); pointer-events: none;
+  overflow-y: auto; scrollbar-width: thin;
+}
+.call-floating-panels > .session-panel.private-calls,
+.call-floating-panels > .sharing-preview {
+  position: relative; inset: auto; flex: 0 0 auto;
+  max-width: 100%; margin: 0; pointer-events: auto;
+}
+.call-floating-panels > .sharing-preview { width: 300px; }
+.call-floating-panels > .session-panel.private-calls.folded {
+  width: max-content; max-width: 100%; padding: 4px; border-radius: 12px;
+}
+.call-floating-panels .private-calls .call-folded {
+  display: flex; align-items: center; gap: 6px; padding: 0; min-height: 32px;
+}
+.call-floating-panels .private-calls .call-folded + .call-folded { margin-top: 4px; }
+.call-floating-panels .call-folded .call-heading {
+  flex: 1; min-width: 0; gap: 4px; padding: 0; margin: 0;
+}
+.call-floating-panels .call-folded .call-heading > div:not(.call-avatar) { min-width: 0; }
+.call-floating-panels .call-folded .call-heading strong {
+  display: block; max-width: 64px; overflow: hidden; text-overflow: ellipsis;
+}
+.call-floating-panels .call-folded .call-heading i { display: none; }
+.call-floating-panels .call-folded .private-call-actions.folded { gap: 3px; }
+.call-floating-panels .private-calls .private-call-actions.folded button {
+  width: 30px; min-width: 30px; height: 30px; border-radius: 8px;
+}
+.call-floating-panels .private-calls .call-folded .call-fold {
+  height: 30px; padding: 4px 6px; border-radius: 8px;
+}
+.call-floating-panels > .sharing-preview.collapsed { width: max-content; border-radius: 12px; }
+.sharing-preview header { height: auto; min-height: 0; border: 0; }
+.sharing-preview.collapsed header { height: 40px; padding: 4px 6px; gap: 6px; }
+.sharing-preview.collapsed header button { height: 30px; padding: 4px 6px; border-radius: 8px; }
+.sharing-preview.collapsed footer { display: none; }
+.sharing-preview.collapsed strong { font-size: 11px; }
+.sharing-preview.collapsed i { margin-right: 4px; }

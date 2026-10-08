@@ -1,4 +1,974 @@
+## 2026-09-30 宝箱视频链接显示封面缩略图、点开即放大观看
+
+用户：「宝箱里面的视频链接，我希望有一个缩略图放的图片，我希望别人点开的时候可以放大观看」，并确认要**自动抓取平台封面**（不是让上传者自己挑图）。
+
+- **封面必须由服务端代理，浏览器直连不行**（三条都是实测）：`api.bilibili.com` 不返回 CORS 头；封面图床认 Referer，带本站来源是 **403**、带 `https://www.bilibili.com/` 才是 200；原始封面常有几百 KB，套 B 站图片 CDN 的 `@480w_300h_1c.webp` 规则后只有 **6.6KB／21.5KB／26.2KB**（jpg 与 png 封面都吃这条规则）。
+- 新增 `OfficeWeb/build-cover.mjs`（156 行）：BV/av 走 `x/web-interface/view`、番剧 ep 走 `pgc/view/web/season`（**没有 `/x/` 前缀**——线上 `/x/pgc/...` 返回的是 HTML 错误页），取 `data.pic` / `result.cover`；图片地址必须落在 hdslb / bilibili / douyinpic 等白名单图床，协议强制 https，只收 `image/*` 且 ≤512KB。带 TTL 内存缓存（命中 6 小时／失败 5 分钟）、**同链接 in-flight 合并**、**上游并发闸门 3**、平台抖动重试一次；`COVER_TRACE=1` 打开失败日志。
+- `build-http.mjs` 新增 `GET /api/build?cover=<视频页>`：**故意不做每账号限速**——打开宝箱时一屏可能同时有好几条视频链接，逐个 429 会把缩略图成片打掉（第一版 300ms 限速在回归里当场现形：3 条连发有 2 条被拒），上游压力交给缓存/合并/闸门兜；解析不到回 **204**，前端降级。未登录仍然 401。
+- 前端：新增 `src/ChestCover.tsx`，视频链接的 110×88 类型位换成封面 + 居中 ▶ 浮层（`aria-label`＝`放大观看：<标题>`），**点缩略图直接打开放大播放器**；不是视频页或取不到封面时退回原来的 `↗` 符号（`onError` 卸载图片，别留一张 0 像素的 `<img>`）。播放器宽屏默认窗口 760px → `min(1040px,92vw)`（竖屏抖音仍是 430px 窄窗），「▶ xx观看」按钮与「最大化」都保留。
+- **抖音封面目前取不到**：分享页只有 SSR 外壳、`<meta og:image>` 在手机 UA／桌面 UA／facebookexternalhit／Bytespider／Baiduspider 下都不返回，`_ROUTER_DATA` 里也没有 video 详情（详情接口要签名）。保留 og:image 这条尽力而为的路径，取不到就退回类型符号。
+- 验证：新增 8 项单测（地址识别、图床白名单、体积上限、缓存、抖动重试、并发闸门），`npm test` 356 项全绿；`node test/browser/chest-cover.cjs` 本地与正式站都通过（缩略图有尺寸、`<img>` 真的加载出来、只请求本站 `?cover=`、普通链接与失败封面退回符号、点缩略图开播放器且宽度 1040，并**顺带打真后端**：匿名 401、B 站 webp（RIFF…WEBP）、站外 204、连发不限速）。同一用例里还有一段**全真链路**（本地起真服务端 + vite 把 `/api` 代理过去 + 真账号 + 真宝箱）：面板里那一行是**平台自己那张图**，实测 `naturalWidth×naturalHeight = 480×300`（正是 `@480w_300h_1c` 那档），截图 `Build/chest-cover-real.png`。两个坑：真账号要先过捏人和选座那两道弹窗（用例只把 `/api/auth/me` 换成"访客+已捏过人"），以及**别把两段用例的宝箱放在同一个坐标**——叠在一起时点击只会命中先渲染的那个（空宝箱），现象是面板一直是"第一件宝物，会是什么？"。`BOX_LIVE=1` 跑 `chest-layout`／`chest-video`／`chest-people` 全过。截图 `Build/chest-cover-{local,live}.png`、`Build/chest-cover-player-live.png`，证据 JSON `Build/chest-cover-live.json`。
+- 发布：前端 `index.html` + `assets/main-BEPwM3kM.js`（839,511 字节）+ `assets/main-DGM9Vziq.css`（86,831 字节），本地与远端逐文件 SHA256 一致、公网 9 项 200；后端 `build-cover.mjs`（`b75d1183b61945900afb56eb16a39e315687e8473de25d7c2614dcdf61e96fbf`）+ `build-http.mjs`（`dc0a0e7608e640595ec92a5c0eb72f94712ed21c2ea7651248726a66759f6868`）上传并 `sudo -n systemctl restart officeweb` → active，日志 `OfficeWeb ready on http://127.0.0.1:3108`。
+- **后端先在 VPS 的隔离预演实例上验过**（`Build/cover-qa-stage.sh`：拷 `~/officeweb/*.mjs` 到 `~/cover-stage`、独立端口 3211、独立 statePath/accountsPath，不碰正式数据与端口）：B 站视频 `200 image/webp 21584` 字节（magic `RIFF…WEBP`）、番剧 `200 26186`、站外 `204`、匿名 `401`、连发 3 条全 `200`、重复命中缓存 6ms。发布后又用**线上那两个文件本身**跑了一遍（`Build/cover-prod-verify.sh`，端口 3212），结果相同；文件哈希与预演实例完全一致。
+- 备份 `~/officeweb/backups/chest-cover-20260930/`（改动前的 `build-http.mjs`、`before.sha256`，以及"此前没有 `build-cover.mjs`"的标记）。刷新页面生效。
+
+## 2026-09-30 绿光过淡修正：客户端0.1.37
+
+保留窄范围无实边的柔光，提高绿色可见度，修正0.1.36过淡。7项相关测试、渲染截图和打包CSS一致性通过。正式安装器101725764字节，整包SHA256 f63e368b65353fb8328000977cb1fa147169f5a8bcbf78a9f1f82b4ae01a7beb及latest.json已核验；更新客户端生效。详情见[绿光记录](Soft_Glow_20260930.md)。
+## 2026-09-30 流动箭头改成"发光、一闪一闪"
+
+用户：「我希望箭头是发光，发光，发光的一闪一闪的那个提示」「箭头组件，那个模型」——即构建库里的**流动箭头（flow-arrow）模型**本身要会发光、会闪。
+- `buildArchitecture`：箭头单独一份自发光材质（`emissive` 取比本体更饱和的同色，`emissiveIntensity = .9*pulse`）+ 一层**加法混合光晕壳**（放大 1.3、`opacity = .5*pulse`）；呼吸曲线 `arrowPulse(t)=.5-.5cos(2πt/1.3)`（1.3 秒一轮），由每帧的 `updateBuildFlags` 驱动，原有的 +Z 轻微推移保留。
+- 两个坑都堵上了：光晕壳**挂空包围盒**（`halo.boundingBox=new THREE.Box3()`），否则目录实测尺寸/选中框会被撑大 30%，`build-specifications`/`build-rotation`/`build-scale` 三条单测立刻变红；`buildInteraction` 把预览网格换成共享 `MeshBasicMaterial` 时**跳过光晕壳并隐藏它**，动画侧再用 `if(body.emissive)` 兜一层（老坑：预览材质不能进 emissive 更新）。
+- 顺带修了两条**早就过期**的浏览器用例（与本次改动无关，在正式站上同样失败）：`build-architecture.cjs`（以为世界是空的，其实默认模板本身就是一批 buildId 节点）与 `build-props.cjs`（画廊张数写死 42，目录已长到 68）。348 项 Node 测试全绿。
+- 发布 `index.html` + `assets/main-DjTW5g57.js` + `characterModel-D-HunoXp.js`；本地/远端逐文件 SHA256 一致、公网 9 项 200。
+- 以正式站为准：`BOX_LIVE=1 node test/browser/arrow-office.cjs` 通过（真实应用里连拍 10 张，最暗/最亮两帧 **4855 px 变化、最亮 +98 级**），`build-architecture.cjs`、`build-hints.cjs`、`build-gizmo.cjs`、`build-experience.cjs` 全过；截图 `Build/arrow-office-{dim,lit,full}-live.png`、`Build/arrow-glow-{dark,bright}.png`。
+- 后端未动、未重启；备份 `~/officeweb/backups/arrow-glow-20260930/`。刷新页面生效。
+
+## 2026-09-30 提示贴片浮到最上层（"不要遮住"）
+
+用户截图反馈：安装模式的贴片被预览部件压掉半张（`Q / R 左右转` 只剩一半），要求「不要遮住」。
+- `buildRotationGuide` 的四张提示贴片改为 `depthTest=false` + `renderOrder=900`（`floatLabel()`），永远画在部件与环线之上；**环线本身仍遵守深度遮挡**（那是 3D 提示，露一半不影响判断）。旧的「旋转提示遵守深度遮挡」规则由用户本次要求取代，AGENTS.md 已同步。
+- 顺势把槽位半径 `SLOT_REACH` 1.45→1.7，贴片整体推到部件轮廓外，减少压在模型上的面积。
+- 发布 `assets/main-BLfyjWYP.js`（838,023 字节）+ `index.html`；本地/远端逐文件 SHA256 一致、公网 9 项 200。
+- 以正式站为准：`BOX_LIVE=1` 跑 `build-hints.cjs`（新增断言：贴片 `depthTest===false` 且 `renderOrder ≥ 900`）、`build-experience.cjs`（断言改为"环线仍吃深度、贴片不吃"）、`build-gizmo.cjs` 全通过；截图 `Build/hint-install-live.png`（四张全部完整可见）。
+- 后端未动、未重启；备份 `~/officeweb/backups/hint-on-top-20260930/`。刷新页面生效。
+
+## 2026-09-30 提示贴片：删掉移动那条、安装改成饼菜单排布
+
+用户：「这个很丑 不要太大 太抢戏，改小，另外把移动的那个去掉提示，安装的这个做成类似 blender 的饼状菜单的 ui 排列文字，不会重叠和干扰」。
+- **移动手柄的说明贴片整条删除**（`BuildMoveHandle` 不再创建 sprite；相关 import/缩放/释放一并清掉）。
+- **安装模式改成饼菜单方位槽**：三张贴片按相机的右/上向量摆到**左／上／右**槽，接点占**右上 45° 斜槽**；**不设正下方槽位**——画布底部压着建造工具栏那层 DOM，第一版放在正下方时实测被整条挡住。sprite 因此从"旋转环的子节点"改成"`root` 的子节点"（`build-experience.cjs` 的断言同步改成读 `root` 下的 sprite）。
+- **变小**：画布 88→80 高、内边距 30→24、键帽 54→50；`guideLabelHeight` `clamp(distance*.034,.06,.7)` → `clamp(distance*.027,.05,.45)`，屏幕高度从 37~43px 降到 **31px**。
+- 发布 `assets/main-0ZNZpipJ.js`（837,919 字节）+ `index.html`；本地/远端逐文件 SHA256 一致、公网 9 项 200。
+- 以正式站为准：`BOX_LIVE=1 node test/browser/build-hints.cjs` 通过（贴片 22~32px；移动模式**没有任何贴片**；三条环提示分别落在左/上/右；接点在右上斜槽；任意两张屏幕矩形不相交；都不落进底部工具栏带），截图 `Build/hint-install-live.png`；`build-gizmo.cjs`（移动手柄 sprite 数 = 0）、`build-experience.cjs`、348 项 Node 测试通过。
+- 后端未动、未重启；备份 `~/officeweb/backups/pie-hints-20260930/`。刷新页面生效。
+
+## 2026-09-30 三维提示文字重做（移动说明 / 旋转快捷键 / 接点）
+
+用户：「移动工具的提示文字的ui设计的实在是太丑了 以及安装工具也是 旋转快捷键的那些提示 重新设计一下」。旧的 `createGuideLabel` 是深色方框 + 8px 高饱和粗描边 + 粗体大字（画布固定 512×96，比例写死 `96/512`），长文案还会被压。
+- 新建 `src/buildHints.ts`：圆角药丸 + 轻投影 + 强调色细描边；快捷键做成**键帽**（`Q / R`、`X`、`Z`、`C`）与说明分开，无键帽的用同色圆点；**画布按文字宽度自适应**（`userData.aspect`），`fitGuideLabel(sprite,height)` 按高度缩放，`guideLabelHeight(distance)=clamp(distance*.034,.06,.7)` 让屏幕高度恒定（实测 37~43px、字约 15px）。`buildRotationGuide.ts` 与 `buildMoveHandle.ts` 都改用它；移动说明文案收短为 `移动 25cm · 缩放 25cm`；`userData.shortcut` 保持完整文案，`build-experience.cjs` 的既有断言不变。
+- 发布：`npm run build`（90 项 public 一致）→ `node Build/deploy-web.cjs --upload --verify`，`index.html` + `assets/main-DZ6sNZkF.js`（838,439 字节）等；本地/远端逐文件 SHA256 一致、公网 9 项 200。
+- 以正式站为准：`BOX_LIVE=1 node test/browser/build-hints.cjs` 通过（画布是细长药丸 501×88、97% 不透明深底、13% 浅色文字、移动与安装模式各一条都在 26~44px 高度带内），截图 `Build/hint-move-live.png`、`Build/hint-install-live.png`；`build-gizmo.cjs`、`build-experience.cjs`、348 项 Node 测试全部通过。
+- 后端未动、未重启；备份 `~/officeweb/backups/hint-chips-20260930/`。刷新页面生效。
+
+## 2026-09-30 移动手柄：其他轴不再压暗
+
+用户：「选中的轴明显了但是没选的其他轴还是看不清 其他轴不要变色了」。去掉悬停时的压暗（原来其余轴会淡到 0.14），抓住的那根仍换饱和色 `#d2603f`／`#3f9a55`／`#3579ad` 并放大 1.16；其余轴连不透明度都不动，并把常驻档位调高（平移 1／旋转 .72／缩放 1）。
+- 发布 `assets/main-CV6NjW7r.js`（837,163 字节）+ `index.html`；本地/远端逐文件 SHA256 一致、公网 9 项 200。
+- `BOX_LIVE=1 node test/browser/build-gizmo.cjs` 通过：新增/改写的断言是"抓住的轴=饱和色且放大"，以及"其余轴的**颜色和不透明度都与静止态一致**"（不再允许压暗）；截图 `Build/gizmo-live-*.png`。本地 348 项 Node 测试与 `build-experience` 通过。
+- 后端未动、未重启；备份 `~/officeweb/backups/gizmo-no-dim-20260930/`。刷新页面生效。
+
+## 2026-09-30 宝箱面板重新布局 + 修"提示有了却不滚动"
+
+用户要求「宝箱内的页面再设计一下，布局合理」。旧版是 480px 宽、内容列表只有 260px 高，外层面板还各滚一次（双滚动条），投放表单永远占在下面。
+- 新布局：面板 `min(940px,96vw) × min(720px,92vh)`，**只有内容列表滚动**；左栏＝创建人/已读头像 + 滚出提示 + 单列条目（110px 类型位：图片缩略图 / 链接 `↗` / 便签 `≡`，右侧标题、域名、正文、署名、`▶ xx观看`、移除）；右栏＝常驻「放进宝箱」表单；计数 `N / 30 项` 进标题栏；便签超 120 字给「展开全文」。窄屏（≤860px）右栏落到列表下，两边各半、都不裁内容。样式搬进新的 `src/chest.css`（`build.css` 不再管宝箱）。
+- 顺带修掉一个真实 bug：`useChestScroll` 的"轻滚 90px 再回顶"以前把计时器放在 effect cleanup 里清，而 `shown` 标记活在 ref 里，依赖变化／StrictMode 开发态重跑就把刚排好的滚动作废——**"提示有了、滚动永远不发生"，4 次里 3 次不滚**。现在计时器归组件自己持有，只在真正卸载（`!element.isConnected`）时收掉；`chest-people.cjs` 也改成用页面内峰值探针断言（从 driver 轮询瞬时动画会漏）。
+- 发布：`npm run build`（90 项 public 一致）→ `node Build/deploy-web.cjs --upload --verify`，`index.html` + `assets/main-Cg2lh-81.js`（837,300 字节）+ `assets/main-CINJP6Bo.css`（85,985 字节）；本地/远端逐文件 SHA256 一致、公网 9 项 200。
+- 以正式站为准：`BOX_LIVE=1` 跑 `chest-layout.cjs`（面板不出视口、只有一个滚动区、无横向溢出、行不重叠、缩略图有尺寸、表单完整可见、窄屏一档）、`chest-people.cjs`（创建人/已读、开箱记录已读、刷新去重、滚动提示）、`chest-video.cjs`（B站/抖音识别、iframe 控件、最大化/还原、关闭卸载、Esc、小红书回退）全部通过；本地 348 项 Node 测试与 `build-experience` 通过。截图 `Build/chest-panel-{local,live}.png`、`chest-panel-zoom-*.png`、`chest-panel-narrow-*.png`。
+- 后端未动、未重启 `officeweb`，未碰 `dist/download/`；备份 `~/officeweb/backups/chest-layout-20260930/`。刷新页面生效。
+
+## 2026-09-30 移动手柄重新设计（低饱和、更小、不被遮挡）
+
+用户在正式客户端里仍看到旧手柄（纯红绿蓝、大而笨重、被柱体吞掉）：原因是上一轮只改了本地源码，客户端加载的是正式站。
+- 改动：低饱和轴色 `#c38e88`/`#97c28e`/`#92b1c4`（悬停 `#dfc590`）、缩放方头与支杆奶油 `#ddd0bd`；`setSize` 平移 .7／旋转 .9／缩放 1.15，杆半径 .0075、锥头 .03×.15、方头 .048；**手柄与提示标签 `depthTest=false` + `renderOrder≥900`**，永远画在被操作部件之上；悬停只留当前轴实色、其余淡到 0.14。样式集中在 `OfficeWeb/src/buildGizmoStyle.ts`。
+- 发布：`npm run build`（`public/ 与构建产物一致：90 个文件`）→ `node Build/deploy-web.cjs --upload --verify`。前端 14 个文件中 12 个已一致、`index.html` 覆盖、`assets/main-xZjJVQ9D.js`（835,902 字节）新上传；上传后本地与远端逐文件 SHA256 一致，公网 9 项资源全部 200 且哈希相同。线上包内能查到 `#c38e88`/`#97c28e`/`#92b1c4`/`#dfc590`/`#ddd0bd` 与 `RoundedBoxGeometry`。
+- 以正式站为准的专项验收：`BOX_LIVE=1 node test/browser/build-gizmo.cjs` 通过（配色、`depthTest=false`、提示标签不被遮挡），截图 `Build/gizmo-live-*.png`。本地 348 项 Node 测试、完整编辑回归与 `SCALE_ONLY` 变体通过。
+- 后端未动、没有重启 `officeweb`，没有碰 `dist/download/`；备份 `~/officeweb/backups/gizmo-restyle-20260930/index.html`。
+- 客户端加载的就是本站，**刷新页面（Ctrl+R，或从托盘退出重开）即可看到**；已加载的旧页面不会自动替换。未能代为刷新：本机 9210 端口不是 CDP 调试端口（`Build/client-eval.mjs` 默认要 9223），无法从外部重载用户窗口。
+- 顺带修掉一个测试竞态：上一次保存还没回来就抓下一个手柄时拖动会被拒（`buildMoveHandle` 现在暴露 `userData.working`），`test/browser/build-experience.cjs` 每次拖动前先等空闲，不再靠运气。
+- **同日追加（用户「点中轴的时候怎么看不清了」）**：上一版把选中态调成淡沙色 `#dfc590`，在浅色地板上比静止时还难认。选中态改为饱和轴色 `#d2603f`／`#3f9a55`／`#3579ad` + 手柄放大 1.16 倍 + 辅助线用同一轴色（拖动时 0.6），静止态仍是低饱和。放大的缩放值必须乘在每个 handle 自己的 `updateMatrixWorld` 里——写在帧后处理里会被 gizmo 每帧的 scale 重置盖掉（第一版就是这么失效的）。
+  已发布 `main-BcoN5VqN.js`（836,328 字节）+ `index.html`；本地/远端逐文件一致、公网 9 项 200 且哈希相同；`BOX_LIVE=1 node test/browser/build-gizmo.cjs` 通过（新增"抓住的轴是饱和色 + 放大 + 其余淡出"断言），截图 `Build/gizmo-live-hover-*-zoom.png`。备份 `~/officeweb/backups/gizmo-restyle-20260930/index-before-grab-fix.html`。
+
+## 2026-09-30 轻薄绿色观看提示
+
+客户端0.1.36已发布，去掉观看/来电绿光的实边及大范围绿雾，只保留淡绿色边缘柔光。7项相关测试、渲染截图、打包CSS一致性通过；公网整包101724439字节、SHA256及latest.json核验通过。需要更新客户端，网页刷新不生效。详见[验证记录](Soft_Glow_20260930.md)。
+## 2026-09-30 Shift+D复制
+
+移动模式复制主选中物件，原位保存并选中新副本，可继续拖动、改色和撤销；工位身份独立，宝箱内容不复制。main-BBUxs12T.js已发布，9项公网资源及3个后端模块哈希一致、服务active，未修改场景存档。
+11项复制/历史/工位/迁移测试、构建及90项资源一致性通过；本地和正式前端隔离业务API验证Shift+D、自动选中、独立编辑、撤销重做和漫游禁用通过。
+备份backups/shift-duplicate-20260930，快照Build/OfficeWebShiftDuplicate20260930，证据Build/shift-duplicate-production.json。刷新页面生效。
+
+## 2026-09-30 直接清理原场景
+
+用户明确要求直接删除闲置物件。正式存档64件减为29件，revision430，删除28件远处悬空方块和7根残留底座柱。空工位与公共座椅清理前已不在存档中；保留7个已认领工位、其他建筑和宝箱，服务active且已重读核验。
+备份backups/manual-scene-cleanup-2026-09-30T03-27-19-657Z。相同存档对照渲染：旧页面仍额外生成202个静态网格，当前公网main-COdbzcf0静态网格为0；旧客户端需要刷新一次卸载旧代码。窗口抓取两次超时，未代为刷新，已告知用户。
+证据Build/manual-scene-cleanup-result.txt、Build/scene-cleanup-render-proof.json、Build/scene-cleanup-live.png。
+
+## 2026-09-30 原场景可编辑与移动网格统一
+
+67件原固定物件接入持久化编辑，原有67件建筑和宝箱不变；原工位编号保留。
+移动三轴统一25cm；删除同步移除碰撞和显示屏。345项测试、浏览器编辑/删除/撤销/刷新及正式资源隔离验收通过。
+main-COdbzcf0.js；9个后端文件及9项公网资源SHA256一致，服务active。
+详情：[Editable_Scene_20260930.md](Editable_Scene_20260930.md)。
+
+## 2026-09-30 收起通话窗口紧凑化
+
+通话控制与共享预览均收为约42px高单行，统一堆放并避让建造工具栏、底部操作栏。
+已发布 main-dXHuAptl.js / main-BxU7E56U.css；九项公网文件SHA256一致。
+1280/390/320px浏览器尺寸、避让、按钮动作、展开及媒体轨保留通过；无需更新客户端。
+详情：[Compact_Call_Panels_20260930.md](Compact_Call_Panels_20260930.md)。
+
+## 2026-09-30 小号单箭头与宝箱饰带修复
+
+- 流动箭头改为0.5×0.125×0.75米的单支常见箭头，取消三段发光，沿局部指向轻推8cm再回位；保存原点及朝向不变，旧部件自动换用新几何。目录同步后端。
+- 宝箱木板与饰带留2cm间距，保持原外包围尺寸，减少共面闪烁；Blender源及68件导出同步，修改前已备份。
+- 构建/90项资源一致性、5项尺寸与缩放测试通过；正式页面隔离数据验证安装、保存、刷新、单箭头及旗帜动画通过。正式main-CJj6qXmz.js，9项公网资源SHA256一致。
+- 证据Build/small-arrow-production-evidence.json、Build/small-arrow-backend-evidence.json；截图Build/small-arrow-live.png。用户存档未覆盖。
+
+## 2026-09-30 宝箱头像、流动箭头、缩放与统一配色
+
+- 宝箱chestPeople持久化创建人/读者，由认证账号写入；读者去重，旧创建人不猜测。场景头像金边创建人在前，绿边读者在后；打开面板显示全员。内容多时轻滚90px回顶部并提示，用户操作取消。
+- 新增flow-arrow三段循环发光纯Box部件，68件库同步至Blender；全组件scale局部XYZ方头手柄按0.25m目标尺寸吸附，保留底部原点、保存/撤销/碰撞支持，原工位占用保护不变。多选仍只平移。
+- 地板移除可见网格；buildColors统一奶油/蜜桃/蓝紫/橄榄材质与更明亮暖光冷色补光。旧颜色ID保留，已建建筑自动统一，无存档迁移。
+- 343项Node测试全部通过；正式网站隔离业务API验证头像/已读/刷新去重、内容滚动回弹、6件建筑安装/刷新、旗帜与箭头动画、无网格地板、缩放手柄/25cm尺寸/撤销。Blender68件源、旗帜动画与GLB导出核查通过。
+- 正式main-DTAIxClk.js、main-rRVz0zUu.css，9个公网资源SHA256一致；build-store.mjs/build-http.mjs/build-catalog.json逐项核对旧哈希后备份发布，服务active，用户存档不覆盖。
+- 快照Build/OfficeWebWorldUpgradeFinal20260929；证据Build/world-upgrade-final-production-evidence.json、Build/chest-people-backend-evidence.json、Build/world-upgrade-tests.log；截图Build/chest-people-live.png、Build/scale-handle-live.png、Build/architecture-live.png。
+
+## 2026-09-29 最大化还原按钮避让客户端标题栏
+
+- 客户端非全屏时视频遮罩顶部留54px，匹配desktop-theme标题栏；整屏模式与浏览器不留空。重置播放器header受全局102px高度影响，保持按钮独立背景和层级。
+- 构建及90项资源一致性通过；模拟客户端最高层54px标题栏，命中测试及真实点击还原通过。正式main-C35ka_ee.js、main-DTK16DEL.css，9个公网文件哈希一致。
+- 快照Build/OfficeWebVideoRestore20260929，证据Build/video-restore-production-evidence.json。仅前端发布。
+
+## 2026-09-29 竖屏播放器完整缩放
+
+- 抖音iframe使用360×720原始布局，按可用窗口等比缩放，为视频控件和平台底栏预留高度；最大化同样保持竖屏比例。小红书提示更正为“内嵌播放尚未接入”，不宣称平台绝对不支持。
+- 正式main-DqdC944k.js、main-gkT0eWKZ.css，9个公网文件哈希一致；构建/90项资源一致性、本地480×890与1500×700窗口边界及最大化还原检查通过。没有修改后端或存档。
+- 快照Build/OfficeWebPortraitFitFinal20260929，证据Build/portrait-fit-final-production-evidence.json。
+
+## 2026-09-29 宝箱内嵌视频
+
+- B站BV/AV/分P/时间点/番剧单集、抖音完整视频链接识别为官方iframe；B站b23.tv和抖音v.douyin.com通过认证后端白名单逐跳解析，6秒超时、5跳上限，拒绝任意域名/内网跳转。不抓取视频文件。
+- 独立窗口最大化/还原，关闭即卸载iframe；使用官方播放器的播放暂停控件，保留原页入口。小红书仅识别平台并打开原页，未发现可确认使用的官方嵌入方案。
+- 正式main-cZ9K-jp0.js、main-C54g5qYj.css，9个公网资源哈希一致；build-link.mjs/build-http.mjs备份发布、哈希核对、服务active，存档不变。
+- 构建/90项公共资产一致性、解析安全测试和工位后端回归通过；正式页面窗口最大化/还原/关闭/Esc/降级通过；真实B站视频媒体时间推进后暂停成功，截图Build/chest-video-live.png。抖音验证了嵌入地址及窗口，未验证有效视频的媒体播放。
+- 官方依据：[B站外链播放器](https://player.bilibili.com/)、[抖音嵌入播放器文档](https://developer.open-douyin.com/docs/resource/zh-CN/dop/develop/openapi/video-management/douyin/iframe-player/get-iframe-by-item)。抖音使用文档示例的公开播放器地址；不宣称所有视频均可嵌入。
+- 快照Build/OfficeWebChestVideo20260929，证据Build/chest-video-production-evidence.json与Build/chest-video-backend-evidence.json。
+
+## 2026-09-29 组件滚轮横向浏览
+
+- 鼠标在组件列表上，普通纵向滚轮直接左右浏览；保留触控板横向滚动及Ctrl缩放，不传递到场景缩放。
+- 正式main-DRBNCc3H.js，9个公网资源哈希一致；构建及90项公共资源一致性通过。本地/正式页面双向滚动、相机不变、收起重开后横向滚动通过。
+- 快照Build/OfficeWebPartsWheel20260929，证据Build/parts-wheel-production-evidence.json；仅前端发布。
+
+## 2026-09-29 漫游关闭建筑选中
+
+- 漫游不再显示悬停选中框，E/F编辑快捷键仅在编辑模式生效；选座与宝箱业务互动保留。
+- 正式main-D3ul1DP_.js，9个公网资源哈希一致，未修改后端/存档；快照Build/OfficeWebRoamSelection20260929。
+- 构建及90项资产一致性、本地完整编辑回归、正式页面漫游专项通过。正式完整回归在后续旋转手柄命中断言失败，漫游检查已通过；该额外回归问题待复查。
+
+## 2026-09-29 客户端 0.1.35：撤销任务栏 owner 回归
+
+已发布 0.1.35，正式 latest.json 已更新，公网整包 101724823 字节和 SHA256 匹配。
+SHA256：6f13040dd55fb138b8a187d4848d3e53f8a32d5517c60bcde0e44303ff4e1493。
+取消 Explorer owner 依赖；事件与原生状态检查不依赖点击，正常时不反复提层。
+155 项测试、打包模块 20 次无点击恢复、真实头像窗口 8 次恢复和桌面像素检查通过。
+当前安装的 0.1.34 未强制退出；需要更新桌面客户端，网页刷新不能替换外壳代码。
+详见 [Dock_Independent_20260929.md](Dock_Independent_20260929.md)。
+
+## 2026-09-29 客户端 0.1.34：任务栏空白处点击闪烁
+
+已发布 `/download/iruler-dream-Setup-0.1.34-x64.exe`，正式 latest.json 已更新。
+公网整包 101723096 字节、SHA256 与本地一致：
+`d5d9030f6e8a731949977e614eb01d99e44c3d83982fd4f3aef0ca2815759668`。
+原生窗口 owner 关系替代正常状态下的周期性抢置顶，153 项单测与原生窗口重排测试通过。
+从实际 app.asar 加载原生依赖测试通过；用户需更新客户端，未强制安装或重启。
+网页及后端本次不改。详见 [Dock_Taskbar_Owner_20260929.md](Dock_Taskbar_Owner_20260929.md)。
+
+## 2026-09-28 蓝色胡子弹出角色与悬停卡片
+
+- 已部署 main-B8Le83Ox.js / dock-CD7cIBLD.js / dock-CMqxuJsV.css。
+- 主窗口与头像条增加同源 BroadcastChannel 完整外观传递；IPC 和名单兜底保留。
+  最新提醒里的外观优先，随后旧桥丢字段的消息不会覆盖已收到的蓝色和胡子。
+- 卡片改为顶部姓名/状态、左侧 218×123 预览、右侧三个图标文字按钮。
+  实测卡片 332×173，可容纳于既有客户端 340×210 预留区域，保留气泡尖角。
+- 源码测试：33 项规则测试、10 色招手、旧桥回退、双窗口蓝色胡子传递、完整头像条交互通过。
+  另有 25 项含并行表情功能兼容测试通过。修改的 OfficeWeb 文件均不超过 500 行。
+- 公网全部 14 个发布文件 SHA256 与独立构建快照一致；正式 dock.html 的双窗口渲染、
+  卡片尺寸和语音按钮转发通过，已查看 Build/hover-card-live.png 与 blue-beard-live.png。
+- 备份：/home/ubuntu/officeweb/backups/hover-fix-20260928/；构建：Build/OfficeWebHoverFix20260928。
+- 本次只发布前端；同工作区的自动表情任务由其自身处理服务端发布。
+- 已运行的旧头像条页面不会因主窗口 F5 自动重载：用户从托盘退出后重新打开客户端即可加载，
+  无需重新安装。本次未连接用户实际客户端调试端口，因此未宣称其运行中的窗口已自动更新。
+## 2026-09-28 灵动岛留白与配饰贴合
+
+灵动岛外框采用任务栏高度的80%（40px任务栏对应32px），头像保持40px与8px间距。
+尺面实测 y=-.043；胡子向内移动 .028，头发前部深度压至38%并贴近面板。
+保留卡通块面造型，同步GLB、选角缩略图和透明配饰层；侧面渲染见 Build/accessory-fit-side.png。
+已发布 main-BmkGcjrl.js / dock-DLeOY2Uz.js / dock-5g3ymsjG.css。
+89项发布文件服务器SHA256一致；98项公网资源及入口SHA256一致；公网状态栏浏览器检查通过（80%外框、统一头像、配饰组装）。
+构建与90项public一致性通过。后端未重启。
+备份：`/home/ubuntu/officeweb/backups/accessory-fit-20260928/`。
+加工源及旧模型：AssetSources/Characters/RulerMascot/cartoon-fit-v4/。
+
+## 2026-09-28 客户端 0.1.33：任务栏切换时头像窗层级恢复
+
+已发布 `/download/iruler-dream-Setup-0.1.33-x64.exe`，latest.json 已更新。
+149 项桌面测试通过；修复模块 asar 与源码一致，既有打包检查通过。
+公网整包大小 101272052 字节、SHA256 与本地一致：
+`1f935eb3f3b9dae3e4cb3089d617d4eb4af8850598c12794a24503090679766d`。
+任务栏操作期间快速恢复头像窗层级，退出任务栏后覆盖 800ms 切换动画；不抢焦点。
+需要更新桌面客户端；未强制替用户重启。网页和后端本次未改。
+原因、验证边界见 [Dock_Taskbar_Switch_20260928.md](Dock_Taskbar_Switch_20260928.md)。
+
+## 2026-09-28 自动头像状态
+
+已发布忙碌、困倦、在线十分钟开心及专注/休息/招手规则，所有在线用户同步。
+前端九文件公网 SHA256、后端两文件远端 SHA256、服务 active 均通过。
+正式 dock.html 六表情合成验证通过；无需重装客户端。
+详情与阈值见 [Automatic_Expressions_20260928.md](Automatic_Expressions_20260928.md)。
+
+## 2026-09-28 悬停/来电角色同步与预览恢复
+
+已发布 main-C3fNZRdT.js / dock-Bio-QhuL.js / dock-DSWxYLwX.css / dockStage-eJn1Y0QW.js。
+舞台优先读取在线名单的完整 appearance 或 look: 字符串，兼容旧桌面桥丢弃来电外观字段；名单换装也触发舞台更新。
+40px 任务栏的头像由 36px 增至 40px；所有状态保持相同尺寸和 8px 间距。
+选角预览加载失败自动重试两次，最终失败保留手动重试，并记录具体错误。
+用户历史首次失败没有当时错误日志，不能认定是网络或模型本身；已故障注入验证首个模型请求失败后自动恢复。
+构建、90 项 public 资产一致性、37 项单测、10 种配色招手和旧桥悬停/来电装扮测试通过。
+正式资源浏览器验证头像尺寸、装扮、选角失败恢复、设置换装和响应式通过。
+两个 HTML 与全部 7 个 JS/CSS 逐文件公网 SHA256 匹配；后端未重启。
+备份：/home/ubuntu/officeweb/backups/greeting-preview-20260928/。
+首次批量公网 fetch 曾超时；改用逐文件 curl 校验全部此次代码资源通过。
+## 2026-09-28 头发与胡子改为卡通块面
+
+已发布六种发型、六种胡子的重建模型及选角缩略图、状态栏透明配饰。
+main-C3fNZRdT.js / dock-Bio-QhuL.js / characterModel-GaPglLJi.js。
+模型 1,168,140 字节，保留头骨绑定和动作库。备份在 `/home/ubuntu/officeweb/backups/cartoon-groom-20260928/`。
+服务器逐文件 SHA256 通过；首次公网并发 fetch 被连接中断，改用 curl --noproxy 后全部 98 项资源和入口 SHA256 通过。
+构建与 11 项外观单测、19 配件组合渲染、多人换装同步通过。
+公网设置浏览器测试本次超时，未计为通过；实际模型和状态栏视觉已在本地应用渲染检查。
+后端未重启。详见 [Cartoon_Groom_20260928.md](Cartoon_Groom_20260928.md)。
+
+## 2026-09-28 状态栏头像加大、间距加宽
+
+40px 任务栏下头像从 32px 增至 36px，头像间距从 2px 增至 8px；保留随任务栏高度适配。
+发布 dock-DHVQvkDq.js / dock-hXDrtB-i.css。14 项发布文件远端一致，公网入口及引用资源校验通过。
+本地与公网浏览器验证 10 个头像、所有状态尺寸、8px 间距、边界和窗口宽度上报均通过。
+后端未重启；构建及 90 项 public 资产一致性检查通过。
+
+## 2026-09-28 状态栏共用姿势、同步场景配饰
+
+已移除独立头像表情选择和账号 expression 字段；旧字段兼容忽略。
+状态栏与场景共用配色、头发、帽子、胡子、眼镜，所有人使用同一套状态姿势。
+设置改为只读的三种状态预览。困倦/专注为保留素材，暂不自动触发。
+已发布 main-BTXPkW0v.js / dock-BUoec6EA.js / useDockPortrait-Cp9wElWK.js。
+39 项前端文件远端及公网 SHA256 匹配，look.mjs 服务端哈希匹配，officeweb active。
+备份：`/home/ubuntu/officeweb/backups/dock-outfit-shared-20260928/`。
+构建及 36 项单测通过；本地多人换装同步、设置分类响应式、状态栏尺寸测试通过。
+公网资源状态栏测试通过：共同姿势、同装扮同图片、胡子叠加、忽略旧个人表情、固定尺寸。
+公网资源设置测试通过：配色/帽子真实像素变化、三个只读状态头像、分类与响应式布局。
+
+## 2026-09-28 薄片尺子表情头像
+
+已发布 6 张透明表情底图、19 张独立配件层、状态栏合成器与设置中的头像表情选择。
+main-BCcWm7bz.js / dock-Bt7zh1Tj.js / expressionPortrait-DQR0uXtv.js。
+39 项此次前端发布文件远端与公网 SHA256 匹配；look.mjs 服务端校验模块哈希匹配。
+officeweb 已重启且 active；旧入口与 look.mjs 备份至
+`/home/ubuntu/officeweb/backups/expressions-thin-20260928/`。
+详见 [Expression_Kit_20260928.md](Expression_Kit_20260928.md)。
+
+## 2026-09-28 角色配件重新建模
+
+已发布 19 件重建配件、平滑眼睛、49 张应用渲染缩略图与头像柔光。
+main-CeWsWQHk.js / dock-DOfcHoWU.js / characterModel-BzT6uWjA.js。
+65 项远端与公网 SHA256 一致；旧模型、缩略图与入口已备份至
+`/home/ubuntu/officeweb/backups/accessories-20260928/`。后端未重启。
+详见 [Accessory_Remodel_20260928.md](Accessory_Remodel_20260928.md)。
+
+## 2026-09-28 状态栏头像尺寸统一
+
+已发布 dock-Cftqhxvy.js / dock-BGLD_B6p.css / portraitRenderer-BwTz73i7.js。
+头像共用固定相机，方形外框禁止 flex 压缩；悬停、提醒和拖拽动画取消缩放。
+64 项远端与公网 SHA256 匹配，后端未重启。浏览器使用公网实际资源验证
+10 种搭配、5 种状态与各动画时刻均为 32×32；截图 Build/dock-uniform-size.png。
+
+## 2026-09-28 配件特写、坐姿与头像修复
+
+已发布并逐文件校验。详见 [Face_Sit_Dock_20260928.md](Face_Sit_Dock_20260928.md)。
+
+## 2026-09-28 选角与设置重设计
+
+已发布 main-BNupYH-3.js / main-DGSa0sqm.css；63 项线上文件哈希匹配，后端未重启。细节见 [Settings_Look_20260928.md](Settings_Look_20260928.md)。
+
 # OfficeWeb 部署（VPS 115.159.43.237）
+
+## 2026-09-28 12:40 尺子角色第三轮：远端跑步位 + `__sendMotion` 探针（前端 `main-CwVrI5lk.js`；后端未动、**未重启**）
+
+- 运动快照补 `running` 位（`OfficeAvatar.getState()` → `types.Motion` → `RemoteAvatars` 按它放
+  `跑步循环_Run`，老客户端不发就当走路）；`RemoteAvatars.snapshot()` 顺带多报 `running` 与当前
+  `clip`（walk/run/idle/pose），方便诊断。
+- `sceneProbe` 加 `__sendMotion`（测试用：把一份构造好的运动快照交给正常上报通道）。
+- 部署：`node Build/deploy-web.cjs --upload --verify` → 只变了 `main-CwVrI5lk.js` 与 `index.html`，
+  上传后本地/远端逐文件一致、公网全 200。核验（curl 原始字节 SHA256）：
+  `main-CwVrI5lk.js`、`icons-DjQzsbEJ.js`、`characterModel-Bi6m6kff.js`、`main-BLJPGaBl.css`
+  **全部 match=true**，线上 `index.html` 入口已是 `main-CwVrI5lk.js`。**后端未动，没有重启 officeweb。**
+- 回归：单测 **292/292**；浏览器 `look` / `look-sync` / `greet-characters` / `sit-probe` / `wear-probe` / `dock` 全过。
+
+## 2026-09-28 12:28 尺子角色第二轮：修掉「默认短发变成光头」（前端 `main-BSMQ86Z2.js` / `icons-DjQzsbEJ.js` / `characterModel-Bi6m6kff.js` / `dock-Bj_icVWv.js` / `dockStage-BsvOShBi.js`；后端 `look.mjs`，**已重启 officeweb**）
+
+- 第二轮自查新增了 `test/browser/look-sync.cjs`（两个真实浏览器 + 隔离服务器：甲换配色/戴礼帽，
+  乙那边画出来的远端角色要跟着变），**它当场抓到**：远端默认外观是 `kraft|none|none|none|none`
+  ——默认短发没了，**任何没有外观载荷的人（老客户端、刚注册没捏过的账号）在别人眼里都是光头**。
+- 根因在**两处**（客户端 `resolveAppearance` 与服务端 `sanitizeAppearance`）：认不出来的配件回退到
+  "该槽位列表第一项"，而第一项是 `none`。都改成回退到 `DEFAULT_APPEARANCE.accessories[slot]`。
+  测试补在 `test/look.test.mjs`（空载荷必须 == `DEFAULT_APPEARANCE`）与 `look-sync.cjs`。
+  **教训**：默认值只有 `DEFAULT_APPEARANCE` 一处真源，任何回退都要指向它。
+- 部署：`node Build/deploy-web.cjs --upload --verify`（8 个文件，本地/远端逐文件一致、公网全 200）
+  + `scp look.mjs`（哈希 `139f4c0a…` 与本地一致）→ `sudo -n systemctl restart officeweb` → `active`。
+- 线上核验（curl 取原始字节比 SHA256）：`main-BSMQ86Z2.js`、`icons-DjQzsbEJ.js`、
+  `characterModel-Bi6m6kff.js`、`dock-Bj_icVWv.js`、`dockStage-BsvOShBi.js`、`main-BLJPGaBl.css`、
+  `ruler.glb` **全部 match=true**。
+- 回归：单测 **292/292**；浏览器 `look` / `look-sync` / `greet-characters` / `sit-probe` /
+  `wear-probe` / `dock` 全过。
+
+## 2026-09-28 12:16 尺子角色上线：换掉 21 个旧角色 + 两步捏人（前端 `main-Big2eYvM.js` / `characterModel-zhvr9ZSi.js` / `dock-FrwJMBOt.js` / `dockStage-COZ38jmU.js` / `main-BLJPGaBl.css`；后端 `server.mjs` / `accounts.mjs` / `preview-relay.mjs` / 新增 `look.mjs`，**已重启 officeweb**）
+
+- 需求与实现细节见 [RulerCharacter_20260928.md](RulerCharacter_20260928.md)：把角色换成用户元绘工程里的「尺子角色」，
+  10 个配色 + 4 个槽位配件（眼镜/头发/胡子/帽子），1 先配色 → 2 选配件；坐下改用已授权的 `坐姿打字_Type`。
+- **前端**：`node Build/deploy-web.cjs --upload --verify` → 8 个文件（两个入口 + 6 个 assets）上传后
+  本地与远端 SHA256 逐文件一致，公网 9 个资源全 200。**这个脚本只覆盖两个入口 + `assets/*` 顶层**，
+  角色模型在子目录里，所以另外用 `scp` 补传：
+  - `assets/characters/ruler.glb`（710,488 字节，与本地哈希 `31d10e27…` 一致）
+  - `assets/characters/thumbnails/`（39 张：`body-*` 10 / `full-*` 10 / `wear-*` 19）
+  - `assets/draco/`（4 个文件）与 `assets/basis/`——**这两份原来线上 dist 里没有**（只有 `public/assets/basis/` 的历史副本在别处），
+    而 `ruler.glb` 是 Draco 压缩的，缺解码器会静默加载失败。**下次换角色一定要连解码器一起查。**
+  - 旧资源移到 `~/officeweb/backups/ruler-20260928/`（21 个旧角色 GLB + 21 张旧缩略图，共 44 个文件），
+    线上 `assets/characters/` 现在只剩 `ruler.glb` + 39 张新缩略图 + `characters.json`。
+- **后端**：`server.mjs`（`character` 事件 → `appearance`，白名单收敛并只在真的变了时广播）、
+  `accounts.mjs`（`setCharacter` → `setAppearance`，`publicUser` 返回 `appearance`）、
+  `preview-relay.mjs`（`watched` 带 `appearance`）、新增 `look.mjs`（由 `tools/build_look_manifest.mjs`
+  从 `src/look.ts` 生成的白名单）。四个文件上传后哈希均与本地一致，`sudo -n systemctl restart officeweb` → `active`，
+  日志 `OfficeWeb ready on http://127.0.0.1:3108`。
+- **线上核验**（本地 `Build/OfficeWeb` 的原始字节 vs 公网 `curl` 取回来的字节，SHA256 逐一比对）：
+  `main-Big2eYvM.js` `da0b3bf20770` / `icons-DUxuLjyH.js` `77ac1824ea49` /
+  `characterModel-zhvr9ZSi.js` `6c693ba50b3b` / `main-BLJPGaBl.css` `bc8a36c73401` /
+  `dock-FrwJMBOt.js` `b90962be96a9` / `dockStage-COZ38jmU.js` `2fb8de73020a` / `dock.html` / `index.html` —— **全部 match=true**。
+  `ruler.glb`、`body-rose.png`、`wear-hat-beret.png`、`draco_decoder.wasm`、`basis_transcoder.wasm` 均 HTTP 200 且类型正确。
+- **注意**：文本资源**不要**用 `Invoke-WebRequest` 取回来比哈希——PowerShell 会把内容解码成字符串再编码，哈希必然不等（本次先误判过一次）。
+  要用 `curl.exe -o` 拿原始字节；`curl` 走 Windows 的 schannel，不用加 `-k`。
+- 测试：`OfficeWeb` 单测 **292/292**；浏览器 `look.cjs` / `greet-characters.cjs` / `dock.cjs` 通过。
+  未做人眼观感验收（坐姿好看与否只有数值证据）。
+
+## 2026-09-2X 去掉"我自己头像"那圈白边（用户：「为什么我自己的头像还有一个白边 去掉吧」）—— 已上线（前端 `dock-9D6Eik2k.js` / `dock-CC0_nwE3.css`）
+
+- 那圈边是 `.dock-avatar.mine` 的白色内描边（`inset 0 0 0 1.5px rgba(255,255,255,.6)`，悬停 `.85`、被看时 `.8`），当初当"这是我"的标记加的。三条规则**全部删掉**；`.mine` 类保留（自己仍排最前、文件拖拽时 `.mine.dropping` 还用它）。
+- **自己怎么认**：排在最前 + 悬停卡片里写着「（我 · 我的工位）」；被我看时照样走 `.open` 的强调色光圈。
+- 线上核验 `Build/live-ui-verify.cjs` 新增断言 **`mineShadow === "none"`**（我自己的头像 computed `box-shadow` 必须为空）并 PASS；`test/dock-rules.test.mjs` / `dock.cjs` 不受影响（断言的是 `.mine` **类**与卡片内容，不是那圈边），网页 **283/283**、`dock.cjs` PASS。
+
+## 2026-09-2X 头像**去掉自己的小底色**（用户：「头像本身的小背景有点黑啊 直接去掉内部小背景」）—— 已上线（前端 `dock-BtTYwdF3.js` / `dock-BELoqsNw.css`；后端未动）
+
+- 改法：`frameColors().chip` 恒为 `transparent`（深浅任务栏都一样），`.dock-avatar` 的 `background-color` 走 `--dock-chip-bg: transparent`；悬停那一层浅色高亮保留（那是"摸到了"的反馈，不是垫底）。
+- **补偿**：原来那块深垫底在 `filter: brightness()` 之下也一起被压暗，等于帮着压住了贴图亮度。去掉之后条子平均亮度从 37.4 跳到 **67.8**，所以把头像的 `brightness(.86 → .68)`、`saturate(1.7 → 1.55)` 补回来，最终 67.1（比原来亮一档是必然的：少了一层暗底；用户要的就是"直接透出任务栏"）。量法见 `Build/dock-white-measure.cjs` / `dock-white-regions.cjs` / `dock-avatar-probe.cjs`（后者直接问页面要 computed filter/背景/贴图 URL）。
+- 回归：`test/dock-rules.test.mjs` 断言 `chip === 'transparent'`（深浅都一样）；网页 **283/283**、`dock.cjs` PASS、`tsc --noEmit` 干净；`dock.css` 485 行。
+- 公网核验 `Build/live-ui-verify.cjs` PASS：`avatarBg rgba(0,0,0,0)`（真的没垫底了）、`cardBg rgba(20,21,24,.88)`、`stripLine .14`、`tipToAvatar 1`。
+
+## 2026-09-2X 按用户三点要求改头像条：**小窗给实底** + **条子更透、边更细** + **小窗加指向头像的尖** —— 已上线（前端 `dock-BADOx3Hz.js` / `dock-DDlDG0Wi.css`；后端未动）
+
+- 用户原话：「弹出的小窗不要完全透明啊 是指状态栏头像设计要改的透明一些，边缘细一些也不要太明显，以及我希望小窗有一个气泡指向的尖尖那个东西指向头像」。
+- **① 小窗（悬停卡片）不许完全透明**：我上一轮为了"降低透明度"把卡片压到 `rgba(18,18,20,.52)`，透到看不清字。现在深色 `rgba(20,21,24,.88)`、浅色 `rgba(250,250,250,.93)`，`backdrop-filter` 保留（`.88` + blur 仍然是一块玻璃，但内容清楚）。**注意主进程给的卡片空间是 `CARD_SPACE = 210`，卡片实测 175 高；尖探出卡片 11px，仍在窗口内。**
+- **② 条子更透、边更细**：白色浮层 `.05 → .04`（悬停 `.07 → .06`），边框 `.2 → .14`（浅色 `.16 → .12`），强调色边框 `.55 → .5`，头像垫底 `rgba(10,12,12,.2) → .16`。条子平均亮度 36.4 → 35 左右，边线不再是一条明显的白线。
+- **③ 小窗的气泡尖指向头像**（用户明确要的）：`.dock-card-tip` = 转 45° 的方块（对角线朝下 = 圆角小三角），`bottom: -11px` 让它探到**头像条上边缘**、和卡片连成一块；位置由纯函数 `cardTipOffset(cardLeft, cardWidth, avatarCenterX)`（`dockRules.ts`）算，**夹在卡片内**（否则会被 18px 圆角切掉），页面在悬停时量头像中点与卡片左边界得出；任务栏在上方时（`.edge-top`）转 225° 指向上面的头像。
+  - 尖**不能挂 `border`**：转 45° 后边框会变成一根斜线；改用 `inset 0 0 0 1px rgba(255,255,255,.16)` 那道极淡边光，尖本身才看得出形状（实测截图上不加就是一团糊）。尖的底色比卡片再实一点（`--dock-card-tip-bg`），小尺寸下太透就糊在一起。
+- 回归：`test/dock-rules.test.mjs` 新增一项（尖对准头像中点、超界夹住、卡片宽度未知时返回 null、页面/样式接线）；`dock.cjs`（真实页面）PASS；网页 **283/283**；`tsc --noEmit` 干净；`dock.css` 485 行、`dockRules.ts` 333、`dock.tsx` 362（都 ≤500）。
+- 上线：`Build/deploy-web.cjs --upload --verify` 上传 8 个文件，复验本地=远端、公网 9 个资源 200 且哈希相同。**重建后文件名会变**（`dock-DDlDG0Wi.css` 等），用 `Build/same-content.cjs` 证实重建产物与线上逐字节相同（规范化哈希后）。
+- 公网核验 `Build/live-ui-verify.cjs` PASS：`cardBg rgba(20,21,24,.88)`（不再透明）、`stripGlass .06`、`stripLine .14`、`tipBox [23,23]`、**`tipToAvatar 1`（尖与头像中点只差 1px）**；浅色档 `rgba(250,250,250,.93)`。
+- 仍然要用户做的一步：**重启客户端**（头像条小窗启动时加载一次），否则看到的还是旧的那份。
+
+## 2026-09-2X 头像条"还是太白了"：**不是透明的问题，是白色浮层太浓** —— 已上线（前端 `dock-D1-Mhz6f.js` / `dock-C4cCZsbU.css` / `main-Dj86UWuF.js`）
+
+- 用户反馈：「还是不好看 太白了 是不是透明的问题」。**先量再改**，写了个逐像素工具 `Build/dock-white-measure.cjs`（同一套假桥 + 同一层 `#1b1b1b` 任务栏底，渲染两份产物并量条子区域的加权亮度）+ `Build/dock-white-regions.cjs`（把条子分成"框底/每个头像/头像缝"分别量）。
+- **量出来的真相**：① 白的是**框那层白色浮层**——深色任务栏上 `rgba(255,255,255,.1)`、悬停还加到 `.17`，白色一层层叠上去就是一块白玻璃；② 头像本身**一点不白**（旧版头像格子内部亮度 44），我上一轮为了"降低透明度"把垫底换成白色 `.14` 反而又加了一层白。
+- **改法**：框的白色浮层降到 **.05**（悬停 .07），顶部高光 `.16 → .07`，头像垫底改成**暗色** `rgba(10,12,12,.2)`（由 `frameColors().chip` 按主题给，浅色任务栏才用亮垫底），卡片底色 `rgba(18,18,20,.52 → .58)` 补回一点（透明降了要保住可读性），悬停白 `.2 → .12`，按钮阴影收细。条子平均亮度实测 **41.7 → 36.4**。
+- **中途一次弯路（值得记下来）**：我曾按"头像太白"的方向把头像提亮（brightness .74 → .88），区域实测头像亮度 **44.3 → 91.8**，方向完全反了；发现后用 `Build/dock-dim-sweep.cjs` 扫参数时又发现**贴图本身是透明底的暗色角色**（它显示多少亮度完全由 CSS filter 决定）。结论：这类"白不白"必须**量**，不要凭截图里的观感调。
+- **构建产物漂移的坑**：同一份源码在依赖/分块名变化后重建，主包会**逐字节相同但文件名不同**（`main-ZLu45is8.js` → `main-Dj86UWuF.js`，两者规范化分块名后 745,716 字节逐字节相同；`icons`/`characterModel`/`dockStage` 分块名也跟着变）。所以"远端缺失新文件名"不等于"有别人的改动混进来"，用 `Build/build-drift.cjs` + `Build/same-content.cjs` 规范化比对来证明，**别靠文件名判断**。
+- 上线：`Build/deploy-web.cjs --upload --verify` 上传 8 个文件（两个入口 + 6 个 assets），复验本地与远端逐文件一致、公网 9 个资源 200 且哈希相同；后端未动、未重启。
+- 公网核验：`Build/live-ui-verify.cjs` PASS —— `stripGlass rgba(255,255,255,.07)`、`cardBg rgba(18,18,20,.58)`、`cardRadius 18px`、`buttonBg rgba(255,255,255,.96)`+深色图标+`50%`+36×36、`avatarBg rgba(10,12,12,.2)`、强调色光圈在；浅色任务栏 `rgba(0,0,0,.08)` + `rgba(255,255,255,.62)`。`Build/live-dock-verify.cjs` PASS（来电气泡、接听、顺序冻结）。截图 `Build/live-dock-look.png`。
+- 仍未定：用户看到的"太白"到底指哪一块（条子/头像/卡片/白按钮）还没确认——线上产物已按"白色浮层降到极淡"这一版发布，**等用户指定具体位置再动**，不再盲调。
+
+## 2026-09-2X 「右键切屏卡顿」修复 + 头像条按参考图重做外观：**已上线**（前端 `main-ZLu45is8.js` / `dock-UjNvyHif.js` / `dock-DiBDYFk2.css`；后端未动、未重启、未发新客户端）
+
+- 用户报障与需求：① 「右键切换屏幕时有一丢丢卡顿…右键出来以后，就整个变卡了。鼠标拖动都变慢了」（测试机三块屏）；② 给了参考图：「把状态栏上的头像部件改的灵动一些…头像背景和组件降低透明度，以及小窗口的圆角绘制，按钮的白色」。
+- **卡顿的根因不是"换屏本身"**，而是 `MonitorContextMenu` 的 effect 依赖写了 `[close]`，而 `close` 是 `App.tsx` 每次渲染新建的箭头函数 —— 页面每重渲染一次（people/seats 广播、任何交互）就重跑 effect、重调 `officeDesktop.displays()`；真客户端里那一次就是 `desktopCapturer.getSources`：**每块屏抓一遍 480×480 缩略图**（用户三块屏，实测 12 次重渲染 → 24 次重读）。主进程被灌满，所以卡的是整台机器、连鼠标都发飘。修法：回调放 `useRef`（`closeRef`），effect 依赖改 `[]`。**换屏那一瞬约一秒的停顿是正常设计**（要重新采集 + 原地换轨，编码器重来），没有改。
+- **头像条外观**（纯 CSS + 一个 `open`/`alert` 类）：条子与悬停卡片共用半透明玻璃材质（`backdrop-filter` blur）、卡片圆角 12 → 18px、动作按钮改成白色圆钮（36px、白底深色图标）、头像垫底改淡亮色玻璃底并把亮度 `.74 → .88`、悬停/被看时带强调色光圈、新人弹一下、有未读/未接来电的一呼一吸柔光。
+- **两个实测踩到的坑**（写进 `AGENTS.md` 与源码注释）：`color-mix()` 在预乘空间会把半透明色的 RGB 一起拖白（浅色任务栏"黑色浮层"被算成 `rgba(35,35,35,…)`，既有断言当场红）→ 悬停底色按主题写死；`.dock-frame` 上不能加 `transition: background`（主题切换时 computed 读到过渡插值，断言随机红）。
+- **上线动作**：`npm run build` → 新脚本 `Build/deploy-web.cjs` 逐文件 sha256 审计（**只比哈希、不 `scp -r`、不碰 `dist/download/`**）：本地 14 个文件里 9 个已一致，**5 个有差异**（`index.html`、`dock.html`、`assets/{main-ZLu45is8.js,dock-UjNvyHif.js,dock-DiBDYFk2.css}`）→ `--upload --verify` 上传后复验 **本地与远端逐文件一致**，公网 9 个资源全部 `HTTP 200` 且 SHA256 与本地逐一相同（`main-ZLu45is8.js` 756,544 字节）。**后端未动、没有重启 officeweb。**
+- **公网核验（跑的是线上产物）**：新脚本 `Build/live-ui-verify.cjs` 从正式站抓下 `index.html`/`dock.html` 与它们引用的 assets，交给本地测试服务端伺服（cookie 认证必须同源），用 Playwright 实测：
+  - `线上切屏菜单：开菜单读 1 次，12 次重渲染后 1 次（旧版是 24 次）`，且选中后 `selectDisplay('22')` 被调用、菜单关闭、广播了 `office-display-changed`；
+  - `线上头像条实测：{"stripGlass":"rgba(255,255,255,0.17)","stripBlur":"blur(18px) saturate(1.25)","stripRadius":"999px","cardRadius":"18px","cardBg":"rgba(18,18,20,0.52)","cardBlur":"blur(22px) saturate(1.3)","buttonBg":"rgba(255,255,255,0.96)","buttonFg":"rgb(27,30,28)","buttonRadius":"50%","buttonBox":[36,36],"cardBox":[294,175],"avatarBg":"rgba(255,255,255,0.14)","openRing":"rgb(0,120,215) 0px 0px 0px 2px …"}`；
+  - 浅色任务栏那一档：`{"strip":"rgba(0,0,0,0.1)","card":"rgba(255,255,255,0.62)","ink":"rgb(29,33,29)"}`（黑色浮层 + 浅色卡片 + 深色字）。
+  - 截图 `Build/live-dock-look.png` / `live-dock-look-light.png` / `live-screen-menu.png`。
+- **既有线上行为核验同时跑过**：`node Build/live-dock-verify.cjs` → `线上 dock.html 的脚本：["/assets/dock-UjNvyHif.js"]`、来电气泡挂头顶（`barToStage 0`、`centerOff 0`、`clip Wave`、`motion 0.83`、`stagePx 452`）、顺序冻结与 2 秒后换序 PASS。
+- 回归：`OfficeWeb` 单测 **282/282**、浏览器 `dock.cjs`（新外观下）**PASS** 且连跑两次稳定、`screen-menu-render.cjs` PASS；改动文件行数 `dock.css` 479、`dock.tsx` 344。
+- **客户端不用重发**：两项都是纯前端，装着的客户端重启或刷新就拉到新分块。仍未做：真机（用户这台三块屏的客户端）上抓一张贴着真实任务栏的截图核对玻璃效果——本地/线上核验的背景是脚本铺的，真机上任务栏合成才是最终样子。
+
+## 2026-09-22 14:31 「头像这个 ui 有时候会消失找不到」：查出**整屏那一路会把条子永久藏起来**（前端 `main-BL0R9IcA.js` / `dock-BdOUFoAn.js`；客户端 `0.1.32`，**未发布**）
+
+- 用户报障：「头像这个 ui 有时候会消失找不到 检查一下问题，注意不要造成新的问题」。
+- **先量现场，不猜**：枚举客户端所有顶层窗口 → 当时条子是好的（`iruler 头像条` pid 21712，visible=True，`1465,1040 191x40`，`ex=0x8000008` = TOPMOST|NOACTIVATE）；任务栏**没有**开自动隐藏（`StuckRects3` 的 offset 8 = 0x02，bit0 = 0）；主屏 1920×1080、任务栏 40 DIP、双屏（办公窗口在下面那块）。
+- **读代码找出两个真会"永久藏"的结构性问题**：
+  1. **三个隐藏理由共用一个 `visible` 标志**。`dock-window.cjs` 里"页面说藏"（共享屏幕/未登录）和"主进程说藏"（整屏）写的是**同一个标志，最后一个写的赢**；而整屏那一路靠 `enter-full-screen` / `leave-full-screen` 两个事件 —— 而 `fullscreen.cjs` 的注释**自己就写着**：这个无边框透明窗口上 Electron **不可靠地**发这两个事件（"the window resizes, but nothing observes it"，2026-09-15 就踩过）。事件漏一次 → 条子**再也不回来**，只能重启客户端。这与用户说的"有时候消失找不到"完全对得上（看全屏视频/整屏共享后最容易遇到）。
+  2. **窗口被异常销毁后没人重建**：`window.on('closed')` 把 `window` 清空，而 `ensure()` 只在启动时调过一次 —— 窗口一旦被系统/驱动收掉，条子从此永久消失。
+- **顺手实测出一个更硬的坑**：把整屏改成"每次现算"后，真机跑 `Build/dock-why-check.mjs` 发现进整屏时**根本没藏**——`mainWindow.isFullScreen()` 在页面调 `setFullscreen(true)` 之后**仍然返回 false**（页面类加上了、窗口也铺满了屏幕）。所以"整屏判断"改成 `fullscreen.cjs` 新增的 `isWindowFullscreen()` = **我们自己请求过（`REQUESTED`）|| 系统说整屏**；`main.cjs` 把它当 `systemHidden` 传进小窗（每 1.5 秒现算，不依赖事件）。`chrome.cjs` 的 `did-navigate` 顺手改成**无条件** `setWindowFullscreen(window, false)`（它内部本来就有"没进过整屏就不动窗口"的守卫），免得重载后 `REQUESTED` 里的记录清不掉。
+- **改法**：① `place()` 现在算 `taskbarGone / pageVisible / system / manual` **四路独立理由**，任一路说藏就藏、互不覆盖；② `follow` 那个 1.5 秒的 tick 里窗口没了就 `ensure()` 重建（主动 `destroy()` 先置 `destroyed`，不会再冒出来）；③ **"为什么藏"留证据**：每次结论变化写一行到 `%APPDATA%\iruler dream\dock-why.json`（`why: shown|taskbar|page|system|manual` + 当时的任务栏/屏幕读数），只在变化时写；④ 页面侧小修：`useDockBridge` 在"不可用"分支推完 `{people:[],hidden:true}` 后清掉 `lastSent`，否则重新可用时会被"没变"跳过、一直停在藏起来那一份。**没有加"定期重推状态"的 keep-alive**——老客户端没有上面那个"整屏现算"，重推会让条子在整屏应用上冒出来，宁可不做。
+- **测试**：桌面 **147/147**（`dock-window.test.cjs` 新增 2 项：三个理由互不覆盖 + 整屏结束自己回来 + 报告的理由序列 = `shown,system,shown,page,shown,manual,shown`、窗口被销毁后重建 / 主动 destroy 后不再重建；`fullscreen.test.cjs` 新增 1 项：`isFullScreen()` **撒谎时**（真机表现）自己请求过的整屏仍算 true、退出后立刻 false、外部整屏也认）。网页 **282/282**。`check-packaged` 扩到 **48 项**（新增 5 项"找不到"标记，含 `isWindowFullscreen`）。
+- **真机核验 `Build/dock-why-check.mjs`**（新脚本，对着打包客户端跑，读主进程写的 `dock-why.json`）：
+
+  ```
+  推状态：why=shown  头像数=2
+  进整屏：why=system  头像数=2
+  退整屏（不额外发任何东西）：why=shown  头像数=2
+  页面说藏：why=page  头像数=0
+  页面说显示：why=shown  头像数=1
+  PASS
+  ```
+
+  并且用 Win32 枚举**在系统层**确认了窗口可见性：整屏中我的探针实例 `pid 20576 visible=False`（同时用户自己开着的 `pid 21712 visible=True`，没被影响），**退出整屏后 `visible=True` 自己回来了**。（探针用单独 user-data-dir，跑完关掉。）
+- **前端已上线**（逐文件 `scp`，没碰 `dist/download/`）：`index.html`、`dock.html` + `assets/{main-BL0R9IcA.js,main-WSouybdb.css,dock-BdOUFoAn.js,dock-CB-_Gs8X.css,dockStage-BYC3GpmU.js,icons-B5h5tCp1.js,characterModel-eDIaoQED.js}`；9 个文件本地/远端 SHA256 逐一相同，公网 `HEAD` 全部 200（`main-BL0R9IcA.js` 756,503 字节、公网取回来哈希一致）。后端未动、未重启 officeweb。
+- **客户端 0.1.32**（**未发布**；线上 `latest.json` 目前是 **0.1.30**，9-21 19:03 发的）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.32-x64.exe`，101,269,171 字节，sha256 `4757644d2631dc83a477d055f07ecec6ae1f2fdb5205a06c4c026640f5ae763e`；`check-packaged` **48/48**。**注意版本号**：14:06 另一轮把版本顶到 0.1.31 并打了包（标注清空那套桌面改动），我的修复在它之后落地，所以直接发 **0.1.32**（把 0.1.31 那批一起带上）；0.1.31 的包留在 `Build/OfficeDesktopRelease/` 里没发。
+
+## 2026-09-22 14:05 两个报障的修复上线：标注清空 + 会议共享能放大能标注（**纯前端**，后端未动、未发新客户端）
+
+- 用户报障：「视频通话的标注清空不管用」「视频会议的屏幕分享和私人要保持一样，可以放大观看可以标记，目前没有」。
+- **根因（都很具体）**：
+  1. 清空是从**别人的页面**中继到分享者桌面浮层的，走 `office:annotation-push`，而 `desktop-bridge.cjs`
+     的 `type` 白名单只认 `annotate`/`undo` —— `{type:'clear'}` 被**静默丢掉**，所以只有"点清空的人自己
+     也在共享"时才擦得掉。
+  2. 会议压根没用 `ScreenStage`（`MeetingCenter` 里是裸的 `<video controls>`）；而且会议的共享由
+     `MeetingScreenShare` 自己采集，**不经过 `media.screen`**，于是 `sharingScreen()` 恒假、浮层从未
+     `attach()`，会议里的标注完全不工作。
+- **改动**：`annotationChannel.mirror()` 让 clear 走已放行的 `office:annotation-clear`（**老客户端也立刻生效**）；
+  `desktop-bridge.cjs` 白名单补 `clear`（随下次客户端版本生效）；`MeetingCenter` 改用 `ScreenStage`
+  （最大化/全屏 + 标注/撤销/清空）+ `App` 传 `annotation`；`media.ts` 的会议视频轨按**共享者 identity** 作键
+  （拆出新模块 `src/meetingVideo.ts`，`media.ts` 已贴 500 行上限）；`useOffice` 的 `sharingScreen()` 把会议
+  共享算上、并在共享开始时 `attach()`；`meetings.css` 放行画布尺寸。
+- **验证**：`OfficeWeb` 全量 **278/278**（含新增 `test/meeting-annotations.test.mjs` 4 项）、
+  `OfficeDesktop` **9/9**（含新增「标注浮层：中继过来的清空也要放行」）、`tsc --noEmit` 干净、改动文件均 ≤500 行。
+- **上线**：`npm run build`（新主包 `assets/main-O_qO03B7.js`）→ 与远端逐文件哈希比对（8 个文件有差异：
+  `index.html`/`dock.html` + 6 个 assets）→ **逐个 `scp`**（没有 `scp -r`、没有碰 `dist/download/`）→ 重跑审计
+  **本地与远端 0 差异**；公网复验 `https://115.159.43.237/` 与 `/dock.html` 引用的 7 个资源全部 HTTP 200 且
+  SHA256 与本地逐一相同。**后端未动，没有重启 officeweb**。
+- 未做：真实的双人会议/通话跑一遍标注（会议那两条现成的 UI harness 是"旧版 UI"那一类，跑不到；改用
+  组件级与中继级测试覆盖）；`desktop-bridge.cjs` 的 `clear` 放行要等下次发客户端版本才生效（网页侧已经不依赖它）。
+- 注意：本地树上另有一个**更新的构建**（另一会话 2026-09-22 13:59 打的 `main-D620__0u.js`，已含本轮改动），
+  线上跑的仍是本次上传的 `main-O_qO03B7.js`；两者只差那个会话自己的改动，等它发布即可。
+
+## 2026-09-22 14:02 头像条的顺序要"粘住"：鼠标看着谁，谁就不许被换走（前端 `dock-GAybfogC.js` / `dock-RCtGPLma.css`；后端未动）
+
+## 2026-09-22 14:02 头像条的顺序要"粘住"：鼠标看着谁，谁就不许被换走（前端 `dock-GAybfogC.js` / `dock-RCtGPLma.css`；后端未动）
+
+- 用户需求：「状态栏的头像位置尽量不要频繁的切换顺序，不然本来鼠标看着一个人闪烁到另一个人了」。
+- **为什么会闪**：名次规则是 未接来电 → 未读 → 正在共享 → 在座 → 名字，而这几个键**随时会翻**——离座/在座（10 秒不操作就变）、别人开始/停止共享、未读数变化。主窗口每推一次状态就按新名次重排名单，小窗照着画，于是头像在鼠标底下换位；`hovered` 是**按 id** 记的，DOM 一挪浏览器就重发 mouseover，卡片跟着换人 = 用户看到的"闪烁到另一个人"。
+- **改法（纯前端，刷新即生效，不用动客户端）**：**显示顺序和名次分开**，新纯函数 `dockRules.stickyOrder()` 两档防抖：
+  1. **指针停在条子/卡片上时（`.dock` 的 `onMouseEnter/Leave` → `pointerOn`）一个都不许挪**——新人接在最后、走掉的人立刻消失（不留鬼头像）；
+  2. 没停住也要名次**连续稳定 `ORDER_SETTLE_MS = 2000`** 才换序，没稳就返回 `waitMs`，页面定个闹钟到点再看一眼。
+  - **踩到的语义坑（写进测试了）**：`since` 必须记"名次第一次和显示对不上"的时刻，**不能**记"上次换序"的时刻——否则下一个心跳（1 秒后）算出来的等待时间早就超了，会立刻换序，"稳住两秒"等于没做。
+  - `orderPeople()` 按粘住的顺序摆人头（顺序表里没有的人接最后，**不许丢人**）；页面画的是 `people`（粘住顺序），不是 `state.people`（刚推来的名次）。
+- **测试**：网页 **279/279**（`test/dock-rules.test.mjs` 新增一项 12 条断言：照排 / 冻结 / 冻结期间新人接尾 / 走人立刻消失 / 刚变不动 / `since` 语义 / 差 100ms 不换 / 变回去重新计时 / 稳住才换 / 指针压着多久都不换 / 两个辅助函数 / 页面接线与"别画回原始顺序"+ 名次规则没被改掉）；浏览器 `dock.cjs` 在真页面里打乱名次：指针压在条子上时**顺序不动**，移开 2.6 秒后才变成 `["我","小李","客户丙","同事乙"]`；`tsc --noEmit` 通过；文件行数 `dock.tsx` 389、`dockRules.ts` 355、`dock-rules.test.mjs` 427、`browser/dock.cjs` 460，全部 ≤500。
+- **前端已上线**（逐文件 `scp`，**没有** `scp -r`、没有碰 `dist/download/`）：`index.html`、`dock.html` + `assets/{main-D620__0u.js,main-WSouybdb.css,dock-GAybfogC.js,dock-RCtGPLma.css,dockStage-mmIrUhFm.js,icons-nnDVQH_G.js,characterModel-DwkIGQTW.js}`（这次**共享分块的名字也全变了**，所以按上次的教训先把 `ls assets` 与线上 HTML 引用的资产逐一对齐再传）。核验：9 个文件本地/远端 SHA256 逐一相同；公网再取一遍 7 个资产哈希也与本地一致；线上 HTML 引用的 6 个资源 + 动态 import 的 `dockStage-mmIrUhFm.js` **全部 200** 且 content-length 对得上；**本地 `Build/OfficeWeb` 全部 65 个文件与远端 `dist` 全量比对：缺失 0、不一致 0**。
+- **线上实测**（`node Build/live-dock-verify.cjs`，直接打开**部署站点**的 `dock.html` 注入假桥）：
+  `线上实测：{"text":"同事乙 来电 · 语音通话","buttons":["拒绝","接听"],"aboveStrip":380,"barToStage":0,"centerOff":0,"clip":"Wave","stagePx":452}`；
+  `顺序（指针在条子上）：{"before":["我","同事乙","客户丙"],"frozen":["我","同事乙","客户丙"]}`；
+  `顺序（移开之后）：["我","客户丙","同事乙"]` → **PASS**。（顺手修了脚本两处：等模型加载改成等探针挂上，远端拉 three 分块 + GLB 时固定 sleep 会偶发不够；假桥补上 `window.__dockState`。）
+- **客户端不用重发**：这一条是纯前端，装着的 0.1.30 重新打开头像条就会拉到新分块。`latest.json` 仍是 0.1.26（0.1.30 还没发布）。
+
+## 2026-09-21 18:55 全量同步审计：**前端已一致，后端有 3 个文件是旧的**（已补齐 + 重启）
+
+- 用户问「现在发布的版本是最新的构建版本吗，同步好吧」——于是做了一次**逐文件哈希审计**
+  （本地 `Build/OfficeWeb` 全部 66 个文件 vs 远端 `dist`；本地 `OfficeWeb/*.mjs` 21 个 vs 远端 `~/officeweb`）。
+- **前端：本来就完全同步**（66/66 逐字节相同；远端多出的 260 个文件是历史哈希包，无害）。
+- **后端：3 个文件比本地旧，而且其中两个是真 Bug 修复，一直没上传过**：
+  1. `collab-annotations.mjs` —— 缺 `drain()`：**线上的标注中继还在丢点**（就是那个"画笔断开"，
+     `AGENTS.md` 里写着已修、测试也有，但从来没部署）。
+  2. `input-presence.mjs` —— 缺 `idleOf(data)`：离座时间没有按客户端上报的 `idleMs` 回拨，
+     线上只会显示「离座 10 秒」而不是真实时长。
+  3. `package.json` —— 只是 `scripts` 不同（本地按 2026-09-14 的要求**删掉了 `dev`/`server` 两个脚本**、
+     加了 `postbuild`）。**先确认过 systemd 的 `ExecStart=/usr/bin/node start.mjs`，不依赖那两个 npm 脚本**，
+     所以换掉是安全的。
+- **动作**：远端先备份到 `backups/sync-20260921/`（三个文件的原件），再上传三个文件，
+  `sudo -n systemctl restart officeweb` → `active`，日志 `OfficeWeb ready on http://127.0.0.1:3108`，
+  重启后 2 分钟内**没有任何 error/throw**。
+- **复验**：重跑同一个审计 → **前端 MISSING/DIFFERENT 都是 (none)，后端也是 (none)**；
+  线上 `index.html` 引用的 `assets/main-B72sKwvJ.js` 与本地构建一致，7 个资源全部 200 且 content-type 正确。
+- **客户端安装器：已发布 0.1.30**（用户 2026-09-21 明确同意「发布 0.1.30」）。
+  - **打包前先重新打包了一次**：原来那个 0.1.30 是 14:42 打的，而 `OfficeDesktop/file-transfer.cjs`
+    在 16:57 才改成 2 GB 预检——直接发那个包，发出去的就不是"当前源码的构建"。
+    重打（`npm run dist:all`）后 asar 里 `MAX_BYTES = 2 * 1024 ** 3`、`文件不能超过 2 GB` 都在，
+    `Build/check-packaged.cjs` **40/40 全绿**，`--office-smoke-test` → `ok: true`。
+  - `iruler-dream-Setup-0.1.30-x64.exe`，**101,267,582 字节**，
+    sha256 `01db6e90279325dabdc353ca69800161661b09b3f00bae3527a1df6b0a6f5584`（重打后与 14:42 那个不同，正常）。
+  - 发布用 `node tools/publish-update.mjs --notes "…"`（**直接调脚本而不是 `npm run`**：npm 转手会把
+    中文参数弄坏）。脚本自报：大小一致、前 1MB 哈希 `8c8388ef…` 一致、`Accept-Ranges` 在、线上清单已是 0.1.30。
+  - **从公网独立复验过**：`/download/latest.json` 是 `0.1.30` + 那段中文说明；安装器 HEAD 200、
+    `Content-Length` 与本地完全一致、`Accept-Ranges: bytes`；`Range: 0-1048575` 取回的前 1MB 哈希与本地一致。
+  - 0.1.27～0.1.29 三个包**始终没发布过**（这次一并跨过去了）；装 0.1.26 的同事打开/刷新软件会看到更新提示。
+- 仍然没同步的：**没有**。前端、后端、客户端安装器三者现在都等于本地最新构建。
+
+## 2026-09-21 18:50 拖拽发送的**真正根因**：socket.io 广播回执是数组（后端 `file-relay.mjs` **已重启**；前端 `main-B72sKwvJ.js`）
+
+- **真机复现**（用 CDP 对着正式客户端派发真实拖放，目标只用用户授权的测试账号 `李小桃公司`）：
+  卡片写的是 **`对方无法接收文件`** —— 这句话在服务端只可能来自 `file-relay.mjs` 的
+  `fail(answer?.error || '对方无法接收文件')`，也就是"ack 里既没有 ok 也没有 error"。
+- **服务端日志一次就点破了**（为此给 `file-relay.mjs` 加了一行 warn，见下）：
+  ```json
+  [file-relay] file-in 被拒绝：{"target":"李小桃公司","kind":"object","isArray":true,"keys":["0"],"error":null}
+  ```
+  **`io.to(room).timeout(ms).emitWithAck(ev, payload)` 是广播操作符，解析出来永远是数组 `[ack]`**
+  ——哪怕 room 里只有一个 socket（只有 `socket.emitWithAck` 才是单个 ack）。服务端原来写
+  `if (!answer?.ok)`，在数组上恒为 `undefined`，于是**每一趟都在 `file-offer` 就被判成"对方无法接收文件"**，
+  而对方其实每次都回了 `{ ok: true }`——传输根本没开始。`file-chunk` / `file-end` 走的 `toTarget()`
+  是同一个坑，所以即使 offer 过了，每一片也会失败。
+- **改法**：`file-relay.mjs` 加 `firstAck(value) => Array.isArray(value) ? value[0] : value`，
+  offer 与 `toTarget()` 都过它；另在 offer 被拒时打一行 `console.warn`（**排障先看
+  `journalctl -u officeweb | grep file-relay`**，`isArray: true` 就是这条 Bug 的指纹）。
+- **为什么测试没抓住**：两个 harness 的假 `io` 回的是**单个对象**（照着"我以为的"写，不是照着真的库写）。
+  现在 `test/file-relay.test.mjs` 与 `test/file-transfer-endtoend.test.mjs` 都**回数组**并加了注释。
+  **实测把那行退回旧写法，11 条中继测试红 9 条**；改回来 11/11。
+- **真机验收**：同一发法重跑 → 卡片变成
+  `给李小桃公司-测试文件-可删除.txt 82 KB 已发送给 李小桃公司 82 KB · 已送达 [打开][打开文件夹][关闭]`，
+  底部状态栏 `已发送给 李小桃公司：…`。**功能通了。**
+- **同时修掉的两个显示问题**（真机看到的）：① Electron 的 `Error invoking remote method 'x': Error: …`
+  原文直接漏到卡片上 → 新增 `readableError()` 剥壳；② 失败的行抬头还写"正在发送给" → 现在
+  失败/取消写「发送给 X」、成功写「已发送给 X」。
+- **发布**：后端 `file-relay.mjs` 上传并 `sudo -n systemctl restart officeweb` → `active`
+  （本地/远端 SHA256 一致 `7eecf0f8…`）；前端 `index.html` + `assets/main-B72sKwvJ.js`（SHA256 一致，
+  线上已引用）。全量回归 OfficeWeb **274/274**、OfficeDesktop **143/143**、`tsc` 通过、所有文件 ≤500 行。
+
+## 2026-09-21 18:35 头像条拖拽：**拖进来了，但发不出去是静默的**（前端 `main-BC0F_7Xo.js`；**后端未动、没有重启**）
+
+- 用户回报（重启客户端后实测）：**头像亮了、条子上写「正在发给 XX」，但左下角没有传输卡片、也传不过去**。
+- **这一句把范围砍掉一半**：头像亮 + 那句提示，说明**系统把拖拽投进小窗了**（窗口标志不是问题），
+  `webUtils.getPathForFile` 也拿到了真路径，`office:dock-files` 一路转到了主窗口。
+  注意「正在发给 XX」是**小窗自己**说的，它并不知道后面成没成——所以真正卡住的是 `sendFiles` 之后。
+- **找到的静默点**：`sendOne` 原来是**先 `sendOpen`、后 `place`**。`sendOpen` 一抛
+  （拖进来的是文件夹 / 路径读不到 / 空文件 / 超过 2 GB），**连一条记录都不建** —— 左下角什么都不出现，
+  原因只闪在底部状态栏。用户看到的正是"拖上去了、然后没有然后了"。
+  - 现在**先立卡片、再开文件**：任何失败都会留下一条带原因的记录（卡片上直接写「暂时不能发送文件夹，
+  请打包后再发」这类原话），并在底部状态栏 + 系统通知各说一次。
+  - `sendFiles` 进门先 `notify(正在发送 N 个文件给 XX…)`：小窗那句是小窗说的，这句才是主窗口真的收到了。
+- **顺手把 `fileTransfer.ts` 拆了**（AGENTS.md 里早就记着"下一次改它之前先把发送那一半拆出去"）：
+  读盘与分片搬到新模块 `src/fileSend.ts`（`createFileSender(ctx)`，依赖用 `SendContext` 显式写出来）。
+  `fileTransfer.ts` 从 **510 行（已经超了上限！）降到 428 行**，`fileSend.ts` 119 行。
+- **测试**：新增 1 项——`sendOpen` 抛错时**必须**留下一条 failed 卡片且名字取路径最后一段；
+  `file-transfer-rules.test.mjs` 里"别再弹同意框"那条也跟着改成查 `fileSend.ts`，
+  并新增"先 place 再 sendOpen"的顺序断言。全量 OfficeWeb **271/271**、`tsc` 通过、所有文件 ≤500 行。
+- **发布**：上传 `index.html` + `assets/main-BC0F_7Xo.js`（`dock-*` 仍是最新的那一版），
+  两个文件本地与远端 SHA256 逐一相同；公网复取：线上入口已是 `main-BC0F_7Xo.js`，
+  包里能查到「正在发送」「无法读取这个文件」「file-offer」。
+- **要用户做的**：在办公室窗口按 **F5**（主窗口的页面不用重启客户端）再拖一次——
+  这次**一定会**在左下角出现一张卡片，卡片上写的就是真正的原因。
+
+## 2026-09-21 18:10 头像条拖拽发送"不行"：先把失败变成看得见（前端 `dock-Dq2hyo-_.js` + `dock-RCtGPLma.css`；**后端未动、没有重启**）
+
+- 报障（用户）：「聊天还行 但是头像拖拽上去发送的功能不行」。
+- **已经排除的**（都有实据）：
+  1. 装的客户端是 **0.1.30**（`Build/which-client.cjs`），而且是 14:42 装的、16:49 启动的；
+     `node Build/check-packaged.cjs "C:\Program Files\iruler dream\resources\app.asar"` 对着**已安装的 asar** 跑，
+     文件直传那 12 项**全绿**（`file-transfer.cjs`、`filePaths`、`dropFiles`、`dock-files` 转发、`transfers` 白名单全在）。
+  2. 于是另起一个隔离实例（`electron . --user-data-dir=… --remote-debugging-port=9223`），
+     用 `Build/client-eval.mjs dock` 问运行中的小窗页：`filePaths`/`dropFiles`/`answer`/`layout` **都是 function**。
+  - 也就是说：**两端代码都在位**，剩下的只有"系统有没有把这次拖拽投进那个小窗"这一件事没法从外面看出来。
+- **所以先把失败变成看得见**（原来做不到就静默 `return`，用户那边一点反应都没有，根本分不清
+  "拖拽没进来"还是"进来了发不出去"）：
+  - 只要这一拖**带着文件**，头像就一定会亮起来——**高亮不再看 `canDrop`**。
+    连亮都不亮 = 拖拽根本没进到这个窗口，这是最有价值的一条线索。
+  - 松手后条子上给一句话（`.dock-notice`，6 秒）：`正在发给 XX` / `客户端太旧 · 请更新` /
+    `这是你自己` / `这一拖没有文件` / `请拖到同事的头像上`（拖在头像之间的空隙上松手也会说）。
+  - 条子宽度变了要重报一次版面，否则那句话会被窗口裁掉（`layout` 的依赖里加了 `dropNotice`）。
+- **探测踩的坑（记下来省得重踩）**：我写了个 P/Invoke 探针，用 `RevokeDragDrop(hwnd)` 的返回值判断
+  "这个窗口有没有注册 OLE 投放目标"，结果**所有窗口（包括主窗口）都报没注册**；
+  拿 explorer.exe 的文件夹窗口做对照，它也报"没注册"——**说明这个探针本身不成立**
+  （`RevokeDragDrop` 要在建窗线程上调用，跨进程跨线程探测不可信）。差点据此得出错误结论。
+  另外那个 `.ps1` 第一版写成 UTF-8 中文注释 + `//` 注释，Windows PowerShell 5.1 按 GBK 读 → 直接语法错误。
+- **发布**：只重传 `dock.html` + `assets/dock-Dq2hyo-_.js` + `assets/dock-RCtGPLma.css`（`main-*` 未变），
+  3 个文件本地与远端 SHA256 逐一相同；公网复取：`dock.html` 现在引用 `dock-Dq2hyo-_.js`（200），
+  包里能查到 `dock-notice` / 「客户端太旧」/「这一拖没有文件」/「这是你自己」/「请拖到同事的头像上」，
+  CSS 里有 `.dock-notice`。
+- **要用户做的**：**重启客户端**（小窗的页面是开窗时加载的，不重启还是旧的），
+  再拖一次，把条子上出现的那句话告诉我——那一句话就能定位到底卡在哪一环。
+
+## 2026-09-21 17:40 聊天框的文件下载改成复用文件直传那套（前端 `main-Djfx15DJ.js` + `main-D2IGwDtR.css`；**后端未动、没有重启**）
+
+- 需求（用户）：「整理一下聊天框里面的文件下载，要带进度条，要软件内设置好下载位置 下载好了也还是有几个按钮 打开等 复用」。
+- **做法：不另写一套下载器，直接走文件直传那条通道**（`fileTransfer.ts` 的 `downloadAttachment`）：
+  - 数据来源换成 HTTP 流（`/api/chat/files/:id`，经新模块 `src/downloadStream.ts` 的 `streamResponse()` 一块块搬，
+    天然背压：写盘慢就把读取拖慢）；
+  - 其余**全部复用**：设置里那个接收文件夹（`receiveOpen/Write/End`）、被限流的进度、任务栏进度条、
+    左下角那张卡片、以及「打开 / 打开文件夹」。设置里改一处，头像直传和聊天下载**两边同时变**。
+  - **行 id 就是附件 id**：聊天里那一条和传输面板里那一条是同一个记录，点两次不会下两遍。
+  - 聊天气泡里新增：自己的细进度条（`.chat-file-bar`）、「下载 / 重新下载」「打开」「打开文件夹」「取消」，
+    小附件另给「另存一份」直链。
+- **顺带修掉一个上限提到 2 GB 后必然出事的地方**：原来**所有**附件都会在后台自动抓下来缓存
+  （`chatClient.show()` 无条件入队），2 GB 时代等于打开一次聊天静默拉几个 GB。现在只预取
+  ≤ `PREFETCH_MAX_BYTES`（4 MB）的小附件（图片预览和"离线也能看"靠它），大附件点了「下载」才走。
+- **测试**：新增 `test/download-stream.test.mjs`（6 项：分块顺序、背压、404/410 单独报错、无 Content-Length、
+  响应头回调）；`test/file-transfer-endtoend.test.mjs` 加 3 项聊天下载（落到接收文件夹 + 逐字节核对 + 行 id 是附件 id、
+  过期副本写清原因、下好再点不重下）；`test/file-transfer-rules.test.mjs` 加 1 项源码断言防止有人又写一套下载器。
+  **新增共享助手 `test/helpers.mjs` 的 `loadTs()`**：`chatAttachments.ts` 开始 import `fileTransferRules.ts` 之后，
+  老的"就地 transpile"写法解析不了 `./x`，会直接崩（这次踩到了）。
+- **回归**：OfficeWeb **269/269**、OfficeDesktop **143/143**、`tsc --noEmit` 通过；所有文件 ≤500 行
+  （`fileTransfer.ts` 494，下一次改它之前先把发送那一半拆出去）。
+- **发布**：`npm run build` 后上传 `index.html` + `assets/main-Djfx15DJ.js` + `assets/main-D2IGwDtR.css`
+  （`dock-*` / `icons-*` / `characterModel-*` / `dockStage-*` 哈希未变）。3 个文件本地与远端 SHA256 逐一相同；
+  公网复取：线上入口已是 `main-Djfx15DJ.js`（200、`text/javascript`），包里能查到 `downloadAttachment`、
+  `chat-file-bar`、「打开文件夹」「另存一份」；CSS 里有 `.chat-file-bar` / `.chat-file-actions`。
+  **后端未动、没有重启 officeweb。**
+
+## 2026-09-21 17:00 两条路的上限都改成 2 GB（前端 `main-5mc0XjJs.js`；后端 `chat-files.mjs` + `file-relay.mjs`，**已重启 officeweb**）
+
+- 需求（用户）：「把聊天框的大小限制到2g文件传输，把头像直传也2g」。
+- **改了四处常量（必须一起改，散在三个文件里）**：
+  | 路径 | 常量 | 原来 → 现在 |
+  |---|---|---|
+  | 头像直传（服务端硬门） | `OfficeWeb/file-relay.mjs` `MAX_FILE_BYTES` | 4 GB → **2 GB** |
+  | 头像直传（桌面端早报错） | `OfficeDesktop/file-transfer.cjs` `MAX_BYTES` | 4 GB → **2 GB** |
+  | 聊天附件（服务端硬门） | `OfficeWeb/chat-files.mjs` `MAX_FILE_SIZE` | 20 MB → **2 GB** |
+  | 聊天附件（网页端早报错） | `OfficeWeb/src/chatAttachments.ts` `MAX_CHAT_FILE_BYTES` | 20 MB → **2 GB** |
+  另有 `ChatPanel.tsx` 那行「单个不超过 2 GB」、`OfficeDesktop/README.md`、`Design/Chat_Attachments_20260913.md` 同步。
+- **提上限时"必须一起改"的两处**（不然 2 GB 根本走不完，属于同一个改动的一部分）：
+  1. `chatAttachments.ts` 下载用的是 `AbortSignal.timeout(60000)`——**它卡的是整条请求，不是空闲**，
+     20 MB 时无所谓，2 GB 永远下不完。改成 `downloadTimeoutMs(size)`：按最低 64 KB/s 估算，
+     最少 2 分钟、最多 6 小时（2 GB ≈ 封顶）。
+  2. 超过 `CACHE_MAX_BYTES`（256 MB）的附件**不再写进 IndexedDB**，直接把手里的 Blob 交出去下载
+     ——浏览器的存储配额经不起几个 GB，`put` 会失败或卡住。
+- **测试**：新增 `OfficeWeb/test/file-size-limits.test.mjs`（3 项）把四个常量钉在一起并核对提示文案
+  （改一处就红），另加 `downloadTimeoutMs` 的边界；`OfficeDesktop/test/file-transfer.test.cjs`
+  新增 1 项（2 GB 收、2 GB+1 拒，并禁止旧的 4 GB 残留）；`file-relay.test.mjs` 的文案断言改成 2 GB
+  并补了"刚好超过 2 GB 就拒"。全量：OfficeWeb **259/259**、OfficeDesktop **143/143**、`tsc --noEmit` 通过。
+- **发布**：前端重新构建上传 `index.html` + `assets/main-5mc0XjJs.js`（其余分块哈希未变）；
+  后端上传 `chat-files.mjs` + `file-relay.mjs` 并 `sudo -n systemctl restart officeweb` → `active`
+  （`OfficeWeb ready on http://127.0.0.1:3108`）。4 个文件本地与远端 SHA256 逐一相同；
+  公网复取：线上入口已是 `assets/main-5mc0XjJs.js`（200、751,815 字节），包里能查到
+  「单个不超过 2 GB」「单个文件需为 1 字节至 2 GB」，**旧的 20 MB 字样已不存在**；
+  服务器上 `grep` 确认两个常量都是 `2 * 1024 ** 3`。
+- **磁盘提醒**：聊天附件是**存在 VPS 上**的（`chat-data/`，保留 7 天）。改完当时 `chat-data` 只有 40K、
+  根分区 40G 用 16G（**22G 可用**）；2 GB 的文件攒几个就会明显吃盘，心里有数。
+- **客户端**：`OfficeDesktop/file-transfer.cjs` 的 2 GB 改动**在下一次打包时生效**；
+  在那之前服务端已经按 2 GB 硬门拒收（超了会收到「文件需为 1 字节至 2 GB」），不会传一半才失败。
+
+## 2026-09-21 14:50 文件直传报障修复：「对方无法接收文件，接收方进度条没有进度」（**纯前端**，只上传 `index.html` + `assets/main-Bs-ZW9Sa.js`；客户端**未动**）
+
+- 报障（用户）：「对方无法接收文件，接收方出现了进度条显示没有进度」。
+- **根因**：`socket.io-client` 的**浏览器构建**（页面和客户端渲染进程用的就是它）默认
+  `binaryType = "arraybuffer"`（`engine.io-client/build/esm/globals.js`），所以接收端拿到的是
+  **`ArrayBuffer`——它只有 `byteLength`，没有 `.length`**。`file-in-part` 原来写的是
+  `const length = payload?.bytes?.length || 0`，于是 `length` 永远是 0，**每一片都被判成"无效的文件分片"**：
+  接收方那张卡片出现了却停在 0% 随即失败，发送方只被告知对方收不了。
+  服务端（Node 构建是 `"nodebuffer"`）收到的是 `Buffer`，所以服务端、中继单测、聊天附件那条老路
+  全都正常——问题只在浏览器那一侧，这就是它没被早发现的原因。
+- **改法**（`src/fileTransferRules.ts` 新增 `toBytes()` / `byteLengthOf()` / `describeBinary()`）：
+  分片统一归一化以后再判长度，`ArrayBuffer` / `TypedArray` / `Buffer` / `Blob` /
+  socket.io 老式 `{type:'Buffer',data}` 全部覆盖；错误信息里写明"收到了什么类型"，下次不用猜。
+  顺带补上 `file-in` / `file-in-end` 的 try/catch——原来接收端一抛（比如 `receiveOpen` 的 IPC 失败）
+  就永远不会 `reply`，发送方要**白等 60 秒**才知道失败。
+- **回归**：新增 `test/file-transfer-endtoend.test.mjs`——**真的 `file-relay.mjs`** +
+  两端 `createFileTransferChannel` 跑完整一趟，harness **把二进制转成 `ArrayBuffer` 再投递给接收方**
+  并断言转换确实发生过（`delivered.arrayBuffers >= 2`）；另外 5 种二进制形状进了
+  `test/file-transfer-rules.test.mjs`。**把那一行退回旧的 `.length` 写法，4 条里有 3 条立刻变红**（已实测）。
+  最后全量：OfficeWeb **256/256**、OfficeDesktop **142/142**、`tsc --noEmit` 通过。
+- **发布**：`npm run build` 后只有主分块变了（`main-fnGAIxfv.js` → **`main-Bs-ZW9Sa.js`**），
+  `dock-*` / `icons-*` / `characterModel-*` / 两个 CSS 的哈希都没变 —— 这也反向证明**改动只在主窗口那一侧**。
+  逐文件 `scp` 上传 `index.html` + `assets/main-Bs-ZW9Sa.js`（没有 `scp -r`、没有碰 `dist/download/`），
+  本地与远端 SHA256 逐一相同；公网复取：`https://115.159.43.237/` 现在引用 `assets/main-Bs-ZW9Sa.js`
+  （200、`text/javascript`、751,654 字节），包里能查到 `byteLength` / `instanceof ArrayBuffer` /
+  「无效的文件分片（收到」/`file-in-part`。**后端未动、没有重启 officeweb。**
+- **用户要做什么**：两端**刷新页面（F5）**即可生效——这是纯前端修复，**不需要重新装客户端**。
+  已装的 0.1.29（含文件直传的桌面代码）继续可用。
+
+## 2026-09-21 14:44 真机报障：**头顶气泡有名字、却没有「接听 / 拒绝」** —— 两处静默丢字段的桥（客户端 `0.1.30`，**未发布**；前端未变）
+
+- 用户报障（装的是 0.1.29，14:35 启动）：「看到名字了 但是没有出现接通和挂断的按钮哎名字附近」。
+- **根因一（主因）**：`OfficeDesktop/desktop-preload.cjs` 的 `dockGreet` 是**白名单清洗**——它把载荷重建成一个新对象，只留 `id/name/character/mode`，而 `requestId/kind/offer` 是随"来电"那一版新加的字段，**在这里被静默丢掉**。小窗那页的渲染条件是 `canAnswer && greet.requestId`，所以：名字出来了（`mode` 在）、**按钮不出现**（`requestId` 没了）。`0.1.29` 是在改这个文件**之前**打的包，装着它必然如此。
+- **根因二（顺手查出来的，更隐蔽）**：反方向的桥**根本不存在** —— `desktop-preload.cjs` 没有 `onDockAnswer`，而 `useDockBridge` 用的是可选链 `bridge.onDockAnswer?.(…)`，所以**就算按钮画出来了，点「接听」也不会有任何反应**（静默跳过）。现在补上（订阅 `office:dock-answer`，清洗成 `{ requestId, accept }`）。
+- **教训（已写进 `OfficeWeb/AGENTS.md`）**：这条链上有**三处**会把新字段悄悄吃掉——① `desktop-preload.cjs` 的 `dockGreet`、② `dock-bridge.cjs` 的 `office:dock-greet`、③ 反方向的 `onDockAnswer`。加字段时三处一起改；漏 ① 的现象是"有名字没按钮"，漏 ③ 是"点了没反应"，两种情况都**不报错**。
+- **新增真机链路测试 `OfficeDesktop/test/dock-call-chain.cjs`**（真 Electron、两个窗口、真 preload、真 dock-bridge，协议桩喂夹具页、不碰网络）：
+
+  ```powershell
+  cd OfficeDesktop
+  & '.\node_modules\electron\dist\electron.exe' test/dock-call-chain.cjs
+  ```
+
+  它断言：小窗收到的 greet **`{id,mode:'call',requestId,kind,offer}` 一个不少**、脏数据仍被清洗（`mode` 归 peek、`kind` 清空、`requestId` 截 64）、**小窗点接听 → 主窗口收到 `{requestId, accept:true}`**、状态照样推得到小窗。证据 `Build/dock-call-chain.json`（本轮 5 项全绿、`errors: []`，退出码 0）。
+- **新增真机探针 `Build/dock-call-probe.mjs`**（对着**打包好的客户端**跑，验的就是用户看得见的那一眼）：
+
+  ```powershell
+  & '.\Build\OfficeDesktopRelease\win-unpacked\iruler dream.exe' --remote-debugging-port=9226 --user-data-dir="$env:TEMP\office-call-probe"
+  $env:DOCTOR_PORT=9226; node Build/dock-call-probe.mjs
+  ```
+
+  在主窗口页里走**真正的桥** `officeDesktop.dockGreet({…, mode:'call', requestId, kind})`，再在头像条页里量。实测：`{"bar":true,"text":"同事乙 来电 · 语音通话","buttons":["拒绝","接听"],"answerBridge":true,"viewport":[320,492],"barToStage":0,"aboveStrip":380,"centerOff":0,"clip":"Wave"}` —— 连**窗口高度**都对（`320×492` = 40 条子 + 452 舞台，说明 `stagePx` 真的把气泡算进去、主进程也真的把窗口长高了），截图 `Build/dock-call-client.png`。（探针用单独的 user-data-dir，不碰用户正开着的那个实例；跑完把那个实例关掉。）
+- **测试**：网页 **251/251**（`test/desktop-preview.test.mjs` 新增 6 条：`requestId`/`kind`/`offer` 必须出现在 preload 白名单里、`onDockAnswer` 与 `office:dock-answer` 订阅必须在）；桌面 **142/142**；`node Build/check-packaged.cjs` **43 项全绿**（给这一条加了 3 个 asar 标记：`来电：邀请 id 传得出主窗口页`、`来电：邀请种类与 offer 传得出`、`来电：主窗口页收得到接听`）。
+- **前端没有改动**（头顶位置那一版已在 14:12 上线），所以**没有重新上传前端、没有重启 officeweb**；这一轮只打客户端。
+- **客户端 0.1.30**（**未发布**，线上 `latest.json` 仍是 0.1.26）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.30-x64.exe`，101,266,900 字节，sha256 `15cffc39837e28e32e00842d24743612cf35ec5e71939dc7d9989e4f24cf6060`；免安装版 `iruler-dream-0.1.30-Windows-x64.exe`（100,680,771 字节）。`check-packaged` 43/43；打包产物 `--office-smoke-test` → `ok: true`、加载 `https://115.159.43.237/`。**0.1.29 已被这一版取代**（用户已经装过 0.1.29，所以要装 0.1.30 才有按钮）。
+
+## 2026-09-21 14:25 文件直传：拖到任务栏头像就发（后端 `file-relay.mjs` **新增** + `server.mjs`；前端 `main-fnGAIxfv.js` / 其余见下条；客户端 `0.1.29`，**未发布**）
+
+需求（用户）：「新增文件发送功能，就是把文件拖至状态栏某人头像，就会开始发送，不需要对方同意，直接就发送到设置好的位置，设置里面可以改，双方要显示系统级进度条，完事有打开和打开文件夹的功能」。功能细节与铁律写在 `OfficeWeb/AGENTS.md` 的「文件直传」一节。
+
+- **后端（本轮真正改到的线上代码）**：新增 `file-relay.mjs`（服务器**只实时转发、不落盘**），`server.mjs` 里 `createFileRelay({ io, people })` + 每个连接 `fileRelay.attach(s)`。两个文件都已上传，**并执行了 `sudo -n systemctl restart officeweb`** → `active`，日志 `OfficeWeb ready on http://127.0.0.1:3108`（没有模块加载错误，说明新模块 import 正常）。
+  - 上面 14:12 那条写「后端未动，没有重启 officeweb」说的是**它自己那一轮**（dock 气泡只动前端）；**本轮的 file-relay 必须重启才生效，已经重启过**，两条记录不要混起来读。
+- **上传与核验**（逐文件 `scp`，没有 `scp -r`，没有碰 `dist/download/`）：后端 `server.mjs`、`file-relay.mjs`；前端 `index.html`、`dock.html`、`assets/{main-fnGAIxfv.js,main-CQo0e_cV.css,icons-CT87jDZG.js,characterModel-Bx0u9nAi.js,dock-DcFR8WQD.js,dock-CYkb4d9K.css,dockStage-mQicwV4d.js}`（第一轮的 dock 分块）→ 之后并发那一轮又重出了 `dock-CmPIa763.js` / `dock-BgWdkgXe.css` 并重传。**11 个文件本地与远端 SHA256 逐一相同**，公网再取一遍仍是同样内容。
+- **线上实测**：`https://115.159.43.237/` 引用的 `assets/main-fnGAIxfv.js`（200、`text/javascript`、750,602 字节）里能查到 `file-offer` / `file-chunk` / `file-in-part` / `file-in-end` / 「接收文件夹」/「打开文件夹」；`dock.html` 引用的 `dock-CmPIa763.js` 里能查到 `dropFiles` / `filePaths` / `dock-progress` 与并发那轮的 `dock-call-wrap`，`dock-BgWdkgXe.css` 里能查到 `.dock-avatar.dropping` / `.dock-progress` / `.dock-call-wrap`。全部 200 且 content-type 正确（不是 SPA 回退的 HTML）。
+- **兼容老客户端**：`dock.tsx` 的拖放以 `typeof window.officeDock?.dropFiles === 'function'` 为门、进度线读 `state.transfers || []`，`files` 桥不存在时发送直接提示"需要桌面客户端"、接收退回浏览器下载。所以 0.1.26 的同事加载新页面**行为不变**，不会因为前端先上线而出错。
+- **客户端 0.1.29**（**未发布**，线上 `latest.json` 仍是 0.1.26）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.29-x64.exe`，101,269,170 字节，sha256 `05fe401e42653959f359d15f16626e9d75a9bd64b61c1ec9624912dd0a5a6ff6`；`--office-smoke-test` → `ok: true`。`Build/check-packaged.cjs` 已**扩充到 40 项**（新增 12 项文件直传：主进程读写/接收文件夹/防穿越/进度条、发送读盘、接收写盘、页面桥、`webUtils.getPathForFile`、小窗交路径、主进程转主窗口、进度白名单、`main.cjs` 建实例与退出收句柄），**40/40 全绿**。
+- **回归**：`tsc --noEmit` 通过；网页 **251/251**、桌面 **142/142**；所有文件 ≤500 行（`server.mjs` 492、`App.tsx` 465、`useOffice.ts` 452）。
+- **还没验证的（重要）**：① 从资源管理器**真的**拖到任务栏小窗上（那条小窗是 `focusable:false` 的无边框透明窗，OLE 投放路径只能人工验一次；合成/网页拖来的 File 没有真路径，`webUtils.getPathForFile` 返回空串，自动化只能覆盖"路径转交 + 接收写盘"两段）；② 两账号真机互传的进度条与「打开 / 打开文件夹」。**所以没有发布 0.1.29**——本机装一份试通了再说，`npm run publish:update` 随时可发。未完成项记在 `Design/TODO.md`。
+
+## 2026-09-21 14:12 来电气泡改挂到**人物头顶**（用户纠正）+ 线上逐文件核验（前端 `dock-CmPIa763.js` / `dock-BgWdkgXe.css`；客户端 `0.1.29`，**未发布**）
+
+- 用户纠正：「没有看到 是不是你理解错了位置我是说打招呼的人站在状态栏上的人物头顶」——上一版把气泡画在**角色下面**（贴头像条上边缘、角色站在气泡上），位置理解反了。
+- **为什么用户"没看到"**（两个原因，都得说清）：
+  1. **位置反了**：气泡在人物下面，不在头顶。
+  2. **本机装的还是 0.1.26**：`mode`/`requestId`/`kind` 这三个字段是 0.1.28 起才由主进程转发给小窗的，0.1.26 会把它们**静默丢掉** → `greetMode(undefined)` 落到 `peek` → 那条来电气泡**根本不渲染**（只有小人儿站着）。所以这一条必须装 0.1.29（含 0.1.28 的全部转发）才看得到。
+- **改法（纯前端，刷新即生效）**：新增外层 `.dock-call-wrap`，与角色画布**同一格**——同样宽（新 CSS 变量 `--dock-stage-w` = `GREET_CANVAS[mode].width`）、底边同样在 `calc(var(--dock-h) + var(--dock-stage-h, 380px))`，也就是**画布上边缘之上**；气泡在里面 `justify-content: center`，角色站在画布正中，所以气泡正对着他的头。外层 `pointer-events: none`、气泡 `pointer-events: auto`（透明区不许吃鼠标，按钮要能点）。气泡高 52 且 `box-sizing: border-box`、`white-space: nowrap`，文字改成 `flex: 1 1 auto; min-width: 0`（名字长了走省略号，否则「接听」会被顶出窗口右边）。`popup-right`/`edge-top` 两条定位规则跟着挪到外层；**旧的 `.dock-stage.over-call`（角色站气泡上面那一版）已删除**，`test/dock-rules.test.mjs` 里加了断言禁止它回来。舞台高度仍是 `380 + 62 + 10 = 452`（`stagePx`），窗口宽度在舞台期间至少 320，气泡不会被裁。
+- **测试**：网页 **251/251**（`callLabel` 现在"不知道种类就只说「同事乙 来电」"——老客户端不转发种类，别瞎猜是语音还是屏幕；新增 4 条 CSS 位置断言 + 禁 `over-call`）；桌面 **142/142**（本轮没动桌面代码，跑一遍确认）；浏览器 `dock.cjs` **PASS**（窗口从 520×260 加高到 520×620——气泡挂在头顶后落在矮视口外面，点不到「接听」；新增断言：`barToStage=0`、`aboveStrip=380`、`centerOff=0`，即"挂在头顶正上方"）；`test/browser/greet-characters.cjs`（21 个角色招手）PASS。
+- **新增线上核验脚本 `Build/live-dock-verify.cjs`**：直接把**部署站点**的 `dock.html` 打开、注入假桥、推一条 `call` 邀请，量位置并截图。实测（线上那份分块）：`{"text":"同事乙 来电 · 语音通话","buttons":["拒绝","接听"],"aboveStrip":380,"barToStage":0,"centerOff":0,"clip":"Wave","stagePx":452}`，点「接听」记到 `["live-1", true]`，截图 `Build/live-dock-call.png`。这个脚本比本地 harness 更硬：**它核的是打包产物，本地好看而线上是旧的瞒不过去**。
+- **前端已上线**（逐文件核过，**没有** `scp -r`、没有碰 `dist/download/`）：`dock.html`（`9f3c0a4b…`）、`assets/dock-CmPIa763.js`（`8359c959…`）、`assets/dock-BgWdkgXe.css`（`4e05196f…`）、`assets/dockStage-mQicwV4d.js`（`6e981cb8…`）——四个文件本地与远端 SHA256 逐一相同，公网再取一次哈希也相同（`8359c959…` / `4e05196f…`）；线上 HTML 引用的 6 个资源（`dock-CmPIa763.js`、`dock-BgWdkgXe.css`、`icons-CT87jDZG.js`、`characterModel-Bx0u9nAi.js`、`main-fnGAIxfv.js`、`main-CQo0e_cV.css`）**全部 200**，动态 import 的 `dockStage-mQicwV4d.js` 也 HEAD 200（1,901 字节）。`main-*` / `icons-*` / `characterModel-*` 这次名字没变（主窗口那侧没动到被引用的代码），所以没传也没有旧引用残留。后端未动，**没有重启 officeweb**。
+- **客户端 0.1.29**（**未发布**，线上 `latest.json` 仍是 0.1.26）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.29-x64.exe`，101,269,170 字节，sha256 `05fe401e42653959f359d15f16626e9d75a9bd64b61c1ec9624912dd0a5a6ff6`；`node Build/check-packaged.cjs` **27 项全绿**（含来电四条）；免安装版 `iruler-dream-0.1.29-Windows-x64.exe`（100,683,081 字节）也在。打包产物 `--office-smoke-test` → `ok: true`、加载 `https://115.159.43.237/`、electron 44.3.0、`sandbox/contextIsolation=true`、`nodeIntegration=false`。这一版同时含同目录另一条线上的改动（文件直传进度条那套桌面代码），**装它一次即可**。
+
+## 2026-09-21 14:20 有人打电话过来：人物上写清"谁来电"+ 直接给「接听 / 拒绝」（前端 `main-CbHUYQo_.js` / `dock-BNBD4W3W.js`；客户端 `0.1.28`，**未发布**）
+
+- 用户需求：「通话请求时，需要在人物上加上是谁来电，再加一个接听的按钮」。
+- **做在头像条（小窗）上**：有人用看屏幕 / 共享屏幕 / 语音三种方式打过来时，那个人的角色照样跳出来，**下面多一条来电气泡**（灵动岛那种胶囊）：`同事乙 来电 · 语音通话` / `· 想看你的屏幕` / `· 要给你看屏幕`，右边红「拒绝」+ 绿「接听」。角色站在气泡上面（`.dock-stage.over-call`），气泡贴着头像条上边缘。**（位置被用户纠正了：气泡应该在角色头顶——见上面 14:12 那条，`.dock-stage.over-call` 已删除。）**
+  - **窗户高度由页面报**（新增 `stagePx`）：气泡让舞台从 380 变成 380+62+10=452，写死在主进程里会被裁掉。`dockBounds` 收 `stagePx`（夹在 120～700，报得离谱地小就当没报、退回老常量），`dock-window.applyLayout` 记下来，`desktop-dock-preload` 与 `dock-bridge` 各清洗一遍。
+  - **接听走新通道** `office:dock-answer`（小窗 → 主进程 → 主窗口）：`office.respond(requestId, accept)`，跟通话面板那两个按钮同一条路（小窗自己不碰 socket、不碰媒体）。**老客户端没有 `answer` 桥就不渲染按钮**，只显示"谁来电"那行字，点了不会没反应。
+  - `useCallAttention`/`callAttention` 现在把那一通邀请的 `requestId`/`kind`/`offer` 一起交给小窗（`callLabel()` 是纯规则，四条文案各一条断言）。
+- **测试**：桌面 **131/131**（新增：`office:dock-answer` 转发与来源校验、greet 带上邀请信息与脏种类、`stagePx` 三档夹取）；网页 **230/230**（`callLabel` + 源码断言）；浏览器 `dock.cjs` 新增：气泡贴条子、角色站在气泡上、`stagePx=452`、文案随种类变、**点「接听」记到 `['inv-9', true]`、点「拒绝」记到 `['inv-10', false]`**、点完气泡收起；截图 `Build/dock-call.png`。
+- **前端已上线**：`index.html`、`dock.html` + 7 个资产（`main-CbHUYQo_.js`、`dock-BNBD4W3W.js`、`dock-BeN2JkBP.css`、`icons-CfgbfAhA.js`、`characterModel-BhAuTbb6.js`、`dockStage-lcwKF5-Y.js`、`main-BG531GmC.css`）本地与线上 SHA256 逐一核过；**线上 HTML 与 dock 分块引用的每一个资源都 HEAD 200**（这次按上次的教训，先 `ls assets` 再逐个核，没有漏传）。后端未动。
+- **客户端 0.1.28**（**未发布**，线上 `latest.json` 仍是 0.1.26）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.28-x64.exe`，101,260,535 字节，sha256 `b37e1518622deaffa5b1b9c6a07ec7759875d24fe9354df6e598d4240e3172e9`；smoke 通过；`node Build/check-packaged.cjs` **27 项全绿**。
+- **事故与教训：别用 PowerShell 改文件**。修 `dock-window.test.cjs` 的断言时我用 `(Get-Content -Raw)` + `Set-Content` 做替换，而宿主是 Windows PowerShell 5.1：它按 **GBK** 读 UTF-8 文件、再写回 UTF-8，中文和换行整片烂掉（`Get-Content`/`Set-Content` 只能用于纯 ASCII 文件）。已从 git 恢复、按**当前**行为重写了整个测试文件（git 里那版还是 0.1.18 的：还在测点击穿透、默认贴托盘，和现在的代码相反）。**改文件一律用编辑工具（read/edit/write），不要走 PowerShell 管道。**
+
+## 2026-09-21 12:10 修「启动/自启不出现头像、头像忽闪」+ 关机不再被拖住（前端 `main-CNrMXNfA.js` / `dock-DMHc4XPZ.js`；客户端 `0.1.27`，**未发布**）
+
+- 用户报障：「有时候启动不出现头像，有时候开机自启不出现头像，有时候头像会消失闪烁，问题二不要阻止关机如果可以的话」。
+- **四处真因，逐条修**：
+  1. **启动先闪一条空条子** → `dock-bridge.cjs` 的初始状态改成 `hidden: true`，装桥时就 `dock.setVisible(false, 'starting')`；主窗口第一次推状态再决定显示。以前初始是"显示"，主窗口还没连上/还没登录的那一两秒会先亮一条"现在没有其他人在线"的条子，用户看到的就是"没有头像"。
+  2. **开机自启时页面根本没加载出来** → `dock-window.cjs` 现在 `did-fail-load`（`-3` 自己中断的不算）按 2s/5s/10s/30s 退避重载，`render-process-gone` 立刻重载。开机那一刻网络常常还没就绪，老代码那一次 `loadURL` 失败就是**永久透明窗口**（没有任何重试）。`dependencies.loadRetryMs` 可注入（测试调快用）。
+  3. **忽闪** → `place()` 里"任务栏不在了 / 这次量不到"要**连续三次**（`HIDE_AFTER_MISSES = 3`，跟着 1.5 秒的复查节奏）才真藏。息屏、切分辨率、全屏应用、量托盘的 PowerShell 抖一下，都会让某一次读数是"workArea == bounds"，一次就藏就是忽闪忽现。真藏起来最多多留三四秒，而条子在托盘那侧、底边别处照样能把任务栏碰出来。
+  4. **掉线把名单抹掉** → 主窗口把 `connected` 一起推给小窗，`dockRules.mergeState()` 在 `connected === false` 且这份名单为空时沿用上一份（`hidden: true` 时照旧清空）。休眠/切网/服务器重启时 `disconnect` 会先 `setPeople([])`，几秒后连上再推回真的，不保留就是"整排消失再冒出来"。
+- **关机/注销不再拖时间**（用户：「问题二不要阻止关机如果可以的话」）：`main.cjs` 新增 `app.on('session-end')`（Windows 真的结束会话时）→ 收掉头像条、光晕窗口、**停掉常驻采集流**（它会替我们申请 DISPLAY 常亮）然后 `app.exit(0)`；`before-quit` 里也停采集。托盘那条"关窗口 = 收进托盘"的 `preventDefault` 本来就有 `quitting` 放行（`query-session-end`/`session-end`/`before-quit` 三处），新增 `test/shutdown.test.cjs` 用源码级断言把这几处钉住，改掉就红。
+- **测试**：桌面 **131/131**（新增：页面加载失败重试与崩溃重载、任务栏读数抖动 3 次才藏、桥的起始隐藏状态、`connected` 透传、关机路径 2 项）；网页 **229/229**（新增 `mergeState` 六种情形 + "主窗口/小窗都得接上 connected" 的源码断言）；浏览器 `dock.cjs` 新增"掉线期间 4 个头像必须留着、连着时以服务器为准"。
+- **前端已上线**：`index.html`、`dock.html`、`assets/{main-CNrMXNfA.js,dock-DMHc4XPZ.js,icons-WYajTV1y.js,characterModel-fqmB6zru.js,dockStage-AYVZ5BBs.js}`，本地与远端 SHA256 逐一核过，线上六个被引用的资源全 **200**。`main-BG531GmC.css` / `dock-DpkPXRmi.css` 没变。
+  - **过程里的教训（差点把线上弄坏）**：这次构建因为动了 `dockRules.ts`，**共享分块的名字也全变了**（`icons-*`、`characterModel-*`、`dockStage-*`），而我第一遍上传时用 `Select-String 'main-|dock-'` 过滤了构建输出，只看见 main/dock 两个名字 → 传了新 `index.html`/`dock.html` 却**没传那两个分块**，线上有几分钟是 404（随即发现并补齐）。**以后：构建完先 `ls assets` 跟"线上 HTML 引用的资产"逐一对一遍、每个都 HEAD 200 才算完事**；不要靠过滤过的构建日志判断"哪些文件变了"。
+- **客户端 0.1.27**（**未发布**，线上 `latest.json` 仍是 0.1.26）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.27-x64.exe`，101,260,997 字节，sha256 `8e40d8cacb177eb089ddee79ad6313b78c517d8e8ab3a53c5318acf8b3a44ab4`；`--office-smoke-test` 通过（`ok: true`）；`node Build/check-packaged.cjs` **23 项全绿**（新增启动/掉线/闪烁/关机四条）。
+
+## 2026-09-20 13:34 **发布**客户端 0.1.26 给所有用户（`latest.json` 0.1.25 → 0.1.26）
+
+- 用户指令：「可以 发布吧」。
+- 一条命令：`cd OfficeDesktop && npm run publish:update -- --notes "…"`。脚本自己核验通过：大小 101,258,697 字节一致、前 1MB 哈希 `c57edebba637…` 一致（`Accept-Ranges` 在）、线上 `latest.json` 已是 0.1.26。
+- 线上确认（公网）：`https://115.159.43.237/download/latest.json` = `0.1.26` + sha256 `9af84f3a940dd63bf3fed09e91f8605704a8f6ec234f4da7d2970d4612a6cb11` + 大小 101,258,697 + 更新说明 + `releasedAt`；直链 HEAD **200**、`Accept-Ranges: bytes`。
+- **真机网络自检**（`Build/update-flow-check.cjs`，真 Electron `net.fetch`）：8.9 秒下完 101,258,697 字节，**sha256 与清单一致**，进度回调 36 次（0% → 100%）。
+- 更新说明（发给用户的）：头像条新外观（整体一个框、两侧灵动岛式纯半圆收口、颜色跟着任务栏适配，换主题最多半分钟自动跟上）+ Windows 11 上"悬停出现大窗口时头像整排位移"的修复。
+- 装了 0.1.25 及更早版本的同事，正常刷新页面就会看到右下角更新提示。服务器 `dist/download/` 现在 4 个安装器（0.1.17 回滚点、0.1.21、0.1.22 孤儿、0.1.26 当前）。
+
+## 2026-09-20 13:45 头像整体框起来（两侧**纯半圆**、灵动岛那种）+ 框的颜色跟着任务栏适配（前端 `main-Bj4dU5CG.js` / `dock-BD0rmkBl.js` / `dock-DpkPXRmi.css`；客户端 `0.1.26`，已发布）
+
+- 用户需求：「把所有的头像整体框起来，像是同一个系统内感觉，有个大的圆角框，另外要根据当前状态栏的颜色去适配」，随后追加「大框两侧用纯半圆像是灵动岛那种」。
+- **形状**：`.dock-frame` 高度 `calc(var(--dock-h) - 4px)`、**`border-radius: 999px`**（浏览器会夹成高度的一半 = 两端正好两个半圆）。**两侧留白必须按高度算**：要求 `留白 ≥ 半径 − √(框高 − 3)`（约框高的 0.26～0.35 倍，任务栏越厚越大），所以写的是 `padding: 0 calc(var(--dock-h) * .4)`；写死 px 的话厚任务栏（>48）上最边上头像的方角会戳出半圆、把边框线切断。浏览器测试里对**最边上的头像算过几何**（圆心在框高一半处，头像的角落必须在半径 − 1px 内），并在 28/40/48/64 四种任务栏厚度上验过留白公式。
+- **颜色**（跟着任务栏适配）：主进程新模块 `OfficeDesktop/taskbar-theme.cjs` 读注册表 —— `SystemUsesLightTheme`（**不是 `AppsUseLightTheme`**，本机实测"应用浅色、任务栏深色"）、`EnableTransparency`、`ColorPrevalence`、`AccentColor`（`0xAABBGGRR`，低字节红）。`frameColors(state.theme)` 把它算成三个 CSS 变量：深色任务栏 → 白色浮层 `rgba(255,255,255,.1)` + 白边 `.2`；浅色 → 黑色浮层 `rgba(0,0,0,.06)` + 黑边 `.16`；任务栏被强调色着色时边框改用强调色（里面再垫 7% 同色）；关掉透明效果时浮层加 4% 浓度。**`.dock` 自己仍然完全透明**（"别有黑底"那条不许破坏），框**不加 `overflow: hidden`**（会把头像凸出去的未读"!"和共享标记切掉）。
+- **坑**：`reg query` **只认一个 `/v`**——`reg query KEY /v A /v B` 直接 `Invalid syntax`（第一版就这么写的，整条路静默退回兜底、看起来"永远深色"），改成整把键读回来自己挑。结果缓存 30 秒，读不到退回 Electron `nativeTheme` 的明暗，**任何情况都不抛**。`dock-bridge.cjs` 每 20 秒重读、变了就**立刻重发一次完整状态**（否则要等主窗口下次推状态才换色），`theme` 过白名单清洗。本机实测读数 `{ light:false, tinted:false, accent:'#0078d7', transparent:true }`。
+- 框占宽度：条子 157 → **191**（两端半圆的留白），页面量出来报给主进程，窗口跟着长、条子位置不动。
+- **测试**：桌面 **127/127**（新增 `test/taskbar-theme.test.cjs` 六项 + `dock-bridge` 的主题转发/重发）；网页 **228/228**（`frameColors` + CSS 断言 + 四种厚度的留白公式）；浏览器 `dock.cjs` 新增：框把 4 个头像都圈住、**半径 ≥ 框高的一半（纯半圆）**、最边上头像的角没戳出半圆、深/浅/强调色三种配色各验一次；截图 `Build/dock-frame-{dark,light,accent}.png`、放大版 `Build/dock-frame-zoom-{dark,light,accent}.png`（`Build/dock-frame-zoom.cjs`，4 倍缩放）。
+- **前端已上线**：`dock-BD0rmkBl.js`、`dock-DpkPXRmi.css`、`dock.html` 三个文件本地与远端 SHA256 一致，线上 `dock.html` 已指向新文件（HEAD 200）；`main-Bj4dU5CG.js` 是上一条那版（`dockRules.ts` 变了会带上它）。**后端未动。**
+- **客户端 0.1.26**（**未发布**，线上 `latest.json` 仍是 0.1.25）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.26-x64.exe`，101,258,697 字节，sha256 `9af84f3a940dd63bf3fed09e91f8605704a8f6ec234f4da7d2970d4612a6cb11`；`--office-smoke-test` 通过；`node Build/check-packaged.cjs` **18 项全绿**。**框的形状是纯前端（CSS），不用重新打包；只有"颜色跟着任务栏"需要装这一版**（客户端才能读注册表）。
+
+## 2026-09-20 13:25 头像整体框起来 + 框的颜色跟着任务栏适配（前端 `main-Bj4dU5CG.js` / `dock-auUNR0NO.js` / `dock-D7LfaXmg.css`；客户端 `0.1.26`，**未发布**）
+
+- 用户需求：「把所有的头像整体框起来，像是同一个系统内感觉，有个大的圆角框，另外要根据当前状态栏的颜色去适配」。
+- **页面**：新增 `.dock-frame`（`border-radius: 12px`、`height: calc(var(--dock-h) - 4px)`）把头像与"暂无人在线"都圈进去。颜色由 `frameColors(state.theme)` 算成三个 CSS 变量：深色任务栏 → 白色浮层（`rgba(255,255,255,.1)` + 白边 `.2`）、浅色 → 黑色浮层（`rgba(0,0,0,.06)` + 黑边 `.16`）、任务栏被强调色着色时边框改用强调色（里面再垫 7% 同色）；关掉透明效果时浮层加 4% 浓度。**`.dock` 自己仍然完全透明**（2026-09-18 定的"别有黑底"），框**不加 `overflow: hidden`**（会把头像右上角凸出去的未读"!"和共享标记切掉）。框占一点宽度：条子 157 → 169，页面量出来报给主进程，窗口跟着长。
+- **任务栏颜色在主进程读注册表**（新模块 `OfficeDesktop/taskbar-theme.cjs`）：`SystemUsesLightTheme`（**不是 `AppsUseLightTheme`**，本机实测"应用浅色、任务栏深色"）、`EnableTransparency`、`ColorPrevalence`、`AccentColor`（`0xAABBGGRR`，低字节红）。**坑：`reg query` 只认一个 `/v`**——`reg query KEY /v A /v B` 直接 `Invalid syntax`（第一次实现就踩到，整条路静默退回兜底），所以整把键读回来自己挑。结果缓存 30 秒，读不到退回 Electron `nativeTheme` 的明暗，**任何情况都不抛**。`dock-bridge.cjs` 每 20 秒重读、变了就**立刻重发一次完整状态**（否则要等主窗口下次推状态才换色），`theme` 过白名单清洗（四个字段、强调色必须 `#rrggbb` 转小写）。
+- 本机实测读数：`{ light:false, tinted:false, accent:'#0078d7', transparent:true }`（深色任务栏 + 蓝色强调色但没勾"用在任务栏上"）→ 白色浮层。
+- **测试**：桌面 **127/127**（新增 `test/taskbar-theme.test.cjs` 六项：解析 `reg query`、ABGR→RGB、感知亮度、着色任务栏听强调色、缓存与 `refresh`、读不到时的兜底；`dock-bridge` 新增主题转发与"变了立刻重发"）；网页 **228/228**（新增 `frameColors` 与源码断言）；浏览器 `dock.cjs` 新增：**框真的把 4 个头像都圈住**、圆角 ≥10px、框高 < 任务栏高、深/浅/强调色三种配色各断言一次、换回 `left`… 截图 `Build/dock-frame-{dark,light,accent}.png`，放大版 `Build/dock-frame-zoom-{dark,light,accent}.png`（`Build/dock-frame-zoom.cjs`，4 倍缩放看细节）。
+- **前端已上线**：8 个文件（`index.html`、`dock.html`、`main-Bj4dU5CG.js`、`icons-CWk7gf1C.js`、`characterModel-DMKg22U6.js`、`dockStage-COcjP1HM.js`、`dock-auUNR0NO.js`、`dock-D7LfaXmg.css`）本地与远端 SHA256 一致，线上 `index.html`/`dock.html` 已指向新文件（HEAD 200）。**后端未动、没有重启 officeweb。**
+- **客户端 0.1.26**（**未发布**，线上 `latest.json` 仍是 0.1.25）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.26-x64.exe`，101,258,697 字节，sha256 `9af84f3a940dd63bf3fed09e91f8605704a8f6ec234f4da7d2970d4612a6cb11`；`--office-smoke-test` 通过；`node Build/check-packaged.cjs` **18 项全绿**（含新增的"任务栏颜色"三条）。主题只有在客户端里才读得到，所以要装这一版框才会跟着任务栏变。
+
+## 2026-09-20 12:56 **发布**客户端 0.1.25 给所有用户（`latest.json` 0.1.21 → 0.1.25）
+
+- 用户指令：「发布一下吧」（0.1.24 没发过，直接把 0.1.25 发出去）。
+- 一条命令：`cd OfficeDesktop && npm run publish:update -- --notes "…"`。脚本自己核验通过：大小 101,258,128 字节一致、前 1MB 哈希 `873d2bcea834…` 一致（`Accept-Ranges` 在）、线上 `latest.json` 已是 0.1.25。
+- 线上确认（公网）：`https://115.159.43.237/download/latest.json` = `0.1.25` + sha256 `2545674643557162cfdb29b9180ee3b6c3620587cdb30695447662a8134728e0` + 大小 101,258,128 + 更新说明 + `releasedAt`；直链 HEAD **200**、`Accept-Ranges: bytes`。
+- **真机网络自检**（`Build/update-flow-check.cjs`，用真 Electron 的 `net.fetch` 走客户端的网络栈；注意要用 `OfficeDesktop/node_modules/electron/dist/electron.exe` 跑，打包好的 exe 不会执行传进来的脚本）：8.7 秒下完 101,258,128 字节，**sha256 与清单一致**，进度回调 36 次（0% → 100%）。
+- 更新说明（发给用户的）：鼠标停在同事头像上 2 秒才开始提示、绿光慢慢亮约 2 秒；只是停一下时人物小一倍、不打招呼；看屏幕/共享屏幕/语音三种方式打过来时所有屏幕立刻绿起来、他的角色照当前大小跳出来招手（21 个角色的招手动作都验过）；修好了 Windows 11 上悬停出现大窗口时头像整排位移的问题。
+- 装了 0.1.21 及更早版本的同事，正常刷新页面就会看到右下角更新提示（装 0.1.25 的不会提示）。
+- **服务器 `dist/download/` 现在 387M**：0.1.17（回滚点）、0.1.21、0.1.22（那条 Win11 实验版，**没有任何清单引用**）、0.1.25（当前）。磁盘 40G 用了 16G（42%），暂时不急，但 0.1.22 那个孤儿包可以删（用户没要求，先留着）。
+
+## 2026-09-20 12:45 修 Windows 11 上的小 bug：出现大窗口时头像被顶走 + 小窗口会挑方向（前端 `dock-DHm6URPI.js` / `dock-DYMXU0aM.css`；客户端 `0.1.25`，**发布前先按"不发布"写的**）
+
+- 用户报障：「小bug 就是Windows11，鼠标放在上面出现大窗口时头像会自适应位移，需要锁定 小窗口出现的方向多变一下」。
+- **根因**：Win11 的条子贴在屏幕最左端（`LEFT_GAP = 8`），可窗口还是按"往左长"摆——窗口左边缘被屏幕夹住（`clamp` 到 0），于是**窗口右边缘不再和条子右边缘对齐**，而页面里的条子一直是 `right: 0` 靠右对齐的，就被顶到一边去了（按 156 的条子实测位移 175px）。
+- **修法**：`dockBounds` 现在按两侧的空档挑 `popup`——左边放得下就先左边（老样子），放不下才翻到右边（Win11 必然往右画）。**参考宽度固定用 `CARD_WIDTH`**（不能用当前状态的 `minWidth`，否则卡片/舞台/peek 一变条子就左右横跳）。往右画时窗口**左边缘**对齐条子左边缘，页面用 `.dock.popup-right` 把条子钉在窗口左边、卡片与舞台改成左对齐；往左画时维持原样。主进程通过 `office:dock-state` 新增的 `popup` 字段告诉小窗（`dock-bridge.cjs` 的清洗里也带上）。
+- **改动文件**：`OfficeDesktop/taskbar-position.cjs`（挑边 + 对齐）、`dock-window.cjs`（记 `popup` 并暴露）、`dock-bridge.cjs`（转发 `popup`）；`OfficeWeb/src/dockRules.ts`（`DockState.popup`）、`src/dock.tsx`（`popup-right` 类）、`src/dock.css`（条子钉左边 + 卡片/舞台左对齐）。
+- **测试**：桌面 **120/120**（新增：挑边与两侧空档、任何状态下 `strip` 完全不变、anchor `left` 下窗口 x 不变且 `popup()` 为 right、`popup` 转发）；网页 **227/227**；浏览器 `dock.cjs` 新增 `popup-right` 断言（条子钉在窗口左边、卡片左对齐、换回 `left` 就没这个类）。
+- **真机验证（本机 Win10 用 `--dock-left` 预览 Win11 摆法）**：推进假状态后，小窗页面自己报 `window.screenX + 条子左边` = **8**；把 320×380 的大舞台点亮后窗口从 123 → 320 宽（往右长），条子仍然是 **8**（一个像素没动），舞台落在条子右边（截图 `Build/dock-left-greet.png`、`Build/dock-left-bar.png`）。命令：`electron.exe . --user-data-dir=… --remote-debugging-port=9226 --dock-left` + `Build/client-eval.mjs`（`DOCTOR_PORT=9226`）+ `Build/dock-shot.ps1`。
+- **前端已上线**：`assets/dock-DHm6URPI.js`、`assets/dock-DYMXU0aM.css`、`dock.html` 三个文件本地与远端 SHA256 一致；线上 `dock.html` 已指向新文件（HEAD 200）。`main-*.js` 没变（这次只动小窗那一页）。**后端未动。**
+- **客户端 0.1.25**（**未发布**，线上 `latest.json` 仍是 0.1.21）：`Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.25-x64.exe`，101,258,128 字节，sha256 `2545674643557162cfdb29b9180ee3b6c3620587cdb30695447662a8134728e0`；`--office-smoke-test` 通过；`node Build/check-packaged.cjs` 15 项全绿（含新增的"挑边"三条）。
+- 说明：这一版把 0.1.24 的内容（慢慢亮 2 秒、peek 小舞台、打电话过来打招呼）一起带上了——0.1.24 没发出去，直接用 0.1.25。
+
+## 2026-09-20 12:20 悬停 2 秒才亮、绿光慢慢亮 2 秒、打电话过来也绿 + 用当前大小打招呼（前端 `main-BGHtv48u.js` / `dock-6CrEJYBE.js`；客户端 `0.1.24`，**按要求没有发布**）
+
+- 用户需求（一条消息三件事）：「鼠标停留在别人头像2秒后才开始亮起绿色，且亮起的时间会很慢 大概用2秒才渐渐亮起，，只是鼠标放上的话人物出现会小一倍，不用打招呼，当用三个方式打电话过来需要屏幕里面绿起来，且用当前角色大小打招呼，注意检查所有角色都要适配打招呼的动作」。
+- **停够 2 秒才算"有人来看我"**：小窗每 800ms 索要一次画面，这条心跳同时就是"我在看他"。现在 `useDockBridge` 自己计时（纯规则 `dockRules.dwellWatch`：`WATCH_DWELL_MS = 2000`、`WATCH_DWELL_GAP_MS = 1500`，中间断过或换了人就重新数），停够了才 `onPreviewWant`，并用 `waitMs` 起定时器**刚好在第 2 秒**报，不等下一次心跳。
+- **亮起来 2 秒**：`PEEK_GLOW_FADE_MS = 2000`（悬停）/ `CALL_GLOW_FADE_MS = 150`（打电话过来，急事，立刻亮）。绿光页面改成"从全透明过渡到不透明"，用 `ease-in-out`——用默认的 `ease-out` 时 2 秒的过渡在 0.6 秒就已经半亮，看着还是"一下亮"。
+- **两种场合**：`GreetMode = peek | call`。只是鼠标停一下（peek）→ 画布 **160×190**、人物小一倍、**不演动作**；有人打电话过来（call）→ **320×380**、演招手。`dock.tsx` 把 `stageMode` 报给主进程，`taskbar-position.cjs` 新增 `PEEK_SPACE = 200` / `PEEK_WIDTH = 168`（那片透明区是**会吃鼠标**的，所以 peek 只留一半），`dock-window.cjs` 的 `applyLayout` 跟着记 `peek`。
+- **三种方式打电话过来**（看我的屏幕 / 把他的屏幕给我 / 语音，服务端都是同一条 `request`）：新增 `src/callAttention.ts`（纯函数 `callAttention(requests, people)` → `{ id, name, character, mode: 'call' }`）+ `src/useCallAttention.ts`（只看"还有没有没处理的邀请"：有就立刻亮 + 让头像条把那个人拉出来招手，每 3 秒补一次，接听/婉拒/超时后 `requests` 空了自然停）。浏览器里没有绿光层，直接不挂。
+- **两个坑（都补了断言）**：
+  1. **`desktop-preload.cjs` 的白名单清洗**：它把 `previewGlow` 的载荷重建成 `{ sharing, on }`、把 `dockGreet` 重建成 `{ id, name, character }`，新加的 `fade`/`mode` 在这里被**静默丢掉** → 现象是"永远立刻亮、永远是小人儿不招手"。第一次真机量到"1ms 就到 1.000"就是它（`test/desktop-preview.test.mjs` 现在盯着这两个字段）。
+  2. **"要不要从全透明重新亮起"必须由主进程判断**（`preview-glow.cjs` 的 `payload.restart`）：窗口一藏起来，页面里的过渡和计时器就被冻住，淡出那步可能根本没跑，页面自己记的"我还亮着"是错的 → 第二次悬停时它不再淡入。页面据此先**同步**强制一帧（`void glow.offsetWidth`）再改成不透明；**别用 requestAnimationFrame**（这个小窗有时拿不到帧，实测 rAF 一直不回调、opacity 一直 0）。
+- **所有 21 个角色都适配招手**：`test/dock-rules.test.mjs` 逐个解析 21 个 GLB（有 `Wave`、通道都指向真实节点、真有旋转/位移通道）；新增浏览器 `test/browser/greet-characters.cjs` 把 21 个角色**真的**一个个挂上舞台演一遍，量手腕累计位移（待机 ≈0.02，招手 0.75～1.0，断言 > 0.15）——21 个全过（`canvas.__dockStage` 是舞台留在画布上的探针；骨骼名要按 `wrist/hand` 找，**不能写死 `Wrist.R`**，glTF 名字里的点号被 GLTFLoader 去掉了）。
+- 测试：网页 `npm test` **227/227**（新增 dwell、两种场合、21 个角色、`useCallAttention`）、桌面 `npm test` **117/117**（新增 peek 几何、`applyLayout({stageMode})`、greet `mode` 透传、光晕 `restart`/`fade`）；浏览器 `dock.cjs`（peek 160×190 / call 320×380 + 真的在动）、`greet-characters.cjs`、`desk-preview.cjs`、`chat-threads.cjs` 全过。
+- **前端已上线**：`npm run build` 后逐个传 `index.html`、`dock.html`、`assets/{main-BGHtv48u.js,icons-BvGxstLz.js,characterModel-DlqEuGVf.js,dockStage-B_gbbxIB.js,dock-6CrEJYBE.js,dock-Be_bcX47.css}`，8 个文件本地与远端 SHA256 一致；线上 `https://115.159.43.237/` 已返回 `assets/main-BGHtv48u.js`（HEAD 200，737,146 字节），`dock.html` 返回 `dock-6CrEJYBE.js`。**后端未改动、没有重启 officeweb。**
+- **真机验证"慢慢亮"**（dev 客户端 + `--remote-debugging-port=9225`，`Build/glow-fade-check.mjs`）：连上绿光页面每 150ms 读 `#glow` 的实际透明度——冷启动第一次悬停与第二次悬停都一样：**0.3s → 0.05、1s → 0.57、半亮在 1.1 秒、2 秒到 1.00**，之后保持 3.6 秒再 0.5 秒淡出；三次重复一致。`Build/glow-page-state.mjs` 打页面自述与 `__glowLog`；`Build/glow-fade-shots.cjs` 是量真实像素那一版（当天因为 DXGI 被别的采集占住抓不到画面，工具留着）。
+- **客户端 0.1.24**（**没有跑 `publish:update`**，线上 `latest.json` 仍是 0.1.21）：`npm run dist:installer` → `Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.24-x64.exe`，101,255,983 字节，sha256 `e68cdcbfa6bedeb8e1e70d70699f8e4aa253c2e97ba2c2b4839de3d260d3f19f`；`--office-smoke-test` 通过（`ok: true`，加载正式站）；`node Build/check-packaged.cjs` 逐条核对 asar 里 12 处新代码都在。
+- **版本号说明**：并行的"Windows 11 头像条放最左"改动（见下一条）已经把版本带到 `0.1.23`，而那一版（11:55 打的包）里的绿光还是"立刻亮"、preload 也还没带 `fade`/`mode`——所以这一版补成 `0.1.24`，两条改动合在一起，避免和已存在的 0.1.23 安装器混淆。
+
+## 2026-09-20 11:55 Win11 把任务栏头像条放到屏幕最左侧（Win10 不变）；**按用户要求暂不发布**（客户端 0.1.23 已打包）
+
+- 需求（用户）：「当时Windows11系统的话 就把头像简单放在屏幕最左侧，Windows10保持当下状态」。
+- 代码：`taskbar-position.cjs` 新增 `dockAnchor(os.release())`（build ≥ **22000** → `'left'`）、`LEFT_GAP = 8`，`dockBounds` 接受 `anchor`；`dock-window.cjs` 启动时定一次 anchor，并支持 `--dock-left` / `--dock-tray`（或 `IRULER_DOCK_ANCHOR=left|tray`）在任意机器上预览两种摆法。Win11 走"贴屏幕最左端"、不受托盘夹紧影响；Win10 完全走原来的"量托盘 + 贴托盘左边 + 夹住"。**本机是 Win10 19045，实测 `dockAnchor('10.0.19045') === 'tray'`，现场行为不变。**
+- 验证：桌面 `node --test test/*.test.cjs` **116/116**（新增 3 项：build 判定、Win11 左端摆放与拖动夹紧、左端不受托盘夹紧影响）；打包产物 `win-unpacked/resources/app.asar` 里能查到 `dockAnchor` / `--dock-left` / `IRULER_DOCK_ANCHOR`。
+- **发布状态：未发布**（用户 2026-09-20：「先不要发布 我测试好了给你说」）。0.1.22 曾短暂发布（11:51），随即按要求把 `dist/download/latest.json` **逐字回滚到 0.1.21**（线上确认仍是 0.1.21，没人会收到更新提示）。0.1.22 的安装器留在服务器 `dist/download/`（**没有任何清单引用它**）；0.1.23 只在本机 `Build/OfficeDesktopRelease/`（sha256 `e7409ca25a04…`）。用户说可以了再跑 `npm run publish:update`。
+- 怎么测：Win11 机器直接装 `iruler-dream-Setup-0.1.23-x64.exe`；Win10 机器想看 Win11 的样子，用 `--dock-left` 启动（或设 `IRULER_DOCK_ANCHOR=left`）。
+
+## 2026-09-20 10:00 页面自空转事故：办公室页 CPU 102%、内存狂涨、头像条一片空白（前端 `main-BIA-z1_K.js`，**不用重装客户端**）
+
+- 报障（用户）：「现在呢遇见一个严重的bug 内存和cpu占比巨大 且头像没有出现」。
+- **实测**（正式客户端 0.1.21 + `--remote-debugging-port=9223`，用 `Build/client-cpu.mjs` 按页面量，每个页面一条独立 CDP 连接）：办公室页一个渲染进程 **102% 一个核**、内存 **445MB** 且每 10 秒涨 11MB；主线程 `ScriptDuration` **5.39s / 6s**（脚本占满，布局/样式几乎为 0）；采集页与头像条页完全空闲。任务栏上的头像条只有 120px 宽、**什么都没画**，三维场景里也看不到人。
+- **根因：React 无限重渲染回路**。`ChatInbox` 的 effect 依赖里放了 `props.onUnread`，而这个回调是 `App`/`SidePanel` 每次渲染新建的箭头函数；effect 里又 `setUnreadByPerson(byPerson)`（`byPerson` 每次都是新对象）→ App 重渲染 → 新箭头 → effect 再跑 → 无限循环。主线程被占满，**渲染、IPC、头像条推送全被饿死**，所以"CPU/内存爆表"和"头像不出来"是同一个病，不是两个。
+- **修法（纯前端，刷新页面即生效）**：
+  1. `ChatInbox`：回调放进 `useRef`，effect 依赖只留 `[unread, unreadKey]`——父组件传下来的函数绝不进依赖；
+  2. `App`：`handleUnread` 用 `useCallback` 固定引用，并用 `mergeUnreadCounts(previous, next)`，内容没变就返回原对象（React 才会跳过渲染）；
+  3. `SidePanel`：`setUnread(previous => previous === count ? previous : count)`；
+  4. 新增纯函数模块 `src/unreadCounts.ts`（`sameUnreadCounts` / `mergeUnreadCounts`）。
+- 发布：`npm run build` → 上传 `main-BIA-z1_K.js` 到 `~/officeweb/dist/assets/`（后端未改动，**没有重启 officeweb**）；线上 `https://115.159.43.237/` 现在返回 `assets/main-BIA-z1_K.js`，本地与线上 SHA256 一致。
+- 真机核验（同一台机器、同一个正式客户端）：修复后办公室页 **0.30s / 6s**（原 5.39s）、进程 **249MB / 6.4 CPU 秒**（原 445MB / 260 CPU 秒），JS 堆不再持续增长；头像条回来了，截图 `Build/dock-fixed.png`（自己的头像，离托盘 8px）。
+- 回归测试：新增 `test/browser/no-spin.cjs`——真实浏览器 + 真实服务器、两个账号，先暂停三维画面，再量 5 秒里主线程忙了多少、JS 堆涨了多少：空转时 **5.00s/5s**，正常 **≈0.09s/5s**，修复前必失败、修复后连续三次稳定通过；另有 `test/unread-counts.test.mjs`（比较 / 原地返回 / 以及"这三处写法不许退化"的源码断言）。网页侧 `npm test` 219 项、桌面侧 110 项全通过，浏览器 `dock.cjs` / `desk-preview.cjs` / `chat-threads.cjs` 同批复跑通过。
+- **不需要重新打包安装器**：病在网页里，装了 0.1.21 的同事只要刷新（F5）或重启客户端一次；线上 `latest.json` 仍是 0.1.21，未动。
+- 排查工具都留在 `Build/`：`client-cpu.mjs`（按页面量主线程/脚本/布局与 JS 堆）、`client-doctor.mjs`（问每个页面 DOM/状态/报错）、`client-eval.mjs`（在某个页面里求值）。**量每个页面必须用各自的 CDP 连接**，否则读数全是 0。
+
+## 2026-09-18 19:38 **发布**客户端 0.1.21 给所有用户（`latest.json` 0.1.17 → 0.1.21）
+
+- 用户指令：「ok 发布安装器给用户吧」（0.1.20/0.1.21 是在本地打好包、验证完才发的）。
+- 一条命令：`cd OfficeDesktop && npm run publish:update -- --notes "…"`。脚本自己核验通过：大小 101,253,287 字节一致、前 1MB 哈希 `aead78829ce6…` 一致（`Accept-Ranges` 在）、线上 `latest.json` 已是 0.1.21。
+- 线上确认：`https://115.159.43.237/download/latest.json` = `0.1.21` + sha256 `4738c1336d67b2337d2bc112c07aa9ff1ab4f97bb2bdd0abf5ef442e01cb0f98` + 更新说明；直链 `Range: bytes=0-1023` 返回 **206**（可断点续传）。
+- **真机自检**（`Build/update-flow-check.cjs`，真的用 Electron 的 `net.fetch` 走客户端的网络栈）：10.4 秒下完 101,253,287 字节，**sha256 与清单一致**，进度回调 40 次（0% → 100%）——即客户端"弹提示 → 进度条 → 下载 → 校验 → 拉起安装器"这条链路是通的（没有运行安装器）。
+- 更新说明（发给用户的）：新增任务栏头像条（贴任务栏、悬停看同事工位画面、卡片上直接通话）；有人来看你时屏幕四周闪绿光、那个人的角色会跳出来招手；离开电脑自动暂停工位预览，屏幕能正常熄灭；修好了头像条盖住输入法等托盘按钮、以及高 DPI 屏幕上位置跑偏的问题。
+- 装有 0.1.17 及更早版本的同事，正常刷新页面就会看到右下角更新提示。
+- **旧安装器清理**（用户 2026-09-18：「老的清理」）：服务器 `dist/download/` 删掉 0.1.14/0.1.15/0.1.16/0.1.18，**保留 0.1.21（当前）+ 0.1.17（上一个正式发布版，留着当回滚点）** → 580M → **194M**；本地 `Build/OfficeDesktopRelease` 删掉 28 个旧安装器/压缩包（0.1.0～0.1.16、0.1.18～0.1.20 以及各种 -notify/-iconfix 变体）→ **3.18G → 0.55G**，只留 0.1.21、0.1.17 和 `win-unpacked/`（烟囱测试要用）。清理后重新核验：`latest.json` 仍指向 0.1.21、直链 `Range` 仍返回 206。
+
+
+## 2026-09-18 19:30 DPI 坑：那台机器上头像条跑到屏幕正中（客户端 `0.1.21`，**没发布**）
+
+- 报障（用户）：「完全不对啊 那台设备的头像现在又跑到了正中心」——0.1.20 的托盘测量在那台机器上算出了错误的预留值。
+- **根因（经典 DPI 陷阱）**：PowerShell 子进程默认**不是 DPI 感知**的，Windows 会把 `GetWindowRect` 返回的坐标**虚拟化**（已经除以缩放比例）。我拿到的 `TrayNotifyWnd.left` 在那台 150% 缩放的机器上其实是"已缩放的 1109"，我又除以 `scaleFactor` → 736，于是"托盘左边缘"被算到屏幕中间，条子自然跟着去了中间。这台机器 100% 缩放，虚拟化是恒等变换，所以一直看不出来。
+- **两头都堵住**：
+  1. 脚本先调 `SetProcessDPIAware()`（返回的坐标保证是物理像素）；
+  2. 换算时**用任务栏高度自校准**：量到的任务栏高度 ÷ Electron 给的 DIP 厚度 = 这套坐标系里"1 DIP 等于几个单位"；比例接近 1（±15%）就说明拿到的是已缩放坐标，**不能再除** scaleFactor。
+- 另加自检：算出来的预留 <40 DIP 或 >60% 屏宽、或者托盘顶到屏幕左边，一律当成"没量到"，退回 220 的估算值（宁可位置不完美，也不能跑到屏幕中间）。
+- **诊断落盘**：每次量到都会把原始数据写进 `%APPDATA%\iruler dream\dock-tray.json`（`scaleFactor`、托盘矩形、任务栏矩形、`space`、最终 reserve）。哪台机器位置不对，看一眼这个文件就能判断是不是缩放/坐标系的问题。本机现在是：托盘 `1640..1920`、`space: 1`、`reserve.rightOffset: 288`、条子右边缘 `1632`（正好 8px 间隙）。
+- 验证：桌面 `npm test` **110/110**（`tray-area` 8 项，新增"坐标被虚拟化过就不能再除一次缩放"和"离谱结果宁可不要"两条）；真机 dev 重启后位置不变（本机 100% 缩放），`dock-tray.json` 内容如上。
+- 打包：`0.1.20 → 0.1.21`，`iruler-dream-Setup-0.1.21-x64.exe`（101,253,287 字节，sha256 `4738c1336d67b2337d2bc112c07aa9ff1ab4f97bb2bdd0abf5ef442e01cb0f98`），`--office-smoke-test` 通过；**没有发布**（`latest.json` 仍是 0.1.17）。
+
+
+## 2026-09-18 15:35 头像条位置改成"真的去量托盘"（客户端 `0.1.20`，**没发布**）
+
+- 报障（用户）：「我另一台电脑直接盖在了输入法等那一堆按钮上了 你需要计算位置啊」。
+- **根因**：托盘宽度一直是**写死的 220 DIP**（Windows 不提供这个数字）。实测这台机器：`Shell_TrayWnd → TrayNotifyWnd` 的矩形是 **1664..1920 = 256px 宽**，也就是写死的 220 本来就压进去 36px；这台机器之所以没露出来，是因为 `dock.json` 里恰好有一次往左拖的 `dx: -123`（早期为了躲开手动留的）。用户那台机器托盘更宽（输入法 + 一堆图标），于是条子直接压在图标上。
+- **现在的做法**：
+  - 新增 `OfficeDesktop/tray-area.cjs`：用一次 PowerShell + `Add-Type` 的 P/Invoke 量 `TrayNotifyWnd` 的窗口矩形（物理像素），按 `scaleFactor` 折算成 DIP → `{ rightOffset, trayLeft }`；**缓存 30 秒**、同一时刻只跑一次、4 秒超时、非 Windows/量不到一律返回 null（退回 220 的估算值，绝不报错）。
+  - `dock-window.cjs` 建窗时、页面加载完、以及每 20 秒重量一次托盘（托盘宽度会随图标多少变）；`taskbar-position.cjs` 除了用 `rightOffset`，还拿 `trayLeft` **夹住**：就算用户把条子往右拖、或者估算值偏小，条子右边缘也不许越过托盘左边缘 8px。
+- 验证：桌面 `npm test` **108/108**（新增 `tray-area` 6 项：解析噪音/坏 JSON/空矩形、256px 换算、高 DPI 折算、副屏不算、缓存与失败兜底、并发只跑一次；`dock-window` 新增 2 项：量到就贴左边、往右拖也压不过去、量不到退回估算值）；真机 dev：清掉 `dock.json` 后条子右边缘 = **1632**，而托盘左边缘量到 **1640**（正好 8px 间隙，截图 `Build/dock-tray-gap.png` 里能看到条子和隐藏图标箭头/输入法「中」/时钟之间留了空）。
+- **打包**：客户端版本 `0.1.19 → 0.1.20`，`npm run dist:installer` 出 `Build/OfficeDesktopRelease/iruler-dream-Setup-0.1.20-x64.exe`（101,251,337 字节，sha256 见下方汇报）；打包后 `--office-smoke-test` 通过（`ok: true`）。**没有跑 `publish:update`**：线上 `latest.json` 仍是 0.1.17，服务器 `dist/download/` 里没有 0.1.20。
+
+
+## 2026-09-18 15:10 有人来看我 → 他本人从头像条里跳出来，站在任务栏上招手（前端 `dock-CB9Ne3zn.js` / `main-FdduS8rL.js`；客户端本地 dev）
+
+- 需求（用户）：「当有人看我时，除了绿色，还要把那个看我的人从状态栏头像中跳出来，站在状态栏上很大，做一个动作，动作就用下载的动作库里面找一个」。
+- **动作库**：角色 GLB（Quaternius）里本来就带 24 条动作：`Death / Gun_Shoot / HitRecieve / Idle / Idle_Gun / Idle_Sword / Interact / Kick_Left / Kick_Right / Punch_Left / Punch_Right / Roll / Run* / Sword_Slash / Walk / Wave`。挑的是 **`Wave`（招手）**——"我来看你啦"。`test/dock-rules.test.mjs` 会直接解析 GLB 的 JSON 块确认这条真的存在，改名字会立刻红。
+- **实现**：头像条上**那个来看我的人**的头像先蹦一下（`dock-jump`：抬 26px、放大 1.9 倍再落回 1.25 倍），同时条子上方开一个 **320×380 的小舞台**，用 three.js 渲染**他那套角色模型**演 `Wave`——画布下边缘贴着头像条上边缘，所以看起来就是**站在任务栏上**，1.72 米的人占画面八成（"很大"），脚下一块接触阴影。最后一个人来看我之后 3.6 秒自动收起；窗口跟着长高（`STAGE_SPACE = 390`），头像条位置不动。
+- **three.js 按需加载**：`dock.tsx` 里 `import('./dockStage')`，小窗那一页仍然只有 **6.19 kB**（three 落到共享分块 `characterModel-*.js`，593 kB，只有真有人来看时才拉；角色 GLB 走浏览器缓存）。旧的"小窗不加载 three.js"规则改成"不**静态**加载"。
+- 踩的坑：① Quaternius 的模型本来就面朝 +Z（相机方向），我按惯例转了 π，结果第一次跑出来**背对着人**（截图确认后去掉）；② 舞台窗口是懒建的，第一次闪时页面还没加载完，`send` 会丢——绿光那边同样的坑，这里靠 React 挂载后拉模型解决。
+- 验证：桌面 `npm test` **100/100**（新增舞台几何、桥接频道与可信来源门）；网页 `node --test test/*.test.mjs` **216/216**（`GREET_CLIP` 必须真的在动作库里、小窗静态 import 里不许有 three、`stage` 要报给主进程）；浏览器 `test/browser/dock.cjs` **真跑一遍 3D**：舞台出现、画布 320×380、头像带 `data-greeting`、`layout.stage === true`、**真的下载了 `man_suit.glb`**、舞台截图非空、3.6 秒后自动收起（截图 `Build/dock-greet.png`）；真机 dev 截图 `Build/screen-dock-greet.png`（李文杰的角色站在任务栏上招手，窗口 320×430）。
+- 发布：前端 `index.html`/`dock.html` + `assets/`（`dock-CB9Ne3zn.js`、`dock-BpGAQlxF.css`、`dockStage-D-wuU4OD.js`、`characterModel-0D0LrN8O.js`、`main-FdduS8rL.js`、`main-BG531GmC.css`、`icons-1E_n0O5i.js`）逐个 SHA256 核对、线上引用全部 200；后端 `preview-relay.mjs` 多带上"看的人的角色"并重启 `officeweb`（`active`）。客户端的舞台窗口代码只在 dev，没有打包发版。
+
+
+## 2026-09-18 14:50 新功能：有人来看我了 → 所有屏幕四周闪一圈绿光（后端 `preview-relay.mjs` + 前端 `main-CDaCveS3.js`；客户端本地 dev）
+
+- 需求（用户）：「当有人鼠标悬浮在自己头像上时，自己的所有屏幕的边缘都发绿光，面积很大，就是简单叠一个覆盖层的显示即可……相当于说有人来看我了，提示我一下」。
+- **信号**：小窗悬停头像本来就会每 800ms 索要那个人的最近一帧，这条心跳同时当"我正在看他"用——`useDockBridge.onDockPreviewWant` 顺手调 `office.notifyWatching` → socket `preview-watch { target }` → 服务端 `preview-relay.watch()`（目标必须在场 / 有工位 / 不是访客 / 不是自己；同一对 700ms 只转一次）→ 转给**被看的人** `watched { from, name }` → 他的页面调 `officeDesktop.previewGlow()`。
+- **绿光层**（新文件 `OfficeDesktop/preview-glow.{cjs,html,css,js}` + `preview-glow-preload.cjs`）：**每块屏幕一个**透明、整窗穿透、`screen-saver` 置顶、不抢焦点、不进任务栏的窗口，铺满整块屏；四周一大圈绿光（亮边 + 大范围绿雾 + 往中间淡出的渐变）。闪一下后 **3.6 秒**自动收掉，一直有人看就一直亮；插拔屏幕/改分辨率会重贴。**自己在共享屏幕时不闪**（否则那一圈光会被一起共享出去）。
+- 踩的两个坑（已修 + 有测试）：① 窗口是第一次闪才建的，页面还在加载时 `send` 会丢 → 现在等 `did-finish-load` 并补一次；② `main.cjs` 是按名字解构 `require('electron')` 的，用 `screen` 必须加进那行，否则启动直接 `ReferenceError`（整窗不开）。
+- 验证：桌面 `npm test` **97/97**（新增 `preview-glow` 5 项：每块屏一层、参数、闪→自动收、连闪不叠层、插拔屏幕、立刻收掉）；网页 `node --test test/*.test.mjs` **211/211**（中继的看/被看规则、限速、真服务端 `watched`、源码级链路断言）；真机 dev：`Build/glow-flash-loop.mjs` 连续闪 + `Build/screen-crop-all.cjs` 抓**每一块屏** + `Build/glow-analyze.cjs` 量四周一圈的 green excess（**这台机器壁纸本来就是绿的，肉眼看不出来**）：主屏 **14.5 → 48**、副屏也亮，`Build/glow-diff.png` 是放大 6 倍的差异图，`Build/glow-lit.png` 是主屏截图；`Build/glow-probe.mjs` 能直接问两个光晕页面「你亮了没有、在哪块屏」。中途有过一次假阴性（-0.5）：截图正好落在一次闪烁的淡出间隙里，所以**必须连续闪几次再抓**。
+- 发布：后端 `server.mjs`（488 行）+ `preview-relay.mjs`（89 行）上传后 `systemctl restart officeweb` → `active`；前端 `index.html`/`dock.html` + `assets/`（`main-CDaCveS3.js` 等）逐个 SHA256 核对，线上 main 里能查到 `preview-watch` / `watched` / `previewGlow`。客户端的绿光层只在 dev，没有打包发版。
+
+
+## 2026-09-18 14:20 走开/采集失败不再抹掉最后一张；更正：「Elsa 没在广播」是误判（前端 `main-Gb8SQmGe.js` + 后端 `preview-relay.mjs`）
+
+- 用户追问：「为啥没有获得屏幕 不是说了保留离座1分钟前的最后一张 吗」。
+- **先查真相**：从办公室页面把服务端的实时人头读出来（`office-peek.mjs --eval` + React fiber，见下）：Elsa `annotate=true`（**她是桌面客户端**）、在座时 `previewSharing=true`（**她一直在正常广播**）。所以上一轮"她的客户端从没广播过、可能是网页登录"是**误判**，要更正。真正的原因是三个都在我们这边：
+  1. 小窗只问一次帧（14:00 已修，悬停期间每 800ms 再要）；
+  2. 服务端不留帧，看的人手里没有就没有（13:53 已修，按账号缓存 + join 快照）；
+  3. **`ambient-sharing:false` 会把画面抹掉**：显示器关掉会让采集失败 → 客户端发它 → 以前服务端 `sendPreview(null)` 让所有人和缓存都清空，看起来就是"办公室还关着屏幕"。
+- 第 3 条这次修掉：`preview-relay.stop()` **不再删缓存**（只发一帧 null 告诉别人"现在没有实时画面"），`useOffice` 收到 null 也**不删手里那一张**（只有人真的离开空间、`retainPresent` 清整条时才丢）。`test/desktop-preview.test.mjs` 新增断言盯着这两处。
+- 另外记一条坑：**任何人走开或断线重连后 `previewSharing` 都是 false**（服务端的人在重连时重建），要等他下一次出帧才回到 true——不能拿这个当成"他的客户端坏了"的证据。
+- 验证：`node --test test/*.test.mjs` **208/208**；真机（dev）悬停 Elsa：**卡片里有她的屏幕画面** + 暗绿「在座」（截图 `Build/dock-card-elsa4.png`）；更早的 `Build/dock-card-away-lastframe.png` 是"我离座 2 分钟、采集已暂停，卡片仍是我离开前那一张"。
+- 发布：前端 `index.html`/`dock.html` + `assets/`（`main-Gb8SQmGe.js`、`main-BG531GmC.css`、`dock-Dg1JwL3x.js`、`dock-C99WVchE.css`、`icons-uUDpnXpb.js`）+ 后端 `preview-relay.mjs`（`server.mjs` 未改），逐个 SHA256 核对；`systemctl restart officeweb` → `active`，站点 200。
+
+
+## 2026-09-18 14:05 「不在就用最后一张」：服务端记住每个人的最后一帧（后端 `preview-relay.mjs` + 前端 `dock-Dg1JwL3x.js`）
+
+- 用户把三条要求又说了一遍：「不要出现此人不在电脑前的文字 不在的话用最后一张 不要再办公室还关着屏幕」。查下来文字那条上一轮已经删了，剩下两条卡在**根本没有画面可显示**上：低清预览一直是"纯转发"的——服务端不留帧，看的人手里没有就是没有。实测（dev 里挨个悬停）：自己和李文杰有画面，离座 14 分钟的 Elsa 是一片白。另外小窗**只问一次帧**：悬停早了（主窗口手里还没有这个人的画面）就永远是一片白，直到挪开再悬停。
+- **后端：新增 `preview-relay.mjs`**（把原来写在 `server.mjs` 里的 `sendPreview` + `preview` 处理搬出来，顺便加能力）：
+  - 校验限速照旧（访客不广播、400ms 一帧、250KB 封顶、必须是 `data:image/jpeg;base64,`）；
+  - 转发给"能看的人"（分享者自己也收，他桌上那块显示器才有画面）；
+  - **按账号 `clientId` 缓存最后一帧**：人走开（客户端暂停采集、什么都不发）之后画面继续留着，别人——**包括刚启动的客户端**——都拿得到。`join` 结束时补一份快照（`previewRelay.snapshot(s.id)`），新开的客户端不用再等每个人下一次采集（最长 12 秒，人不在电脑前就永远不采），整间办公室不再是黑屏。
+  - **只有明说停止广播**（`ambient-sharing:false`：关掉预览或关窗）才清掉最后一帧；断线只清限速表（人回来还认得出是他，重连也还在）。
+  - `server.mjs` 因此**从 500 行降到 485 行**（正好离上限更远了）：`sendPreview` 删除、`preview` 处理收成一行、新增 join 快照与 disconnect 清理。
+- **前端：小窗悬停期间每 800ms 再要一次帧**（`PREVIEW_POLL_MS`）：主窗口手里那张可能还没到，只问一次就会一直白着。
+- 顺带确认：`dock.tsx` 收到空帧不覆盖已有的图、`useDockBridge` 有画才发——离座的人显示的就是"最后那一张"。
+- 验证：`node --test test/*.test.mjs` **207/207**（新增 `preview-relay` 5 项：转发/回显/访客兜底/脏数据/限速、"人走开最后一张留着"、"明说停止才清掉"、"按账号记重连还在"；新增 `preview-snapshot` 5 项：**在真服务端上**验回显、join 快照、停止广播后不再补、访客兜底、限速）；浏览器 `test/browser/dock.cjs` PASS（改成断言"悬停期间反复要帧"，并保留离座标签/暗红暗绿/空帧不顶掉最后一张那些断言）；`test/browser/desk-preview.cjs`、`workstation-preview.cjs` 都 PASS（预览链路没被改坏）。
+- 发布：后端 `server.mjs` + `preview-relay.mjs` 上传后 `sudo -n systemctl restart officeweb`（`active`，日志 `OfficeWeb ready on http://127.0.0.1:3108`，站点 200）；前端 `index.html`/`dock.html` + `assets/` 5 个 js/css（`dock-Dg1JwL3x.js`、`dock-C99WVchE.css`、`main-D6IWcUNw.js`、`main-BG531GmC.css`、`icons-uUDpnXpb.js`）逐个 SHA256 核对，线上引用全部 200。
+- 真机（dev）截图：`Build/dock-card-self2.png`（我自己的卡片有自己的画面 + 暗红「离座 1 秒」）、`Build/dock-card-li2.png`（李文杰 + 暗绿「在座」+ 他的画面）。**Elsa 的卡片仍然是"暂时没有画面"**：她的客户端压根没有广播过工位预览（浏览器登录/老客户端都可能），服务端也就没有她的画面——这不是坏了，是真的没有，`Build/dock-card-elsa3.png` 就是这一张。
+- 客户端（`dock-window.cjs` 等）依旧只在 dev，没有打包发版。
+
+
+## 2026-09-18 12:45 卡片上写清「在座/离座」、离座也显示最后一张画面（前端 `dock-Cznt7O8a.js` / `dock-C99WVchE.css`）
+
+- 用户要求（一句话四条）：「在座就显示暗绿色在座 离座显示暗红色离座，不要出现此人不在电脑前的文字 不在的话用最后一张 不要在办公室还关着屏幕」。
+- **状态写成字**：悬停卡片名字右边多一个小标签（`.dock-card-state`），在座 = 暗绿 `#2f6b3c` 写「在座」，离座 = 暗红 `#8f3a2c` 写「离座 N 分钟」（时长仍然来自主窗口算好的 `away`）。名字放进 `.dock-card-who`，长了先省略名字，别把标签挤出去。
+- **删掉「此人不在电脑前，预览已暂停」**（`dockRules.previewPlaceholder`）：离座不再等于"没有画面"，真的没画面时只说「暂时没有画面（对方可能没在采集）」。
+- **离座显示最后一张**：小窗收到空帧时**不覆盖**手里已有的图（`dock.tsx` 的 `onPreview` 直接 return），主窗口那边也改成**有画才发**（`useDockBridge` 的 `onDockPreviewWant` 遇到空帧不推）——否则"对方停采 → 空帧 → 卡片变白板"就是用户看到的"办公室还关着屏幕"。
+- 验证：网页 `node --test test/*.test.mjs` **197/197**；浏览器 `test/browser/dock.cjs` PASS（新增：离座标签文字 =「离座 6 分钟」且背景 `rgb(143, 58, 44)`、在座标签 =「在座」且背景 `rgb(47, 107, 60)`、整页不含「不在电脑前」、给离座的人推一帧后卡片显示图片、再推空帧图片**仍在**）；真机（dev）截图 `Build/dock-card-away.png`（我是甲方 + 暗红「离座 1 分钟」）与 `Build/dock-card-here.png`（李文杰 + 暗绿「在座」+ 实时画面）。
+- **部署踩到的坑（差点把 dock 页面弄坏）**：这一版 `icons-*` 分块的哈希从 `CD4QjoSP` 变成了 `uUDpnXpb`，`dock.html`（和 `index.html`）都引用它。我按上一次的文件名上传，`scp` 报 `No such file or directory`，而**新的 dock.html 已经先传上去了**——那一瞬间线上 dock.html 指向一个不存在的 icons 分块。发现后立刻补传 `assets/icons-uUDpnXpb.js` 并逐个 `curl` 线上引用（`dock-C99WVchE.css`、`dock-Cznt7O8a.js`、`icons-uUDpnXpb.js` 全部 200 且 content-type 正确，不是 SPA 回退的 HTML）。**教训：重传前端前先 `ls Build/OfficeWeb/assets`，把 `index.html`/`dock.html` 里引用的每个文件名（含 `icons-*`）都对着真实文件核一遍，别照抄上一轮的清单。**
+- 发布：`index.html`、`dock.html` + `assets/` 下 5 个 js/css（`main-D6IWcUNw.js`、`main-BG531GmC.css`、`dock-Cznt7O8a.js`、`dock-C99WVchE.css`、`icons-uUDpnXpb.js`），SHA256 与本地逐一相同。客户端侧仍是 dev，没打包发布。
+
+
+## 2026-09-18 12:30 头像条点不动：不用点击穿透了，窗口跟着状态收放（前端 `dock-DXTdviRe.js`；客户端本地 dev）
+
+- 报障（用户）：「**我鼠标放上去弹出的窗口我无法点击 快速消失了**」。先查根因再改，查出来的东西比想象的严重：
+  - 小窗原本一直 `setIgnoreMouseEvents(true, { forward: true })` 穿透，指望页面收 mousemove 来判断"指针在头像条上了"再接管点击。**实测这台机器上 ignore+forward 一条 mousemove 都不给**：`Build/dock-hover-watch.mjs` 把真实指针从 x1400 扫到 x1590（正好压过 4 个头像），穿透状态下页面收到 **0** 条 mousemove、`enters` 空、卡片不出来；用 CDP 把 `setInteractive(true)`（=关掉穿透）再扫同一条轨迹，立刻收到 40 条 mousemove、`enters` 依次是 小桃1/李文杰/我是甲方/Elsa、卡片弹出（`cardName:"李文杰"`）。所以页面永远判不出指针上来了——悬停卡片要么不出来，要么出来了也点不动。透明窗上的 forward 本来就不稳（electron#40213），不修它，改成不依赖它。
+- **新做法**：窗口**始终接收鼠标事件**，尺寸跟着状态走。没人悬停时窗口**就是头像条本身**（宽高都等于条子：实测 `window 157x40 @1420,1040`，正好压在条子上，一个像素都不多占任务栏）；悬停卡片打开时向上长高一个卡片空间、并宽到至少放得下卡片（实测悬停后 `340x250 @1237,830`，**头像条屏幕位置一动没动**，卡片完整在窗口内）。页面新增 `officeDock.layout({ expanded, width })`：**卡片开没开 + 条子实际多宽**——宽度以页面量出来的为准（`widthFor(count)` 只在页面报之前兜底），所以窗口不会再比条子宽出 30px 去盖住任务栏上别人的图标。`setIgnoreMouseEvents` / `dockRules.dockInteractive` 全部删除，测试里有断言禁止回来。
+- **顺手抓到第二个真 bug**：`dock-bridge.cjs` 转发人头时按白名单重建字段，`self` / `missed` / `away` **都没在名单里**——所以真机上"自己的头像没有白圈也不排最前、未接来电没有 `!`、**悬停卡片里没有离座时长**"（用户前一天刚要求的那个）。浏览器 harness 直接吃 `buildDockState` 的产物，所以测试全绿而真机是坏的。已在白名单补上三个字段并加断言；现在 dev 真机状态里能看到 `self:true`（我在最左）与「离座 13 秒 / 6 分钟 / 1 分钟」。
+- 另外：头像不再挂 `title`（系统悬停提示会盖在头像条上，卡片里已经写清名字/未读/离座时长）。
+- 验证：桌面 `npm test` **92/92**（新增"窗口就是头像条本身"、"悬停时向上长高一个卡片空间、关掉就收回"、"不用点击穿透"、桥接的 `office:dock-layout` 通道与白名单三字段）；网页 `node --test test/*.test.mjs` **197/197**、`tsc --noEmit` 通过；浏览器 `test/browser/dock.cjs` PASS（新增断言：卡片开着时报 `expanded:true` 且宽度 = 条子实际宽度、离开后报 `expanded:false`）。真机（dev，`electron .` + `--remote-debugging-port=9222`）：真实鼠标扫过头像 → `hover.any:true`、`card:true`、`cardName:"我是甲方 · 离座 6 分钟"`；指针移开后窗口收回 `157x40`（就是条子本身）；真机截图 `Build/screen-dock-card.png`、`Build/screen-taskbar.png`。
+- **这次验证犯了一个错，用户当场警告「不要乱打电话」**：为了证明"卡片上的按钮真的点得动"，我用真实鼠标点了第三个按钮（邀请语音）。原本打算把 `window.officeDock.action` 换成只记录不发送，但 `contextBridge.exposeInMainWorld` 暴露的对象是 `Object.freeze` 的，赋值被**静默忽略**——于是那一下真的走了 `office.request`，办公室窗口弹出「请求已发送，等待对方同意」。事后查过办公室窗口：`sessions 0`、无未接弹窗、无通知，请求自己超时了，没有留下任何东西。**以后一律不许用真实点击去点那三个按钮**（已写进 `OfficeWeb/AGENTS.md`）：要么用浏览器 harness，要么在捕获阶段拦下 click。
+- 发布：**只上传了 `dock.html` + `assets/dock-DXTdviRe.js`**（dock 是独立入口，不必连带重传主包；`https://115.159.43.237/dock.html` 已引用新 `dock-DXTdviRe.js`，SHA256 与本地一致）。客户端侧（`dock-window.cjs` / `dock-bridge.cjs` / preload）**只在 dev 目录里，没有打包发布**——`latest.json` 仍是回退后的 0.1.17，等用户测试点头再打包发版。
+
+## 2026-09-18 12:20 收起按钮写字了、共享小窗标题收窄（前端 `main-CSiebPKI.js` / `main-BG531GmC.css`）
+
+- 用户追加：「屏幕小窗口的标题太宽了，通话的收起按钮太小了 也叫"收起吧"」。
+- **通话的收起按钮**：不再是那个小小的 `⌄` 箭头，改成正常按钮并写上「收起」/「展开」（`aria-expanded` 仍在，`title` 里带对方名字）。收起后的三条规则（只有三个按钮、视频不显示、面板 ≤200×110）不变——按钮变宽后重新量过：约 141×80px。
+- **共享小窗（`SharingPreview`）的标题**：`正在共享屏幕` → **`正在共享`**、`正在共享到会议` → **`共享到会议`**；窗口 360px → **320px**，标题 13px → 12px 且 `white-space: nowrap`（标题不再撑成一长条；屏幕名仍留在底部那行，带省略号）。
+- 验证：浏览器 `test/browser/call-fold.cjs` **PASS**（新增断言：展开时按钮文字是「收起」、收起后是「展开」；同时截图 B 侧的共享小窗 `Build/sharing-preview-compact.png` 与 A 侧的收起态 `Build/call-folded.png`）。这一次也顺手修掉了用例本身的一个竞态：**必须等两边都"2 人在线"再发邀请**，否则请求会被服务器丢掉（表现为乙收不到「同意并接通」）。
+- 发布：`npm run build` → 上传 `index.html` + `dock.html` + `dist/assets/` 下 5 个 js/css。线上 `main-BG531GmC.css`、`main-CSiebPKI.js`、`icons-CD4QjoSP.js` 与本地 **SHA256 逐一相同**，且都确认返回的是真 CSS/JS 而不是 SPA 回退的 HTML；CSS 里能查到 `.call-fold`、`width:min(320px`，JS 里能查到「共享到会议」。`Build/live-boot-check.cjs` 打开正式站无页面错误。
+
+## 2026-09-18 12:05 通话窗口可以收起，收起后只剩三个按钮并且够小（前端 `main-CmZjs8oP.js` / `main-IFVeK0Av.css`）
+
+- 需求（用户）：「通话中的小窗口可以折叠起来，折叠后只剩三个按钮」「视频窗口的收起也要收起的够小」。
+- 改动：`PrivateCallPanel.tsx` 加 `.call-fold` 收起按钮（`⌄`/`⌃`），收起状态按 session id 记在本机内存；收起后**只留麦克风 / 共享 / 挂断三个图标按钮**（`aria-label` 决定语义，`title` 出提示），视频与状态文字全部隐藏、面板整体缩到最小（`main-IFVeK0Av.css` 里 `.call-folded …` 一套规则）。视频元素**不卸载**，只用 `display:none` 隐藏，展开瞬时恢复、不动共享状态。
+- **顺手修掉一个继承坑**：`styles.css` 的全局 `header { height: 102px; border-bottom }` 会落到通话卡片的 `<header class="call-heading">` 上，所以收起时怎么都是 102px 高（实测面板 172px）。现在 `.call-heading` 显式 `height:auto; min-height:0; border-bottom:0`；窄条里的中文还要 `white-space:nowrap`，否则 flex 逐字换行、高度再翻几倍。
+- 验证：浏览器 `test/browser/call-fold.cjs` **PASS**（本地服务器 + 正式 LiveKit：甲请乙共享屏幕 → 视频真的播起来 → 收起后断言只有三个按钮、视频不可见、面板 ≤200×110 且比展开窄一半 → 展开画面回来 → 再收起点挂断，两边面板都消失），截图 `Build/call-folded.png`；`tsc --noEmit` 通过。
+- **部署过程中自己踩的坑（已修）**：第一次 `scp` 把 `main-*.js/css`、`icons-*.js`、`dock-*` 直接传到了 `dist/` 根目录（应该进 `dist/assets/`），而 `static.mjs` 的 SPA 回退把缺失资源返回成 200 的 HTML——差点当成"上传成功"。已删掉放错的文件、按 `dist/assets/` 重传，并**逐个核对线上内容不是 HTML 且 SHA256 与本地一致**；线上 `main-IFVeK0Av.css` 里能查到 `.call-heading{…height:auto;min-height:0;border-bottom:0}` 与 `.call-folded`。`Build/live-boot-check.cjs` 打开正式站无页面错误。
 
 ## 2026-09-18 10:55 任务栏头像条（dock）：贴任务栏看在线同事、悬停看缩略图、可直接通话（前端 `main-C3jZuwtg.js` / `dock-XauI8cGZ.js`；客户端 0.1.18）
 
@@ -955,3 +1925,275 @@ TLS，同源反代：静态与 `/socket.io/` → `127.0.0.1:3108`，`/rtc`（Web
 - 发布BNq8_jzk/Drf0iNJg；正式HTTPS与本地一致。JS SHA256 906a789fc14fe246c6f114338cd8bd513d4815603d5a75b431e5807bc4b32df7；CSS 037b4b4be3691c2864f7ed916298007b9321966b14210dcc7f8f7830c6b33d1f。
 - server/accounts/chat-server/chat-store/chat-files/chat-access六文件哈希匹配，officeweb active；76测试及三个隔离浏览器回归通过，正式列表/私聊进入/返回已查看。
 - 备份backups/chat-threads-20260914；未覆盖业务数据。产生私聊后不得回退旧版无隔离聊天后端。详见Chat_Threads_20260914.md。
+
+
+
+## 2026-09-29 记住密码修复（找回密码待确认）
+
+仅前端已部署 main-DM4UMfvi.js / main-CgZrxncf.css，公网入口及全部七个代码资源 SHA256 与
+Build/OfficeWebAuthRecovery20260929 一致。备份 backups/login-memory-20260929/index.html。
+正式登录页浏览器验收通过，无页面异常；匿名 /api/auth/me 返回401且未启用 recoveryEnabled。
+未上传 accounts.mjs、未重启服务、未修改账号数据。找回密码接口因自动审批拒绝而尚未发布，
+界面入口保持关闭；不能把本地完成描述为正式可用。详见 Login_Recovery_20260929.md。
+
+## 2026-09-29 找回密码正式启用
+
+用户明确回复“接受这个风险，按姓名直接改密码并上线”后，已上传 accounts.mjs 并重启
+officeweb，服务 active；后端文件 SHA256 与本地一致。前端 main-DM4UMfvi.js 保持不变，
+入口及七个 JS/CSS 公网 SHA256 全部匹配。备份 backups/auth-recovery-20260929。
+正式浏览器点击“找回密码”后出现姓名、新密码和“修改密码并进入”；无页面异常。
+/api/auth/me 已声明 recoveryEnabled:true；重设接口空请求返回400，未修改真实账号。
+截图 Build/password-recovery-live.png。此条替代下文“找回密码待确认”状态。
+
+
+## 2026-09-29 方块共创空间正式发布
+
+- 已发布全新无倒角 Box 场景；旧办公室 GLB 不再被场景请求。
+- 19 种部件、放置/旋转/移动/拆除/撤销、音效、地面自建座位、共享宝箱。
+- 线上入口 main-hRXlpASE.js / main-Dv3gN8lr.css；全部 9 个 JS/CSS/HTML 公网 SHA256
+  与本地构建一致，5 个后端文件远端 SHA256 一致，officeweb active。
+- 正式 /api/build 匿名返回 401。未覆盖任何账号、名单、聊天或建造存档。
+- 308 项 Node 回归通过；VPS 双人 QA 与正式网址实际发布资源完整交互验收通过，
+  含安装、R旋转、移动、拆除、撤销、跨客户端同步、刷新、三类宝箱内容、自建椅子入座、
+  占用时禁止拆除。正式网址验收将业务 API/Socket 路由到独立 QA，未写正式测试账号。
+- 已查看正式发布资源的 1600×1080 / 1000×800 场景截图与宝箱截图，无页面异常。
+- 后端和入口备份 /home/ubuntu/officeweb/backups/box-world-20260929/。
+- Blender 源 AssetSources/BoxWorld/BoxWorld_Parts.blend（19种纯Box部件，约137KB）。
+- 当前边界：地面行走；楼梯上楼、展示屏视频播放、自建工位绑定预览在 TODO 单独跟踪。
+- 详情 Design/BoxWorld_20260929.md；证据 Build/box-production-evidence.json、box-world-evidence.json。
+
+
+## 2026-09-29 方块拱门、立体行走与地板扩展
+
+- 正式入口 main-BQcnD_WD.js / main-DM1Jpqnl.css；9 个前端文件公网 SHA256 一致，5 个后端文件远端一致，officeweb active。
+- 新增纯 Box 拱门，楼梯点击/WASD 上下行走及多人 y 高度同步；地板取消初始岛屿边界和 600 件非地板装饰限制。
+- 支持不符合承重物理的悬挑、单角支撑、悬空。保留账号、工位、聊天、建造存档与原通话流程。
+- 组件栏实测展开 149px、收起 55px（1600px / 1000px 两档窗口）。Blender 源同步为 20 种部件。
+- 313 项 Node 测试通过；隔离 QA 和正式网址实际发布资源的双人交互验收全部通过。
+- 正式网址验证仅把业务 API/Socket 路由到隔离 QA，不写入正式测试账号或建筑。
+- 已查看正式资源楼上站立、拱门和紧凑 UI 截图；无页面异常。
+- 备份 /home/ubuntu/officeweb/backups/box-expansion-20260929/；证据 Build/box-expansion-production-evidence.json、box-expansion-evidence.json。
+- 详情 Design/BoxWorld_Expansion_20260929.md；跳跃与自建工位预览等边界继续在 TODO 跟踪。
+
+
+## 2026-09-29 放置接触面高亮
+
+- 正式入口 main-CG6lf7ds.js / main-DM1Jpqnl.css；9 个前端 HTML/JS/CSS 公网 SHA256 全部匹配。
+- 新增浅蓝虚线落点轮廓、实际接触面的绿色填色及加粗亮边；无效位置为红色。
+- 按实际 Box 表面交集显示，覆盖柱顶单角支撑、侧边接地板；悬空仍可安装。
+- 移动模式排除原部件自身；漫游/移出画布隐藏，转动相机时重新计算；高亮不参与点击和碰撞。
+- 类型检查、构建通过；QA 和正式发布资源浏览器分别验证单角接触、侧边接缝、无效红色和漫游隐藏，零页面异常。
+- 已查看接缝和柱顶截图。证据 Build/box-guide-evidence.json、box-guide-production-evidence.json。
+- 仅更新前端，无后端重启或数据覆盖；备份 backups/box-guide-20260929/。
+## 2026-09-29 休闲影音区42件新物品
+
+已发布main-D7efjecU.js / main-AwCDpcjG.css，部件目录扩为62件、8类并增加搜索。
+公网9个入口/代码文件SHA256与Build/OfficeWebLoungeProps20260929一致；服务active。
+后端仅替换build-catalog.json，账号/聊天/建造存档均保留。备份backups/lounge-props-20260929。
+正式页面加载新模型、搜索与马克杯贴合0.495m桌面已实测（业务API隔离为内存，不污染正式存档）。
+证据Build/lounge-props-live.png，完整模型清单和可编辑源见Lounge_Props_20260929.md。
+
+
+
+## 2026-09-29 外方内圆拱门
+
+- 用户纠正原阶梯拱门：现为 3×3×0.5m 方正外框，2m 宽门洞，半径1m半圆内缘，拱顶2.5m，无倒角。
+- 真实圆弧轮廓挤出；独立空心碰撞近似保留门洞通行，接触面高亮不会把洞口视为实心。
+- main-Ws2IXQfI.js / main-AwCDpcjG.css；9 个前端文件公网 SHA256 一致，未改后端或存档。
+- 317 项 Node 测试、构建、90 项静态资产一致性通过。QA / 正式页面的圆弧外观、门洞通行和部件缩略图验收通过，原接触面高亮回归通过。
+- 实际页面截图 Build/round-arch-scene.png；资源证据 Build/round-arch-production-evidence.json。
+- 保留全部62件模型，Blender可编辑库和 Models/arch.glb 已由同一顶点数据重新生成。
+- 发布快照 Build/OfficeWebRoundArch20260929；VPS入口备份 backups/round-arch-20260929/。
+
+## 2026-09-29 建造遮挡与墙面安装
+
+- 用户所说“不透视”指不能隔墙看见后方物件；保留原透视相机。
+- 放置预览改为不透明且写入深度；接触面、亮边、落点轮廓开启深度测试，编辑模式停用工位前景裁切。
+- 识别墙面世界法线，四朝向自动贴面并支持相对旋转；移动时射线排除被拿起的原部件。
+- 从实际旋转网格计算接触偏移；建造存档校验允许毫米精度，修复薄墙/相框偏移和非整格桌面高度保存被拒绝。
+- 正式入口 main-CXGnSykS.js；9个HTML/JS/CSS公网SHA256全部一致，build-store.mjs远端哈希一致，服务active。
+- 318项Node回归、类型检查、构建和90项公共资源一致性通过；隔离浏览器验证四向贴墙、像素级遮挡；正式资源完整页面安装相框、保存和刷新通过，业务请求隔离到临时存档。
+- 快照 Build/OfficeWebWall20260929，备份 backups/wall-placement-20260929；证据 Build/wall-production-evidence.json、wall-app-live.png。
+- 几何资产未改变，无需重导Blender；建造/账号/聊天数据保留。
+
+## 2026-09-29 地下搭建开放
+
+- 去掉客户端和服务端y>=0限制，贴墙不再夹回地面；原工位保护仅拦与0～2m地上区域相交的部件，允许在其下方搭建。
+- 高度改为紧凑数值输入，无负数下限，清空回自动；编辑视角可绕到地下。既有地上12m上限保持。
+- 多人motion广播保留负y；地下楼梯上下行走验证通过。
+- 321项Node回归、构建、90项资源一致性通过；负3/100/10000米持久化与地下角色同步通过。
+- 正式main-C3LGtM0s.js / main-C7dwhlmq.css，9个前端公网哈希及build-store.mjs、server.mjs远端哈希一致，服务active。
+- 正式资源页面验证负高度输入、地下安装相框、保存与刷新；业务API隔离到临时测试存档。
+- 快照Build/OfficeWebUnderground20260929，备份backups/underground-20260929；未覆盖用户存档。
+
+## 2026-09-29 鼠标接点与双柱搭梁
+
+- 柱子叠接自动对齐同尺寸轴线；不同尺寸近边吸附。横梁默认抓住端点，旋转时端点随朝向变化。
+- 紧凑工具栏新增接点按钮，Q循环自动/一端/另一端/中心；中心模式保留自由错位，不强制承重。
+- 鼠标点击第一根柱顶可把4m横梁从x10搭到x14的第二根柱子；真实接触检测为两个支撑面。
+- 浏览器验证柱顶边角点击对齐、四向旋转和两个端点、墙面安装/遮挡回归；完整页面Q切换、双柱搭梁、保存刷新通过。
+- 部件库8类及1600/1000/520宽度紧凑布局通过；构建和90项公共资源一致性通过。
+- 正式main-DzoLEWt-.js / main-C7dwhlmq.css；9个HTML/JS/CSS公网哈希一致，正式资源完整页面搭接通过（业务API隔离到临时存档）。
+- 快照Build/OfficeWebAnchors20260929；备份backups/anchors-20260929；只更新前端，未重启后端或改用户存档。
+- 截图Build/bridge-app-live.png、two-pillar-beam-preview.png；几何未变，无需重新导出Blender。
+
+## 2026-09-29 空心门框跨柱落点修复
+
+- 用户截图指出实际问题是鼠标射线穿过两柱空隙，退到远处地面；此前端点切换不能解决此问题。
+- 新增buildGapPlacement，按部件真实底足和两侧支撑顶面识别跨空隙安装高度，近距离磁吸对齐两只脚；不改门洞模型或碰撞。
+- 仅在真实底足同时接触两个部件、且落点前方无更近射线命中时吸附；自由悬空仍保留，手动高度优先。
+- 浏览器覆盖门框/圆拱、两个旋转方向、地下、直接指向空隙、远处命中和近处遮挡；接触面至少两个。墙面/端点/遮挡回归通过。
+- 正式main-CdSqxxwg.js / main-C7dwhlmq.css；9个前端文件公网哈希全部一致。正式资源页面直接指向空隙安装门框、保存刷新通过，业务API隔离到临时存档。
+- 构建与90项静态资源一致性通过；快照Build/OfficeWebGap20260929、备份backups/hollow-gap-20260929。
+- 已查看Build/hollow-gap-preview.png、gap-app-live.png。仅前端，无服务重启或用户数据覆盖。
+
+## 2026-09-29 建造体验与62件部件规格核对
+
+- 发布 main-Br8NALOE.js / main-C7dwhlmq.css；9个HTML/JS/CSS公网SHA256一致，build-catalog.json远端哈希一致，服务active。
+- E取同款、F聚焦、Shift+R反向旋转；目标金色/拆除红色轮廓；连续撤销/重做；移动保存失败保留拿起状态，可重试或Esc恢复。
+- 实测62件四朝向网格；dimensions显示实际规格，size保留居中范围；宝箱范围覆盖外凸锁扣，几何及已建物件外形不变。
+- 325项Node测试、构建、90项公共资产一致性通过；1600/1000/520宽度紧凑工具栏通过。
+- 正式资源浏览器验证快捷操作、撤销/重做、取消移动、保存冲突重试；双柱空隙安装与刷新回归通过。业务API隔离到临时存档。
+- 已查看 Build/build-experience-live.png；证据 Build/build-experience-production-evidence.json；快照 Build/OfficeWebExperience20260929。
+- 备份 backups/build-experience-20260929；仅更新前端与目录，不覆盖建造/账号/聊天数据。Blender库元数据已同步。
+- 原panels.css超500行，将管理面板样式拆至admin-panel.css；构建CSS哈希不变。OfficeWeb除用户豁免锁文件外均≤500行。
+
+## 2026-09-29 建造三向旋转快捷键
+
+- 已发布 main-C9mGA-_G.js / main-DBOwZaBP.css；9个前端文件公网SHA256一致，build-store.mjs/build-http.mjs远端一致，服务active。
+- 取消底部旋转按钮，改为紧凑三轴角度显示和屏幕快捷键提示：Q/W左右、X前后、Z侧翻、Shift反向；C接点；R兼容旧操作。仅安装/移动模式截获旋转键，漫游W走路保留。
+- 新增pitch/roll可选字段，旧存档默认0；旋转几何底部归零，实际碰撞/贴面与缓存键包含三轴。翻倒座椅不提供坐下入口，翻倒地板不套水平续铺规则。
+- 327项测试、构建、90项资源一致性通过；62件×三轴四档组合尺寸检查、保存与非法角度校验通过。
+- 正式页面验证Q/W、X/Z及反向操作、横柱保存刷新；移动取消/失败重试/撤销重做、双柱中空搭接回归通过。业务API隔离，不污染用户存档。
+- 1600/1000/520宽度工具栏保持紧凑；已查看Build/build-experience-live.png。
+- 快照Build/OfficeWebRotation20260929，备份backups/build-rotation-20260929，证据Build/build-rotation-production-evidence.json。
+- 部件基础几何不变，无需改Blender模型；只是实例朝向变化。没有覆盖账号/聊天/建造数据。
+
+## 2026-09-29 边行走边建造与常驻按键提示
+
+- 旋转键由Q/W改为Q/R；W不再被建造事件拦截，安装和移动时WASD保持行走。
+- 编辑时独立常驻快捷键条：WASD行走、Q/R水平、X前后、Z侧翻、Shift反向、C接点、左键操作、Esc退出、Ctrl+Z撤销；落点提示不覆盖快捷键。
+- 正式main-yPqYzf5T.js / main-ClD1epYs.css，9个公网文件SHA256与快照一致；只发布前端，不重启后端。
+- 实际页面验证安装模式W持续按下使角色位置变化且角度不变，Q/R旋转、翻转、移动重试、撤销及保存刷新通过；业务API隔离。
+- 工具栏1600/1000/520响应式、构建、90个资源一致性通过；修改文件均≤500行。已查看正式页面编辑提示截图。
+- 快照Build/OfficeWebWalkBuild20260929，备份backups/walk-build-20260929，证据Build/walk-build-production-evidence.json。
+
+## 2026-09-29 场景内旋转轴按键提示
+
+- 按用户纠正，将Q/R、X、Z提示从底部移至预览部件周围的三色旋转环；标签朝向镜头、选取上侧弧段，随部件与视角更新。
+- 环与标签遵守深度遮挡，不参与拾取；漫游/移出/取消时隐藏，释放时回收纹理和几何。底部仅保留行走、安装等通用操作。
+- 正式main-D1XQ0Iic.js，9个前端文件公网SHA256一致；无后端重启或存档修改。
+- 本地及正式页面旋转/翻转、W行走、保存刷新、取消隐藏通过；双柱搭接回归、紧凑工具栏、构建与90项资源一致性通过。
+- 快照Build/OfficeWebAxisHints20260929；备份backups/axis-hints-20260929；证据Build/axis-hints-production-evidence.json。
+
+## 2026-09-29 部件移动与旋转手柄
+
+- 移动模式点部件后原位选中，显示三轴箭头与旋转环；鼠标拖箭头位移，拖圆环旋转，松手保存，拖动中Esc取消。WASD行走和键盘旋转保留。
+- 位移0.25米吸附、旋转90度；旋转围绕真实包围盒中心，恢复为已支持的三轴离散朝向与底部坐标。原有自由悬挑/地下规则不变。
+- 拖动期间锁定OrbitControls；保存失败恢复原位置，旧版本冲突保留服务端校验，退出时恢复原部件并回收预览。
+- 去掉自由旋转球/多轴平面，保留单轴手柄；文字贴近物件，按视距缩放，深度遮挡保持。
+- 327项Node测试、构建和90项公共资产一致性通过；真实鼠标位移、圆环旋转、Esc取消及失败回退通过。并行测试的转译输出改为进程独立目录，避免半写模块竞态。
+- 正式main-BrCaZsU_.js，9个前端文件公网SHA256一致；前端发布，无后端重启或数据覆盖。
+- 快照Build/OfficeWebMoveHandle20260929，备份backups/move-handle-20260929，证据Build/move-handle-production-evidence.json。
+- 正式资源完整页面鼠标手柄交互、旋转、取消、失败回退及保存刷新验收通过，业务API隔离；已查看Build/move-handle-live.png。
+
+## 2026-09-29 手柄步长与接触吸附修正
+
+- 根因：TransformControls按物件包围盒中心吸附0.25m，中心不在网格上的薄板/家具产生半格偏移；原手柄没有接触面吸附。
+- 关闭内置中心吸附，改为相对已保存原点计算位移，每格0.05m；Shift为0.01m并关闭磁吸。未拖动不跳位，未选中轴不变。
+- 仅在其他两轴实际重叠/接触时，沿拖动轴按真实碰撞片边缘0.075m内磁吸；圆拱/门洞不填实心区域；接触面高亮复用安装标记。
+- 新增4项测试覆盖薄地板半高偏移、非网格原点、毫米墙面/桌面、地下、Shift脱离吸附及空门洞；全部通过。
+- 正式页面鼠标验证5cm步长、Shift 1cm、保存、取消、旋转及失败回退通过；业务API隔离。
+- 正式main-DGjUOf9D.js，9个前端文件公网SHA256一致；构建及90项资产一致性通过，无后端或存档改动。
+- 快照Build/OfficeWebMoveSnap20260929，备份backups/move-snap-20260929，证据Build/move-snap-production-evidence.json。
+
+## 2026-09-29 Shift多选整组移动
+
+- 移动模式Shift点击追加/取消部件；普通点击重新单选，空白点击清除，Shift点击空白保留。选中轮廓与组中心手柄，拖动保持所有相对位置。
+- 多选状态仅显示位移手柄；单选旋转保留。Shift点击是多选，Shift拖动是1cm微调。
+- moveMany整组校验、一次落盘/修订号；任一版本冲突/越界则整组拒绝；占用座椅检查覆盖全部选择。Ctrl+Z/重做按组回退，并更新前序单件历史版本。
+- 333项Node测试、构建与90项公共资源一致性通过；正式资源浏览器Shift增减、两柱同位移、整组撤销、原单件旋转/失败回退通过，业务API隔离。
+- 正式main-ByNXYGlc.js，9个前端公网SHA256与build-store.mjs/build-http.mjs远端SHA256一致，服务active；用户存档保留。
+- 快照Build/OfficeWebMultiMove20260929，备份backups/multi-move-20260929，证据Build/multi-move-production-evidence.json；已查看Build/multi-move-live.png。
+
+## 2026-09-29 取消贴面自动旋转
+
+- 删除buildSurface按墙面法线追加朝向的逻辑；fitToSurface只改位置，rotation/pitch/roll完全保留用户值。
+- 浏览器覆盖四面墙×三轴四档组合共256种朝向，均不改变输入角度；边缘贴合、遮挡与双柱搭接通过；完整手柄/多选回归通过。
+- 正式页面从背面墙安装相框仍保持rotation=0，保存刷新通过（原逻辑会改成2）；业务API隔离。
+- 正式main-CtQadxTi.js，9个公网文件SHA256一致；构建与90项资源一致性通过。仅前端发布，无后端/存档更改。
+- 快照Build/OfficeWebManualRotation20260929，备份backups/manual-rotation-20260929，证据Build/manual-rotation-production-evidence.json。
+
+## 2026-09-29 狭窄顶面拾取与空白落点修正
+
+- 新增14屏幕像素范围内真实碰撞片顶边辅助吸附，优先于双支撑推断；保留近处遮挡检查和用户三轴朝向。顶面法线改用世界坐标，覆盖翻转部件。
+- 空白近水平射线不再投射到极远平面；无有效交点时隐藏预览，提示指向实体或地面。
+- build-top、build-gap、build-surface、build-experience浏览器回归通过；覆盖柱顶边缘偏入空隙、翻转、地下、近处遮挡、手柄与多选。
+- 正式资源完整页面鼠标柱顶安装、服务端校验、保存刷新通过（业务API隔离）；横梁y=3、rotation=0，已查看Build/top-edge-app-live.png。
+- 正式main-Pqjb8bmi.js，9个前端文件公网SHA256一致；构建与90项公共资产一致性通过。仅前端发布，无后端重启或存档覆盖。
+- 快照Build/OfficeWebTopEdge20260929，备份backups/top-edge-20260929，证据Build/top-edge-production-evidence.json。
+
+
+## 2026-09-29 C键四底边接点
+
+- C循环自动、底边1、底边2、底边3、底边4、中心；四条底边中点可作为放置接点，跟随当前朝向，保持手动三轴角度。
+- 选中底边金色高亮，图内显示C及当前接点，遵守实体遮挡；指定边时地板自动续铺不再覆盖接点位置。
+- 1024组部件/三轴朝向/底边落点检查通过，含等宽翻转的浮点稳定性；柱顶吸附、双柱安装、完整编辑体验回归通过。
+- 正式资源实际键盘C六档循环、图内提示和角度保持验证通过，业务API隔离；构建与90项公共资源一致性通过，改动文件均小于500行。
+- 正式main-pQjz6C0A.js，9个公网文件SHA256一致；仅前端发布，后端和用户存档不变。
+- 快照Build/OfficeWebFourEdges20260929，备份backups/four-edges-20260929，证据Build/four-edges-production-evidence.json。
+
+
+## 2026-09-29 四底边侧贴高度网格修复
+
+- 根因：指定底边侧面安装绕过高度网格，直接使用命中点y，造成厘米级错层；改为0.25m高度网格，附近真实上下边可精确对齐。保持顶面实际高度、手动高度及地下高度。
+- 四边正负高度扰动、相邻地板齐平、非网格真实顶面及手动高度回归通过；既有1024组四边朝向检查、柱顶拾取通过。构建及90项公共资源一致性通过。
+- 正式页面鼠标命中1.04m侧面，地板保存y=1，刷新重载验证通过；业务API隔离，不改已有错层存档。
+- 正式main-Dm7UQly_.js，9个公网文件SHA256一致；仅前端发布，无后端重启。
+- 快照Build/OfficeWebHeightGrid20260929，备份backups/height-grid-20260929，证据Build/height-grid-production-evidence.json。
+
+
+## 2026-09-29 旧楼梯错层存档修复
+
+- 只读核对正式53件场景，发现三段楼梯旧高度5.516/6.242/7.003米；分别修正为5.5/6.25/7米。
+- 停止服务后备份，校验各部件版本及坐标，原子保存并恢复服务active；重新下载逐字段核对，仅三项y、各自version及全局revision改变，其他部件与宝箱不变。网站可访问。
+- 备份backups/height-repair-20260929-212117，证据Build/height-repair-evidence.json。未发布新前端。
+
+
+## 2026-09-29 移动选中部件改色
+
+- 移动模式底部常驻色板，选中同步当前颜色，点击直接保存；单件/多选均支持，位置与朝向不变，复用版本校验及撤销历史。
+- 正式页面鼠标单选改色、撤销、多选统一改色、后续拖动回归通过（API隔离）；构建和90项公共资产一致性通过。
+- 正式main-CgHdfkEX.js，9个公网文件SHA256一致；快照Build/OfficeWebMoveColor20260929，备份backups/move-color-20260929。
+- 仅前端发布，12米上限仍然保留。取消地上上限的后端发布被自动审批拒绝，等待用户明确授权；代码备份在Build/PendingHighStairs，未部署。
+
+## 2026-09-29 用户明确授权解除空间边界
+
+- 取消前后端12米建造高度及人物同步截断，移除600件非地板上限；镜头距离改为Infinity，远裁切面/雾随视距调整并启用对数深度缓冲。保留有限数值、毫米精度、存档容量及原通话工位保护。
+- 22项存档/移动/寻路测试通过，覆盖高处同步、1000米保存及超过600件。正式前端13米楼梯安装保存刷新与改色移动回归通过，业务API隔离。
+- 正式main-86NeyVua.js，公网资源哈希一致；构建和90项公共资源一致性通过。后端精确修改build-store.mjs/server.mjs规则并备份重启，服务active；用户场景不覆盖。
+- 快照Build/OfficeWebHighStairs20260929，备份backups/high-stairs-20260929，证据Build/high-stairs-production-evidence.json及Build/high-stairs-backend-evidence.txt。
+
+## 2026-09-29 自建工位参与选座
+
+- 自建desk使用稳定数字编号加入原有永久工位认领、成员列表、共享屏幕及管理员释放。新增运行数据build-world.json.seats.json，禁止部署覆盖；原始场景/账号/归属文件保留。
+- 已被认领或正在坐人的工位不能移动拆除；普通椅子和沙发仍为临时坐位。高处及地下座位携带chair/stand.y，入座起身不回地面；翻倒工位不能认领。
+- 336项Node测试通过；真实页面点击高处自建椅子认领、13.25米坐下/起身、显示器生成、占用时拆除拒绝通过。正式前端资源配合隔离后端再次验证并查看Build/built-seat-live.png。
+- 正式main-B8UBKvDH.js，9个公网文件SHA256一致；后端server.mjs、admin.mjs、build-http.mjs、build-workstations.mjs核对差异后备份发布，哈希一致、服务active。构建及90项公共资产一致性通过。
+- 快照Build/OfficeWebBuiltSeats20260929，备份backups/built-seats-20260929，证据Build/built-seats-production-evidence.json及Build/built-seats-backend-evidence.json。
+
+## 2026-09-29 删除底部两行提示
+
+- 移除build-shortcuts和build-help及对应样式；消除动态提示出现/消失改变底部定位工具栏高度的问题，保留三维轴提示。
+- 构建及90项公共资源一致性通过；正式页面反复悬停工具栏包围框不变，改色/旋转/多选/撤销回归通过，业务API隔离。
+- 正式main-eUb-WZpP.js、main-GuCGzSDG.css，9个公网文件SHA256一致；仅前端发布。
+- 快照Build/OfficeWebStableToolbar20260929，备份backups/stable-toolbar-20260929，证据Build/stable-toolbar-production-evidence.json。
+
+## 2026-09-29 楼梯、屋顶与飘旗
+
+- 新增窄/高/窄高楼梯、双坡屋顶、飘旗屋顶，共67件；基础Box无倒角，踏步高0.25米，旗面装饰动画不参与碰撞。
+- 尺寸/旋转/持久化及楼梯上下行走测试通过；正式资源五件安装、保存刷新、旗帜动画验证通过，业务API隔离。Blender可编辑库及GLB同步，旧库备份Build/BoxWorldBeforeArchitecture20260929。
+- 正式main-BOnpPaH_.js，9个公网文件SHA256一致；只更新后端build-catalog.json并备份重启，服务active，目录哈希一致；未覆盖任何场景和座位归属存档。
+- 快照Build/OfficeWebArchitecture20260929，证据Build/architecture-production-evidence.json及Build/architecture-catalog-evidence.json。
+
+

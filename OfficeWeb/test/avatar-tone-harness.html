@@ -1,0 +1,57 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>头像色调试验</title>
+<style>
+  /* 故意用任务栏那种深色底，方便看"白不白" */
+  body { margin: 0; background: #1c1c1c; color: #ddd; font: 12px/1.4 "Microsoft YaHei", sans-serif; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 7px 12px; }
+  .label { width: 250px; opacity: .85; font-family: Consolas, monospace; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 6px;
+    background-repeat: no-repeat;
+    background-size: 340% auto;
+    background-position: 50% 9%;
+    background-color: rgba(0,0,0,.25);
+  }
+</style></head>
+<body>
+<div id="root"></div>
+<script type="module">
+  const thumbs = ['man_suit', 'woman_casual', 'man_worker'];
+  const variants = [
+    ['当前 B/D：1.6 / .78 / 1.15 / sepia .12', 'saturate(1.6) brightness(.78) contrast(1.15) sepia(.12)'],
+    ['下一档：1.7 / .74 / 1.18 / sepia .12', 'saturate(1.7) brightness(.74) contrast(1.18) sepia(.12)'],
+    ['再一档：1.75 / .70 / 1.2 / sepia .15', 'saturate(1.75) brightness(.70) contrast(1.2) sepia(.15)'],
+    ['更狠：1.85 / .66 / 1.22 / sepia .18', 'saturate(1.85) brightness(.66) contrast(1.22) sepia(.18)'],
+  ];
+  const root = document.getElementById('root');
+  for (const [label, filter] of variants) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const name = document.createElement('div');
+    name.className = 'label';
+    name.textContent = label;
+    row.append(name);
+    for (const id of thumbs) {
+      const node = document.createElement('div');
+      node.className = 'avatar';
+      node.style.backgroundImage = `url(/assets/characters/thumbnails/${id}.png)`;
+      if (filter) node.style.filter = filter;
+      node.title = id;
+      row.append(node);
+    }
+    // 放大版，方便肉眼看颜色
+    for (const id of thumbs) {
+      const big = document.createElement('div');
+      big.className = 'avatar';
+      big.style.width = '64px';
+      big.style.height = '64px';
+      big.style.backgroundImage = `url(/assets/characters/thumbnails/${id}.png)`;
+      big.style.backgroundSize = '340% auto';
+      if (filter) big.style.filter = filter;
+      row.append(big);
+    }
+    root.append(row);
+  }
+  window.__ready = true;
+</script>
+</body></html>

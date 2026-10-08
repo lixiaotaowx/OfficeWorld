@@ -22,6 +22,7 @@ export function syncMonitors(
   monitors: MonitorScreens,
   state: { people: Person[]; previews: Record<string, string> },
 ) {
+  monitors.refreshBoxScreens();
   for (const workstation of WORKSTATIONS) {
     const occupant = state.people.find((person) => person.seat === workstation.index);
     const preview = occupant ? state.previews[occupant.id] : undefined;
@@ -49,6 +50,38 @@ interface ScreenSlot {
 export class MonitorScreens {
   private slots = new Map<number, ScreenSlot>();
   private disposed = false;
+  private boxScene?:THREE.Object3D;
+  private boxBase?:THREE.MeshStandardMaterial;
+  refreshBoxScreens(){if(this.boxScene && this.boxBase)this.attachBoxScreens(this.boxScene,this.boxBase);}
+
+  attachBoxScreens(scene: THREE.Object3D, base: THREE.MeshStandardMaterial) {
+    this.boxScene=scene;this.boxBase=base;
+    const live=new Set(WORKSTATIONS.map(s=>s.index));
+    for(const [index,slot] of this.slots)if(!live.has(index)) {
+      slot.revision++;slot.mesh?.removeFromParent();slot.mesh?.geometry.dispose();
+      slot.texture.dispose();slot.material.dispose();this.slots.delete(index);
+    }
+    for (const seat of WORKSTATIONS) {
+      const current=this.slots.get(seat.index);
+      if(current?.mesh) {
+        current.mesh.position.set(seat.display.x,seat.display.y,seat.display.z);
+        current.mesh.rotation.y=seat.chair.angle-Math.PI;
+        current.mesh.scale.set(seat.displayScale?.[0] ?? 1,seat.displayScale?.[1] ?? 1,1);
+        continue;
+      }
+      const slot = this.createSlot(base, seat.label);
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 0.37), slot.material);
+      mesh.position.set(seat.display.x, seat.display.y, seat.display.z);
+      mesh.rotation.y = seat.chair.angle-Math.PI;
+      mesh.scale.set(seat.displayScale?.[0] ?? 1,seat.displayScale?.[1] ?? 1,1);
+      mesh.userData.monitorSeat = seat.index;
+      mesh.userData.seat = seat.index;
+      mesh.name = `seatScreen_${seat.id}`;
+      slot.mesh = mesh;
+      scene.add(mesh);
+      this.slots.set(seat.index, slot);
+    }
+  }
 
   /** Find the per-seat screen meshes in the loaded scene and take them over. */
   attach(scene: THREE.Object3D, base: THREE.MeshStandardMaterial) {

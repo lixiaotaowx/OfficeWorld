@@ -2,7 +2,7 @@
 // The password is sent with every kick so the panel is stateless; a wrong
 // password simply surfaces an error without doing anything.
 import { useState } from "react";
-import { WORKSTATIONS } from "./seats";
+import { WORKSTATIONS, workstationAt } from "./seats";
 import type { SeatOwner } from "./types";
 
 interface KickReply {
@@ -30,7 +30,7 @@ export default function AdminDialog({ seats, onKick, onClose }: Props) {
     const reply = await onKick(seat, password);
     setBusy(null);
     if (reply.ok) {
-      setNotice(`已请出「${reply.name}」（${WORKSTATIONS[seat]?.label}），他已离开空间`);
+      setNotice(`已请出「${reply.name}」（${workstationAt(seat)?.label}），他已离开空间`);
     } else {
       setError(reply.error || "请出失败");
     }

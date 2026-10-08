@@ -3,14 +3,18 @@
 <body><div id="root"></div>
 <script>
 // 假的主进程桥：让浏览器里能单独把头像条画出来（真实环境里这些通道由 Electron 提供）。
-window.__want = []; window.__actions = []; window.__hidden = 0; window.__interactive = [];
+// `person.character` 现在装的是**配色 id**（尺子角色，2026-09-28 起），头像按它取
+// `thumbnails/head-<color>.png`；留空则退回名字首字。
+window.__want = []; window.__actions = []; window.__answers = []; window.__hidden = 0;
+window.__layouts = []; window.__greets = [];
 const STATE = {
   people: [
-    { id: 'p1', name: '同事乙', character: 'man_suit', atDesk: true, sharing: true, hasPreview: true, unread: 0, missed: false },
-    { id: 'p2', name: '客户丙', character: 'woman_casual', atDesk: false, sharing: false, hasPreview: false, unread: 3, missed: false },
+    { id: 'me', name: '我自己', character: 'kraft', atDesk: true, sharing: false, hasPreview: true, unread: 0, missed: false, self: true },
+    { id: 'p1', name: '同事乙', character: 'navy', atDesk: true, sharing: true, inCall: true, hasPreview: true, unread: 0, missed: false },
+    { id: 'p2', name: '客户丙', character: 'rose', atDesk: false, sharing: false, hasPreview: false, unread: 3, missed: false, away: '离座 6 分钟' },
     { id: 'p3', name: '小李', character: '', atDesk: true, sharing: false, hasPreview: true, unread: 0, missed: true },
   ],
-  sharing: false, missed: 1, hidden: false,
+  sharing: false, missed: 1, hidden: false, edge: 'bottom', stripHeight: 40,
 };
 window.officeDock = {
   state: async () => STATE,
@@ -18,7 +22,11 @@ window.officeDock = {
   requestPreview: personId => { window.__want.push(personId); return Promise.resolve(true); },
   onPreview: callback => { window.__pushPreview = callback; return () => {}; },
   action: (kind, personId) => { window.__actions.push([kind, personId]); return Promise.resolve(true); },
-  setInteractive: value => { window.__interactive.push(value); return Promise.resolve(value); },
+  // 接听 / 拒绝某一通来电（用户 2026-09-21）：真环境里由主进程转给主窗口去应答。
+  answer: (requestId, accept) => { window.__answers.push([requestId, accept]); return Promise.resolve(true); },
+  layout: input => { window.__layouts.push(input); return Promise.resolve(input); },
+  // 有人在看我的头像：把那个人的角色拉出来演一段（真环境里由主进程转发）。
+  onGreet: callback => { window.__pushGreet = payload => { window.__greets.push(payload); callback(payload); }; return () => {}; },
   onVisibility: () => () => {},
 };
 window.__dockState = STATE;

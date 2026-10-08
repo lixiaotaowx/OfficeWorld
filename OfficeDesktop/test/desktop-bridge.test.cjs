@@ -7,7 +7,7 @@ const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const policy = require('../policy.cjs');
 
-function fixture() {
+function fixture(overrides = {}) {
   const handlers = {}, files = new Map(), calls = [], sent = [], toasts = [], timers = new Map();
   let timerSeq = 0;
   // Native toasts are raised by the main process; the mock keeps them inspectable.
@@ -92,7 +92,7 @@ function fixture() {
     attachedTo: () => '',
     isSupported: () => false,
   };
-  context.module.exports.installDesktopBridge(() => win, { displays, previewCapture });
+  context.module.exports.installDesktopBridge(() => win, { displays, previewCapture, ...overrides });
   return { call: (name, ...args) => handlers['office:' + name](event, ...args),
     event, state, files, calls, handlers, wc, displays, displayFile, win, sent, toasts, timers, stops };
 }
@@ -251,4 +251,23 @@ test('离开电脑（系统空闲超过 60 秒）就停掉采集，别挡息屏'
   f.state.idleSeconds = 0;
   assert.match(String(await f.call('preview-frame')), /^data:image\/jpeg/);
   assert.equal((await state()).paused, false);
+});
+
+test('标注浮层：中继过来的「清空」也要放行', () => {
+  // 用户 2026-09-22：「视频通话的标注清空不管用」。清空是从别人的页面中继到分享者的
+  // 浮层上的，走的也是 `office:annotation-push`；以前这张白名单只认 annotate/undo，
+  // 于是 `{type:'clear'}` 被静默丢掉，谁点清空都没用。
+  const pushed = [];
+  const layer = { isOpen: () => true, displayId: () => '11', open() {}, close() {},
+    push: payload => { pushed.push(payload); return true; } };
+  const f = fixture({ annotationLayer: layer });
+  assert.equal(f.call('annotation-push', { type: 'annotate', id: 'a', stroke: 's', points: [[0.1, 0.2]] }), true);
+  assert.equal(f.call('annotation-push', { type: 'undo', id: 'a' }), true);
+  assert.equal(f.call('annotation-push', { type: 'clear' }), true, '清空必须放行');
+  assert.equal(f.call('annotation-push', { type: 'evil' }), false, '白名单之外仍然要拒掉');
+  assert.equal(f.call('annotation-push', null), false);
+  assert.deepEqual(pushed.map(entry => entry.type), ['annotate', 'undo', 'clear']);
+  // 浮层没开的时候一条都不该往里推。
+  const closed = fixture({ annotationLayer: { isOpen: () => false, push: () => { throw Error('不该被调用'); } } });
+  assert.equal(closed.call('annotation-push', { type: 'clear' }), false);
 });

@@ -1,0 +1,116 @@
+/* 文件直传的进度卡片（用户 2026-09-22）。
+   放在**左下角**：右下角已经给未接来电（.call-alerts）和更新提示（.update-prompt）了。 */
+.file-transfers {
+  position: fixed;
+  left: 20px;
+  bottom: 46px;
+  z-index: 290;
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.file-transfers-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--muted, #5b6b5e);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, .5);
+}
+.file-transfers-head button {
+  pointer-events: auto;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.file-transfers-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-card {
+  pointer-events: auto;
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(29, 42, 31, .16);
+  background: var(--panel, #ffffff);
+  color: var(--text, #1d2a1f);
+  box-shadow: 0 14px 32px rgba(16, 32, 20, .24);
+  animation: file-card-in .2s ease-out;
+}
+.file-card.done { border-color: rgba(63, 157, 79, .5); }
+.file-card.failed { border-color: rgba(196, 88, 66, .55); }
+
+@keyframes file-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.file-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.file-card-name {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-card-size {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted, #5b6b5e);
+  font-variant-numeric: tabular-nums;
+}
+
+.file-card-bar {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(29, 42, 31, .12);
+  overflow: hidden;
+}
+.file-card-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3f9d4f, #7cc06a);
+  transition: width .18s linear;
+}
+/* 发出去是青色、收进来是绿色（和头像条上那条线一个配色）。 */
+.file-card-bar.sending > i { background: linear-gradient(90deg, #2f7fb5, #63b6e8); }
+.file-card-bar.failed > i { background: #c45842; }
+
+.file-card-state {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  min-width: 0;
+}
+.file-card-head { color: var(--text, #1d2a1f); }
+.file-card-detail {
+  color: var(--muted, #5b6b5e);
+  overflow-wrap: anywhere;
+}
+.file-card.failed .file-card-detail { color: #a4402c; }
+
+.file-card-actions { display: flex; gap: 8px; }
+.file-card-actions button { white-space: nowrap; }
+
+@media (max-width: 560px) {
+  .file-transfers { left: 8px; right: 8px; width: auto; bottom: 40px; }
+}

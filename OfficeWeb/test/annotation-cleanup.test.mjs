@@ -39,6 +39,8 @@ function screenShare({ capture = true } = {}) {
   const { MeetingScreenShare } = load("meetingScreenShare.ts", {
     "livekit-client": { Track: { Source: { ScreenShare: "screen" } } },
     screenPermission: { waitForScreenPermission: async () => {} },
+    // 换屏用的原地换轨；这里只关心开始/结束时谁被清理。
+    screenSwitch: { swapScreenTrack: async () => true },
   });
   const share = new MeetingScreenShare(socket, rooms, () => "meeting-1", () => {});
   return { share, socket };
@@ -78,18 +80,25 @@ test("私聊与会议的结束都汇到同一个 onScreenStopped", () => {
   assert.match(media, /const hadScreen = Boolean\(this\.screen\)/);
 });
 
-test("所有会结束共享的路径都在 useOffice 里清理标记", () => {
+test("所有会结束共享的路径都在 useOffice / annotationChannel 里清理标记", () => {
   const office = sourceOf("useOffice.ts");
-  assert.match(office, /m\.onScreenStopped = \(\) => clearShareMarks\(myShareScopes\.current\)/,
+  const channel = sourceOf("annotationChannel.ts");
+  // The layering is split: useOffice knows WHEN a share ended, the channel knows HOW to
+  // take the marks away. Both halves are asserted, so the split cannot silently lose a
+  // path. (The channel was extracted when useOffice.ts reached the 500-line limit.)
+  assert.match(office, /m\.onScreenStopped = \(\) => annotations\.clearShareMarks\(myShareScopes\.current\)/,
     "媒体层一报告结束就清理");
-  assert.match(office, /socket\.current\.emit\('annotate-clear', \{ scope \}\)/,
-    "要通知同屏的人一起清掉");
-  assert.match(office, /const clearShareMarks =[\s\S]{0,400}detachAnnotationLayer\(\)/,
-    "清理必须关掉桌面层");
-  assert.match(office, /s\.on\("disconnect"[\s\S]{0,200}detachAnnotationLayer\(\)/,
-    "断线/被顶下线不能把标记层留在桌面上");
-  assert.match(office, /previous !== meetingRoom\) clearShareMarks\(\[previous\]\)/,
+  // 退出会议那一条现在住在 channel 里（`trackMeetingRoom`），useOffice 只把房间号交过去。
+  assert.match(office, /annotations\.trackMeetingRoom\(meetingRoom\)/,
+    "离开会议要通知画布换房间了");
+  assert.match(channel, /if \(meetingRoom && meetingRoom !== room\) channel\.clearShareMarks\(\[meetingRoom\]\)/,
     "退出会议要清掉该会议范围的标记（会议号会被复用）");
-  assert.match(office, /void window\.officeDesktop\?\.annotations\?\.clear\(\)/,
+  assert.match(office, /s\.on\("disconnect"[\s\S]{0,200}annotations\.detach\(\)/,
+    "断线/被顶下线不能把标记层留在桌面上");
+  assert.match(channel, /socket\.current\.emit\('annotate-clear', \{ scope \}\)/,
+    "要通知同屏的人一起清掉");
+  assert.match(channel, /clearShareMarks\(scopes: string\[\]\)[\s\S]{0,300}channel\.detach\(\)/,
+    "清理必须关掉桌面层");
+  assert.match(channel, /void layer\(\)\?\.clear\(\)/,
     "隐藏桌面层前要先擦掉画布，否则下次共享会看到旧笔画");
 });

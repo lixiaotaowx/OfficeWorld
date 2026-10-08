@@ -58,8 +58,10 @@ function installChrome(window) {
   window.on('leave-full-screen', () => applyFullscreenState(window, false));
   // A reload must never leave the window stuck in whole-screen mode: the title bar -
   // and with it the maximise button - is hidden then, and the page that could ask to
-  // leave is gone (user, 2026-09-15).
-  window.webContents.on('did-navigate', () => { if (window.isFullScreen()) setWindowFullscreen(window, false); });
+  // leave is gone (user, 2026-09-15). 这里**无条件**调一次：`setWindowFullscreen` 自己
+  // 有守卫（没进过整屏的窗口不会被它缩小），而 `isFullScreen()` 在这个无边框窗口上不可靠
+  // （2026-09-22 实测），只看它会让"自己请求过的整屏"记录留在 REQUESTED 里清不掉。
+  window.webContents.on('did-navigate', () => { setWindowFullscreen(window, false); });
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
     let action;

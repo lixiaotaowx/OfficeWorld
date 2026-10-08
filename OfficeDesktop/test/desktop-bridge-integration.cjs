@@ -28,12 +28,16 @@ app.whenReady().then(async () => {
     const image=await b.previewFrame();
     const saved=await b.saveLogin({name:'Fixture',password:'fixture1'});
     const login=await b.readLogin();
-    return {count:rows.length,selected,image:image.startsWith('data:image/jpeg;base64,'),saved,loginMatches:login?.password==='fixture1'};
+    const idle=await b.systemIdle();
+    return {count:rows.length,selected,image:image.startsWith('data:image/jpeg;base64,'),saved,loginMatches:login?.password==='fixture1',
+      idleSeconds:typeof idle?.seconds==='number'&&idle.seconds>=0,idleState:typeof idle?.state==='string'};
   })()`);
   assert.equal(result.count, 2); assert.equal(result.selected, '2');
   assert.equal(result.image, true); assert.equal(result.saved, true); assert.equal(result.loginMatches, true);
+  assert.equal(result.idleSeconds, true, 'powerMonitor 必须给出真实的系统空闲秒数');
+  assert.equal(result.idleState, true, 'powerMonitor 必须给出 active/idle/locked');
   assert.equal(fs.readFileSync(path.join(profile, 'login.enc')).includes(Buffer.from('fixture1')), false);
-  evidence.checks.push({ name: 'sandbox IPC, synthetic dual displays and OS-encrypted credentials', ...result });
+  evidence.checks.push({ name: 'sandbox IPC, synthetic dual displays, OS-encrypted credentials and Windows idle time', ...result });
   await win.webContents.executeJavaScript('officeDesktop.clearLogin()');
   assert.equal(fs.existsSync(path.join(profile, 'login.enc')), false);
   await win.loadURL('https://example.com/');

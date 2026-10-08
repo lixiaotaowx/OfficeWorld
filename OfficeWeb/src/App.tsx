@@ -1,18 +1,23 @@
-import NotificationSetting from './NotificationSetting';
+import { useBuildWorkstations } from './buildWorkstations';
+import FileTransferPanel from "./FileTransferPanel";
 import PrivateCallPanel from "./PrivateCallPanel";
+import CallFloatingPanels from "./CallFloatingPanels";
 import MonitorContextMenu from "./MonitorContextMenu";
 import UpdatePrompt from "./UpdatePrompt";
 import { useAppUpdate } from "./useAppUpdate";
 import { useDockBridge } from "./useDockBridge";
-import { useEffect, useRef, useState } from "react";
+import { useCallAttention } from "./useCallAttention";
+import { mergeUnreadCounts } from "./unreadCounts";
+import { useCallback, useEffect, useRef, useState } from "react";
 import OfficeScene, { View } from "./OfficeScene";
 import SeatPicker from "./SeatPicker";
+import LookOnboarding from "./LookOnboarding";
 import SidePanel from "./SidePanel";
 import type { Account } from "./AccountGate";
 import MeetingCenter from "./MeetingCenter";
 import SharingPreview from "./SharingPreview";
 import AdminDialog from "./AdminDialog";
-import CharacterSetting from "./CharacterSetting";
+import SettingsDialog from "./SettingsDialog";
 import {
   AdminIcon,
   ChatIcon,
@@ -23,8 +28,8 @@ import {
   ScreenIcon,
   PreviewIcon,
 } from "./icons";
-import { WORKSTATIONS } from "./seats";
-import { resolveCharacterId, type CharacterId } from "./characters";
+import { WORKSTATIONS, workstationAt } from "./seats";
+import { readStoredAppearance, resolveAppearance, type Appearance } from "./look";
 import { useOffice } from "./useOffice";
 import "./styles.css";
 import "./workspace-ui.css";
@@ -39,10 +44,19 @@ function Stream({ stream }: { stream: MediaStream }) {
 }
 export default function App({ account, onLogout }: { account: Account; onLogout: () => void }) {
   const office = useOffice(account);
+  useBuildWorkstations();
+  // 有人用三种方式打过来：所有屏幕绿起来 + 头像条把那个人的角色用当前大小拉出来招手
+  // （用户 2026-09-20）。只看"还有没有没处理的邀请"，一通电话响多久就提醒多久。
+  useCallAttention({ requests: office.requests, people: office.people, sharing: office.sharing });
   // 有新版本就弹提示、下载、启动安装器（用户 2026-09-17）。
   const update = useAppUpdate();
   // 头像条要的"每人多少条未读"（总数在 SidePanel 里显示）。
   const [unreadByPerson, setUnreadByPerson] = useState<Record<string, number>>({});
+  // **必须是稳定引用 + 内容相同就返回旧对象**：这个回调会被 ChatInbox 的 effect 调用，
+  // 每次渲染都给新函数的话就会"渲染 → setState → 再渲染"空转（2026-09-20 的 CPU/内存爆表）。
+  const handleUnread = useCallback((_count: number, byPerson: Record<string, number>) => {
+    setUnreadByPerson(previous => mergeUnreadCounts(previous, byPerson));
+  }, []);
   // 任务栏头像条：把在线状态与缩略图推给那个小窗，并接收它的点击（用户 2026-09-17）。
   useDockBridge({
     enabled: Boolean(window.officeDesktop?.dockState),
@@ -52,11 +66,21 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
     unread: unreadByPerson,
     missed: new Set(office.callAlerts.map(alert => alert.target)),
     sharing: office.sharing,
+    // 短暂掉线时小窗保留上一次的名单，别让头像整排闪掉（用户 2026-09-20）。
+    connected: office.connected,
+    // 有人在小窗里看我/别人的工位：告诉服务端，被看的人屏幕闪一圈绿光（别人来看我了）。
+    onPreviewWant: office.notifyWatching,
+    // 头像条上直接按了「接听 / 拒绝」（用户 2026-09-21）：跟通话面板上那两个按钮同一条路。
+    onAnswer: (requestId, accept) => { void office.respond(requestId, accept); },
     onCommand: (kind, personId) => {
       // 看对方屏幕 / 把我的屏幕给他 / 语音通话——和右侧详情卡上的三个按钮同一条路。
       if (kind === 'call') office.request(personId, 'voice');
       else office.request(personId, 'screen', kind === 'share');
     },
+    // 有人把文件拖到了某个头像上（用户 2026-09-22）：交给唯一的 socket 拥有者去发。
+    onFiles: (personId, paths) => void office.files.sendFiles(personId, paths,
+      office.people.find(person => person.id === personId)?.name || ''),
+    transfers: office.files.dockRows(),
   });
   const [focusSeat, setFocusSeat] = useState<{ seat: number; nonce: number } | null>(null);
   // The camera can also be pointed at a person: a visitor holds no desk, so the
@@ -69,7 +93,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   }
   // The open workstations are what a visitor comes for, so that is the camera
   // position the office opens on. 空间总览 stays one click away on the rail.
-  const [view, setView] = useState<View>("desks");
+  const [view, setView] = useState<View>("overview");
   function chooseView(next: View) {
     setRenderPaused(false); setFocusSeat(null); setFocusPerson(null); setView(next);
   }
@@ -105,11 +129,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const [rePicking, setRePicking] = useState(false);
   // Error from a failed chair click, shown inside the floating picker hint.
   const [pickError, setPickError] = useState("");
-  // The avatar we wear. Owned here so the first-visit dialog can set it too.
-  const [character, setCharacter] = useState<CharacterId>(() =>
-    resolveCharacterId(
-      account.character,
-    ),
+  // The look we wear: 配色 + 配件. Owned here so the first-visit dialog can set it too.
+  // 服务端那份（`account.appearance`）优先，本机缓存只是进页面时先用着的兜底。
+  const [appearance, setAppearance] = useState<Appearance>(() =>
+    account.appearance ? resolveAppearance(account.appearance) : readStoredAppearance(),
   );
   // Dialogs for naming (first visit and rename) and the admin panel.
   const [adminOpen, setAdminOpen] = useState(false);
@@ -126,9 +149,9 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   // server state rather than stored, so it cannot drift.
   const showPicker =
     !needsName && !isVisitor && (rePicking || (Boolean(me) && mySeat === null));
-  function chooseCharacter(id: CharacterId) {
-    setCharacter(id);
-    office.setCharacter(id);
+  function chooseAppearance(next: Appearance) {
+    setAppearance(next);
+    office.setAppearance(next);
   }
   // Claim a chair clicked in the scene while the picker is up. The server does
   // the authoritative check, so a race is simply reported as a failed claim.
@@ -146,7 +169,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const httpsUrl =
     typeof location !== "undefined" ? `https://${location.host}/` : "";
   const viewNames: Record<View, string> = {
-    overview: "空间总览",
+    overview: "方块共创空间",
     desks: "开放工位",
     meeting: "会议空间",
     lounge: "休闲角落",
@@ -266,6 +289,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               ))}
             </div>
             <OfficeScene
+              accountId={account.id}
               mySeat={mySeat}
               people={office.people}
               myId={office.myId}
@@ -286,7 +310,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               // While our screen is being watched the 3D view must keep painting even
               // if this window is not focused, or viewers would see a frozen office.
               keepRendering={office.sharing}
-              character={character}
+              appearance={appearance}
               onMotion={office.reportMotion}
               onSit={office.sitSpot}
               // The office may seat us itself: a visiting client is placed on a sofa.
@@ -305,7 +329,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
                         ? "公共区沙发"
                         : me?.seat === null || me?.seat === undefined
                           ? "还没选工位"
-                          : `${WORKSTATIONS[me.seat]?.label ?? ""} 工位`}
+                          : `${workstationAt(me.seat)?.label ?? ""} 工位`}
                   </small>
                 </div>
                 <button
@@ -389,8 +413,9 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
             onMessage={office.chat}
             onFile={office.sendChatFile}
             loadFile={office.loadChatFile}
+            files={office.files}
             onOpenScreenMenu={setScreenMenu}
-            onUnread={(_count, byPerson) => setUnreadByPerson(byPerson)}
+            onUnread={handleUnread}
           />
         </main>
         <footer role="status">
@@ -398,70 +423,45 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
           <span>A SPACE FOR PEOPLE. / OFFICE WORLD</span>
         </footer>
       </div>
-      <PrivateCallPanel office={office} />
+      <CallFloatingPanels>
+        <PrivateCallPanel office={office} />
+        {office.videos['local-screen'] && Object.values(office.callStates).some(call => call.connected && call.sharing) &&
+          !meetingOpen && !office.meetings.sharing &&
+          <SharingPreview stream={office.videos['local-screen']} meeting={false} onStop={office.stopShare} />}
+      </CallFloatingPanels>
       <UpdatePrompt update={update} />
+      {/* 文件直传：进度 + 完事的「打开 / 打开文件夹」（用户 2026-09-22）。 */}
+      <FileTransferPanel files={office.files} />
       {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
-      <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} />
-      {office.videos['local-screen'] && Object.values(office.callStates).some(call => call.connected && call.sharing) &&
-        !meetingOpen && !office.meetings.sharing &&
-        <SharingPreview stream={office.videos['local-screen']} meeting={false} onStop={office.stopShare} />}
+      <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} annotation={office.annotation} />
       {help && (
-        <div className="modal-backdrop">
-          <section className="modal settings-modal">
-            <h2>设置</h2>
-            <CharacterSetting value={character} onChange={chooseCharacter} />
-            {window.officeDesktop && <p className="settings-note">
-              登录记忆：<strong>{remembered === null ? "检查中…" : remembered
-                ? "已保存，下次启动自动登录" : "未保存（只有主动退出登录才会清除）"}</strong>
-            </p>}
-            <NotificationSetting />
-            <label className="settings-row">
-              <span>暂停三维画面（语音、共享和聊天继续）</span>
-              <input type="checkbox" checked={renderPaused} onChange={e => setRenderPaused(e.target.checked)} />
-            </label>
-            <p>
-              中键拖动旋转，Shift＋中键平移，滚轮朝鼠标位置缩放。点击地面或 WASD 行走，点击自己的椅子或屏幕回座。坐下后会自动随机切换坐姿。
-            </p>
-            <p>
-              {isVisitor
-                ? "访客在公共区沙发就坐，不占用同事工位，会议、私聊、语音和共享屏幕都不受影响。"
-                : "工位一旦选定就属于你，别人无法再占用，你的共享画面也会显示在那张桌子的屏幕上。"}
-            </p>
-            <div className="settings-row">
-              <span>
-                {isVisitor ? "我的座位：" : "我的工位："}
-                <strong>
-                  {isVisitor ? "公共区沙发" : mySeat === null ? "还没选" : WORKSTATIONS[mySeat]?.label}
-                </strong>
-              </span>
-              {!isVisitor && (
-                <button
-                  className="primary"
-                  onClick={() => {
-                    setHelp(false);
-                    setRePicking(true);
-                  }}
-                >
-                  {mySeat === null ? "去选工位" : "重新选座"}
-                </button>
-              )}
-            </div>
-            <div className="actions">
-              <button onClick={() => setHelp(false)}>关闭</button>
-            </div>
-          </section>
-        </div>
+        <SettingsDialog
+          appearance={appearance}
+          onAppearance={chooseAppearance}
+          remembered={remembered}
+          renderPaused={renderPaused}
+          onRenderPaused={setRenderPaused}
+          isVisitor={isVisitor}
+          mySeat={mySeat}
+          onRepick={() => setRePicking(true)}
+          onClose={() => setHelp(false)}
+        />
       )}
       {showPicker && (
         <SeatPicker
-          character={character}
-          onCharacter={chooseCharacter}
+          appearance={appearance}
+          onAppearance={chooseAppearance}
           failed={pickError}
           onDone={() => setRePicking(false)}
           // On a first visit there is nothing to go back to, so the picker
           // cannot be dismissed until a desk has been taken.
           dismissable={mySeat !== null}
         />
+      )}
+      {/* 从没捏过角色的账号：登录后弹一次捏人面板（选过就不再见）。
+          选座面板开着的时候不叠着弹，避免两个对话框打架。 */}
+      {!showPicker && (
+        <LookOnboarding account={account} appearance={appearance} onAppearance={chooseAppearance} />
       )}
       {adminOpen && (
         <AdminDialog

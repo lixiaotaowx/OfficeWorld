@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>部件库回归</title>
+<style>body{margin:0;background:#e9e5dc;font-family:system-ui}.build-ui{--build-bottom:20px}</style>
+<div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {BuildToolbar} from '../src/BuildToolbar';
+import '../src/build.css';
+function Harness(){
+ const [settings,change]=React.useState({mode:'explore',kind:'block',color:'#e9b8b5',rotation:0,height:0});
+ window.__settings=settings;
+ return React.createElement(BuildToolbar,{settings,onChange:change,ready:true,busy:false,
+   message:'已连接',hint:'',sound:true,onSound(){},onUndo(){},undoCount:0});
+}
+createRoot(document.getElementById('root')).render(React.createElement(Harness));
+</script></html>

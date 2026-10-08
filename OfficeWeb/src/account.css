@@ -71,6 +71,7 @@
 .account-card input::placeholder { color: #81986c; }
 .account-card input:focus { outline: 2px solid #c1db8e; outline-offset: 3px; background: #364932; }
 .account-card .account-error { min-height: 22px; color: #efad8f; }
+.account-card .account-recovery { display: block; margin-left: auto; border: 0; background: transparent; color: #d7ed9d; padding: 5px 0; }
 .account-submit { width: 100%; padding: 16px; margin: 4px 0 26px; border-radius: 9px; font-size: 12px; letter-spacing: .08em; background: #d7ed9d; color: #293b25; border: 0; box-shadow: none; }
 .account-submit:hover:not(:disabled) { background: #e4f6bc; color: #263b22; }
 .account-card > small { display: block; border-top: 1px solid #667b4e40; padding-top: 21px; font-size: 9px; }

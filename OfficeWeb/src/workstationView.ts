@@ -12,10 +12,24 @@ export function workstationView(seat: Workstation, panel: THREE.Vector3, aspect:
   return { position, target };
 }
 
+/**
+ * How far in front of the camera the temporary foreground section may reach.
+ *
+ * Bounded on purpose. What this clip removes is the bit of wall or partition the
+ * workstation view is looking over, and that is always within about a metre of
+ * the camera. Leaving the clip proportional to the view distance (it used to be
+ * `depth - 1.25`, unbounded) meant that zooming out after focusing a desk cut
+ * away most of the office — `near` had grown to ~10m at an 12m distance — and
+ * only a page reload brought the view back.
+ */
+const FOREGROUND_CLIP_MAX = 1.25;
+
 /** A temporary foreground section: preserve 1.25m around the focused desk. */
 export function updateWorkstationClip(camera: THREE.PerspectiveCamera, target: THREE.Vector3, active: boolean) {
   const depth = target.clone().sub(camera.position).dot(camera.getWorldDirection(new THREE.Vector3()));
-  const near = active ? Math.max(0.1, depth - 1.25) : 0.1;
+  const near = active
+    ? THREE.MathUtils.clamp(depth - 1.25, 0.1, FOREGROUND_CLIP_MAX)
+    : 0.1;
   if (Math.abs(camera.near - near) < 0.001) return;
   camera.near = near;
   camera.updateProjectionMatrix();

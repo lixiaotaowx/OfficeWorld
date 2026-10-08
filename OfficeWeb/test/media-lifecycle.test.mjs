@@ -25,7 +25,10 @@ function setup(token = async () => ({ url: 'wss://test', token: 'test' })) {
     async connect() { this.state = 'connected'; }
     async disconnect() { this.state = 'disconnected'; this.emit('disconnected'); }
   }
-  const { MediaRooms } = load('mediaRooms.ts', { Room });
+  // 屏幕共享的发布参数用得到这个 preset（媒体房间的配置见 screen-quality.test.mjs）。
+  const ScreenSharePresets = { h720fps15: { width: 1280, height: 720,
+    encoding: { maxBitrate: 1_500_000, maxFramerate: 15 } } };
+  const { MediaRooms } = load('mediaRooms.ts', { Room, ScreenSharePresets });
   const manager = new MediaRooms(token, () => {}, () => {});
   return { manager, created };
 }

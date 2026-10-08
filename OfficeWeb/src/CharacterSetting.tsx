@@ -1,14 +1,15 @@
-import { CHARACTERS_BY_GENDER, type CharacterId } from './characters';
+// Settings entry for 我的角色: the same two-step chooser the first visit shows
+// (1 配色 → 2 配件), so the player never reads a bare dropdown.
+import LookChooser from './LookChooser';
+import type { Appearance } from './look';
+import DockLookPreview from './DockLookPreview';
 
 export default function CharacterSetting({ value, onChange }: {
-  value: CharacterId; onChange: (id: CharacterId) => void;
+  value: Appearance; onChange: (next: Appearance) => void;
 }) {
-  return <label className="character-setting">我的角色
-    <select aria-label="选择角色" value={value}
-      onChange={e => onChange(e.target.value as CharacterId)}>
-      {(['woman', 'man'] as const).map(g => <optgroup key={g} label={g === 'woman' ? '女角色' : '男角色'}>
-        {CHARACTERS_BY_GENDER[g].map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-      </optgroup>)}
-    </select>
-  </label>;
+  return <section className="character-setting" aria-label="我的角色">
+    <span className="character-setting-title">我的角色</span>
+    <LookChooser value={value} onChange={onChange} />
+    <DockLookPreview value={value} />
+  </section>;
 }

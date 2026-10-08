@@ -12,7 +12,7 @@ try {
 }
 
 /** Temporary reservations belong to a live socket, independently of the permanent roster. */
-export function createSitting(people, roster, publish, seatCount) {
+export function createSitting(people, roster, publish, seatCount, extraSeat) {
   const valid = new Set(publicSeats.map(s => s.id));
   for (let i = 0; i < seatCount; i++) valid.add(`desk-${i}`);
   const occupant = id => [...people.values()].find(p => p.sittingSpot === id);
@@ -31,6 +31,7 @@ export function createSitting(people, roster, publish, seatCount) {
      */
     freeSofa(person) {
       for (const seat of publicSeats) {
+        if (extraSeat && !extraSeat(seat.id)) continue;
         if (!seat.id.startsWith('sofa-')) continue;
         const other = occupant(seat.id);
         if (!other || other.id === person.id) return seat.id;
@@ -42,7 +43,7 @@ export function createSitting(people, roster, publish, seatCount) {
         if (typeof reply !== 'function') return;
         const person = people.get(socket.id);
         if (!person) return reply({ ok: false, error: '请先进入空间' });
-        if (id !== null && !valid.has(id)) return reply({ ok: false, error: '无效的座位' });
+        if (id !== null && !(extraSeat ? extraSeat(id) : valid.has(id))) return reply({ ok: false, error: '无效的座位' });
         const error = id === null ? null : blocked(id, person);
         if (error) return reply({ ok: false, error });
         person.sittingSpot = id;

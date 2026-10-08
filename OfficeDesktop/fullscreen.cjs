@@ -50,4 +50,20 @@ function setWindowFullscreen(window, on) {
   return wanted;
 }
 
-module.exports = { applyFullscreenState, setWindowFullscreen };
+/**
+ * 这个窗口现在算不算"整屏"。
+ *
+ * **不能只看 `window.isFullScreen()`**：2026-09-22 真机实测（`Build/dock-why-check.mjs`）——
+ * 页面调 `officeDesktop.setFullscreen(true)` 之后，页面上的 `iruler-fullscreen` 类加上了、
+ * 窗口也确实铺满了屏幕，但 `isFullScreen()` 仍然返回 **false**（无边框 + 透明窗口上它不可靠，
+ * 和上面那句"事件也不会来"是同一个毛病）。所以自己请求过的状态（`REQUESTED`）也算数：
+ * 我们要么是在自己这边进的整屏，要么是外面（F11/系统）真的把它变成整屏了。
+ *
+ * 头像条"整屏时藏起来"就靠这个判断（`main.cjs` 的 `systemHidden`）。
+ */
+function isWindowFullscreen(window) {
+  if (!window || window.isDestroyed?.()) return false;
+  return REQUESTED.has(window) || window.isFullScreen?.() === true;
+}
+
+module.exports = { applyFullscreenState, setWindowFullscreen, isWindowFullscreen };

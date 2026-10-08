@@ -6,8 +6,8 @@ export interface SittingSpot {
   id: string;
   label: string;
   family: string;
-  chair: { x: number; z: number; angle: number };
-  stand: { x: number; z: number };
+  chair: { x: number; y?: number; z: number; angle: number };
+  stand: { x: number; y?: number; z: number };
   height: number;
   workstation?: number;
 }
@@ -19,7 +19,9 @@ export const SITTING_SPOTS: SittingSpot[] = [
   })),
   ...publicSeats,
 ];
-export const sittingSpot = (id?: string | null) => SITTING_SPOTS.find(s => s.id === id);
+let buildSeats: SittingSpot[] | undefined;
+export function setBuildSeats(spots: SittingSpot[]) { buildSeats = spots; }
+export const sittingSpot = (id?: string | null) => (buildSeats ?? SITTING_SPOTS).find(s => s.id === id);
 
 /** Tag complete furniture, including backs, arms and legs, without altering the model. */
 export function attachSittingSpots(scene: THREE.Object3D) {

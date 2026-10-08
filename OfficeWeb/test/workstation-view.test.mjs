@@ -42,3 +42,16 @@ test('foreground is clipped only in focus mode and never clips the target', () =
   updateWorkstationClip(camera, target, true);
   assert.equal(camera.near, 0.1);
 });
+
+test('the foreground clip stays bounded however far the camera pulls back', () => {
+  // Regression (user, 2026-09-15): zooming out after focusing a desk used to grow
+  // the near plane with the view distance (12m away => near 10.7m), which cut
+  // away the whole office until the page was reloaded.
+  const camera = new THREE.PerspectiveCamera(40, 1.5, 0.1, 150);
+  const target = new THREE.Vector3(0, 1.3, 0);
+  camera.position.set(0, 6, 11); camera.lookAt(target); camera.updateMatrixWorld();
+  updateWorkstationClip(camera, target, true);
+  assert.ok(camera.near > 0.1, `near=${camera.near} 应仍然开启前景裁切`);
+  assert.ok(camera.near <= 1.25 + 1e-6, `near=${camera.near} 不应随视距无限放大`);
+  assert.ok(camera.near < camera.position.distanceTo(target));
+});

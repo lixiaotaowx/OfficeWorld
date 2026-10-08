@@ -92,21 +92,35 @@ export function watchInputPresence(
   // The page has just been opened by somebody, so it starts 在座: arriving at
   // your desk should not flash red while you read the screen.
   let atDesk = true;
+  let busy = false;
+  let stopped = false;
+  const activeSeconds = new Set<number>();
+  let busyUntil = 0;
+  const recordActivity = () => {
+    const second = Math.floor(now() / 1000);
+    activeSeconds.add(second);
+    for (const value of activeSeconds) if (value <= second - 10) activeSeconds.delete(value);
+    // Count occupied seconds, never raw pointer events or key contents.
+    if (activeSeconds.size >= 6) busyUntil = now() + 8_000;
+  };
   const report = () => {
     // Before `join` there is nobody to tell; the server ignores it anyway.
     // `idleMs` is how long the mouse and keyboard have already been quiet, so the
     // 离座 clock starts at the moment input stopped rather than at the moment the
     // threshold was crossed (user, 2026-09-15: "不操作10秒就算是离座").
     if (socket.connected) {
-      socket.emit("input-state", { atDesk, idleMs: Math.max(0, now() - lastInputAt) });
+      socket.emit("input-state", { atDesk, busy, idleMs: Math.max(0, now() - lastInputAt) });
     }
   };
   const apply = (next: boolean) => {
-    if (next === atDesk) return;
+    const nextBusy = next && now() < busyUntil;
+    if (next === atDesk && nextBusy === busy) return;
     atDesk = next;
+    busy = nextBusy;
     report();
   };
   const touch = () => {
+    recordActivity();
     lastInputAt = now();
     apply(true);
   };
@@ -121,7 +135,7 @@ export function watchInputPresence(
     Promise.resolve()
       .then(idleSource)
       .then((idle) => {
-        if (!idle) return; // Bridge busy or unsupported: keep watching our own input.
+        if (stopped || !idle) return;
         const seconds = Number(idle.seconds);
         // Windows says how long the whole machine has been quiet: trust it as the
         // start of the 离座 clock, so the number shown is the real idle time.
@@ -131,7 +145,15 @@ export function watchInputPresence(
         };
         if (idle.state === "locked") return awayFor(Number.isFinite(seconds) ? seconds * 1000 : 0);
         if (!Number.isFinite(seconds)) return;
-        if (seconds * 1000 < awayAfterMs) { lastInputAt = now(); apply(true); }
+        if (seconds * 1000 < awayAfterMs) {
+          // Two-second OS samples imply sustained activity, not a keylogger.
+          if (seconds < 2) {
+            recordActivity();
+            activeSeconds.add(Math.floor(now() / 1000) - 1);
+          }
+          lastInputAt = now() - seconds * 1000;
+          apply(true);
+        }
         else awayFor(seconds * 1000);
       })
       .catch(() => { /* a failed poll must never break the local watch */ });
@@ -151,6 +173,7 @@ export function watchInputPresence(
     tick,
     poll,
     stop() {
+      stopped = true;
       cancel(timer);
       if (idleTimer !== undefined) cancel(idleTimer);
       socket.off("connect", onConnect);

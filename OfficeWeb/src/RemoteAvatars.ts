@@ -9,30 +9,37 @@ import * as THREE from "three";
 import {
   loadCharacter,
   releaseCharacter,
+  setCharacterAppearance,
   type LoadedCharacter,
 } from "./characterModel";
-import type { CharacterId } from "./characters";
+import { appearanceKey, type Appearance } from "./look";
 import { applySitPose, SIT_POSES, type SitPoseId } from "./sitPoses";
 import { sittingSpot } from "./sittingSpots";
 import { SEAT_HEIGHT } from "./seats";
 import { groundSeatedFeet } from "./seatedFeet";
 import { placeSeatedHands } from "./seatedHands";
 import { snapStandingPose } from './standingPose';
+import { updateSeatedAnimation } from './seatedAnimation';
 
 export interface RemoteState {
+  y?: number;
   x: number;
   z: number;
   rot: number;
   moving: boolean;
+  /** 他在跑（长距离/Shift）：放跑步循环；缺省当成走路（老客户端不发这个字段）。 */
+  running?: boolean;
   sitting: boolean;
   sittingSpot?: string | null;
-  character: CharacterId;
+  /** 这个人的配色与配件；变了只改材质与显隐，不重新下载模型。 */
+  appearance: Appearance;
   pose?: SitPoseId;
 }
 
 interface RemoteEntry {
   id: string;
-  kind: CharacterId;
+  /** 当前外观的指纹（`appearanceKey`），用来判断要不要重新套用。 */
+  kind: string;
   root: THREE.Group;
   character?: LoadedCharacter;
   current?: THREE.AnimationAction;
@@ -57,12 +64,12 @@ export class RemoteAvatars {
       if (!entry) {
         const root = new THREE.Group();
         root.name = `remote:${id}`;
-        root.position.set(state.x, 0, state.z);
+        root.position.set(state.x, state.y ?? 0, state.z);
         root.rotation.y = state.rot;
         this.world.add(root);
         entry = {
           id,
-          kind: state.character,
+          kind: appearanceKey(state.appearance),
           root,
           target: state,
           loading: false,
@@ -71,9 +78,13 @@ export class RemoteAvatars {
         };
         this.entries.set(id, entry);
         void this.loadModel(entry);
-      } else if (entry.kind !== state.character) {
-        entry.kind = state.character;
-        void this.loadModel(entry);
+      } else {
+        const key = appearanceKey(state.appearance);
+        if (entry.kind !== key) {
+          entry.kind = key;
+          // 同一个模型里换配色/换配件：只改材质与显隐，别重新下载。
+          if (entry.character) setCharacterAppearance(entry.character, state.appearance);
+        }
       }
       entry.target = state;
     }
@@ -90,8 +101,8 @@ export class RemoteAvatars {
     entry.loading = true;
     const kind = entry.kind;
     try {
-      const loaded = await loadCharacter(kind);
-      // The player may have left, or switched character, while this decoded.
+      const loaded = await loadCharacter(entry.target.appearance);
+      // The player may have left, or changed their look, while this decoded.
       if (this.entries.get(entry.id) !== entry || entry.kind !== kind) {
         releaseCharacter(loaded);
         return;
@@ -121,13 +132,14 @@ export class RemoteAvatars {
       const dz = target.z - entry.root.position.z;
       const distance = Math.hypot(dx, dz);
       if ((entry.wasSeated && !target.sitting) || distance > SNAP_DISTANCE) {
-        entry.root.position.set(target.x, 0, target.z);
+        entry.root.position.set(target.x, target.y ?? 0, target.z);
       } else if (distance > 0.001) {
         const step = Math.min(1, dt * 8);
         entry.root.position.x += dx * step;
         entry.root.position.z += dz * step;
       }
       // Turn the short way round.
+      entry.root.position.y += ((target.y ?? 0)-entry.root.position.y)*Math.min(1,dt*14);
       const turn = Math.atan2(
         Math.sin(target.rot - entry.root.rotation.y),
         Math.cos(target.rot - entry.root.rotation.y),
@@ -138,6 +150,10 @@ export class RemoteAvatars {
       if (!character) continue;
       if (target.sitting) {
         entry.wasSeated = true;
+        const seat = sittingSpot(target.sittingSpot);
+        if (seat) entry.root.rotation.set(0, seat.chair.angle, 0);
+        const seated = updateSeatedAnimation(character, seat?.height ?? SEAT_HEIGHT, dt);
+        if (seated) { entry.current = seated.action; continue; }
         // Stop any clip and let the shared seated pose own the bones, exactly
         // like the local avatar, so colleagues sit identically.
         if (entry.current) {
@@ -166,7 +182,10 @@ export class RemoteAvatars {
           entry.current = snapStandingPose(character, target.moving);
           entry.wasSeated = false;
         }
-        const action = target.moving ? character.walk : character.idle;
+        // 跑还是走由对方广播的 `running` 决定；老客户端不带这个字段就当走路。
+        const action = target.moving
+          ? (target.running && character.run ? character.run : character.walk)
+          : character.idle;
         if (entry.current !== action) {
           entry.current?.fadeOut(0.18);
           action.reset().fadeIn(0.18).play();
@@ -176,6 +195,14 @@ export class RemoteAvatars {
         character.model.position.y = character.groundY;
       }
     }
+  }
+
+  /**
+   * One remote avatar's scene root: the name tag hangs from it, and focusing a
+   * person in the directory reads its position.
+   */
+  objectOf(id: string) {
+    return this.entries.get(id)?.root;
   }
 
   /** How many remote avatars exist, and how many have finished loading. */
@@ -192,8 +219,15 @@ export class RemoteAvatars {
       kind: entry.kind,
       loaded: Boolean(entry.character),
       x: Math.round(entry.root.position.x * 100) / 100,
+      y: Math.round(entry.root.position.y * 100) / 100,
       z: Math.round(entry.root.position.z * 100) / 100,
       sitting: entry.target.sitting,
+      /** 对方广播的"在跑"（远端会放跑步循环）。 */
+      running: entry.target.running === true,
+      /** 此刻远端实际在放哪条：走路 / 跑步 / 待机。 */
+      clip: entry.current === entry.character?.run ? "run"
+        : entry.current === entry.character?.walk ? "walk"
+        : entry.current === entry.character?.idle ? "idle" : "pose",
     }));
   }
 
@@ -202,3 +236,4 @@ export class RemoteAvatars {
     this.entries.clear();
   }
 }
+

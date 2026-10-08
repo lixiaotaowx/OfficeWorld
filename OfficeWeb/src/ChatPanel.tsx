@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatAttachment, Message } from "./types";
+import type { FileTransferRow } from "./fileTransferRules";
+import { formatBytes, percentOf, statusText } from "./fileTransferRules";
+import { PREFETCH_MAX_BYTES } from "./chatAttachments";
+import type { FileTransfers } from "./useFileTransfers";
 import "./chat-files.css";
 
 export interface ChatFileActions {
   onFile: (file: File, progress: (percent: number) => void, recipientId?: string) => Promise<boolean>;
   loadFile: (file: ChatAttachment) => Promise<Blob>;
+  /**
+   * 文件直传那条通道（用户 2026-09-21：「整理一下聊天框里面的文件下载，要带进度条，
+   * 要软件内设置好下载位置，下载好了也还是有几个按钮 打开等，复用」）。
+   * 聊天下载**完全复用**它：同一个接收文件夹、同一份进度、同一个任务栏进度条、
+   * 同一张卡片和同样的「打开 / 打开文件夹」。
+   */
+  files: FileTransfers;
 }
 interface Props extends ChatFileActions {
   privateChat?: boolean;
@@ -15,8 +26,6 @@ interface Props extends ChatFileActions {
   onText: (text: string) => void;
   onSend: (event: React.FormEvent) => void;
 }
-const sizeLabel = (size: number) => size < 1024 * 1024
-  ? `${Math.ceil(size / 1024)} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`;
 
 // Preview only raster formats identified from bytes. HTML/SVG and documents
 // remain downloads and cannot execute as same-origin content.
@@ -30,8 +39,13 @@ async function imageType(blob: Blob) {
   return "";
 }
 
-export function AttachmentView({ file, loadFile, own }: {
-  own: boolean; file: ChatAttachment; loadFile: ChatFileActions["loadFile"];
+/** 这一条附件在传输通道里的记录（没下过就是 undefined）。行 id 就是附件 id。 */
+function transferRow(files: FileTransfers, id: string): FileTransferRow | undefined {
+  return files.rows.find(row => row.id === id);
+}
+
+export function AttachmentView({ file, loadFile, files, own }: {
+  own: boolean; file: ChatAttachment; loadFile: ChatFileActions["loadFile"]; files: FileTransfers;
 }) {
   const [url, setUrl] = useState("");
   const [image, setImage] = useState(false);
@@ -40,7 +54,12 @@ export function AttachmentView({ file, loadFile, own }: {
   const dialog = useRef<HTMLDialogElement>(null);
   const loader = useRef(loadFile);
   loader.current = loadFile;
+  const row = transferRow(files, file.id);
+  // 只对小附件做后台预取（图片预览 + 离线可看）。大文件点了「下载」才走传输通道，
+  // 否则打开一次聊天就会静默拉几个 GB（用户 2026-09-21 把上限提到 2 GB 之后这条尤其重要）。
+  const previewable = file.size <= PREFETCH_MAX_BYTES;
   useEffect(() => {
+    if (!previewable) { setUrl(""); setImage(false); setError(""); return; }
     let disposed = false, objectUrl = "";
     setError(""); setUrl("");
     void loader.current(file).then(async blob => {
@@ -50,16 +69,34 @@ export function AttachmentView({ file, loadFile, own }: {
       setImage(!!mime); setUrl(objectUrl);
     }).catch(e => { if (!disposed) setError(e.message); });
     return () => { disposed = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [file.id, retry]);
+  }, [file.id, retry, previewable]);
+  const downloading = row?.status === 'receiving';
+  const done = row?.status === 'done';
+  const state = row ? statusText(row) : (url ? '已保存到本机' : previewable ? (error || '正在接收并保存…') : '');
   return <div className="chat-attachment">
     {url && image && <button type="button" className="chat-image" onClick={() => dialog.current?.showModal()}>
       <img src={url} alt={file.name} loading="lazy" />
     </button>}
     <span className="chat-filename">{file.name}</span>
-    <small>{sizeLabel(file.size)}{(!url || !own) &&
-      <> · {url ? "已保存到本机" : error || "正在接收并保存…"}</>}</small>
-    {url && <a href={url} download={file.name}>下载文件</a>}
-    {error && <button type="button" onClick={() => setRetry(n => n + 1)}>重新接收</button>}
+    <small>{formatBytes(file.size)}{(!url || !own) && state && <> · {state}</>}</small>
+    {/* 下载进度：和头像直传同一条被限流的进度（用户要"带进度条"）。 */}
+    {downloading && <div className={`chat-file-bar ${row?.status}`} role="progressbar"
+      aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percentOf(row!) * 100)}>
+      <i style={{ width: `${Math.max(2, Math.round(percentOf(row!) * 100))}%` }} />
+    </div>}
+    <div className="chat-file-actions">
+      {!done && !downloading && <button type="button" onClick={() => files.downloadAttachment({
+        id: file.id, name: file.name, size: file.size,
+        url: `/api/chat/files/${encodeURIComponent(file.id)}`,
+      })}>{row?.status === 'failed' ? '重新下载' : '下载'}</button>}
+      {done && <button type="button" onClick={() => files.open(file.id)}>打开</button>}
+      {done && (row?.path || row?.folder) &&
+        <button type="button" onClick={() => files.reveal(file.id)}>打开文件夹</button>}
+      {downloading && <button type="button" onClick={() => files.cancel(file.id)}>取消</button>}
+      {!done && !downloading && url && <a href={url} download={file.name}>另存一份</a>}
+      {!done && !downloading && previewable && error &&
+        <button type="button" onClick={() => setRetry(n => n + 1)}>重新接收</button>}
+    </div>
     {image && <dialog ref={dialog} className="chat-image-dialog" onClick={() => dialog.current?.close()}>
       <button type="button" onClick={() => dialog.current?.close()}>关闭图片</button>
       <img src={url} alt={file.name} />
@@ -67,7 +104,8 @@ export function AttachmentView({ file, loadFile, own }: {
   </div>;
 }
 
-export default function ChatPanel({ messages, accountId, connected, text, onText, onSend, onFile, loadFile, privateChat }: Props) {
+export default function ChatPanel({ messages, accountId, connected, text, onText, onSend,
+  onFile, loadFile, files, privateChat }: Props) {
   const [visible, setVisible] = useState(100);
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -98,7 +136,7 @@ export default function ChatPanel({ messages, accountId, connected, text, onText
       {messages.slice(-visible).map(message => <article key={message.id} className={message.senderId === accountId ? 'message-own' : ''}>
         <strong>{message.name} · {new Date(message.time).toLocaleString()}</strong>
         {message.text && <p>{message.text}</p>}
-        {message.attachment && <AttachmentView file={message.attachment} loadFile={loadFile}
+        {message.attachment && <AttachmentView file={message.attachment} loadFile={loadFile} files={files}
           own={message.senderId === accountId} />}
       </article>)}
     </div>
@@ -107,9 +145,9 @@ export default function ChatPanel({ messages, accountId, connected, text, onText
         setFile(e.target.files?.[0]); e.target.value = "";
       }} />
       <button type="button" disabled={!connected || sending} onClick={() => input.current?.click()}>＋ 图片 / 文件</button>
-      <small>单个不超过 20 MB</small>
+      <small>单个不超过 2 GB</small>
       {file && <div className="chat-file-selection">
-        <span>{file.name} · {sizeLabel(file.size)}</span>
+        <span>{file.name} · {formatBytes(file.size)}</span>
         <button type="button" disabled={!connected || sending} onClick={() => void sendFile()}>
           {sending ? `发送中 ${progress}%` : "发送文件"}</button>
         <button type="button" disabled={sending} onClick={() => setFile(undefined)}>移除</button>

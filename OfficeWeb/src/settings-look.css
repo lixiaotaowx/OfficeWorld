@@ -1,0 +1,108 @@
+/* Settings and character creation share a warm, quiet surface. */
+.settings-modal {
+  width: min(1020px, 94vw);
+  height: min(720px, 90dvh);
+  max-height: 90dvh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.settings-header, .settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 26px;
+  flex-shrink: 0;
+}
+.settings-header { border-bottom: 1px solid var(--line-2); }
+.settings-header small { font-size: 11px; color: var(--ink-3); }
+.settings-header h2 { margin-top: 5px; font-family: inherit; font-size: 22px; font-weight: 650; }
+.settings-header > button { width: 36px; height: 36px; padding: 0; font-size: 24px; }
+.settings-layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); flex: 1; min-height: 0; }
+.settings-nav { padding: 20px 12px; background: var(--surface-2); border-right: 1px solid var(--line-2); overflow-y: auto; }
+.settings-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 13px 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+}
+.settings-nav button strong { font-size: 13px; }
+.settings-nav button small { color: var(--ink-3); font-size: 11px; }
+.settings-nav button.chosen { background: white; border-color: var(--line); color: var(--brand); box-shadow: var(--shadow-sm); }
+.settings-content { min-width: 0; overflow: auto; padding: 24px; }
+.settings-content h3 { font-size: 18px; }
+.settings-content .settings-intro { margin: 8px 0 20px; font-size: 12px; }
+.settings-content .character-setting-title { display: none; }
+.settings-card { border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-top: 18px; }
+.settings-card h4 { font-size: 14px; margin: 0 0 16px; }
+.settings-card p { font-size: 13px; margin-bottom: 0; }
+.settings-card .settings-row { gap: 16px; flex-wrap: wrap; }
+.settings-card .settings-row small { display: block; margin-top: 7px; font-size: 12px; color: var(--ink-3); }
+.settings-card input[type="checkbox"] { width: 19px; height: 19px; accent-color: var(--brand); }
+.settings-shortcuts { margin: 0; }
+.settings-shortcuts div { display: flex; justify-content: space-between; gap: 15px; padding: 12px 0; border-top: 1px solid var(--line-2); font-size: 13px; }
+.settings-shortcuts dd { margin: 0; color: var(--ink-2); text-align: right; }
+.settings-footer { border-top: 1px solid var(--line-2); padding-top: 12px; padding-bottom: 12px; }
+.settings-footer span { font-size: 11px; color: var(--ink-3); }
+.settings-footer button { background: var(--brand); color: white; padding: 9px 25px; }
+.look-body { gap: 22px; }
+.look-stage { flex: 0 0 32%; padding: 10px 10px 20px; gap: 7px; background: radial-gradient(ellipse at 50% 35%, #fffdf3, #e7eddf); overflow: hidden; }
+.look-stage strong { font-size: 15px; }
+.look-stage small { color: var(--ink-3); font-size: 11px; }
+.live-look { position: relative; width: 100%; aspect-ratio: 4 / 5; min-height: 100px; }
+.live-look canvas { display: block; width: 100%; height: 100%; }
+.live-look-canvas { position: absolute; inset: 0; }
+.look-loading { position: absolute; inset: 0; display: grid; place-content: center; font-size: 12px; gap: 12px; }
+.look-steps { gap: 6px; padding: 4px; border-radius: 12px; background: var(--surface-2); }
+.look-steps button { border: 0; font-size: 13px; padding: 10px 8px; }
+.look-steps button.chosen { background: white; box-shadow: var(--shadow-sm); }
+.color-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; max-height: none; overflow: visible; }
+.color-grid button { min-width: 0; padding: 5px 4px 10px; font-size: 11px; }
+.color-grid button img { background: none; }
+.color-grid .swatch { width: 10px; height: 10px; }
+.accessory-list { max-height: none; overflow: visible; }
+.character-setting .accessory-list, .character-setting .color-grid { max-height: none; }
+.accessory-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.accessory-tabs button { flex: 1; padding: 8px 5px; font-size: 12px; white-space: nowrap; }
+.accessory-tabs button.chosen { background: var(--brand); color: white; }
+.accessory-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.accessory-grid button { min-width: 0; padding: 7px; font-size: 12px; }
+.accessory-grid button img { background: var(--surface-2); aspect-ratio: 1; }
+.seat-picker-hint[aria-label="设置我的角色"] {
+  width: min(840px, calc(100vw - 32px));
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 26px;
+  gap: 18px;
+}
+.seat-picker-hint[aria-label="设置我的角色"] > strong { font-size: 21px; }
+.settings-content, .settings-card, .look-options { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .settings-modal { width: 96vw; height: 94dvh; max-height: 94dvh; border-radius: 16px; }
+  .settings-header { padding: 14px 18px; }
+  .settings-layout { display: flex; flex-direction: column; }
+  .settings-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 8px; gap: 4px; flex-shrink: 0; border-right: 0; }
+  .settings-nav button { width: 100%; padding: 9px 6px; margin: 0; align-items: center; }
+  .settings-nav button strong { font-size: 12px; }
+  .settings-nav button small { display: none; }
+  .settings-content { padding: 16px; }
+  .look-body { flex-direction: column; gap: 14px; }
+  .look-stage { width: 100%; box-sizing: border-box; padding: 4px 10px 12px; }
+  .live-look { width: 160px; height: 190px; min-height: 0; }
+  .look-options { width: 100%; }
+  .color-grid { gap: 7px; }
+  .settings-footer { padding: 10px 16px; }
+  .settings-footer span { display: none; }
+  .settings-footer button { margin-left: auto; }
+  .seat-picker-hint[aria-label="设置我的角色"] { padding: 18px; }
+}

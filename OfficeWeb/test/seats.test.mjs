@@ -79,7 +79,7 @@ test("老板工位可以认领且拒绝并发抢占与越界座位", async () =>
     const a = await connect("甲"), b = await connect("乙");
     const results = await Promise.all([claim(a, 8), claim(b, 8)]);
     assert.equal(results.filter(r => r.ok).length, 1);
-    assert.equal((await claim(a, 9)).ok, false);
+    assert.equal((await claim(a, 9999)).ok, false);
   });
 });
 
@@ -129,7 +129,7 @@ test("并发抢同一工位只有一个成功", async () => {
 test("非法工位被拒绝", async () => {
   await withServer(async ({ connect }) => {
     const a = await connect("甲");
-    for (const bad of [-1, SEAT_COUNT, 1.5, "3", {}, true]) {
+    for (const bad of [-1, 9999, 1.5, "3", {}, true]) {
       const reply = await claim(a, bad);
       assert.equal(reply.ok, false, `${JSON.stringify(bad)} 不应被接受`);
     }

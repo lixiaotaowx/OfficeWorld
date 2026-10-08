@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Wall placement QA</title></head>
+<body style="margin:0"><script type="module">
+import * as THREE from 'three';
+import { BuildInteraction } from '../src/buildInteraction';
+import { createPart } from '../src/buildMeshes';
+import { fitToSurface } from '../src/buildSurface';
+const world = new THREE.Scene();
+world.background = new THREE.Color('#242c39');
+world.add(new THREE.AmbientLight('white', 3));
+const renderer = new THREE.WebGLRenderer({preserveDrawingBuffer:true});
+renderer.setSize(800,600);
+document.body.append(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(40,4/3,.1,100);
+camera.position.set(10,1.5,7);
+camera.lookAt(10,1.5,0);
+camera.updateMatrixWorld(true);
+const settings = {mode:'place',kind:'photo-frame',color:'#cabddd',rotation:0,height:0};
+const commands = [];
+const controller = new BuildInteraction(world,camera,renderer.domElement,{
+  settings:()=>settings,change:c=>commands.push(c),open:()=>{},hint:()=>{},
+});
+controller.sync([{id:'wall',kind:'wall',color:'#f3dfc5',x:10,y:0,z:0,rotation:0,version:1}]);
+renderer.domElement.addEventListener('pointermove',e=>controller.move(e));
+renderer.domElement.addEventListener('pointerdown',e=>controller.click(e));
+function render(){renderer.render(world,camera);}
+renderer.setAnimationLoop(render);
+window.qa = {world,renderer,camera,settings,controller,commands,THREE,fitToSurface,createPart,render};
+</script></body></html>

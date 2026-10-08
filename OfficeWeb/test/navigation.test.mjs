@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 import * as THREE from 'three';
+import { loadTs } from './helpers.mjs';
+const buildNavigation = await loadTs('buildNavigation.ts');
 const source = readFileSync(new URL('../src/navigation.ts', import.meta.url), 'utf8')
   .replace(/export \{ chairSeats \} from "\.\/seats";/, '');
 const compiled = ts.transpileModule(source, { compilerOptions: {
   target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
-} }).outputText.replace('"three"', JSON.stringify(import.meta.resolve('three')));
+} }).outputText.replace('"three"', JSON.stringify(import.meta.resolve('three')))
+  .replace("'./buildNavigation'", JSON.stringify(buildNavigation));
 const {findPath, walkable, segmentWalkable} = await import(
   'data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 const v = (x,z) => new THREE.Vector3(x,0,z);

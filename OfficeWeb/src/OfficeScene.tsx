@@ -1,24 +1,21 @@
-import { attachSittingSpots } from "./sittingSpots";
+import { updateBuildFlags } from './buildArchitecture';
+import { buildEnvironment } from './buildEnvironment';
+import { useBuildEditor } from './useBuildEditor';
 import { attachMonitorContext } from './monitorContext';
-import MonitorContextMenu from './MonitorContextMenu';
 import { disposeResources } from './disposeResources';
-import { WallCutaway } from "./wallCutaway";
 import { workstationView, updateWorkstationClip } from './workstationView';
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { loadOfficeAsset } from './officeAsset';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { OfficeAvatar } from "./OfficeAvatar";
 import { RemoteAvatars, type RemoteState } from "./RemoteAvatars";
 import { MonitorScreens, syncMonitors } from "./monitorScreens";
-import { WORKSTATIONS } from "./seats";
-import { bakedAwareMaterial } from "./bakedMaterials";
-import { attachMeetingWallPhoto } from "./meetingWallPhoto";
+import { WORKSTATIONS, workstationAt } from "./seats";
 import { installSceneProbe } from "./sceneProbe";
 import { pickSceneSurface, SceneClickGesture } from "./scenePicking";
 import { SceneLoop, observeSceneVisibility } from "./sceneLoop";
 import "./avatar.css";
-import { type CharacterId } from "./characters";
+import { type Appearance } from "./look";
 import type { Motion, Person } from "./types";
 import { NameTags } from "./nameTags";
 import { VIEWS, nameTagItems, remoteStates, type View } from "./sceneViews";
@@ -28,6 +25,7 @@ import { VIEWS, nameTagItems, remoteStates, type View } from "./sceneViews";
 export type { View } from "./sceneViews";
 
 interface Props {
+  accountId: string;
   renderPaused?: boolean;
   onResumeRendering?: () => void;
   /** Keep painting while unfocused, because our screen is being watched. */
@@ -50,21 +48,23 @@ interface Props {
   picking: boolean;
   /** Claim a chair by clicking it; only used while `picking` is true. */
   onPick: (seat: number) => void;
-  /** Which avatar we wear. Owned by the app so the picker can set it too. */
-  character: CharacterId;
+  /** 我们的配色与配件；住在 App 里，所以捏人面板也能改。 */
+  appearance: Appearance;
   /** Publish our own motion so everybody else can draw us. */
   onMotion: (motion: Motion) => void;
   onSit: (spot: string | null) => Promise<boolean>;
   /** A public seat the office assigned to us (visitors are placed on a sofa). */
   sitSpot?: string | null;
+  /** 打开"切换屏幕"菜单：画面里右键自己的显示器，或成员列表里右键自己。 */
+  onOpenScreenMenu?: (point: { x: number; y: number }) => void;
 }
 
 export default function OfficeScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
+  const builder = useBuildEditor(props.accountId);
   const latest = useRef(props);
   latest.current = props;
   const [status, setStatus] = useState("正在载入办公室");
-  const [screenMenu, setScreenMenu] = useState<{ x: number; y: number } | null>(null);
   const actor = useRef<OfficeAvatar>();
   const [actorState, setActorState] = useState("角色载入中…");
   const [stats, setStats] = useState("");
@@ -91,15 +91,10 @@ export default function OfficeScene(props: Props) {
   useEffect(() => {
     if (props.focusPerson) api.current?.person(props.focusPerson.id);
   }, [props.focusPerson]);
-  // The app owns the character choice (the first-visit dialog sets it too), so
-  // the avatar simply follows it.
+  // 换配色/换配件只套用材质与显隐，**不重新加载模型**（捏人时每点一下都会变）。
   useEffect(() => {
-    const avatar = actor.current;
-    void avatar?.load(props.character).then(() => {
-      const seat = latest.current.mySeat;
-      if (seat != null) avatar.sit(seat);
-    });
-  }, [props.character]);
+    actor.current?.applyAppearance(props.appearance);
+  }, [props.appearance]);
   // Push each occupant's broadcast thumbnail onto their own workstation screen.
   // The preview map is the ambient, unreadably small JPEG; nothing here grants
   // access to the real video stream, which still needs an approved request.
@@ -107,11 +102,12 @@ export default function OfficeScene(props: Props) {
     const monitors = monitorsRef.current;
     if (!monitors) return;
     syncMonitors(monitors, props);
-  }, [props.people, props.previews]);
+  }, [props.people, props.previews, builder.revision]);
   // The avatar follows whichever desk the server says we hold, so claiming one
   // in the picker walks us over and sits us down.
   const lastSeat = useRef<number | null | undefined>(undefined);
   useEffect(() => {
+    if(mySeat!==null && mySeat>=9 && builder.revision<0)return;
     if (lastSeat.current === mySeat) return;
     const first = lastSeat.current === undefined;
     lastSeat.current = mySeat;
@@ -119,7 +115,7 @@ export default function OfficeScene(props: Props) {
     if (first && mySeat === null) return;
     if (mySeat === null) actor.current?.standUp();
     else actor.current?.sit(mySeat);
-  }, [mySeat]);
+  }, [mySeat,builder.revision]);
   // The office can place somebody directly (a visiting client is put on a sofa), in
   // which case the avatar walks over and sits down. Applied once per assignment so
   // it never fights the user walking around afterwards.
@@ -132,9 +128,9 @@ export default function OfficeScene(props: Props) {
   }, [props.sitSpot]);
   useEffect(() => {
     const el = host.current!;
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-    renderer.setClearColor("#c4ccc0");
+    renderer.setClearColor("#c7d8ee");
     renderer.localClippingEnabled = true;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -144,14 +140,14 @@ export default function OfficeScene(props: Props) {
     renderer.toneMappingExposure = 1.11;
     el.appendChild(renderer.domElement);
     const world = new THREE.Scene();
-    const wallCutaway = new WallCutaway();
+    world.fog = new THREE.Fog('#c7d8ee', 40, 85);
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
     const avatar = new OfficeAvatar(world, camera, setActorState, id => latest.current.onSit(id));
     actor.current = avatar;
-    // Load the character here too: the `[props.character]` effect above runs
-    // before this mount effect, so on the first render `actor.current` was
-    // still empty and skipped the load. Loading now makes the avatar appear.
-    void avatar.load(latest.current.character).then(() => {
+    // Load the character here too: the appearance effect above runs before this
+    // mount effect, so on the first render `actor.current` was still empty and
+    // skipped the load. Loading now makes the avatar appear.
+    void avatar.load(latest.current.appearance).then(() => {
       const seat = latest.current.mySeat;
       if (seat != null) avatar.sit(seat);
       else if (latest.current.sitSpot) void avatar.sitAt(latest.current.sitSpot);
@@ -185,6 +181,19 @@ export default function OfficeScene(props: Props) {
         nameTags: () => nameTags.info(),
         personPosition,
         controls: () => controlsHolder.current,
+        sendMotion: motion => latest.current.onMotion(motion as Motion),
+        canvasSize: () => ({
+          width: renderer.domElement.clientWidth || 1,
+          height: renderer.domElement.clientHeight || 1,
+        }),
+        setPartVisible: (name, visible) => {
+          let found = false;
+          avatar.root.traverse(object => {
+            const mesh = object as THREE.Mesh;
+            if (mesh.isMesh && mesh.name === name) { mesh.visible = visible; found = true; }
+          });
+          return found;
+        },
       });
     }
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -198,14 +207,14 @@ export default function OfficeScene(props: Props) {
     controls.screenSpacePanning = true;
     controls.maxPolarAngle = Math.PI * 0.47;
     controls.minDistance = 0.45;
-    controls.maxDistance = 65;
+    controls.maxDistance = Infinity;
     const goalPosition = new THREE.Vector3();
     const goalTarget = new THREE.Vector3();
     let traveling = true;
     let focusedWorkstation = false;
     api.current = {
       screen(index) {
-        const seat = WORKSTATIONS[index];
+        const seat = workstationAt(index);
         if (!seat) return;
         const panel = monitorsRef.current?.meshFor(index);
         goalTarget.copy(panel ? panel.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(seat.display.x, seat.display.y, seat.display.z));
@@ -244,8 +253,8 @@ export default function OfficeScene(props: Props) {
     // Baked surfaces are drawn unlit and skip tone mapping (see
     // bakedMaterials.ts), so the lights only serve the avatars and the few
     // props the bake did not touch. Kept moderate so those do not blow out.
-    world.add(new THREE.HemisphereLight(0xffffff, 0x9ca797, 1.1));
-    const sun = new THREE.DirectionalLight(0xfff2dd, 1.6);
+    world.add(new THREE.HemisphereLight(0xfff6eb, 0xa5b6df, 1.75));
+    const sun = new THREE.DirectionalLight(0xffeed9, 2.3);
     sun.position.set(-12, 22, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -260,22 +269,6 @@ export default function OfficeScene(props: Props) {
     sun.shadow.normalBias = 0.035;
     sun.shadow.radius = 4;
     world.add(sun);
-    // Context around the building, not part of it: unlit and muted so it does
-    // not compete with the baked room (the office floor is in the baked model).
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(160, 160),
-      new THREE.MeshBasicMaterial({ color: 0x9aa396 }),
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.42;
-    world.add(ground);
-    const glass = new THREE.MeshStandardMaterial({
-      color: 0xbfcfc7,
-      transparent: true,
-      opacity: 0.12,
-      depthWrite: false,
-      roughness: 0.25,
-    });
     const screenMat = new THREE.MeshStandardMaterial({
       color: 0xb8cfc1,
       emissive: 0x7eaa95,
@@ -289,70 +282,31 @@ export default function OfficeScene(props: Props) {
       states: Map<string, RemoteState> } | null = null;
     const monitors = new MonitorScreens();
     monitorsRef.current = monitors;
-    const stopLoading = loadOfficeAsset(
-      renderer,
-      (gltf) => {
-        if (stopped) { disposeResources(gltf.scene); return; }
-        gltf.scene.traverse((o) => {
-          if (typeof o.userData.seat_index === "number") o.userData.seat = o.userData.seat_index;
-          if (!(o instanceof THREE.Mesh)) return;
-          const name = o.name.toLowerCase();
-          if (name.includes("glass") || name.includes("glazing")) {
-            o.material = glass;
-            o.castShadow = false;
-            o.receiveShadow = false;
-            return;
-          }
-          // Baked faces already carry their own lighting, so they are drawn
-          // unlit and take no runtime shadows. Props the bake did not touch
-          // keep their own material and are still lit by the scene.
-          o.material = bakedAwareMaterial(o.material);
-          o.castShadow = false;
-          o.receiveShadow = false;
-        });
-        // Hand every per-seat screen its own material so a thumbnail can be
-        // painted on it without touching the other monitors.
-        monitors.attach(gltf.scene, screenMat);
-        // Chairs carry their seat in their name ("Island_A_Seat_1 approved
-        // chair"), not in an extra, so tag the chair object with its seat index
-        // for the click-to-select/claim raycast below. A chair is a multi-
-        // primitive group in glTF, so tag the group itself, not just its Mesh
-        // children (which the raycast actually hits). The DISPLAY panel has the
-        // seat_id extra but is hidden and replaced by our own screen quad.
-        gltf.scene.traverse((o) => {
-          const match = /^(.+?)[ _]approved[ _](chair|monitor)$/.exec(o.name || "");
-          if (!match) return;
-          const seat = WORKSTATIONS.findIndex((w) => w.id === match[1]);
-          if (seat >= 0) {
-            o.userData.seat = seat;
-            if (match[2] === 'monitor') o.userData.monitorSeat = seat;
-          }
-        });
-        attachSittingSpots(gltf.scene);
-        wallCutaway.attach(gltf.scene);
-        // The meeting room's wall display shows the office photo (user, 2026-09-15).
-        attachMeetingWallPhoto(gltf.scene);
-        world.add(gltf.scene);
-        // Thumbnails that arrived while the model was still loading.
-        syncMonitors(monitors, latest.current);
-        setStatus("办公室已就绪");
-      },
-      (p) => {
-        if (p.total)
-          setStatus(`正在载入 ${Math.round((p.loaded / p.total) * 100)}%`);
-      },
-      () => {
-        setStatus("模型加载失败，请刷新重试");
-      },
-    );
+    buildEnvironment(world);
+    monitors.attachBoxScreens(world, screenMat);
+    syncMonitors(monitors, latest.current);
+    const buildController = builder.attach(world, camera, renderer.domElement, box => {
+      focusedWorkstation=false;
+      box.getCenter(goalTarget);
+      const away=camera.position.clone().sub(controls.target).normalize();
+      const span=Math.max(...box.getSize(new THREE.Vector3()).toArray(),1.5);
+      goalPosition.copy(goalTarget).addScaledVector(away,span*2.3/Math.min(1,Math.max(.35,camera.aspect)));
+      traveling=true;
+    }, locked => { controls.enabled=!locked; if(locked)controls.dispatchEvent({type:'start'}); });
+    const refreshBuild = () => buildController.refresh();
+    const leaveBuild = () => buildController.leave();
+    controls.addEventListener('change',refreshBuild);
+    el.addEventListener('pointerleave',leaveBuild);
+    setStatus('方块空间已就绪');
     const ray = new THREE.Raycaster(),
       pointer = new THREE.Vector2();
     const gesture = new SceneClickGesture();
     const start = (e: PointerEvent) => { if (!latest.current.renderPaused) gesture.start(e); };
-    const move = (e: PointerEvent) => gesture.move(e);
+    const move = (e: PointerEvent) => { gesture.move(e); buildController.move(e); };
     const cancel = () => gesture.cancel();
     const end = (e: PointerEvent) => {
       if (latest.current.renderPaused || !gesture.end(e)) return;
+      if (buildController.click(e)) return;
       const r = el.getBoundingClientRect();
       pointer.set(
         ((e.clientX - r.left) / r.width) * 2 - 1,
@@ -380,6 +334,10 @@ export default function OfficeScene(props: Props) {
           return;
       }
       const point = new THREE.Vector3();
+      if (picked?.kind === 'surface' && picked.hit.face && picked.hit.face.normal.y > 0.9) {
+        avatar.moveTo(picked.hit.point);
+        return;
+      }
       if (
         ray.ray.intersectPlane(
           new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
@@ -394,7 +352,7 @@ export default function OfficeScene(props: Props) {
     el.addEventListener("pointercancel", cancel);
     el.addEventListener("pointerup", end);
     const stopContext = attachMonitorContext(el, camera, world,
-      () => latest.current.mySeat, setScreenMenu);
+      () => latest.current.mySeat, point => latest.current.onOpenScreenMenu?.(point));
     const resize = new ResizeObserver(() => {
       renderer.setSize(el.clientWidth, el.clientHeight);
       camera.aspect = el.clientWidth / el.clientHeight;
@@ -403,6 +361,7 @@ export default function OfficeScene(props: Props) {
     resize.observe(el);
     const loop = new SceneLoop((dt) => {
       avatar.update(dt);
+      updateBuildFlags(world,performance.now()/1000);
       sinceReport += dt;
       if (sinceReport >= 0.07) {
         sinceReport = 0;
@@ -416,9 +375,17 @@ export default function OfficeScene(props: Props) {
         if (camera.position.distanceTo(goalPosition) < 0.01) traveling = false;
       }
       controls.dampingFactor = 1 - Math.pow(0.95, dt * 60);
+      controls.maxPolarAngle = buildController.isEditing() ? Math.PI * .95 : Math.PI * .47;
       controls.update();
-      updateWorkstationClip(camera, controls.target, focusedWorkstation);
-      wallCutaway.update(camera, controls.target, dt);
+      const viewDistance=camera.position.distanceTo(controls.target);
+      const far=Math.max(150,camera.position.length()+controls.target.length()+viewDistance*4);
+      if(Math.abs(camera.far-far)>1){camera.far=far;camera.updateProjectionMatrix();}
+      if(world.fog instanceof THREE.Fog) {
+        world.fog.near=Math.max(40,viewDistance*2);
+        world.fog.far=Math.max(85,viewDistance*4);
+      }
+      updateWorkstationClip(camera, controls.target, focusedWorkstation && !buildController.isEditing());
+
       // Draw the other players, then tell the server where we are. Reporting is
       // throttled: the server would reject a faster stream anyway.
       // The map is rebuilt only when the snapshots change: doing it every frame
@@ -448,7 +415,9 @@ export default function OfficeScene(props: Props) {
     loop.setBackgroundDraws(!!latest.current.keepRendering);
     const stopObserving = observeSceneVisibility(el, loop);
     return () => {
-      stopLoading();
+      buildController.dispose();
+      controls.removeEventListener('change',refreshBuild);
+      el.removeEventListener('pointerleave',leaveBuild);
       stopContext();
       stopped = true;
       removeProbe?.();
@@ -461,7 +430,7 @@ export default function OfficeScene(props: Props) {
       loopRef.current = undefined;
       resize.disconnect();
       controls.dispose();
-      wallCutaway.dispose();
+
       monitors.dispose();
       monitorsRef.current = undefined;
       el.removeEventListener("pointerdown", start);
@@ -470,7 +439,7 @@ export default function OfficeScene(props: Props) {
       el.removeEventListener("pointerup", end);
       disposeResources(world);
       sun.shadow.dispose();
-      glass.dispose();
+
       screenMat.dispose();
       renderer.dispose();
       renderer.domElement.remove();
@@ -479,7 +448,7 @@ export default function OfficeScene(props: Props) {
   return (
     <div className="scene-shell">
       <div className="scene" ref={host} />
-      {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
+      {!props.renderPaused && builder.ui}
       {props.renderPaused && <div className="scene-paused">
         <p>三维画面已暂停，语音、共享和聊天继续</p>
         <button onClick={props.onResumeRendering}>恢复三维画面</button>

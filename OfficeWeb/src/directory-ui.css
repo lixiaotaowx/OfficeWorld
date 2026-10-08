@@ -119,3 +119,58 @@
 .seat.is-offline .presence-label { background: #39443b; color: #b0b9aa; }
 .seat.is-online:hover:not(:disabled) { background: #405a40; border-color: #b5f58c; }
 .seat.is-online.chosen { background: #405a40; border-color: #c7efab; box-shadow: inset 3px 0 #c7efab; }
+
+/* 访客：坐在公共区的客人。琥珀色把它们和绿色工位区分开，点一下把镜头对到本人
+   （访客没有工位，所以列表里不能只给"聚焦工位"这一种动作）。 */
+.visitor-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 14px 2px;
+  flex: 0 0 auto;
+}
+.visitor {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 8px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: 5px 8px;
+  background: #332c1e;
+  border: 1px solid #8a6c2f4d;
+  border-radius: 10px;
+  box-shadow: none;
+}
+.visitor:hover:not(:disabled) { background: #403722; border-color: #c99b3f; }
+.visitor.chosen { background: #453a22; border-color: #e6c274; box-shadow: inset 3px 0 #e6c274; }
+.visitor .visitor-dot {
+  grid-row: 1 / -1;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e0b155;
+  box-shadow: 0 0 6px #e0b15566;
+}
+.visitor strong { grid-column: 2; font-size: 12px; font-weight: 400; color: #f2dda9; overflow-wrap: anywhere; }
+.visitor small { grid-column: 2; font-size: 10px; color: #b9a271; }
+.visitor.mine strong { color: #ffeec2; font-weight: 600; }
+
+/* 在座 / 离桌 (see src/presenceInput.ts). The online green already comes from
+   .seat.is-online .seat-state, so only the away state overrides it. */
+.seat.is-online .seat-state.away { color: #f08a72; text-shadow: 0 0 6px #f08a7266; }
+.visitor .visitor-dot.away { background: #e07a63; box-shadow: 0 0 6px #e07a6366; }
+.away-label {
+  display: inline-block;
+  margin-right: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  background: #46292a;
+  color: #f3a892;
+}

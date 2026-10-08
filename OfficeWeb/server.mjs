@@ -1,7 +1,10 @@
 import { createSitting } from "./sitting.mjs";
+import { createBuildHttp } from './build-http.mjs';
 import { createAdmin } from "./admin.mjs";
 import { createCollabAnnotations } from "./collab-annotations.mjs";
 import { createInputPresence } from "./input-presence.mjs";
+import { markCallPresence } from "./call-presence.mjs";
+import { createPreviewRelay } from "./preview-relay.mjs";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { fileURLToPath } from "node:url";
@@ -20,6 +23,7 @@ import { createChatStore } from "./chat-store.mjs";
 import { createMembership } from "./membership.mjs";
 import { attachChat } from "./chat-server.mjs";
 import { createChatFiles } from "./chat-files.mjs";
+import { createFileRelay } from "./file-relay.mjs";
 import { createAccounts } from "./accounts.mjs";
 import { createPrivateSessions } from "./privateSessions.mjs";
 import { createMeetings } from "./meetings.mjs";
@@ -54,35 +58,17 @@ export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const DEFAULT_STATE_PATH = fileURLToPath(new URL("./state.json", import.meta.url));
 
 /** Players cannot be relayed outside the building, whatever a client claims. */
-export const MOTION_BOUNDS = { minX: -11, maxX: 12, minZ: -9, maxZ: 7 };
+export const MOTION_BOUNDS = { minX: -Number.MAX_SAFE_INTEGER/4, maxX: Number.MAX_SAFE_INTEGER/4,
+  minZ: -Number.MAX_SAFE_INTEGER/4, maxZ: Number.MAX_SAFE_INTEGER/4 };
 /** Ceiling on motion relays per client, in milliseconds between updates. */
 export const MOTION_INTERVAL_MS = 60;
 
-/** Valid bundled character ids, kept in sync with src/characters.ts. */
-const CHARACTER_IDS = new Set([
-  "man_adventurer",
-  "man_beach",
-  "man_casual_2",
-  "man_casual_hoodie",
-  "man_farmer",
-  "man_king",
-  "man_punk",
-  "man_spacesuit",
-  "man_suit",
-  "man_swat",
-  "man_worker",
-  "woman_adventurer",
-  "woman_casual",
-  "woman_formal",
-  "woman_medieval",
-  "woman_punk",
-  "woman_scifi",
-  "woman_soldier",
-  "woman_suit",
-  "woman_witch",
-  "woman_worker",
-]);
-const DEFAULT_CHARACTER = "woman_casual";
+/** 合法的配色/配件白名单与收敛函数，由 tools/build_look_manifest.mjs 从 src/look.ts 生成。 */
+const {
+  sanitizeAppearance,
+  sameAppearance,
+  DEFAULT_APPEARANCE,
+} = await import("./look.mjs");
 const SIT_POSES = new Set([
   "standard",
   "relax",
@@ -91,8 +77,6 @@ const SIT_POSES = new Set([
   "crossLegs",
   "wave",
 ]);
-const sanitizeCharacter = (id) =>
-  CHARACTER_IDS.has(id) ? id : DEFAULT_CHARACTER;
 
 /** Read the permanent roster from disk, tolerating a missing or corrupt file. */
 function loadRoster(statePath) {
@@ -106,7 +90,7 @@ function loadRoster(statePath) {
       if (
         Number.isInteger(seat) &&
         seat >= 0 &&
-        seat < SEAT_COUNT &&
+        Number.isSafeInteger(seat) &&
         owner &&
         typeof owner.id === "string" &&
         owner.id
@@ -135,6 +119,8 @@ function saveRoster(statePath, roster) {
 export function createOfficeServer(options = {}) {
   const adminPassword = options.adminPassword ?? ADMIN_PASSWORD;
   const statePath = options.statePath || DEFAULT_STATE_PATH;
+  const buildHttp = createBuildHttp(join(dirname(statePath), 'build-world.json'),
+    id => [...people.values()].some(person => person.sittingSpot === id) || (id.startsWith('desk-') && !!roster[Number(id.slice(5))]));
   const chatStore = createChatStore(options.chatPath || join(dirname(statePath), "chat-data"));
   const chatFiles = createChatFiles(join(options.chatPath || join(dirname(statePath), "chat-data"), "files"), chatStore);
   const accounts = options.authentication === false ? null : createAccounts(
@@ -151,6 +137,7 @@ export function createOfficeServer(options = {}) {
   );
   const http = createServer(async (req, res) => {
     if (accounts && await accounts.handle(req, res)) return;
+    if (await buildHttp(req, res, accounts)) return;
     if (chatFiles.handle(req, res, accounts)) return;
     // The app is served from here in production; in development Vite serves it
     // and this falls through to the status document below.
@@ -187,14 +174,15 @@ export function createOfficeServer(options = {}) {
   const save = () => saveRoster(statePath, roster);
   /** Seat view for clients: who holds each desk and whether they are online. */
   const seatsView = () =>
-    Array.from({ length: SEAT_COUNT }, (_, seat) => {
+    Array.from({ length: buildHttp.seatCount() }, (_, seat) => {
       const owner = roster[seat];
       if (!owner) return null;
       const online = [...people.values()].some((p) => p.clientId === owner.id);
       return { id: owner.id, name: owner.name, online };
     });
   const publish = () => {
-    io.emit("people", inputPresence.view()); // 附带 atDesk / awayFor
+    // 附带 atDesk / awayFor，以及"谁正在通话里"（inCall，头像条上的话筒标记）。
+    io.emit("people", markCallPresence(inputPresence.view(), sessions));
     io.emit("seats", seatsView());
     // Tell each client whether anybody else could receive its workstation preview,
     // so a machine nobody is watching does not keep capturing the screen at all.
@@ -205,12 +193,15 @@ export function createOfficeServer(options = {}) {
     }
   };
   const inputPresence = createInputPresence({ io, people, publish }); // 在座 / 离桌
+  const expressionTimer = setInterval(() => inputPresence.refresh(), 1000);
+  expressionTimer.unref();
+  http.on("close", () => clearInterval(expressionTimer));
   const admin = createAdmin({
-    io, people, roster, save, publish, adminPassword, seatCount: SEAT_COUNT,
+    io, people, roster, save, publish, adminPassword, seatCount: SEAT_COUNT, validSeat: buildHttp.hasWorkstation,
     // Somebody shown out leaves the member and chat lists and loses their session.
     eject: (accountId) => membership.eject(accountId),
   });
-  const sitting = createSitting(people, roster, publish, SEAT_COUNT);
+  const sitting = createSitting(people, roster, publish, SEAT_COUNT, buildHttp.hasSeat);
   const meetings = createMeetings(io, people, publish, removeMeetingMedia,
     options.meetingPermissions || updatePrivatePermissions);
   const end = (id) => {
@@ -218,13 +209,20 @@ export function createOfficeServer(options = {}) {
     if (!c) return;
     for (const p of c.peers) io.to(p).emit("session-end", id);
     sessions.delete(id);
+    // 通话结束时"谁在通话里"变了：头像条上的话筒标记要马上收掉（用户 2026-09-23）。
+    publish();
     if (c.room.startsWith("call-")) void (options.closePrivateMedia || removeMeetingMedia)(c.room).catch(error => {
       if (error?.status !== 404) console.error("私聊媒体清理失败", error);
     });
   };
   const privateCalls = createPrivateSessions(io, people, sessions, invites, end, options.privatePermissions || updatePrivatePermissions,
-    { ringMs: options.inviteRingMs ?? 30000 });
+    { ringMs: options.inviteRingMs ?? 30000, publish });
   const annotations = createCollabAnnotations({ io, people, sessions });
+  // 低清工位预览：校验、转发、并记住每个人的最后一张（见 preview-relay.mjs）。
+  // 必须建在连接之外：它是全局的那一份，不是每个 socket 一份。
+  const previewRelay = createPreviewRelay({ io, people });
+  // 文件直传：拖到任务栏头像条上就发，服务器只实时转发、不落盘（见 file-relay.mjs）。
+  const fileRelay = createFileRelay({ io, people });
   io.on("connection", (s) => {
     if (accounts) s.use((_packet, next) => {
       if (!accounts.authenticate(s.request)) {
@@ -287,8 +285,8 @@ export function createOfficeServer(options = {}) {
         name,
         seat,
         role,
-        // Which bundled avatar this player wears, so colleagues render it.
-        character: sanitizeCharacter(s.data.account?.character || data?.character),
+        // 这个人的配色与配件（尺子角色），同事据此把他画成一模一样。
+        appearance: sanitizeAppearance(s.data.account?.appearance ?? data?.appearance),
         // The tiny ambient thumbnail may be shown on the workstation screen.
         // It is deliberately unreadable, and the sharer can turn it off.
         previewAllowed: true,
@@ -303,7 +301,7 @@ export function createOfficeServer(options = {}) {
       // The boss sits in the manager's chair without having to claim it. The name is
       // the office's own rule, so it is applied server-side and persisted like any
       // other claim.
-      if (BOSS_NAME.test(name) && (!roster[BOSS_SEAT] || roster[BOSS_SEAT].id === clientId)) {
+      if (BOSS_NAME.test(name) && buildHttp.hasWorkstation(BOSS_SEAT) && (!roster[BOSS_SEAT] || roster[BOSS_SEAT].id === clientId)) {
         for (const [seatKey, held] of Object.entries(roster)) {
           if (held.id === clientId && Number(seatKey) !== BOSS_SEAT) delete roster[seatKey];
         }
@@ -319,6 +317,9 @@ export function createOfficeServer(options = {}) {
       }
       meetings.sync();
       publish();
+      // 先给他一份"每个人的最后一张"：否则刚进来的客户端要等每个人的下一次采集
+      // （最长 12 秒，人不在电脑前就永远不采），整间办公室的屏幕都是黑的。
+      previewRelay.snapshot(s.id);
     });
     // Seat arbitration. Two players clicking the same workstation must not both
     // win, and this handler runs synchronously on the event loop, so the
@@ -341,7 +342,7 @@ export function createOfficeServer(options = {}) {
           ok: false,
           error: "工位一旦占用就是永久的，如需释放请联系管理员",
         });
-      if (!Number.isInteger(requested) || requested < 0 || requested >= SEAT_COUNT)
+      if (!Number.isInteger(requested) || requested < 0 || !buildHttp.hasWorkstation(requested))
         return reply({ ok: false, error: "无效的工位" });
       const blocked = sitting.blocked(`desk-${requested}`, person);
       if (blocked) return reply({ ok: false, error: blocked });
@@ -365,12 +366,6 @@ export function createOfficeServer(options = {}) {
       publish();
       reply({ ok: true, seat: requested });
     });
-    function sendPreview(image) {
-      for (const person of people.values()) {
-        if (person.id === s.id || person.previewAllowed)
-          io.to(person.id).emit("preview", { id: s.id, image });
-      }
-    }
     s.on("preview-allowed", (allowed) => {
       const p = people.get(s.id);
       if (!p) return;
@@ -378,11 +373,14 @@ export function createOfficeServer(options = {}) {
       // This preference controls receiving other workstations, never publishing.
       publish();
     });
-    s.on("character", (id) => {
+    s.on("appearance", (raw) => {
       const p = people.get(s.id);
       if (!p) return;
-      p.character = sanitizeCharacter(id);
-      accounts?.setCharacter(p.clientId, p.character);
+      const next = sanitizeAppearance(raw);
+      // 只在真的变了的时候广播：外观消息可能被拖拽调色时高频发出。
+      if (sameAppearance(p.appearance, next)) return;
+      p.appearance = next;
+      accounts?.setAppearance(p.clientId, next);
       publish();
     });
     // Permanent naming: a player can (re)name themselves at any time.
@@ -419,6 +417,7 @@ export function createOfficeServer(options = {}) {
         !m ||
         !Number.isFinite(m.x) ||
         !Number.isFinite(m.z) ||
+        (m.y !== undefined && !Number.isFinite(m.y)) ||
         !Number.isFinite(m.rot)
       )
         return;
@@ -426,6 +425,7 @@ export function createOfficeServer(options = {}) {
       s.broadcast.emit("motion", {
         id: s.id,
         x: Math.min(MOTION_BOUNDS.maxX, Math.max(MOTION_BOUNDS.minX, m.x)),
+        y: m.y ?? 0,
         z: Math.min(MOTION_BOUNDS.maxZ, Math.max(MOTION_BOUNDS.minZ, m.z)),
         rot: m.rot,
         moving: m.moving === true,
@@ -439,7 +439,7 @@ export function createOfficeServer(options = {}) {
       if (!p) return;
       p.sharing = v === true;
       if (!p.sharing) {
-        if (!p.previewSharing) sendPreview(null);
+        if (!p.previewSharing) previewRelay.stop(s.id);
         privateCalls.screenStopped(s.id);
       }
       publish();
@@ -450,27 +450,11 @@ export function createOfficeServer(options = {}) {
       // A visiting client never broadcasts a low-resolution screen preview. The
       // client does not even capture one; this is the server-side backstop.
       p.previewSharing = value === true && p.seat != null && p.role !== "visitor";
-      if (!p.previewSharing) sendPreview(null);
+      if (!p.previewSharing) previewRelay.stop(s.id);
     });
-    let lastFrame = 0;
-    s.on("preview", (image) => {
-      const p = people.get(s.id);
-      // Visitors never broadcast the low-resolution preview, even while sharing in
-      // high definition: that is the one part of the office they opt out of.
-      if (p?.role === "visitor") return;
-      if (
-        !(p?.sharing || p?.previewSharing) ||
-        typeof image !== "string" ||
-        image.length > 250000 ||
-        !image.startsWith("data:image/jpeg;base64,") ||
-        Date.now() - lastFrame < 400
-      )
-        return;
-      lastFrame = Date.now();
-      // Everyone, including the sharer: their own workstation monitor should
-      // show their own screen, exactly like standing at a real desk.
-      sendPreview(image);
-    });
+    s.on("preview", image => previewRelay.push(s, image));
+    // 有人在小窗里悬停我的头像 → 转给我自己，我的屏幕闪一圈绿光（用户 2026-09-18）。
+    s.on("preview-watch", target => previewRelay.watch(s, target));
     sitting.attach(s);
     annotations.attach(s);
     attachChat(io, s, people, chatStore, membership.contacts, membership.hidden);
@@ -480,12 +464,16 @@ export function createOfficeServer(options = {}) {
       catch (error) { reply({ ok: false, error: error.message }); }
     });
     chatFiles.attach(io, s, people, accounts?.listContacts);
+    fileRelay.attach(s);
     privateCalls.attach(s);
     meetings.attach(s);
     s.on("disconnect", () => {
       people.delete(s.id);
       admin.forget(s.id);
       annotations.forget(s.id);
+      // 最后一张留着（他人可能马上回来），只清限速表。
+      previewRelay.forget(s.id);
+      previewRelay.forgetWatch(s.id);
       for (const [id, c] of sessions) if (c.peers.includes(s.id)) end(id);
       for (const [id, i] of invites)
         if (i.from === s.id || i.target === s.id) {

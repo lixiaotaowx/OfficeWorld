@@ -1,0 +1,23 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div>
+<script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import PrivateCallPanel from '/src/PrivateCallPanel.tsx';
+import SharingPreview from '/src/SharingPreview.tsx';
+import CallFloatingPanels from '/src/CallFloatingPanels.tsx';
+import '/src/styles.css';
+import '/src/workspace-ui.css';
+import '/src/workspace-responsive.css';
+const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
+const ctx=canvas.getContext('2d');ctx.fillStyle='#718879';ctx.fillRect(0,0,640,360);
+window.testStream=canvas.captureStream(1);window.actions={mute:0,end:0,stop:0};
+const office={requests:[],outgoing:[],callAlerts:[],sessions:[{id:'call',peer:'peer',kind:'voice'}],
+people:[{id:'peer',name:'很长的同事姓名用于检查省略显示'}],callStates:{call:{voice:'已开启',connected:true,sharing:true}},videos:{},
+mute:async()=>window.actions.mute++,end:()=>window.actions.end++,stopShare:()=>window.actions.stop++,shareInCall:async()=>{}};
+createRoot(document.getElementById('root')).render(React.createElement(React.Fragment,null,
+React.createElement('div',{className:'stage',style:{position:'fixed',top:70,left:12,right:12,bottom:12,width:'auto',height:'auto'}},
+React.createElement('div',{className:'build-ui',style:{position:'absolute',left:12,right:12,bottom:80,height:70,background:'#dfe5d4'}},'建造工具栏'),
+React.createElement('button',{className:'bottom-bar',style:{position:'absolute',left:12,right:12,bottom:12,height:52}},'底部操作栏')),
+React.createElement(CallFloatingPanels,null,React.createElement(PrivateCallPanel,{office}),
+React.createElement(SharingPreview,{stream:window.testStream,meeting:false,onStop:office.stopShare}))));
+</script></body></html>

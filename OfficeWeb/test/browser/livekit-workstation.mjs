@@ -1,6 +1,6 @@
 // Workstation verification: a player claims a desk, shares their screen, and
 // another player sees that thumbnail land on the claimed desk's 3D monitor.
-// Requires the signaling server (3108), Vite (5188) and global Playwright.
+// Requires a site to drive (OFFICE_APP_URL, default 127.0.0.1:5188) and global Playwright.
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 let chromium;
@@ -236,27 +236,33 @@ try {
   check("起身后别人依然选不到这个工位", Boolean(viewerStillBlocked));
   await viewer.getByRole("button", { name: "先不选" }).click();
 
-  // The first-visit dialog also picks the avatar: gender first, then a grid.
+  // The first-visit dialog also does the 捏人: 1 配色 then 2 配件.
   const pickerAgain = viewer.locator(".seat-picker");
   await viewer.locator('button[title="使用说明"]').click();
   await viewer.getByRole("button", { name: "重新选座" }).click();
   await pickerAgain.waitFor({ timeout: 15000 });
   check(
-    "选座弹窗里先选男女、再选外观",
-    (await pickerAgain.locator(".gender-tabs button").count()) === 2 &&
-      (await pickerAgain.locator(".character-grid button").count()) > 5,
+    "选座弹窗里先选配色、再选配件",
+    (await pickerAgain.locator(".color-grid button").count()) >= 8 &&
+      (await pickerAgain.locator(".accessory-list").count()) === 0,
   );
-  await pickerAgain.getByRole("button", { name: "男角色" }).click();
-  await pickerAgain
-    .locator(".character-grid button", { hasText: "宇航服" })
-    .click();
-  const avatarSwitched = await waitFor(async () =>
-    (await viewer.locator("select[aria-label='选择角色']").inputValue()) ===
-    "man_spacesuit"
-      ? true
-      : null,
-  );
-  check("在弹窗里选角色会真的切换角色", Boolean(avatarSwitched));
+  await pickerAgain.locator('.look-steps button', { hasText: "2 配件" }).click();
+  check("第 2 步有四个配件分组",
+    (await pickerAgain.locator(".accessory-row").count()) === 4);
+  await pickerAgain.locator(".accessory-row", { hasText: "帽子" })
+    .locator("button", { hasText: "礼帽" }).click();
+  // The settings dialog shows the same panel, so the stored choice is readable
+  // there as the selected thumbnail.
+  await viewer.locator('button[aria-label="设置"]').click();
+  const avatarSwitched = await waitFor(async () => {
+    await viewer.locator('.character-setting .look-steps button', { hasText: "2 配件" }).click();
+    const hat = await viewer
+      .locator('.character-setting .accessory-row', { hasText: "帽子" })
+      .locator('button[aria-selected="true"]').getAttribute("title");
+    return hat === "礼帽" ? true : null;
+  });
+  check("在弹窗里选配件会真的戴上", Boolean(avatarSwitched));
+  await viewer.getByRole("button", { name: "关闭", exact: true }).click();
   await viewer.getByRole("button", { name: "先不选" }).click();
 } catch (error) {
   check("测试执行未抛异常", false, error.message);

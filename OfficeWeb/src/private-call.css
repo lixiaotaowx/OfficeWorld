@@ -1,7 +1,10 @@
 .session-panel.private-calls { width: 340px; max-height: 65vh; overflow: auto; padding: 18px; border: 1px solid #d7dfd4; border-radius: 20px; background: #fbfcf8; box-shadow: 0 14px 45px #18382724; }
 .private-calls > div > span { padding-right: 0; font-size: 12px; color: #687568; }
 .private-calls > div > button { position: static; margin-top: 8px; }
-.call-heading { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+.call-heading { display: flex; align-items: center; gap: 11px; margin-bottom: 12px;
+  /* styles.css 里有一条全局 header { height: 102px; border-bottom: ... }（给页面标题栏用的），
+     通话卡片里的 header 不该继承它——否则收起状态怎么都是 100px 高。 */
+  height: auto; min-height: 0; border-bottom: 0; }
 .call-heading small { display: block; font-size: 10px; letter-spacing: .12em; color: #73836d; margin-bottom: 3px; }
 .call-heading strong { font-size: 17px; color: #233e31; }
 .call-avatar { width: 42px; height: 42px; display: grid; place-items: center; flex-shrink: 0; border-radius: 14px; background: #e4ecde; color: #426648; }
@@ -29,7 +32,26 @@
 .call-invite button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 1; border-radius: 12px; padding: 11px; }
 @media (max-width: 700px) {
   .session-panel.private-calls { width: auto; left: 16px; right: 16px; bottom: 18px; max-height: 52vh; }
+  /* 收起时连窄屏也要缩成一小条，不要被 left/right 拉满一整行 */
+  .session-panel.private-calls.folded { right: auto; max-height: none; }
 }
+
+/* 收起通话窗口（用户 2026-09-15：「折叠后只剩三个按钮」「收起的够小」）：
+   面板跟着缩到最小——一行名字 + 一行图标按钮，视频与状态文字全部隐藏。
+   视频元素不卸载，只是不显示，展开时不用重新挂载，也不会动到共享状态。 */
+.session-panel.private-calls.folded { width: auto; max-height: none; padding: 8px 10px; border-radius: 16px; }
+.call-folded .call-avatar, .call-folded .call-heading small { display: none; }
+/* 名字必须一行显示：窄条里面 flex 会把中文一个字一行地折下去，高度立刻翻几倍 */
+.call-folded .call-heading { margin-bottom: 6px; gap: 8px; flex-wrap: nowrap; }
+.call-folded .call-heading strong { font-size: 12px; white-space: nowrap; }
+.call-folded > span { display: none; }
+.call-folded .screen-stage { display: none; }
+.call-folded .private-call-actions.folded { margin-top: 0; padding-top: 0; border-top: 0; flex-wrap: nowrap; gap: 6px; }
+.session-panel.private-calls .private-call-actions.folded button { width: 34px; height: 34px; min-width: 34px; padding: 0; border-radius: 11px; }
+/* 收起/展开是一个正常的按钮（用户 2026-09-18：「通话的收起按钮太小了，也叫"收起"吧」），
+   不再是那个小小的 ⌄ 箭头。 */
+.session-panel.private-calls .call-fold { position: static; inset: auto; font-size: 12px; line-height: 1.2; padding: 5px 10px; border: 1px solid #d9e2d5; border-radius: 10px; background: #f0f4eb; color: #34553e; white-space: nowrap; }
+.session-panel.private-calls .call-fold:hover:not(:disabled) { background: #e4ecdd; color: #2c4a34; }
 
 .notification-setting { margin: 18px 0; }
 .notification-setting button { display: inline-flex; align-items: center; gap: 8px; }

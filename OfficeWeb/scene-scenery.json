@@ -1,0 +1,402 @@
+[
+{
+  "id": "island",
+  "kind": "block",
+  "origin": [0,-0.6,0],
+  "color": "#f3dfc5",
+  "dimensions": [30,0.6,24],
+  "boxes": [
+    [[30,0.6,24],[0,0.3,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "island-trim",
+  "kind": "block",
+  "origin": [0,-0.78,0],
+  "color": "#f3dfc5",
+  "dimensions": [29.7,0.18,23.7],
+  "boxes": [
+    [[29.7,0.18,23.7],[0,0.09,0],"#e9c6bd"]
+  ]
+},
+{
+  "id": "pillar--12--9",
+  "kind": "block",
+  "origin": [-12,-4.15,-9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar--12-9",
+  "kind": "block",
+  "origin": [-12,-4.15,9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar--4--9",
+  "kind": "block",
+  "origin": [-4,-4.15,-9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar--4-9",
+  "kind": "block",
+  "origin": [-4,-4.15,9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar-4--9",
+  "kind": "block",
+  "origin": [4,-4.15,-9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar-4-9",
+  "kind": "block",
+  "origin": [4,-4.15,9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar-12--9",
+  "kind": "block",
+  "origin": [12,-4.15,-9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "pillar-12-9",
+  "kind": "block",
+  "origin": [12,-4.15,9],
+  "color": "#f3dfc5",
+  "dimensions": [2.5,3.5,2.5],
+  "boxes": [
+    [[2.5,3.5,2.5],[0,1.75,0],"#d3c6d7"]
+  ]
+},
+{
+  "id": "distant-0-base",
+  "kind": "block",
+  "origin": [33,-7.5,0],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-0-top",
+  "kind": "block",
+  "origin": [33,-2.5,0],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-0-plant",
+  "kind": "block",
+  "origin": [33,-1.7,0],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-1-base",
+  "kind": "block",
+  "origin": [26.698,-7.5,17.634],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-1-top",
+  "kind": "block",
+  "origin": [26.698,-2.5,17.634],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-1-plant",
+  "kind": "block",
+  "origin": [26.698,-1.7,17.634],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-2-base",
+  "kind": "block",
+  "origin": [10.198,-7.5,28.532],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-2-top",
+  "kind": "block",
+  "origin": [10.198,-2.5,28.532],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-2-plant",
+  "kind": "block",
+  "origin": [10.198,-1.7,28.532],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-3-base",
+  "kind": "block",
+  "origin": [-10.198,-7.5,28.532],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-3-top",
+  "kind": "block",
+  "origin": [-10.198,-2.5,28.532],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-3-plant",
+  "kind": "block",
+  "origin": [-10.198,-1.7,28.532],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-4-base",
+  "kind": "block",
+  "origin": [-26.698,-7.5,17.634],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-4-top",
+  "kind": "block",
+  "origin": [-26.698,-2.5,17.634],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-4-plant",
+  "kind": "block",
+  "origin": [-26.698,-1.7,17.634],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-5-base",
+  "kind": "block",
+  "origin": [-33,-7.5,0],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-5-top",
+  "kind": "block",
+  "origin": [-33,-2.5,0],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-5-plant",
+  "kind": "block",
+  "origin": [-33,-1.7,0],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-6-base",
+  "kind": "block",
+  "origin": [-26.698,-7.5,-17.634],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-6-top",
+  "kind": "block",
+  "origin": [-26.698,-2.5,-17.634],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-6-plant",
+  "kind": "block",
+  "origin": [-26.698,-1.7,-17.634],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-7-base",
+  "kind": "block",
+  "origin": [-10.198,-7.5,-28.532],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-7-top",
+  "kind": "block",
+  "origin": [-10.198,-2.5,-28.532],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-7-plant",
+  "kind": "block",
+  "origin": [-10.198,-1.7,-28.532],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-8-base",
+  "kind": "block",
+  "origin": [10.198,-7.5,-28.532],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-8-top",
+  "kind": "block",
+  "origin": [10.198,-2.5,-28.532],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-8-plant",
+  "kind": "block",
+  "origin": [10.198,-1.7,-28.532],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+},
+{
+  "id": "distant-9-base",
+  "kind": "block",
+  "origin": [26.698,-7.5,-17.634],
+  "color": "#f3dfc5",
+  "dimensions": [4,5,4],
+  "boxes": [
+    [[4,5,4],[0,2.5,0],"#d9d0e3"]
+  ]
+},
+{
+  "id": "distant-9-top",
+  "kind": "block",
+  "origin": [26.698,-2.5,-17.634],
+  "color": "#f3dfc5",
+  "dimensions": [5,0.4,5],
+  "boxes": [
+    [[5,0.4,5],[0,0.2,0],"#f3dfc5"]
+  ]
+},
+{
+  "id": "distant-9-plant",
+  "kind": "block",
+  "origin": [26.698,-1.7,-17.634],
+  "color": "#f3dfc5",
+  "dimensions": [1.6,1.6,1.6],
+  "boxes": [
+    [[1.6,1.6,1.6],[0,0.8,0],"#c6d1b2"]
+  ]
+}
+]

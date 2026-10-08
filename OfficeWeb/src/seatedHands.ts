@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { LoadedCharacter } from "./characterModel";
+import { findBone, type LoadedCharacter } from "./characterModel";
 import type { SitPoseId } from "./sitPoses";
 
 /** Wrist targets match the authored keyboard: 0.52m ahead, top at 0.818m. */
@@ -15,9 +15,9 @@ export function placeSeatedHands(root: THREE.Object3D, character: LoadedCharacte
     root.updateMatrixWorld(true);
   };
   for (const side of ["L", "R"]) {
-    const upper = character.bones.get(`UpperArm${side}`);
-    const lower = character.bones.get(`LowerArm${side}`);
-    const wrist = character.bones.get(`Wrist${side}`);
+    const upper = findBone(character.bones, `UpperArm${side}`);
+    const lower = findBone(character.bones, `LowerArm${side}`);
+    const wrist = findBone(character.bones, `Wrist${side}`);
     if (!upper?.parent || !lower?.parent || !wrist?.parent) continue;
     const shoulder = upper.getWorldPosition(new THREE.Vector3());
     const elbow = lower.getWorldPosition(new THREE.Vector3());

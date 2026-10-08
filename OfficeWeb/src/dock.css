@@ -1,174 +1,396 @@
-/* 任务栏头像条：外观照着任务栏图标做（同高、同圆角、悬停高亮），
-   窗口本身是透明无边框置顶小窗（见 OfficeDesktop/dock-window.cjs）。 */
+@import "./dock-card.css";
+@import "./dock-transfer.css";
+/* 任务栏头像条：不画自己的底（任务栏本来就有底，再加一条深色就"太明显"了），
+   只画头像本身 + 悬停高亮，尽量像任务栏图标。
+   高度 --dock-h 由主进程按任务栏厚度给（实测这台 40 DIP）。
+
+   2026-09-2X（用户给了参考图）：整块换成**一层很淡的玻璃**——条子和悬停卡片同一套
+   半透明材质 + 背景模糊，卡片圆角更大，卡片上的按钮改成**白色圆按钮**。 */
 html, body { background: transparent; }
 
 .dock {
+  --dock-h: 40px;
+  /* 玻璃：深色任务栏上是**很淡的白色浮层**，浅色任务栏上翻成黑色浮层（主进程按任务栏颜色
+     算好，见 `frameColors()`）。2026-09-2X 用户说"太白了"：那一版是 rgba(255,255,255,.1)、
+     悬停还加到 .17，白色一层层叠上去整条就像块白玻璃。现在**只留极淡的一层**（.05/.07），
+     靠细边和阴影定型 —— 要的是"一层玻璃"，不是"一片白"。
+     注意：**别用 color-mix 混 #fff**（预乘空间会把透明色的 RGB 一起拖白，浅色任务栏的黑色
+     浮层被染成 rgba(35,35,35,…)，"浅色 → 黑色浮层"那条断言当场红）。 */
+  --dock-strip-bg: var(--dock-frame-bg, rgba(255, 255, 255, .05));
+  --dock-strip-bg-hover: var(--dock-frame-bg-hover, rgba(255, 255, 255, .07));
+  --dock-card-bg: rgba(20, 21, 24, .88);
+  /* 尖比卡片再实一点：它很小，跟卡片一样透就会糊在一起看不出是个尖（实测截图上几乎看不见）。 */
+  --dock-card-tip-bg: rgba(24, 25, 29, .97);
+  --dock-line: var(--dock-frame-line, rgba(255, 255, 255, .2));
+  --dock-ink: #f5f7f4;
+  --dock-btn-bg: rgba(255, 255, 255, .96);
+  --dock-btn-fg: #1b1e1c;
+  --dock-ring: var(--dock-frame-accent, rgba(90, 170, 255, .9));
+  /* 头像**没有**自己的小底色（用户 2026-09-2X：「头像本身的小背景有点黑啊 直接去掉内部小背景」）：
+     贴图是透明底的，直接透出任务栏最干净；暗垫底看着就是每人戴了块黑牌。
+     悬停时那一层浅色高亮还在（见 `.dock-avatar:hover`），那是"摸到了"的反馈，不是垫底。 */
+  --dock-chip-bg: transparent;
   position: absolute;
-  left: 0;
   right: 0;
   bottom: 0;
-  height: 44px;
+  /* 宽度贴着内容（几个头像就多宽），右边对齐——窗口比它宽是为了放悬停卡片，
+     多出来的透明区域靠 setIgnoreMouseEvents 穿透。 */
+  width: max-content;
+  height: var(--dock-h);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  border-radius: 10px;
-  /* 和任务栏一样的那种半透明深色底；浅色主题下 Windows 会给任务栏浅底，这里跟随系统。 */
-  background: rgba(32, 32, 32, .82);
+  gap: 2px;
+  padding: 0 4px;
   color: #f2f2f2;
   font: 12px/1 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
-  backdrop-filter: blur(12px);
   user-select: none;
+}
+
+/* 浅色任务栏：玻璃改用黑色浮层，卡片里的字与白按钮也跟着翻过来，不然读不出来。
+   `--dock-strip-bg-hover` / `--dock-chip-bg` 由 `frameColors()` 一起给（这里是兜底）。 */
+.dock[data-theme="light"] {
+  --dock-card-bg: rgba(250, 250, 250, .93);
+  --dock-card-tip-bg: rgba(252, 252, 252, .98);
+  --dock-strip-bg-hover: rgba(0, 0, 0, .07);
+  --dock-chip-bg: transparent;
+  --dock-ink: #1d211d;
+  --dock-btn-bg: rgba(255, 255, 255, .92);
+  --dock-btn-fg: #1b1e1c;
 }
 
 /* 任务栏在屏幕上方时，头像条贴在窗口顶部，卡片朝下画。 */
 .dock.edge-top { top: 0; bottom: auto; }
 .dock.edge-top .dock-card { bottom: auto; top: calc(100% + 8px); }
 
+/* 卡片/舞台往**右**画时（头像条在屏幕最左端，比如 Windows 11）：整条钉在窗口左边，
+   卡片也改成左对齐——不然窗口往右长，靠右对齐的条子会被顶到一边去，头像整排位移
+   （用户 2026-09-20：「出现大窗口时头像会自适应位移，需要锁定」）。 */
+.dock.popup-right { left: 0; right: auto; }
+.dock.popup-right .dock-card { left: 0; right: auto; }
+.dock.popup-right .dock-stage { left: 0; right: auto; }
+
 .dock-grip {
   cursor: grab;
-  opacity: .5;
-  font-size: 12px;
+  opacity: 0;
+  font-size: 11px;
   padding: 0 2px;
+  transition: opacity .15s;
   /* 让小窗能被拖动：这一段交给窗口管理器当标题栏用。 */
   -webkit-app-region: drag;
 }
+.dock:hover .dock-grip { opacity: .45; }
 
-.dock-empty { opacity: .7; padding: 0 6px; white-space: nowrap; }
+/* ---- 所有头像外面那圈大圆角框（用户 2026-09-20）----
 
-/* ---- 头像 ---- */
-.dock-avatar {
+   形状是**灵动岛那种纯半圆收口**（`border-radius: 999px` 会被夹成高度的一半，两端正好
+   两个半圆）。两侧留白必须够宽，否则最边上头像的方角会戳出半圆、把边框线切断：要求
+   `留白 ≥ 半径 − √(框高 − 3)`（约框高的 0.26～0.35 倍），所以按高度取 0.4 倍。
+   颜色由主进程读注册表 → state.theme → `frameColors()` 算好，用 CSS 变量传进来。 */
+.dock-frame {
   position: relative;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, .08);
-  cursor: pointer;
-  overflow: visible;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: calc(var(--dock-h) * .8);
+  box-sizing: border-box;
+  padding: 0 calc(var(--dock-h) * .4);
+  border-radius: 999px;
+  background: var(--dock-strip-bg);
+  border: 1px solid var(--dock-line);
+  box-shadow: var(--dock-frame-shadow, 0 6px 18px rgba(0, 0, 0, .32));
+  /* 玻璃：把任务栏/桌面透出来一点，比一层纯色浮层"灵动"。
+     **这里不加 transition**：主题切换时 computed 底色是过渡插值，用例读到
+     rgba(0,0,0,.06) / rgba(35,35,35,.063) 两个数随机出现，那条断言会随机红。 */
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+.dock:hover .dock-frame { background: var(--dock-strip-bg-hover); }
+/* 任务栏被强调色着色时，框里再垫一层很淡的强调色，和任务栏是一套色。
+   （不要给框加 overflow:hidden —— 头像右上角的未读"!"和共享标记是往外凸的，会被切掉。） */
+.dock-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--dock-frame-accent, transparent);
+  opacity: .07;
+  pointer-events: none;
+}
+/* 顶上一道极淡的边光（玻璃要有边，不然一片糊）。**用很低的白色**：2026-09-2X 用户说
+   "太白了"，原来 `.16 × .5` 那道光在深色任务栏上就已经是一片白。 */
+.dock-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 60%);
+  opacity: .5;
+  pointer-events: none;
+}
+.dock[data-theme="light"] .dock-frame::after {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 60%);
 }
 
-.dock-avatar:hover, .dock-avatar:focus-visible { background: rgba(255, 255, 255, .22); outline: none; }
-
-.dock-avatar img {
-  width: 100%;
-  height: 100%;
+.dock-empty {
+  padding: 0 8px;
+  height: calc(var(--dock-h) - 8px);
+  display: grid;
+  place-items: center;
   border-radius: 6px;
-  object-fit: cover;
-  display: block;
+  background: rgba(0, 0, 0, .35);
+  color: #eee;
+  white-space: nowrap;
+}
+/* ---- 头像：只给"头+肩"（缩略图是全身照，放大到头部） ---- */
+.dock-avatar {
+  position: relative;
+  width: var(--dock-h);
+  flex: 0 0 var(--dock-h);
+  min-width: var(--dock-h);
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  height: var(--dock-h);
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  /* 缩略图是透明底的亮色渲染，直接贴上来一片惨白：垫一层暗底再压亮度、提饱和度，
+     看起来才像任务栏上的头像（用户 2026-09-18：「头像太白了吧」）。
+     2026-09-2X 用户又说整条"太白了"：垫底**交给 `frameColors().chip` 按主题给**
+     （深色任务栏上是暗垫底），不再用白色垫底；头像本身靠滤镜压亮。 */
+  background-color: var(--dock-chip-bg, rgba(10, 12, 12, .2));
+  background-repeat: no-repeat;
+  /* 小窗用的就是**头像图**（`head-<color>.png`，`portraitCamera()` 出的方形特写）。
+     2026-09-28 换尺子角色前用的是全身图 + `background-size: 340%` 去"放大取头"——
+     这块板子的头在画面最上面，340% 取到的其实是板身中部（用户报障：「头像不对」）。
+     2026-09-28 用户又说「头像太小了 只特写面部就行」：取景从"头顶往下 0.65m"改成
+     **量出五官（瞳孔/眼白那个材质槽）围着它取景**，28px 的头像现在整张都是脸。 */
+  background-size: 100% 100%;
+  background-position: 50% 50%;
+  /* 贴图是透明底的**亮色**渲染，所以亮度要压低；垫底去掉之后不能再靠"深色垫底"帮忙压，
+     得自己压到位（实测：垫底 .16 时 brightness(.86) 的条子平均亮度 37.4，去掉垫底后跳到
+     67.8 —— 补偿到 .68 才回到同一档，见 `Build/dock-white-measure.cjs`）。 */
+  filter: none;
+  cursor: pointer;
+  overflow: visible;
+  transition: transform .16s cubic-bezier(.22, 1, .36, 1), box-shadow .16s ease,
+    background-color .16s ease;
+}
+
+/* 悬停高亮照任务栏图标的样子：一层浅色圆角底 + 微微抬起来一点（"灵动"）。
+   白色只给到 .12/.22 —— 再高在深色任务栏上就是"白块"。 */
+.dock-avatar:hover, .dock-avatar:focus-visible {
+  background-color: rgba(255, 255, 255, .12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22), 0 0 0 3px rgba(255, 255, 255, .06);
+  transform: translateY(-1px);
+  outline: none;
+  z-index: 2;
+}
+
+/* 我正在看的那一个（悬停卡片开着）：套一圈柔和的光圈，跟参考图里那颗蓝圈一个意思。
+   强调色读得到就用任务栏的强调色，读不到就退回浅蓝（`--dock-ring` 在 .dock 上定义）。 */
+.dock-avatar.open {
+  box-shadow: 0 0 0 2px var(--dock-ring), 0 0 14px 2px color-mix(in srgb, var(--dock-ring) 45%, transparent);
+  transform: translateY(-1px);
+  z-index: 2;
+}
+
+/* 我自己的头像**不画边**（用户 2026-09-2X：「为什么我自己的头像还有一个白边 去掉吧」）：
+   原来这里是一圈白色内描边当"这是我"的标记，用户不要。自己仍然排最前、并且在悬停卡片里
+   写着「（我 · 我的工位）」，认得出自己；被我看时一样走 `.open` 的强调色光圈。 */
+
+/* 新来的人轻轻弹一下（"灵动"但只弹这一次，不会一直动）。 */
+.dock-avatar { animation: dock-pop 320ms cubic-bezier(.22, 1.3, .36, 1) both; }
+@keyframes dock-pop {
+  from { transform: translateY(3px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+/* 有未读/未接来电的人：一呼一吸的柔光，扫一眼就知道谁在等（不是闪个不停）。 */
+.dock-avatar.alert { animation: dock-pop 320ms cubic-bezier(.22, 1.3, .36, 1) both,
+  dock-live 2.4s ease-in-out 400ms infinite; }
+@keyframes dock-live {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 69, 58, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(217, 69, 58, .3); }
 }
 
 .dock-initial {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-  background: #3f6d4a;
-  color: #fff;
-  font-size: 15px;
+  display: grid; place-items: center; width: 100%; height: 100%;
+  border-radius: 7px; background: #3f6d4a; color: #fff;
+  font-size: calc(var(--dock-h) / 2.4);
 }
 
 .dock-dot {
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(32, 32, 32, .9);
+  position: absolute; right: 0; bottom: 0; width: 7px; height: 7px;
+  border-radius: 50%; border: 1.5px solid rgba(20, 20, 20, .85);
 }
 .dock-dot.here { background: #3f9d4f; }
 .dock-dot.away { background: #cf4a38; }
 
 .dock-sharing {
-  position: absolute;
-  left: -2px;
-  top: -2px;
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  background: #2f7a3d;
-  color: #fff;
+  position: absolute; left: -2px; top: -2px; display: grid; place-items: center;
+  width: 13px; height: 13px; border-radius: 4px; background: #2f7a3d; color: #fff;
 }
-.dock-sharing svg { width: 10px; height: 10px; }
+.dock-sharing svg { width: 9px; height: 9px; }
+
+/* 正在通话里（语音或共享，含别人打给别人的）：左下角一个话筒。共享标记占左上、未读占
+   右上、在座点在右下，所以这一格是空的（用户 2026-09-23）。 */
+.dock-voice {
+  position: absolute; left: -2px; bottom: -2px;
+  display: grid; place-items: center;
+  width: 13px; height: 13px; border-radius: 4px; background: #2f6fb5; color: #fff;
+}
+.dock-voice svg { width: 9px; height: 9px; }
 
 .dock-unread {
-  position: absolute;
-  right: -4px;
-  top: -5px;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 3px;
-  border-radius: 8px;
-  background: #d9453a;
-  color: #fff;
-  font-size: 10px;
-  line-height: 15px;
-  text-align: center;
+  position: absolute; right: -3px; top: -4px;
+  min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px;
+  background: #d9453a; color: #fff;
+  font-size: 10px; line-height: 14px; text-align: center;
 }
 
-/* ---- 悬停卡片 ---- */
-.dock-card {
+/* ---- 「有人来看我了」：头像蹦一下 + 他的角色站在条子上演一段 ---- */
+
+/* 从头像条里跳出来（用户 2026-09-18：「把那个看我的人从状态栏头像中跳出来」） */
+.dock-avatar.greeting {
+  animation: dock-jump 620ms cubic-bezier(.22, 1.2, .36, 1) both;
+  z-index: 3;
+}
+@keyframes dock-jump {
+  0% { transform: none; }
+  35% { transform: translateY(-6px); }
+  60% { transform: translateY(-3px); }
+  100% { transform: translateY(-2px); }
+}
+
+/* 舞台：下边缘贴着头像条上边缘 = 角色站在任务栏上。
+   默认是"打电话过来"那么大（320×380，人物照现在这么大）；
+   `.peek` 是鼠标只停在头像上——画布小一半，人物也就小一倍（用户 2026-09-20）。 */
+.dock-stage {
   position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  padding: 10px;
-  min-width: 260px;
-  border-radius: 12px;
-  background: rgba(28, 28, 28, .96);
-  color: #f5f5f5;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, .45);
+  right: 0;
+  bottom: var(--dock-h);
+  width: 320px;
+  height: 380px;
+  animation: dock-stage-in 260ms ease-out both;
+  pointer-events: none;
+}
+.dock-stage.peek { width: 160px; height: 190px; }
+.dock-stage canvas { width: 100%; height: 100%; display: block; }
+.dock-stage-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  text-align: center;
+  color: #eaf7ec;
+  font-size: 13px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
+}
+.dock.edge-top .dock-stage { bottom: auto; top: var(--dock-h); }
+@keyframes dock-stage-in {
+  from { opacity: 0; transform: translateY(28px) scale(.82); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 来电条（用户 2026-09-21：「通话请求时，需要在人物上加上是谁来电，再加一个接听的按钮」→
+   「我是说打招呼的人站在状态栏上的人物头顶」）：角色照旧站在头像条上，气泡挂在**他的头顶**
+   （画布上边缘之上），写清是谁、怎么打过来的，右边两个按钮直接接听/拒绝。
+   外层只管"贴在画布那一格的头顶正中"——角色在画布正中，所以气泡也居中对齐到他的头上，
+   不是偏在一边；透明区域不吃鼠标（下面那些按钮要能点到）。 */
+.dock-call-wrap {
+  position: absolute;
+  right: 0;
+  left: auto;
+  bottom: calc(var(--dock-h) + var(--dock-stage-h, 380px));
+  width: var(--dock-stage-w, 320px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.dock-call {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  height: 52px;
+  pointer-events: auto;
+  /* 高度含边框：和下面角色的头顶留出干净的间隙。 */
+  box-sizing: border-box;
+  padding: 0 6px 0 14px;
+  border-radius: 999px;
+  background: var(--dock-frame-bg, rgba(255, 255, 255, .1));
+  border: 1px solid var(--dock-frame-line, rgba(255, 255, 255, .2));
+  box-shadow: var(--dock-frame-shadow, 0 6px 18px rgba(0, 0, 0, .32));
+  /* 深色任务栏上是浅字，浅色任务栏上要反过来，不然读不出来。 */
+  color: var(--dock-call-fg, #f4f7f2);
+  white-space: nowrap;
   animation: dock-card-in .16s ease-out;
 }
-
-@keyframes dock-card-in {
-  from { opacity: 0; transform: translate(-50%, 6px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-.dock-shot {
-  display: grid;
-  place-items: center;
-  width: 240px;
-  height: 135px;
-  border-radius: 8px;
-  background: #f2f2ef;
-  color: #4a4a4a;
-  overflow: hidden;
-}
-
-.dock-shot img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.dock-shot-empty { font-size: 13px; text-align: center; padding: 0 12px; line-height: 1.5; }
-
-.dock-card-actions { display: grid; gap: 8px; align-content: start; }
-.dock-card-actions button {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border: 0;
-  border-radius: 9px;
-  background: #6b4b7a;
-  color: #fff;
-  cursor: pointer;
-}
-.dock-card-actions button:hover { background: #7d5a8d; }
-
-.dock-card-name {
-  grid-column: 1 / -1;
+/* 卡片/舞台往右画时（Win11 条子在屏幕最左端），头顶的气泡也跟着钉在窗口左边。 */
+.dock.popup-right .dock-call-wrap { left: 0; right: auto; }
+.dock.edge-top .dock-call-wrap { bottom: auto; top: calc(var(--dock-h) + var(--dock-stage-h, 380px)); }
+.dock-call-text {
+  flex: 1 1 auto;
+  /* 名字长了要能缩，否则"接听"会被顶出窗口右边（胶囊是右对齐定位的）。 */
+  min-width: 0;
   font-size: 12px;
-  opacity: .8;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dock-call-actions { display: flex; align-items: center; gap: 6px; }
+.dock-call-actions button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+.dock-call-actions button svg { width: 14px; height: 14px; }
+/* 接听是主按钮（绿）、拒绝是次要按钮（红）：一眼能分，跟系统来电那一套一致。 */
+.dock-call-answer { background: #2f9e4f; }
+.dock-call-answer:hover { background: #37b45a; }
+.dock-call-decline { background: #b8433a; }
+.dock-call-decline:hover { background: #cc4c42; }
+
+/* 卡片要压在舞台上面（同时出现时别打架） */
+.dock-card { z-index: 4; }
+
+/* 在座 / 离座写成字：暗绿 / 暗红的小标签，跟名字一行（用户 2026-09-18） */
+.dock-card-state {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 15px;
+  color: #f4f7f2;
+}
+.dock-card-state.here { background: #2f6b3c; }
+.dock-card-state.away { background: #8f3a2c; }
+
+/* 拖拽的结果/原因：拖完在条子上说一句（用户 2026-09-21 报「头像拖拽上去发送的功能不行」后加）。
+   原来失败是静默的，根本分不清"拖拽没进来"还是"进来了发不出去"——这句话就是那条分界线。
+   贴着头像排在框里；条子宽度由页面报给主进程，窗口跟着长。 */
+.dock-notice {
+  margin-left: 6px;
+  padding: 0 10px;
+  height: calc(var(--dock-h) - 10px);
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(214, 158, 46, .94);
+  color: #201a08;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+
+
+

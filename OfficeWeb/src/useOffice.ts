@@ -2,15 +2,16 @@ import { attachOfficeNotifications } from './officeNotifications';
 import { attachChatClient } from "./chatClient";
 import { retainPresent, sameCallStates } from './presenceResources';
 import { useDesktopPreview } from './useDesktopPreview';
+import { useFileTransfers } from './useFileTransfers';
 import { useMeetings } from "./useMeetings";
-import type { AnnotateMessage } from './annotations';
 import { alertForExpiry, withCallAlert, type CallAlert } from './callAlertRules';
 import { createAnnotationChannel } from './annotationChannel';
+import { createSeatRequests } from './seatRequests';
 import { watchInputPresence, deskSensorLabel } from './presenceInput';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
-import { resolveCharacterId, type CharacterId } from "./characters";
+import { resolveAppearance, storeAppearance, type Appearance } from "./look";
 import type {
   Person,
   ChatContact,
@@ -22,10 +23,12 @@ import type {
 } from "./types";
 
 import type { Account } from "./AccountGate";
+import { attachPreviewIncoming, mergePreviewBatch } from './previewFrames';
+import { PEEK_GLOW_FADE_MS } from './dockRules';
+import { sendDockGreeting } from './dockGreeting';
 
 /** How often relayed positions and thumbnails are folded into React state. */
 const MOTION_FLUSH_MS = 100;
-const PREVIEW_FLUSH_MS = 500;
 
 export function useOffice(account: Account) {
   const [people, setPeople] = useState<Person[]>([]);
@@ -62,6 +65,9 @@ export function useOffice(account: Account) {
   sessionsRef.current = sessions;
   const [connected, setConnected] = useState(false);
   const [sharing, setSharing] = useState(false);
+  /** 同一个值的 ref：socket 回调里要读它（绿光在共享屏幕时不闪）。 */
+  const sharingRef = useRef(false);
+  sharingRef.current = sharing;
   const [muted, setMuted] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState('未通话');
   const [callStates, setCallStates] = useState<Record<string, ReturnType<OfficeMedia['callStatus']>>>({});
@@ -99,9 +105,16 @@ export function useOffice(account: Account) {
   const annotations = useMemo(() => createAnnotationChannel({
     socket,
     notify: (message: string) => setNotice(message),
-    sharingScreen: () => media.current?.screen?.active === true,
+    // 会议里的共享是 MeetingScreenShare 自己采集的，不经过 media.screen —— 两处都要算
+    // "我正在共享"，否则中继过来的笔迹与清空会被这一句挡掉（用户 2026-09-22）。
+    sharingScreen: () => media.current?.screen?.active === true
+      || media.current?.meetingStatus().sharing === true,
   }), []);
   const desktopPreview = useDesktopPreview(socket, connected, people.find(p => p.id === myId), setNotice);
+  // 工位相关的两个服务端请求（认领/放弃、管理员释放）：逻辑在 src/seatRequests.ts。
+  const seatApi = useMemo(() => createSeatRequests(socket, setNotice), []);
+  // 文件直传：拖到任务栏头像上就发，直接落进对方的接收文件夹（用户 2026-09-22）。
+  const fileTransfers = useFileTransfers(setNotice);
   const meetings = useMeetings(socket, media, connected);
   // Which screens we are publishing, so the marks can be cleared for exactly those
   // when the share ends however it ends.
@@ -112,6 +125,11 @@ export function useOffice(account: Account) {
     if (meetings.sharing && meetings.active?.room) mine.push(meetings.active.room);
     myShareScopes.current = mine;
   }, [sessions, meetings.sharing, meetings.active?.room]);
+  // 会议共享那条路不会经过 shareInCall()，标注浮层要在这里主动挂上：不然参会者画在
+  // 共享画面上的笔迹没有地方落，看起来就是"会议里不能标注"（用户 2026-09-22）。
+  useEffect(() => {
+    if (meetings.sharing) annotations.attach();
+  }, [meetings.sharing]);
   // 换屏（右键画面里的显示器，或成员列表里的自己）不只换低清预览：正在进行的屏幕
   // 共享也要实时切到新屏幕，会议与私聊各自把已发布的轨原地换掉（用户 2026-09-15）。
   useEffect(() => {
@@ -124,12 +142,7 @@ export function useOffice(account: Account) {
   // Leaving a meeting must drop its marks too: the room name is reused, so a later
   // share there would otherwise start with the previous strokes on it.
   const meetingRoom = meetings.active?.room ?? null;
-  const previousMeetingRoom = useRef<string | null>(null);
-  useEffect(() => {
-    const previous = previousMeetingRoom.current;
-    if (previous && previous !== meetingRoom) annotations.clearShareMarks([previous]);
-    previousMeetingRoom.current = meetingRoom;
-  }, [meetingRoom]);
+  useEffect(() => { annotations.trackMeetingRoom(meetingRoom); }, [meetingRoom]);
   const chatClient = useRef<ReturnType<typeof attachChatClient>>();
   useEffect(() => {
     const s = io({ autoConnect: false });
@@ -163,7 +176,7 @@ export function useOffice(account: Account) {
       setMyId(s.id || "");
       s.emit("join", {
         name: account.name,
-        character: resolveCharacterId(account.character),
+        appearance: resolveAppearance(account.appearance),
         // Only the desktop app can paint on the sharer's real screen. A browser cannot
         // (there is no native layer out there), so it says so and everyone else can stop
         // offering to draw on a screen that could never show the marks.
@@ -232,24 +245,20 @@ export function useOffice(account: Account) {
     chatClient.current = chat;
     // Thumbnails are batched for the same reason as motion: several people sharing
     // used to mean a render per JPEG, and the 3D scene only needs the newest frame.
-    const pendingPreviews: Record<string, string | null> = {};
-    let previewTimer: ReturnType<typeof setTimeout> | undefined;
-    const flushPreviews = () => {
-      previewTimer = undefined;
-      const batch = { ...pendingPreviews };
-      for (const key of Object.keys(pendingPreviews)) delete pendingPreviews[key];
-      setPreviews((old) => {
-        const next = { ...old };
-        for (const [key, value] of Object.entries(batch)) {
-          if (value !== null && (key === s.id || receivePreviews.current)) next[key] = value;
-          else delete next[key];
-        }
-        return next;
-      });
-    };
-    s.on("preview", ({ id, image }) => {
-      pendingPreviews[id] = image ? String(image) : null;
-      previewTimer ??= setTimeout(flushPreviews, PREVIEW_FLUSH_MS);
+    // 规则本身在 src/previewFrames.ts（纯函数，单独测）。
+    const detachPreviews = attachPreviewIncoming(s, batch => setPreviews(old =>
+      mergePreviewBatch(old, batch,
+        { selfId: s.id, receiving: receivePreviews.current }).next));
+    // 有人在小窗里悬停我的头像 → 我的所有屏幕四周**慢慢**亮起一圈绿光（用户 2026-09-18：
+    // 「有人来看我了，提示我一下」；2026-09-20：停够 2 秒才开始、用 2 秒渐渐亮起来），同时让
+    // 头像条把那个人拉出来——只是看一眼，所以是小一号、不打招呼（mode 缺省就是 peek）。
+    s.on("watched", (payload: { from?: string; name?: string; appearance?: Appearance }) => {
+      const desktop = window.officeDesktop;
+      if (!desktop) return;
+      void desktop.previewGlow?.({ sharing: sharingRef.current, fade: PEEK_GLOW_FADE_MS })
+        .catch(() => undefined);
+      if (payload?.from) sendDockGreeting({ id: payload.from, name: payload.name,
+        appearance: payload.appearance, mode: 'peek' });
     });
     s.on("request", (r: Request) => {
       invitationIds.current.add(r.id); setRequests((old) => [...old, r]);
@@ -279,20 +288,14 @@ export function useOffice(account: Account) {
     });
     // Annotation board. The desktop app additionally mirrors the strokes onto the
     // display it is sharing, so the sharer sees them while working in other apps.
-    s.on("annotate", (message: AnnotateMessage) => {
-      annotations.mirror({ type: 'annotate', ...message });
-    });
-    s.on("annotate-clear", (message: { scope?: string }) => {
-      annotations.mirror({ type: 'clear' });
-    });
-    s.on("annotate-undo", (message: { id?: string; clientId?: string; scope?: string }) => {
-      annotations.undoOnLayer(message?.id);
-    });
+    annotations.attachSocket(s);
+    // 文件直传的收发两端都挂在这条 socket 上（不含发送动作本身，那由拖拽触发）。
+    fileTransfers.attach(s);
     s.connect();
     return () => {
       presence.stop();
       clearTimeout(motionTimer);
-      clearTimeout(previewTimer);
+      detachPreviews();
       disposeNotifications();
       chat.dispose();
       m.dispose();
@@ -338,47 +341,6 @@ export function useOffice(account: Account) {
     }
   }
   /** Claim a workstation (or pass null to give it up). Resolves to success. */
-  async function claimSeat(seat: number | null) {
-    const reply = await new Promise<{
-      ok: boolean;
-      seat?: number | null;
-      error?: string;
-    }>((resolve) => {
-      const active = socket.current;
-      if (!active) return resolve({ ok: false, error: "尚未连接" });
-      active.timeout(6000).emit("seat", seat, (error: unknown, answer: never) => {
-        if (error) resolve({ ok: false, error: "工位请求超时" });
-        else resolve(answer ?? { ok: false, error: "工位请求失败" });
-      });
-    });
-    setNotice(
-      reply.ok
-        ? seat === null
-          ? "已离开工位"
-          : `已占用 ${seat + 1} 号工位`
-        : reply.error || "无法占用该工位",
-    );
-    return reply.ok;
-  }
-  /** Ask the server to free a permanently held desk (admin only). */
-  async function adminKick(seat: number, password: string) {
-    const reply = await new Promise<{
-      ok: boolean;
-      seat?: number;
-      name?: string;
-      error?: string;
-    }>((resolve) => {
-      const active = socket.current;
-      if (!active) return resolve({ ok: false, error: "尚未连接" });
-      active
-        .timeout(6000)
-        .emit("admin", { password, seat }, (error: unknown, answer: never) => {
-          if (error) resolve({ ok: false, error: "管理请求超时" });
-          else resolve(answer ?? { ok: false, error: "管理请求失败" });
-        });
-    });
-    return reply;
-  }
   return {
     people,
     seats,
@@ -412,9 +374,11 @@ export function useOffice(account: Account) {
     voiceStatus,
     callStates,
     notice,
+    /** 文件直传：`files.rows` / `files.sendFiles` / 完事的打开与打开文件夹（用户 2026-09-22）。 */
+    files: fileTransfers,
     myId,
     name,
-    adminKick,
+    adminKick: seatApi.adminKick,
     share,
     shareInCall: async (id: string) => {
       try { await media.current?.shareInCall(id); annotations.attach(); }
@@ -431,10 +395,9 @@ export function useOffice(account: Account) {
     },
     meetings,
     respond,
-    claimSeat,
+    claimSeat: seatApi.claimSeat,
     setNotice,
-    sitSpot: (id: string | null) => new Promise<boolean>(resolve => {
-      const sequence = ++sitSequence.current;
+    sitSpot: (id: string | null) => new Promise<boolean>(resolve => {      const sequence = ++sitSequence.current;
       const active = socket.current;
       if (!active?.connected) return resolve(false);
       active.timeout(6000).emit("sit", id, (error: unknown, answer?: { ok: boolean; error?: string }) => {
@@ -447,13 +410,9 @@ export function useOffice(account: Account) {
       });
     }),
     reportMotion: (motion: Motion) => socket.current?.emit("motion", motion),
-    setCharacter: (id: CharacterId) => {
-      try {
-        localStorage.setItem("office-character", id);
-      } catch {
-        // Storage may be unavailable; the server value still holds.
-      }
-      socket.current?.emit("character", id);
+    setAppearance: (appearance: Appearance) => {
+      storeAppearance(appearance);
+      socket.current?.emit("appearance", appearance);
     },
     setPreviewAllowed: (allowed: boolean) => {
       receivePreviews.current = allowed;
@@ -466,6 +425,14 @@ export function useOffice(account: Account) {
     loadChatFile: (file: NonNullable<Message["attachment"]>) =>
       chatClient.current?.loadFile(file) ?? Promise.reject(Error("聊天尚未连接")),
     chat: (text: string, recipientId?: string) => chatClient.current?.send(text, recipientId) ?? Promise.resolve(false),
+    /**
+     * 告诉服务端"我正在看某人的工位"（小窗悬停头像时每秒会报一次）。服务端转给他，
+     * 他的屏幕就闪一圈绿光——用户 2026-09-18：「有人来看我了，提示我一下」。
+     */
+    notifyWatching: (targetId: string) => {
+      if (!targetId) return;
+      socket.current?.emit("preview-watch", { target: targetId });
+    },
     request: async (target: string, kind: "screen" | "voice", offer = false) => {
       if (requestBusy.current) return;
       requestBusy.current = true;

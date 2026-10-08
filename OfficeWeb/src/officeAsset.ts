@@ -3,6 +3,18 @@ import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
+/** Decoders are the slow part of the first load; give them the machine's cores. */
+function decoderWorkers() {
+  const cores = typeof navigator === "undefined" ? 4 : navigator.hardwareConcurrency || 4;
+  return Math.min(8, Math.max(2, cores - 1));
+}
+
+/**
+ * Note: pre-fetching the decoders was measured and dropped. The loader asks for
+ * them inside its workers, which does not reuse a document-level prefetch — the
+ * files were downloaded twice and the office finished ~250ms *later*.
+ */
+
 /** Keep compressed mip levels for context restoration; release decoder workers. */
 export function loadOfficeAsset(
   renderer: THREE.WebGLRenderer,
@@ -10,7 +22,8 @@ export function loadOfficeAsset(
   progress: (event: ProgressEvent) => void,
   failed: () => void,
 ) {
-  const draco = new DRACOLoader().setDecoderPath('/assets/draco/');
+  const draco = new DRACOLoader().setDecoderPath('/assets/draco/')
+    .setWorkerLimit(decoderWorkers());
   const loader = new GLTFLoader().setDRACOLoader(draco);
   // Tiered UASTC preserves baked gradients while keeping textures GPU-compressed.
   const mode = new URLSearchParams(location.search).get('textures');
@@ -19,7 +32,11 @@ export function loadOfficeAsset(
     'WEBGL_compressed_texture_s3tc', 'WEBGL_compressed_texture_etc',
   ].some(extension => renderer.extensions.has(extension));
   const ktx = supportsCompression
-    ? new KTX2Loader().setTranscoderPath('/assets/basis/').setWorkerLimit(2).detectSupport(renderer)
+    ? new KTX2Loader().setTranscoderPath('/assets/basis/')
+      // 130+ textures are transcoded one task at a time; the default limit of
+      // two workers leaves most of the machine idle during the first load.
+      .setWorkerLimit(decoderWorkers())
+      .detectSupport(renderer)
     : null;
   if (ktx) loader.setKTX2Loader(ktx);
   const original = mode === 'original' ? '/assets/office-baked.glb?v=20260913-monitor-uv2'

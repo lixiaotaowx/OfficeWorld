@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { LoadedCharacter } from "./characterModel";
+import { findBone, type LoadedCharacter } from "./characterModel";
 import type { SitPoseId } from "./sitPoses";
 
 /** Two-bone solve: keep the pelvis on the chair and each supported foot down. */
@@ -12,9 +12,9 @@ export function groundSeatedFeet(
   const worldRotation = root.getWorldQuaternion(new THREE.Quaternion());
   for (const side of ["L", "R"]) {
     if (pose === "crossLegs" && side === "R") continue;
-    const thigh = character.bones.get(`UpperLeg${side}`);
-    const shin = character.bones.get(`LowerLeg${side}`);
-    const foot = character.bones.get(`Foot${side}`);
+    const thigh = findBone(character.bones, `UpperLeg${side}`);
+    const shin = findBone(character.bones, `LowerLeg${side}`);
+    const foot = findBone(character.bones, `Foot${side}`);
     const height = character.groundFootHeights.get(side);
     if (!thigh?.parent || !shin?.parent || !foot?.parent || height === undefined) continue;
     const hip = thigh.getWorldPosition(new THREE.Vector3());

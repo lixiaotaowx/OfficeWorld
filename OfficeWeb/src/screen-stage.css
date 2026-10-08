@@ -38,6 +38,7 @@
 .screen-stage:focus-within .screen-stage-bar:not(.minimal),
 .screen-stage.annotating .screen-stage-bar:not(.minimal),
 .screen-stage.maximized .screen-stage-bar:not(.minimal),
+.screen-stage.fullscreen .screen-stage-bar:not(.minimal),
 .screen-stage:fullscreen .screen-stage-bar:not(.minimal) { opacity: 1; }
 .screen-stage-name {
   display: flex; align-items: center; gap: 6px; margin-right: auto;
@@ -83,12 +84,24 @@
   background: #0d1512; display: flex; align-items: center; justify-content: center;
 }
 .screen-stage.maximized video { width: 100%; height: 100%; max-height: none; }
+/* Whole-screen mode in the desktop shell is a NATIVE window mode: the DOM Fullscreen
+   API is a no-op there, so the `:fullscreen` pseudo-class never matches and only the
+   window grew while the picture stayed in its inline box (user, 2026-09-15: "怎么窗口
+   全屏了 但是视频没有"). Drive the layout from the reported state class instead.
+   Declared after `.maximized` so whole-screen wins if both are somehow on. */
+.screen-stage.fullscreen {
+  position: fixed; inset: 0; z-index: 60;
+  border-radius: 0; background: #0d1512;
+  display: flex; align-items: center; justify-content: center;
+}
+.screen-stage.fullscreen video { width: 100%; height: 100%; max-height: none; }
 .screen-stage:fullscreen { border-radius: 0; }
 .screen-stage:fullscreen video { max-height: none; height: 100%; }
 
 /* Enlarged: one centred pill at the bottom instead of a full-width strip with the
    controls crammed into the right corner next to a stranded label. */
 .screen-stage.maximized .screen-stage-bar,
+.screen-stage.fullscreen .screen-stage-bar,
 .screen-stage:fullscreen .screen-stage-bar {
   left: 50%; right: auto; bottom: 22px;
   transform: translateX(-50%);
@@ -97,6 +110,7 @@
   padding: 9px 14px; border-radius: 999px;
 }
 .screen-stage.maximized .screen-stage-bar .screen-stage-name,
+.screen-stage.fullscreen .screen-stage-bar .screen-stage-name,
 .screen-stage:fullscreen .screen-stage-bar .screen-stage-name {
   margin-right: 2px; padding-right: 10px; border-right: 1px solid #ffffff24;
 }

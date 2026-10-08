@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ChatPanel, { type ChatFileActions } from './ChatPanel';
 import type { ChatContact, Message, Person, SeatOwner } from './types';
 import './chat-inbox.css';
@@ -76,12 +76,18 @@ export default function ChatInbox(props: Props) {
   const unread = threads.reduce((sum, t) => sum + t.unread, 0);
   const unreadRows = threads.filter(t => t.id !== 'public' && t.unread > 0);
   const unreadKey = unreadRows.map(t => `${t.id}:${t.unread}`).join(',');
+  // **回调放 ref 里，绝不进 effect 的依赖**：父组件每次渲染都会传一个新的箭头函数，
+  // 一旦拿它当依赖，effect 就会"渲染 → 回调 → setState → 再渲染"地空转
+  // （2026-09-20 的 CPU/内存爆表就是这么来的，test/browser/no-spin.cjs 守着）。
+  const onUnreadRef = useRef(props.onUnread);
+  onUnreadRef.current = props.onUnread;
   useEffect(() => {
     const byPerson: Record<string, number> = {};
     for (const thread of unreadRows) byPerson[thread.id] = thread.unread;
-    props.onUnread(unread, byPerson);
+    onUnreadRef.current(unread, byPerson);
     // 只有"谁有多少未读"真的变了才重推，避免每秒晃动主窗口与头像条。
-  }, [unread, unreadKey, props.onUnread]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unread, unreadKey]);
   async function send(event: React.FormEvent) {
     event.preventDefault();
     if (!active || sending || !props.connected) return;
@@ -105,7 +111,7 @@ export default function ChatInbox(props: Props) {
         connected={props.connected && !sending} text={drafts[active!] || ''}
         onText={text => setDrafts(old => ({ ...old, [active!]: text }))} onSend={send}
         onFile={(file, progress) => props.onFile(file, progress, active === 'public' ? undefined : active!)}
-        loadFile={props.loadFile} />
+        loadFile={props.loadFile} files={props.files} />
     </> : <>
       <div className="conversation-list-heading"><h3>会话</h3><small>{visitor
         ? '和同事单独聊聊' : '公共交流，也能单独聊聊'}</small></div>

@@ -8,7 +8,10 @@ import type { Session } from "./types";
 import { MediaRooms } from "./mediaRooms";
 import { MediaAudioFocus } from "./mediaAudioFocus";
 import { MeetingScreenShare } from './meetingScreenShare';
+import { startScreenThumbnails, type ScreenThumbnails } from './screenThumbnails';
+import { captureSelectedScreen, switchLiveScreen } from './screenSwitch';
 import { waitForScreenPermission } from './screenPermission';
+import { meetingVideoKey } from './meetingVideo';
 
 interface TokenReply {
   url?: string;
@@ -43,8 +46,9 @@ export class OfficeMedia {
     if (this.meetingRoom && name !== this.meetingRoom) this.meetingMic = false;
   }, message => this.onNotice(message));
   private audio = new Map<string, HTMLMediaElement>();
-  private previewTimer?: ReturnType<typeof setInterval>;
   private previewVideo?: HTMLVideoElement;
+  /** Ambient thumbnail loop for our own shared screen. */
+  private thumbnails?: ScreenThumbnails;
   private meetingRoom: string | null = null;
   private meetingVideos = new Set<string>();
   private meetingScreens: MeetingScreenShare;
@@ -111,11 +115,11 @@ export class OfficeMedia {
         const key = `${roomName}:local`;
         this.meetingVideos.delete(key); this.onVideo(key, null);
       })
-      .on(RoomEvent.TrackSubscribed, (track) => {
+      .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
         if (!this.connections.current(roomName, room)) return;
         const id = this.sessionOf(roomName);
         if (track.kind === Track.Kind.Video) {
-          const key = roomName.startsWith('meeting-') ? `${roomName}:${track.sid}` : id;
+          const key = roomName.startsWith('meeting-') ? meetingVideoKey(roomName, participant, track.sid) : id;
           if (roomName.startsWith('meeting-')) this.meetingVideos.add(key);
           this.onVideo(key, new MediaStream([track.mediaStreamTrack]));
           return;
@@ -130,11 +134,11 @@ export class OfficeMedia {
         });
         this.audio.set(key, element);
       })
-      .on(RoomEvent.TrackUnsubscribed, (track) => {
+      .on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
         if (!this.connections.current(roomName, room)) return;
         const id = this.sessionOf(roomName);
         if (track.kind === Track.Kind.Video) {
-          const key = roomName.startsWith('meeting-') ? `${roomName}:${track.sid}` : id;
+          const key = roomName.startsWith('meeting-') ? meetingVideoKey(roomName, participant, track.sid) : id;
           this.meetingVideos.delete(key); this.onVideo(key, null);
           return;
         }
@@ -325,10 +329,7 @@ export class OfficeMedia {
   async startScreen(publicPreview = true) {
     this.stopScreen();
     const generation = this.screenGeneration;
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { ideal: 15, max: 20 } },
-      audio: false,
-    });
+    const stream = await captureSelectedScreen();
     if (this.disposed || generation !== this.screenGeneration) {
       stream.getTracks().forEach(track => track.stop()); return;
     }
@@ -337,29 +338,17 @@ export class OfficeMedia {
     this.onVideo('local-screen', stream);
     stream.getVideoTracks()[0].onended = () => { if (this.screen === stream) this.stopScreen(); };
     // Low-bandwidth seat-grid thumbnails; unrelated to the LiveKit video stream.
-    const video = document.createElement("video");
-    video.muted = true;
-    video.srcObject = stream;
-    await video.play();
-    if (this.screen !== stream) { video.srcObject = null; return; }
-    this.previewVideo = video;
+    const thumbnails = await startScreenThumbnails({
+      stream,
+      current: () => this.screen === stream,
+      publicPreview,
+      publish: image => this.socket.emit("preview", image),
+    });
+    if (!thumbnails.video) return;
+    this.thumbnails = thumbnails;
+    this.previewVideo = thumbnails.video;
     this.socket.emit("sharing", true);
     this.onSharing(true);
-    const canvas = document.createElement("canvas");
-    // 300px / 6s (user, 2026-09-14): the ambient thumbnail is deliberately tiny and
-    // slow; the readable stream still needs an approved request and goes over LiveKit.
-    canvas.width = 300;
-    canvas.height = 169;
-    const context = canvas.getContext("2d")!;
-    this.previewTimer = setInterval(() => {
-      if (video.readyState < 2) return;
-      if (!video.videoWidth || !video.videoHeight) return;
-      const scale = Math.min(1, 300 / Math.max(video.videoWidth, video.videoHeight));
-      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
-      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      if (publicPreview) this.socket.emit("preview", canvas.toDataURL("image/jpeg", 0.55));
-    }, 6000);
     // Viewers approved before this point already sit in our screen room.
     for (const [name, room] of this.connections.values()) {
       if ([...this.privateSessions.values()].some(session => session.room === name &&
@@ -370,6 +359,30 @@ export class OfficeMedia {
   }
 
   cancelScreenSelection() { this.stopScreen(); }
+
+  /**
+   * 跟着新选的屏幕走（用户 2026-09-15：会议与视频聊天里切换屏幕也要实时切过去）。
+   * 会议共享自己管采集，先问它；私聊这条把正在发布的画面原地换轨，通话不中断。
+   */
+  async switchScreenDisplay(): Promise<boolean> {
+    const meeting = await this.meetingScreens.switchDisplay();
+    const privateShare = await switchLiveScreen({
+      live: () => this.screen,
+      owner: previous => !this.disposed && this.screen === previous,
+      adopt: next => {
+        this.screen = next;
+        this.onVideo('local-screen', next);
+        next.getVideoTracks()[0].onended = () => { if (this.screen === next) this.stopScreen(); };
+        if (this.previewVideo) {
+          this.previewVideo.srcObject = next;
+          void this.previewVideo.play().catch(() => undefined);
+        }
+      },
+      publishers: () => this.connections.values()
+        .filter(([name]) => this.voiceRooms.has(name)).map(([, room]) => room),
+    });
+    return privateShare || meeting;
+  }
 
   async shareInCall(id: string) {
     const captured = !this.screen?.active;
@@ -394,7 +407,8 @@ export class OfficeMedia {
       }).catch(error => { if (!this.disposed) this.onNotice(String(error)); });
     }
     const hadScreen = Boolean(this.screen);
-    clearInterval(this.previewTimer);
+    this.thumbnails?.stop();
+    this.thumbnails = undefined;
     this.screen?.getTracks().forEach((track) => track.stop());
     this.screen = null;
     this.onVideo('local-screen', null);

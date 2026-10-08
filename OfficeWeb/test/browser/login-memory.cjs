@@ -53,6 +53,26 @@ const assert = require("node:assert/strict");
     assert.equal(afterDisplacement.name, "小文杰", "回到登录页要把姓名填好");
     assert.equal(afterDisplacement.password, "pw-1234", "回到登录页要把密码填好");
 
+    // A typo must not replace the known-good encrypted login.
+    await page.getByLabel('密码', { exact: true }).fill('wrong-password');
+    await page.getByRole('button', { name: '进入办公室 →', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: '测试环境不登录' }).waitFor();
+    assert.equal(await page.evaluate(() => window.__saved.password), 'pw-1234');
+    assert.equal(await page.evaluate(() => window.__calls.filter(([kind]) => kind === 'save').length), 0);
+
+    // Reset updates the same saved identity only after server success.
+    await page.getByRole('button', { name: '找回密码', exact: true }).click();
+    assert.equal(await page.getByLabel('新密码', { exact: true }).inputValue(), '');
+    assert.equal(await page.getByLabel('姓名', { exact: true }).inputValue(), '小文杰');
+    await page.getByLabel('新密码', { exact: true }).fill('new-secret');
+    await page.screenshot({ path: resolve('../Build/password-reset-form.png') });
+    await page.getByRole('button', { name: '修改密码并进入 →', exact: true }).click();
+    await page.getByRole('heading', { name: '你是哪一位？' }).waitFor();
+    assert.equal(await page.evaluate(() => window.__saved.password), 'new-secret');
+    await page.reload();
+    await page.waitForFunction(() => document.querySelector('input[type="password"]')?.value === 'new-secret');
+    assert.equal(await page.getByLabel('姓名', { exact: true }).inputValue(), '小文杰');
+
     // A deliberate exit is the one case that forgets the account.
     await page.evaluate(() => window.dispatchEvent(new CustomEvent("office-session-ended",
       { detail: { message: "已退出登录", forget: true } })));
@@ -70,8 +90,8 @@ const assert = require("node:assert/strict");
     // And the source keeps both rules in place.
     const source = require("node:fs").readFileSync(resolve("src/AccountGate.tsx"), "utf8");
     assert.match(source, /if \(detail\.forget === true\)/, "只有明确要求时才清除");
-    assert.match(source, /saveLogin\(\{ name, password \}\)\.catch\(\(\) => false\)/,
-      "本机无法加密保存时也要允许登录");
+    assert.ok(source.indexOf('if (!r.ok) throw') < source.indexOf('saveLogin({'),
+      'save only after successful authentication');
     assert.deepEqual(errors, []);
     console.log("PASS 记住账号（被顶下线/会话失效都不清），只有主动退出才清");
   } finally {

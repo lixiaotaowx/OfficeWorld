@@ -80,7 +80,7 @@
   .session-panel { left: 22px; right: 22px; bottom: 22px; width: auto; }
   .sharing-preview { left: 22px; bottom: 22px; width: calc(100vw - 44px); }
   .meeting-presence { top: 72px; left: 15px; right: 15px; }
-  .meeting-notification { left: 22px; right: 22px; bottom: 22px; width: auto; font-size: 12px; }
+  .meeting-notification { width: auto; max-width: calc(100vw - 32px); font-size: 12px; }
   .modal { padding: 24px; max-height: 88dvh; overflow-y: auto; }
   .modal .actions { display: flex; flex-wrap: wrap; }
   .modal .actions button { font-size: 12px; }

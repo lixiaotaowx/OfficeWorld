@@ -3,12 +3,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import ts from "typescript";
+import { loadTs } from "./helpers.mjs";
 
-const js = ts.transpileModule(readFileSync(new URL("../src/chatAttachments.ts", import.meta.url), "utf8"),
-  { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
-const { AttachmentGoneError, createAttachmentCache } =
-  await import("data:text/javascript;base64," + Buffer.from(js).toString("base64"));
+// `chatAttachments.ts` 现在 import 了 `fileTransferRules.ts`，所以走共享的转译助手
+// （data URL 模块解析不了 `./x`，必须把它一起换成 data URL）。
+const { AttachmentGoneError, createAttachmentCache, PREFETCH_MAX_BYTES } =
+  await import(await loadTs("chatAttachments.ts"));
 
 /** Minimal stand-in for the IndexedDB objects the cache touches. */
 function fakeDatabase() {

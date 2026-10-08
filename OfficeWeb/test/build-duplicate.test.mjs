@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createBuildStore} from '../build-store.mjs';
+import {createBuildWorkstations} from '../build-workstations.mjs';
+import {loadTs} from './helpers.mjs';
+const {BuildHistory}=await import(await loadTs('buildHistory.ts'));
+const user={id:'copy-user',name:'复制测试'};
+test('Shift D copy preserves transform, has independent identity, undo and redo',()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'copy-')),'world.json');
+ const store=createBuildStore(path),history=new BuildHistory();
+ const original=store.mutate({action:'add',part:{kind:'block',x:17.125,y:-4,z:10,rotation:3,pitch:1,roll:2,color:'#e9b8b5',scale:[2,1,.5]}},user).changed;
+ const command={action:'duplicate',id:original.id,version:original.version};
+ const result=store.mutate(command,user),copy=result.changed;
+ assert.notEqual(copy.id,original.id);
+ assert.deepEqual({...copy,id:original.id},original);
+ history.accept(command,result);
+ const undo=history.peek('undo'),removed=store.mutate(undo,user);history.accept(undo,removed,'undo');
+ assert(!store.snapshot().parts.some(p=>p.id===copy.id));
+ assert(store.snapshot().parts.some(p=>p.id===original.id));
+ store.mutate(history.peek('redo'),user);
+ assert.throws(()=>store.mutate({...command,version:0},user),/已更新/);
+});
+test('original desk copies preserve geometry but receive independent seat numbers',()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'copy-seat-')),'world.json');
+ const store=createBuildStore(path),seats=createBuildWorkstations(path+'.seats.json',()=>store.snapshot().parts);
+ const original=store.snapshot().parts.find(p=>p.fixture==='desk-1');
+ const copy=store.mutate({action:'duplicate',id:original.id,version:1},user).changed;
+ assert.equal(copy.fixture,'desk-1');assert.equal(copy.fixtureCopy,true);
+ assert.equal(seats.index(original.id),1);assert(seats.index(copy.id)>=9);
+ const moved=store.mutate({action:'move',id:copy.id,version:1,part:{...copy,x:20,fixtureCopy:false}},user).changed;
+ assert.equal(moved.fixtureCopy,true);
+});
+test('treasure copies start empty with a new creator and no reader history',()=>{
+ const path=join(mkdtempSync(join(tmpdir(),'copy-chest-')),'world.json');
+ const store=createBuildStore(path),chest=store.snapshot().parts.find(p=>p.kind==='chest');
+ store.mutate({action:'put',id:chest.id,entry:{type:'note',title:'original',value:'original content'}},user);
+ const copy=store.mutate({action:'duplicate',id:chest.id,version:chest.version},user).changed;
+ assert.equal(store.chest(chest.id).length,1);assert.equal(store.chest(copy.id).length,0);
+ assert.deepEqual(store.people(copy.id).readers,[]);assert.equal(store.people(copy.id).creator.id,user.id);
+});

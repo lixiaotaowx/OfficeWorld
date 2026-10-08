@@ -9,7 +9,7 @@ const MAX_FAILS = 5;
 const WINDOW_MS = 10 * 60000;
 
 export function createAdmin({ io, people, roster, save, publish, adminPassword, seatCount,
-  eject = () => {} }) {
+  validSeat = () => false, eject = () => {} }) {
   const fails = new Map();
   const blocked = (socketId) => {
     const now = Date.now();
@@ -36,7 +36,7 @@ export function createAdmin({ io, people, roster, save, publish, adminPassword, 
       return reply({ ok: false, error: "管理员密码不正确" });
     }
     const seat = Number(data?.seat);
-    if (!Number.isInteger(seat) || seat < 0 || seat >= seatCount)
+    if (!Number.isInteger(seat) || seat < 0 || (seat >= seatCount && !validSeat(seat)))
       return reply({ ok: false, error: "无效的工位" });
     const owner = roster[seat];
     if (!owner) return reply({ ok: false, error: "这个工位本来就是空的" });

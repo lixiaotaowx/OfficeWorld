@@ -1,4 +1,4 @@
-import type { CharacterId } from "./characters";
+import type { Appearance } from "./look";
 import type { SitPoseId } from "./sitPoses";
 
 export interface Person {
@@ -8,8 +8,8 @@ export interface Person {
   name: string;
   /** Chosen workstation, or null while the player has not picked one yet. */
   seat: number | null;
-  /** Which bundled avatar this player wears, so colleagues render it. */
-  character: CharacterId;
+  /** 这个人的配色与配件（尺子角色），同事据此把他画成一样。 */
+  appearance: Appearance;
   /** `employee`, `visitor`, or empty before they chose on the way in. */
   role?: "employee" | "visitor" | "";
   /** Whether this person's tiny thumbnail may show on their monitor. */
@@ -21,6 +21,21 @@ export interface Person {
    * host it should be offered as a screen to draw on.
    */
   annotate?: boolean;
+  /**
+   * Whether this client's mouse/keyboard has been used recently enough to call
+   * them 在座. Missing means 在座 (older client, or a page that cannot detect
+   * input), which is why the check everywhere is `atDesk !== false`.
+   */
+  atDesk?: boolean;
+  /** Milliseconds already away when the server sent this payload. */
+  awayFor?: number;
+  autoExpression?: import('./look').AvatarExpression;
+  /**
+   * Whether this person is in a call right now (a private voice or screen call —
+   * including calls that are not with me). The taskbar strip marks them with a
+   * microphone; the server derives it from the live sessions (用户 2026-09-23).
+   */
+  inCall?: boolean;
   meeting: boolean;
 }
 
@@ -35,11 +50,14 @@ export interface SeatOwner {
 
 /** One throttled motion snapshot relayed from another player. */
 export interface Motion {
+  y?: number;
   sittingSpot?: string | null;
   x: number;
   z: number;
   rot: number;
   moving: boolean;
+  /** 他是不是在跑（长距离/Shift）：远端放跑步循环而不是走路。 */
+  running?: boolean;
   sitting: boolean;
   /** Seated pose, so colleagues see the same sitting action. */
   pose?: SitPoseId;

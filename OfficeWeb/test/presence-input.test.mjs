@@ -49,6 +49,28 @@ function harness({ awayAfterMs = 1_000, desktopIdle } = {}) {
 /** Let the injected promise callbacks run. */
 const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 
+test('忙碌按活跃秒数而非事件数判定，停止频繁输入八秒后恢复', () => {
+  const h = harness({ awayAfterMs: 10_000 });
+  for (let i = 0; i < 100; i++) h.presence.touch();
+  assert.equal(h.sent.length, 0, '一秒内大量鼠标事件不算持续忙碌');
+  for (let i = 0; i < 5; i++) { h.advance(1000); h.presence.touch(); }
+  assert.equal(h.last().busy, true);
+  h.advance(8000); h.presence.tick();
+  assert.equal(h.last().busy, false);
+  assert.equal(h.last().atDesk, true);
+});
+
+test('桌面系统持续活跃可触发忙碌，锁屏清除忙碌', async () => {
+  let idle = { seconds: 0, state: 'active' };
+  const h = harness({ awayAfterMs: 10000, desktopIdle: async () => idle });
+  for (let i = 0; i < 4; i++) { h.advance(2000); h.presence.poll(); await settle(); }
+  assert.equal(h.last().busy, true);
+  idle = { seconds: 0, state: 'locked' };
+  h.presence.poll(); await settle();
+  assert.equal(h.last().busy, false);
+  assert.equal(h.last().atDesk, false);
+});
+
 test('阈值是 10 秒；刚打开页面算在座，也不会上报', () => {
   const h = harness();
   assert.equal(AWAY_AFTER_MS, 10_000);

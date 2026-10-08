@@ -1,0 +1,78 @@
+.build-ui { position:absolute; bottom:var(--build-bottom,110px); left:20px; right:20px; z-index:8; max-width:820px; margin:auto; color:#424c54; font-size:12px; pointer-events:none; }
+.build-ui button, .build-ui select, .build-library, .build-tools { pointer-events:auto; }
+.build-ui button { color:inherit; font:inherit; cursor:pointer; border:0; }
+.build-topline { line-height:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 3px 4px; }
+.build-topline button { padding:3px 8px; background:#fffdf5ee; border-radius:9px; box-shadow:0 2px 10px #4d567514; }
+.build-live { background:#fffdf0db; border-radius:8px; padding:3px 8px; max-width:70%; }
+.build-live i { display:inline-block; width:6px; height:6px; margin-right:7px; border-radius:50%; background:#6d9466; }
+.build-live i.offline { background:#c88978; }
+.build-library { background:#fffdf8f5; border:1px solid #ffffff; border-radius:18px 18px 0 0; box-shadow:0 -10px 35px #5655750d; padding:5px 8px 3px; backdrop-filter:blur(15px); }
+.build-library-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.build-library-heading small { color:#9a9189; font-size:9px; letter-spacing:2px; display:block; margin-bottom:6px; }
+.build-library-heading strong { font-size:19px; font-weight:550; }
+.build-library-heading > span { color:#a79d94; font-size:11px; }
+.build-categories { display:flex; gap:3px; margin-bottom:0; }
+.build-categories button { background:transparent; padding:3px 10px; border-radius:6px; }
+.build-categories button[aria-selected=true] { background:#e6eadf; color:#4b6556; font-weight:600; }
+.build-parts { display:flex; gap:7px; overflow-x:auto; padding:3px 1px 4px; scrollbar-width:thin; }
+.build-part { flex:0 0 69px; display:flex; flex-direction:column; align-items:center; gap:1px; padding:3px 3px 4px; background:#f2efea; border-radius:8px; outline:2px solid transparent; outline-offset:-2px; }
+.build-part:hover { background:#eaece8; }
+.build-part.selected { outline-color:#749b93; background:#e9efe7; }
+.build-part small { font-size:9px; color:#969892; }
+.build-part-image { width:48px; height:30px; object-fit:contain; }
+.part-icon { position:relative; display:block; height:30px; width:46px; margin-bottom:2px; }
+.part-icon i { position:absolute; width:28px; height:28px; left:9px; top:7px; background:var(--part-color); box-shadow:inset -7px -4px #00000012; transform:skewY(-12deg); }
+.part-icon b { position:absolute; width:28px; height:10px; left:9px; top:2px; background:var(--part-color); filter:brightness(1.1); transform:skewX(-30deg); }
+.part-wall i, .part-window i, .part-door i, .part-screen i { width:35px; height:33px; left:5px; }
+.part-window em, .part-door em { position:absolute; left:16px; top:16px; width:12px; height:15px; background:#f4f3ee; transform:skewY(-12deg); }
+.part-pillar i { width:13px; height:36px; left:16px; }
+.part-floor i, .part-beam i { height:9px; top:20px; width:38px; left:4px; }
+.part-floor b, .part-beam b { top:14px; width:38px; left:4px; }
+.part-tree i, .part-planter i { background:#aabe8d; }
+.part-tree em { position:absolute; width:7px; height:14px; left:20px; top:30px; background:#c69770; }
+.part-chest em { position:absolute; width:7px; height:8px; left:20px; top:19px; background:#ffe8a2; }
+.part-table i, .part-desk i { height:8px; top:14px; width:37px; left:5px; }
+.part-table em, .part-desk em { position:absolute; width:30px; height:19px; left:8px; top:19px; border-left:4px solid var(--part-color); border-right:4px solid var(--part-color); }
+.build-palette { display:flex; gap:7px; align-items:center; margin:0 3px 0 auto; }
+.build-palette > span { color:#979289; margin-right:5px; }
+.build-palette button { width:16px; height:16px; border-radius:50%; outline:2px solid transparent; outline-offset:2px; }
+.build-palette button[aria-pressed=true] { outline-color:#718880; }
+.build-palette small { margin-left:auto; color:#a59c93; }
+.build-tools { display:flex; gap:5px; align-items:center; padding:4px 8px; background:#fffef9f5; border-radius:12px; box-shadow:0 6px 30px #4e54751a; }
+.build-library + .build-tools { border-radius:0 0 14px 14px; border-top:1px solid #eee8de; }
+.build-tools button { background:transparent; padding:5px 7px; white-space:nowrap; border-radius:8px; }
+.build-tools button:hover { background:#ebece4; }
+.build-modes { display:flex; gap:3px; }
+.build-modes button { display:flex; gap:7px; align-items:center; }
+.build-modes button[aria-pressed=true] { background:#4e7269; color:white; }
+.build-modes button[aria-pressed=true]:last-child { background:#bc796b; }
+.build-modes b { font-size:18px; line-height:18px; font-weight:400; }
+.build-divider { height:22px; border-left:1px solid #dddcd3; }
+.build-height { display:flex; align-items:center; gap:5px; white-space:nowrap; }
+.build-height input { color:#53635f; background:#f0f0e9; border:0; padding:4px 2px; border-radius:5px; width:64px; }
+.build-ui button:disabled { opacity:0.4; cursor:default; }
+.build-error { color:#a74d43; font-size:12px; margin:2px 0; }
+@media (max-width:900px) {
+  .build-ui { left:8px; right:8px; }
+  .build-tools { gap:2px; padding:4px; overflow-x:auto; scrollbar-width:thin; flex-wrap:nowrap; }
+  .build-tools button { padding:5px; }
+  .build-library-heading > span, .build-palette small { display:none; }
+  .build-library { padding:5px 6px 3px; }
+  .build-library-heading strong { font-size:16px; }
+}
+
+.build-library-options { display:flex; align-items:center; gap:8px; }
+.build-live { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.build-categories { min-width:0; overflow-x:auto; scrollbar-width:thin; flex:1; }
+.build-categories button { flex-shrink:0; white-space:nowrap; }
+.build-search { width:85px; min-width:55px; flex-shrink:1; border:1px solid #dcded4; border-radius:5px; padding:4px 6px; font:inherit; background:white; color:inherit; }
+.build-palette button { flex-shrink:0; padding:0; }
+.build-tools { overflow-x:auto; scrollbar-width:thin; }
+.build-tools .build-live { font-size:10px; min-width:65px; margin-left:auto; background:transparent; }
+.build-tools .build-toggle { background:#e6eadf; }
+.build-rotation { flex-shrink:0; white-space:nowrap; font-size:10px; padding:0 5px; }
+@media (max-width:520px) {
+  .build-categories button { padding:3px 5px; }
+  .build-palette { gap:5px; }
+  .build-palette button { width:13px; height:13px; }
+}

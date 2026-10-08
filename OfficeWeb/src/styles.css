@@ -1,4 +1,5 @@
 @import "./panels.css";
+@import "./admin-panel.css";
 
 /* Design tokens: one warm sage/olive palette with a deep forest rail so the
    header, 3D stage and side panel read as clearly separated zones. */
@@ -122,6 +123,10 @@ h1, h2, h3, p { margin: 0; }
   height: 38px;
   display: grid;
   place-items: center;
+  /* The global `button` rule pads 10px 15px, which left a 2px content box in
+     this 34px chip: the 19px person icon could not be centred and spilled out
+     of the right/bottom of the circle (the top-right icon looked crooked). */
+  padding: 0;
   border-radius: 50%;
   font-weight: 600;
   color: #49653f;

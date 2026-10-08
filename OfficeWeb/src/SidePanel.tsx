@@ -65,6 +65,7 @@ export default function SidePanel({
   onRequest,
   onFile,
   loadFile,
+  files,
   onOpenScreenMenu,
   onUnread,
 }: Props) {
@@ -264,8 +265,13 @@ export default function SidePanel({
       <ChatInbox accountId={accountId} messages={messages} contacts={contacts} people={people}
         seats={seats} connected={connected} visible={panelOpen && tab === "chat"} onMessage={onMessage}
         visitor={visitor} hidden={hiddenContacts}
-        onFile={onFile} loadFile={loadFile}
-        onUnread={(count, byPerson) => { setUnread(count); onUnread?.(count, byPerson); }} />
+        onFile={onFile} loadFile={loadFile} files={files}
+        onUnread={(count, byPerson) => {
+          // 数字没变就别碰 state：这个回调每次渲染都会重新创建，顺手 setState 容易和父组件空转
+          // （2026-09-20 的 CPU/内存爆表就是这么来的）。
+          setUnread(previous => (previous === count ? previous : count));
+          onUnread?.(count, byPerson);
+        }} />
       <div className="side-foot">
         <span className="dot" /> 各自专注，随时连接。
       </div>

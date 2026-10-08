@@ -18,7 +18,10 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     data.sessions = data.users.flatMap(u => data.sessions.filter(s => s.userId === u.id && s.expires > Date.now()).slice(-12));
     saveAccounts(path, data);
   };
-  const publicUser = (user) => ({ id: user.id, name: user.name, character: user.character,
+  const publicUser = (user) => ({ id: user.id, name: user.name, appearance: user.appearance ?? null,
+    // 「捏过了」只记一次：网页端据此决定登录后要不要**再弹一次**捏人面板
+    // （用户 2026-09-28：「重新登录时，需要重新弹出角色设置」→ 只在从没捏过时弹）。
+    lookConfirmed: user.lookConfirmed === true,
     role: ROLES.has(user.role) ? user.role : "" });
   const tokenOf = (req) => {
     const match = /(?:^|;\s*)office_session=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie || "");
@@ -78,7 +81,7 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     if (route === "/api/auth/me" && req.method === "GET") {
       const user = authenticate(req);
       reply(res, user ? 200 : 401, { user: user ? publicUser(user) : null,
-        invalidSession: !user && !!tokenOf(req) });
+        invalidSession: !user && !!tokenOf(req), recoveryEnabled: true });
       return true;
     }
     if (req.method !== "POST" || !originAllowed(req)) {
@@ -102,7 +105,7 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
       } catch { if (!res.headersSent) reply(res, 400, { error: "请求未完成，请稍后重试" }); }
       return true;
     }
-    if (!["/api/auth/login", "/api/auth/register"].includes(route)) {
+    if (!["/api/auth/login", "/api/auth/register", "/api/auth/reset-password"].includes(route)) {
       reply(res, 404, { error: "接口不存在" }); return true;
     }
     if (!rateAllowed(req)) {
@@ -117,13 +120,24 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
       }
       // Serialize registration and durable writes, including concurrent names.
       const task = pending.then(async () => {
+        if (!rateAllowed(req)) return reply(res, 429, { error: "尝试过于频繁，请十分钟后再试" });
         let user = data.users.find((u) => u.key === name.toLocaleLowerCase("en-US"));
+        let previousPassword;
         if (route.endsWith("register")) {
           if (user) { rateFailed(req); return reply(res, 409, { error: "这个姓名已注册，请登录或使用可区分的姓名" }); }
           const salt = randomBytes(16).toString("hex");
           const hash = (await scrypt(password, salt, 64)).toString("hex");
           user = { id: randomUUID(), name, key: name.toLocaleLowerCase("en-US"), salt, hash, character: "woman_casual" };
           data.users.push(user);
+        } else if (route.endsWith("reset-password")) {
+          // Temporary product rule: named-account reset without old password/code.
+          // Keep the same account, role, outfit and seat; revoke old sessions below.
+          rateFailed(req);
+          if (!user) return reply(res, 404, { error: "这个姓名尚未注册，请确认姓名" });
+          previousPassword = { salt: user.salt, hash: user.hash };
+          const salt = randomBytes(16).toString("hex");
+          const hash = (await scrypt(password, salt, 64)).toString("hex");
+          Object.assign(user, { salt, hash });
         } else {
           const actual = await scrypt(password, user?.salt || "unregistered-account", 64);
           if (!user || !timingSafeEqual(actual, Buffer.from(user.hash, "hex"))) {
@@ -136,7 +150,11 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
         data.sessions = data.sessions.filter((s) => s.expires > Date.now() && s.userId !== user.id);
         data.sessions.push({ hash: digest(token), userId: user.id, expires: Date.now() + LIFE });
         try { commit(); }
-        catch (error) { data.sessions = previousSessions; throw error; }
+        catch (error) {
+          data.sessions = previousSessions;
+          if (previousPassword) Object.assign(user, previousPassword);
+          throw error;
+        }
         onLogin(user.id);
         reply(res, 200, { user: publicUser(user) }, { "Set-Cookie": cookie(token) });
       });
@@ -147,9 +165,14 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     }
     return true;
   }
-  const setCharacter = (id, character) => {
+  const setAppearance = (id, appearance) => {
     const user = data.users.find((u) => u.id === id);
-    if (user) { user.character = character; commit(); }
+    if (user) {
+      user.appearance = appearance;
+      // 客户端只会把**面板里确认过的**外观发上来，所以这就是"捏过了"的标志。
+      user.lookConfirmed = true;
+      commit();
+    }
   };
   const setRole = (id, role) => {
     const user = data.users.find((u) => u.id === id);
@@ -166,5 +189,5 @@ export function createAccounts(path, { secure = true, onLogin = () => {} } = {})
     catch { data.sessions = previous; return false; }
   };
   const listContacts = () => data.users.map(user => ({ id: user.id, name: user.name }));
-  return { handle, authenticate, setCharacter, setRole, revokeSessions, originAllowed, listContacts };
+  return { handle, authenticate, setAppearance, setRole, revokeSessions, originAllowed, listContacts };
 }

@@ -1,10 +1,39 @@
 // Shared test helpers. Not a test file itself (the runner only globs
 // `test/*.test.mjs`), so it can hold setup code without being executed.
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import ts from "typescript";
 import { io } from "socket.io-client";
 import { createOfficeServer } from "../server.mjs";
+
+/**
+ * 把一个 `src/*.ts` 模块转译出来，返回一个可以直接 `import()` 的 data URL。
+ *
+ * 相对导入（`./fileTransferRules`）会被**递归**替换成同样转译过的 data URL：data URL 模块
+ * 解析不了 `./x`，所以只要 `src` 里的模块开始互相 import，不这么做测试就会直接崩
+ * （2026-09-21 `chatAttachments.ts` 开始 import `fileTransferRules.ts` 时踩到）。
+ * 只看相对导入，包名（`socket.io-client` 之类）交给 Node 自己解析。
+ *
+ * 用法：`const { toBytes } = await import(await loadTs('fileTransferRules.ts'));`
+ */
+export async function loadTs(name, urls = new Map()) {
+  const cached = urls.get(name);
+  if (cached) return cached;
+  const source = readFileSync(fileURLToPath(new URL(`../src/${name}`, import.meta.url)), "utf8");
+  let js = ts.transpileModule(source,
+    { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
+  const relatives = [...new Set([...js.matchAll(/from\s*['"](\.[^'"]+)['"]/g)].map(match => match[1]))];
+  for (const specifier of relatives) {
+    const url = await loadTs(`${specifier.replace(/^\.\//, "")}.ts`, urls);
+    js = js.split(`from '${specifier}'`).join(`from '${url}'`)
+      .split(`from "${specifier}"`).join(`from '${url}'`);
+  }
+  const url = "data:text/javascript;base64," + Buffer.from(js).toString("base64");
+  urls.set(name, url);
+  return url;
+}
 
 /**
  * Boot a signaling server on an ephemeral port, hand the callback a `connect`

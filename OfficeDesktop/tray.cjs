@@ -48,6 +48,11 @@ function installTray(window, iconPath, options = {}) {
     });
     template.push({ type: 'separator' });
   }
+  // 绿光可以让用户自己看一眼效果（真触发要别人在他的小窗里悬停你的头像）。
+  if (options.glow) {
+    template.push({ label: '测试：屏幕绿光（有人来看我时也会亮）', click: () => options.glow.flash?.() });
+    template.push({ type: 'separator' });
+  }
   template.push({ label: '退出 iruler dream', click: quit });
   const menu = Menu.buildFromTemplate(template);
   tray.setToolTip('iruler dream · 一起在场');
