@@ -1,3 +1,17 @@
+## 2026-09-30 仓库推送：换台电脑能不能拉起来
+
+- [x] 远端 private 仓库确认存在（之前"没创建"是匿名 API 对私有库返回 404 的误判）；
+      本地领先的 50 个提交 + 522 个文件已提交并推送（`7e48b94`），远端与本地哈希一致。
+- [x] 新增 `SETUP.md`、`.gitattributes`（统一 LF），`.gitignore` 补 `debug.log`/`*.TMP`；
+      推前扫描确认无密钥、无 >20MB 单文件。
+- [ ] `tools/` 下一次性诊断脚本仍写死 Playwright/sharp/`.codex` 绝对路径，换机器要改；
+      网页/客户端/构建/单测不依赖它们。`OfficeDesktop/tools/publish-update.mjs` 的
+      私钥路径同理（见 `SETUP.md` 第 8 节）。
+- [ ] 私钥、`.env` 的 LiveKit key/secret、`ADMIN_PASSWORD`、运行期数据不在仓库里，
+      换机器需人工带过去；未做任何自动同步。
+- 详情与证据：[Repo_Migration_20260930.md](Repo_Migration_20260930.md)、
+  核验脚本 `tools/verify_fresh_clone.ps1`。
+
 ## 2026-09-30 宝箱视频链接封面缩略图（已完成，附已知边界）
 
 - [x] 视频链接显示平台封面缩略图，点缩略图直接打开放大播放器；B 站视频与番剧封面已验证，取不到封面时退回类型符号。详见 [Deployment.md](Deployment.md) 同日条目。

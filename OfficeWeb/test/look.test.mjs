@@ -7,11 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const source = readFileSync(new URL('../src/look.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: {
@@ -257,10 +253,19 @@ test('板身配色走"贴图像素重算"，并且垃圾几何在导出阶段就
   // 已在导出阶段整个删除；网页侧不该再有隐藏补丁。
   assert.doesNotMatch(source, /HIDDEN_MATERIALS|LEG_MATERIAL|tintLeg/,
     '垃圾几何要在导出阶段删掉，不要再留运行时的隐藏补丁');
-  // 用绝对路径拼，别数 `../`（数错过一次，读到别的目录去了）。
-  const exporter = readFileSync(join(__dirname, '..', '..', 'Build', 'ruler', 'export_ruler.py'), 'utf8');
+  // 导出脚本的**正式副本在 tools/export_ruler.py**（2026-09-30 入库）。
+  // 原来只读 `Build/ruler/export_ruler.py`，而 `Build/` 是被 ignore 的构建目录 ——
+  // 于是 clone 到新机器后这条用例必然 ENOENT 失败（实测 `npm test` 355 项里唯一一条红的）。
+  // 用 file URL 拼路径，不要数 `../`（数错过一次，读到别的目录去了）。
+  const exporter = readFileSync(new URL('../../tools/export_ruler.py', import.meta.url), 'utf8');
   assert.match(exporter, /for name in EYES:[\s\S]{0,220}dropped stray eye geometry/,
     '导出脚本要逐个删掉那四个球（球体.004~007）');
+  // 本机留着的那份也一起查（改了导出脚本还没同步到 tools 时能当场看出不一致）。
+  const local = new URL('../../Build/ruler/export_ruler.py', import.meta.url);
+  if (existsSync(local)) {
+    assert.match(readFileSync(local, 'utf8'), /for name in EYES:[\s\S]{0,220}dropped stray eye geometry/,
+      '本机 Build/ruler 那份也要删掉那四个球');
+  }
 });
 
 test('界面是两步的：先配色，再配件', () => {
