@@ -17,13 +17,16 @@ import {
 } from "./sitPoses";
 import { findPath, pathLength } from "./navigation";
 import { advancePath } from './avatarPath';
-import { walkStep } from './avatarWalk';
+import { MOVEMENT_KEYS, walkStep } from './avatarWalk';
+import { FallRig, type DeathInfo } from './avatarFall';
+import { actorStatusText } from './actorStatus';
 import { SEAT_HEIGHT } from "./seats";
 import { sittingSpot, type SittingSpot } from "./sittingSpots";
 import { groundSeatedFeet } from "./seatedFeet";
 import { placeSeatedHands } from "./seatedHands";
 import { snapStandingPose } from './standingPose';
 import { updateSeatedAnimation } from './seatedAnimation';
+import { measureSeatedOffset } from './sitDiagnostics';
 
 /** Seconds for sitting down. Standing up is an immediate pose change. */
 const SIT_TRANSITION = 0.9;
@@ -84,12 +87,16 @@ export class OfficeAvatar {
   private speed = 0;
   /** 坐姿动作里髋部自身的世界高度（实测），用来把工位高度对齐过去。 */
   private seatedClipHip = 0;
+  /** 掉落 / 死亡 / 原地复活（规则在 `avatarFall.ts`，这里只接线）。 */
+  private fall = new FallRig();
 
   constructor(
     private world: THREE.Scene,
     private camera: THREE.Camera,
     private report: (text: string) => void,
     private reserve: (id: string | null) => Promise<boolean>,
+    /** 掉死时通知外面（右下角那张"你掉下去了"的卡片）。 */
+    private onDeath?: (info: DeathInfo) => void,
   ) {
     this.root.position.set(4, 0, 4);
     this.root.name = "Controlled avatar";
@@ -106,22 +113,10 @@ export class OfficeAvatar {
       )
     )
       return;
-    if (
-      [
-        "KeyW",
-        "KeyA",
-        "KeyS",
-        "KeyD",
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-      ].includes(e.code)
-    ) {
-      e.preventDefault();
-      this.stand();
-      this.keys.add(e.code);
-    }
+    if (!MOVEMENT_KEYS.has(e.code)) return;
+    e.preventDefault();
+    this.stand();
+    this.keys.add(e.code);
   };
   private keyup = (e: KeyboardEvent) => {
     this.keys.delete(e.code);
@@ -223,6 +218,7 @@ export class OfficeAvatar {
    */
   teleportTo(point: { x: number; y: number; z: number }, heading: number) {
     this.stand();
+    this.fall.clear();
     this.path = [];
     this.root.position.set(point.x, point.y, point.z);
     this.root.rotation.set(0, heading, 0);
@@ -235,6 +231,7 @@ export class OfficeAvatar {
   async sitAt(id: string) {
     const seat = sittingSpot(id);
     if (!this.model || !seat || this.disposed) return false;
+    this.fall.clear();
     const request = ++this.sitRequest;
     this.hasReservation = true;
     const accepted = await this.reserve(id);
@@ -268,35 +265,12 @@ export class OfficeAvatar {
     );
   }
   /**
-   * 坐姿下"髋部相对模型原点"的高度**实测一次**。
-   *
-   * 不能再靠 `seatHeight - restHipHeight` 这种差值：姿势会把腿折起来，髋部相对模型原点
-   * 的位置**随骨架而变**。旧角色（Quaternius）下那个差值刚好成立，换成尺子角色（Mixamo）
-   * 后坐姿反而把整个人抬高了 0.58m（实测：站姿髋 0.601 → 坐姿 1.178）。
-   * 所以：把坐姿摆到模型上量一次，之后每帧都用这个偏移把髋部放到工位高度。
+   * 坐姿下"髋部相对模型原点"的高度**实测一次**（算法在 `sitDiagnostics.ts`：换姿势/换模型都要重量）。
    */
   private measureSeatedOffset(): number | null {
-    const character = this.character;
-    if (!character) return null;
-    const model = character.model;
-    const previousY = model.position.y;
-    const previousRootY = this.root.position.y;
-    try {
-      // 先把 root 归零，量到的就是"相对模型原点"的纯几何偏移。
-      this.root.position.y = 0;
-      model.position.y = 0;
-      applySitPose(this.root, this.bones, character.rest, SIT_POSES[this.seatedPose], 0);
-      this.root.updateMatrixWorld(true);
-      const hips = findBone(this.bones, "Hips");
-      if (!hips) return null;
-      return hips.getWorldPosition(new THREE.Vector3()).y;
-    } catch {
-      return null;
-    } finally {
-      model.position.y = previousY;
-      this.root.position.y = previousRootY;
-      this.root.updateMatrixWorld(true);
-    }
+    if (!this.character) return null;
+    return measureSeatedOffset({ root: this.root, bones: this.bones,
+      character: this.character, pose: this.seatedPose });
   }
   private stopSeatedClip() {
     if (!this.seatedClip) return;
@@ -356,7 +330,15 @@ export class OfficeAvatar {
       const step = dt / SIT_TRANSITION;
       this.sitBlend = Math.min(1, this.sitBlend + step);
     }
-    if (!this.sitBlend && !this.sitTarget && this.keys.size && this.model) {
+    this.fall.tick(dt);
+    // 能自己走的状态：站着（不在入座过渡里）、模型已就绪。复活保护期内不许走，免得一复活
+    // 就又被按住的 W 键送回边缘。
+    const onFoot = !this.sitBlend && !this.sitTarget && !!this.model;
+    if (onFoot && this.fall.falling) {
+      // 空中：重力 + 空中控制；落到下层建筑上就站住，掉过最低部件就死（规则在 `avatarFall`）。
+      if (this.fall.advance(this.root.position, this.keys, this.camera, dt, WALK_SPEED) === 'died') this.die();
+      moving = true;
+    } else if (onFoot && this.fall.graceLeft <= 0 && this.keys.size) {
       this.path = [];
       // 按 Shift 跑（尺子腿短，走太慢）；路径行走也按距离自动跑。
       const speed = this.keys.has("ShiftLeft") || this.keys.has("ShiftRight")
@@ -365,11 +347,13 @@ export class OfficeAvatar {
       // 走 / 跑 / 爬梯都在 `avatarWalk.walkStep` 里（离了浏览器也能单测）。
       const step = walkStep(this.root.position, this.keys, this.camera, dt, speed);
       if (step.moving) {
+        // 踩空那一脚：先把"掉落前的位置"记下来，死亡后回到这里（`avatarFall`）。
+        if (step.falling) this.fall.begin(this.root.position);
         this.root.position.copy(step.position);
         this.root.rotation.set(0, step.rotationY, 0);
         moving = true;
       }
-    } else if (!this.sitBlend && !this.sitTarget && this.path.length && this.model) {
+    } else if (onFoot && this.fall.graceLeft <= 0 && this.path.length) {
       // 路很长就跑：先量整条路的长度（点击远处地面时不必让一块板子慢慢挪）。
       const speed = pathLength(this.root.position, this.path) > RUN_DISTANCE ? RUN_SPEED : WALK_SPEED;
       this.speed = speed;
@@ -394,6 +378,9 @@ export class OfficeAvatar {
         this.seatedAt = spot;
         this.pendingSeat = null;
       }
+    } else if (onFoot && this.fall.graceLeft <= 0 && this.fall.stranded(this.root.position)) {
+      // 脚下的平台被别人拆了/被放到空中：那就掉下去（以前会原地悬空）。
+      this.fall.begin(this.root.position);
     }
     this.moving = moving;
     this.sitting = this.sitTarget === 1 && this.sitBlend >= 0.999;
@@ -411,22 +398,38 @@ export class OfficeAvatar {
       this.poseSit(dt);
     } else if (this.model) {
       if (this.current === undefined) this.play(false);
-      this.play(moving, this.speed > WALK_SPEED + 0.01);
+      // 下落时不放走路循环：空中踏步看着很假，用待机姿势往下坠。
+      this.play(moving && !this.fall.falling, this.speed > WALK_SPEED + 0.01);
       this.speed = moving ? this.speed : 0;
       this.mixer?.update(dt);
       this.model.position.y = this.character?.groundY ?? 0;
     }
-    const state = this.sitting
-      ? `已坐在 ${this.seatedAt?.label}`
-      : this.sitBlend > 0.001
-        ? "入座中…"
-        : moving
-          ? "行走中"
-          : "待机 · 点击地面或 WASD 行走";
+    const state = actorStatusText({
+      sitting: this.sitting, label: this.seatedAt?.label, sitBlend: this.sitBlend,
+      moving, falling: this.fall.falling,
+    });
     if (state !== this.lastState && this.model) {
       this.report(state);
       this.lastState = state;
     }
+  }
+  /**
+   * 掉到最低部件之下：宣布死亡，然后回到**掉落前站的那个位置**原地复活。
+   * 那一小段保护期（`RESPAWN_GRACE`）里不收走路按键，免得松不开的 W 让人立刻又掉一次。
+   */
+  private die() {
+    const spot = this.fall.die();
+    this.root.position.set(spot.x, spot.y, spot.z);
+    this.path = [];
+    this.speed = 0;
+    this.moving = false;
+    this.report("你掉下去了 · 已在掉落前的位置复活");
+    this.onDeath?.(this.fall.lastDeath!);
+  }
+  /** 掉落 / 死亡的诊断读数（`?debug=1` 的探针与浏览器用例读它）。 */
+  fallDiagnostics() {
+    return { falling: this.fall.falling, deaths: this.fall.deaths,
+      graceLeft: +this.fall.graceLeft.toFixed(3), last: this.fall.lastDeath };
   }
   dispose() {
     this.stand();

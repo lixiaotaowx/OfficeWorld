@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { traverse } from './navigation';
+import { stepOff, traverse } from './navigation';
 import { climbStep } from './buildClimb';
 
 /**
@@ -13,7 +13,14 @@ export type WalkResult = {
   position: THREE.Vector3;
   rotationY: number;
   moving: boolean;
+  /** 这一脚踩空了（前方没有地面）：位置已经挪到边缘外，接下来交给 `avatarFall` 下落。 */
+  falling?: boolean;
 };
+
+/** 会被"走路"接管的按键（`OfficeAvatar` 的 keydown 用它，别在别处再抄一份）。 */
+export const MOVEMENT_KEYS = new Set([
+  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+]);
 
 /** 相机朝向在水平面上的投影（长度 0 时退回 +Z，避免 atan2(0,0) 乱转）。 */
 export function heading(camera: THREE.Camera) {
@@ -50,7 +57,10 @@ export function walkStep(
   if (direction.lengthSq() === 0) return { position, rotationY, moving: false };
   const next = position.clone().addScaledVector(direction, dt * speed);
   const supported = traverse(position, next);
-  return supported
-    ? { position: supported, rotationY, moving: true }
-    : { position, rotationY, moving: false };
+  if (supported) return { position: supported, rotationY, moving: true };
+  // 走到边缘外面：水平方向没有挡住身体的东西、脚下又没有地面 → 允许踏空（重力在 `avatarFall`）。
+  if (stepOff(position, next.x, next.z)) {
+    return { position: new THREE.Vector3(next.x, position.y, next.z), rotationY, moving: true, falling: true };
+  }
+  return { position, rotationY, moving: false };
 }

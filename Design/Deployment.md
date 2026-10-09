@@ -1,3 +1,13 @@
+## 2026-10-09 掉落机制：走出边缘会掉、掉到下层站住、掉过最低部件宣布死亡并原地复活
+
+用户：「添加掉落机制，可以走下去掉落到最低的部件组合之下就宣布死亡，然后再掉落前的位置，也就是可以跳到下一层建筑上原地复活」。
+
+- **以前**：走出边缘被当成"撞住不动"（`buildTraverse` 找不到支撑就回 null），所以想从平台上下来只能绕着走或者用传送点。
+- **现在**：①`buildNavigation` 新增 `supportBelow`（从某个高度往下、这里最高的一层地——`supportHeight` 的 ±0.255 窗口是给抬腿用的，下落一帧能掉几米，拿它问会穿过楼板）、`blocksBody`、`buildClearPath`、`buildStepOff`，并在 `setBuildSolids()` 里顺便算好 `lowestSolidBottom()`；②`avatarWalk.walkStep` 在 `traverse` 失败后再问一次 `stepOff`——能踏空就返回 `{falling:true}`（位置已挪到边缘外，高度不变），撞墙才真的不动；③新文件 `src/avatarFall.ts` 的 `FallRig` 管重力（18m/s²、终端 28m/s）、落地（`supportBelow`，用上一帧的 y 当上界）、判死（**全世界最低那一件的底面再往下 0.5m**）、复活（回**掉落前站的位置**，站不住就在 2m 内就近找一个支撑）、复活后 0.9s 不许走动；空中可以横向控制，能往下一层平台上飘；④新文件 `FallToast.tsx` + `src/fall.css` 在画面上方**宣布死亡**（「你掉下去了 / 已在掉落前的位置复活 · 落差 N m」），2.6s 自己消失。
+- **产物**：`npm run build`（`public-parity` 90 个文件一致）→ `node Build/deploy-web.cjs --upload --verify`。**这一轮没有上传动作**：逐文件审计显示远端已与本地构建**逐字节一致**（并行的另一个会话在提交后发布过，构建树里已经包含这份改动），公网 `index.html` + `assets/main-DATeyWq7.js`（859,853 字节）/`main-xWPLr2SU.css` 全部 200 且 SHA256 与本地相同。**纯前端，后端未改、没有重启 `officeweb`**（`build-catalog.json` 审计一致）。
+- **验证**：`node --test test/avatar-fall.test.mjs`（8 项：判死线/踏空与撞墙/落到下层顶面且速度归零/掉过最低部件即死/复活点含就近救援/状态机的落地·死亡·保护期/空中控制与撞墙/梯子里不算踏空）+ 全量 **392 项**单测 + `tsc --noEmit` 全绿；真浏览器 `node test/browser/build-fall.cjs`（自建 6.25 高台 + 3.25 下层：走出边缘 → 下落 → 正好落在 3.25 且 deaths=0；再走出下层边缘 → deaths=1 → **回到掉落前的位置 (100, 3.25, 5.985)** + 死亡卡片文案，截图 `Build/build-fall.png`）；回归 `build-ladder-climb`/`build-experience`/`editable-scene`/`no-spin`/`box-expansion-check` 全过。
+- **上线核验（正式站）**：`node test/browser/build-fall-live.cjs` PASS —— 验收账号在 **PLOT=(64,64)**（开跑前量过半径 14m 内 0 件）放两块平台，真键盘走出边缘落到下层、再走出边缘掉 **12.0m** 触发死亡（判死线 = 正式世界最低件 −8.25 再往下 0.5 = **−8.75**）并在掉落前的位置复活；收尾删掉自己那两件，**正式世界回到 233 件**（基线一致，别人的件一件没动）。截图 `Build/build-fall-live.png`（画面上方就是那张死亡卡片）。**接口节流坑**：`/api/build` 每账号写接口 120ms 起步，连发两次 `add` 第二次回「操作太快，请稍候」——验收用例两次写入之间必须 `await sleep(500)`。
+
 ## 2026-10-09 摞起来的直梯不能自动寻路：柱体要"并成一根"
 
 用户：「把直梯摞得很高之后，怎么不能自动寻路了」。

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { buildClimbAt, buildNavigationActive, buildPath, buildStepOff, buildTraverse } from './buildNavigation';
+import { buildClearPath, buildClimbAt, buildNavigationActive, buildPath, buildStepOff, buildTraverse } from './buildNavigation';
 
 export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
   if (buildNavigationActive()) {
@@ -12,6 +12,11 @@ export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
 /** 走出边缘：只有方块世界有"高度"这一说，老场景里永远走不出去。 */
 export function stepOff(start: THREE.Vector3, x: number, z: number) {
   return buildNavigationActive() ? buildStepOff(start, x, z) : false;
+}
+
+/** 空中能不能横着挪（掉落时的空中控制）：没有墙挡着就行，脚下有没有地无所谓。 */
+export function clearPath(start: THREE.Vector3, x: number, z: number) {
+  return buildNavigationActive() ? buildClearPath(start, x, z) : true;
 }
 
 /** 梯子柱体（`(x,z)` 处、`y` 够得着）：在梯子上时移动键改成往上爬 / 往下退。 */

@@ -18,6 +18,8 @@ import "./avatar.css";
 import { type Appearance } from "./look";
 import type { Motion, Person } from "./types";
 import { NameTags } from "./nameTags";
+import FallToast from "./FallToast";
+import type { DeathInfo } from "./avatarFall";
 import { VIEWS, nameTagItems, remoteStates, type View } from "./sceneViews";
 
 // The camera presets and the per-player helpers live in sceneViews.ts; this
@@ -68,6 +70,8 @@ export default function OfficeScene(props: Props) {
   const actor = useRef<OfficeAvatar>();
   const [actorState, setActorState] = useState("角色载入中…");
   const [stats, setStats] = useState("");
+  /** 最近一次掉死（每次换 id，`FallToast` 自己计时消失）。 */
+  const [death, setDeath] = useState<{ id: number; info: DeathInfo } | null>(null);
   const api = useRef<{
     focus: (v: View) => void;
     screen: (seat: number) => void;
@@ -142,7 +146,9 @@ export default function OfficeScene(props: Props) {
     const world = new THREE.Scene();
     world.fog = new THREE.Fog('#c7d8ee', 40, 85);
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 150);
-    const avatar = new OfficeAvatar(world, camera, setActorState, id => latest.current.onSit(id));
+    const avatar = new OfficeAvatar(world, camera, setActorState, id => latest.current.onSit(id),
+      // 掉死 → 画面上方"宣布死亡"（卡片自己计时消失，每次掉死换一个 key 重挂）。
+      info => setDeath({ id: Date.now(), info }));
     actor.current = avatar;
     // Load the character here too: the appearance effect above runs before this
     // mount effect, so on the first render `actor.current` was still empty and
@@ -451,6 +457,7 @@ export default function OfficeScene(props: Props) {
     <div className="scene-shell">
       <div className="scene" ref={host} />
       {!props.renderPaused && builder.ui}
+      {death && <FallToast key={death.id} info={death.info} />}
       {props.renderPaused && <div className="scene-paused">
         <p>三维画面已暂停，语音、共享和聊天继续</p>
         <button onClick={props.onResumeRendering}>恢复三维画面</button>
