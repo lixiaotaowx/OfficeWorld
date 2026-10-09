@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { BuildAnchor, BuildPart } from './buildTypes';
 
 type Axis = 'x' | 'y' | 'z';
-const rounded = (value: number) => Math.round(value*1000)/1000;
+const rounded = (value: number) => Math.round(value*1000)/1000 + 0;
 
 /** Ends follow the part's rotation, so rotating keeps the grabbed end in place. */
 export function endAxis(bounds: THREE.Box3, rotation: number) {

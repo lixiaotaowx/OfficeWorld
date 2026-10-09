@@ -26,9 +26,16 @@ test('add/move/remove persist and stale collaborative edits do not overwrite', (
 });
 test('bounds, finite coordinates, grid, palette validated on server', () => {
   const s=store();
-  for (const override of [{x:Number.MAX_VALUE},{y:Infinity},{x:NaN},{z:0.0003},{kind:'bad'},{rotation:0.2},{color:'red'}])
+  // y 仍按毫米校验（接触高度是毫米级但不许比毫米更细）；x/z 不再拒收，而是**落格**——见下一条断言。
+  for (const override of [{x:Number.MAX_VALUE},{y:Infinity},{x:NaN},{y:0.0003},{kind:'bad'},{rotation:0.2},{color:'red'}])
     assert.throws(()=>s.mutate({action:'add',part:{...part,...override}},user));
-  assert.equal(s.snapshot().revision,1);
+  assert.equal(s.snapshot().revision,2,'新世界两次一次性迁移：原场景迁入 + 水平回格');
+});
+test('off-grid x/z are snapped, never rejected', () => {
+  const s=store();
+  const added=s.mutate({action:'add',part:{...part,x:5.11,z:-2.19,y:.105}},user).changed;
+  assert.deepEqual([added.x,added.z],[5,-2.25]);
+  assert.equal(added.y,.105,'y 原样保留（接触高度）');
 });
 test('floors extend beyond the old island and are not subject to the 600 prop cap', () => {
   const path=join(mkdtempSync(join(tmpdir(),'box-floor-')),'world.json');

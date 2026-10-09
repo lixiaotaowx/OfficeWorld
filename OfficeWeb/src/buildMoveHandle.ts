@@ -11,6 +11,7 @@ import { copyDropPoint, keepsOriginalSpot, type DropPlane, type DropPoint } from
 import { applyGizmoLook, styleGizmo, type GizmoKind } from './buildGizmoStyle';
 import { BuildPlacementGuide } from './buildPlacementGuide';
 import { snapMove } from './buildMoveSnap';
+import { gridSnap, snapHorizontal } from './buildGrid';
 
 const quaternion = partQuaternion;
 type Options={
@@ -358,13 +359,15 @@ export class BuildMoveHandle {
       scale[index]=Math.max(.25,Math.round(base[index]*scale[index]*factor*4)/4)/base[index];
       this.draft={...this.startPart,scale};
     }else{
+      // 旋转要保持"围着原来的落脚点转"：非对称模型的局部中心可以是毫米级，所以这里**水平两轴必须落格**
+      // ——不然"转一下"就会把部件带离网格，正好违反"部件永远整格"这条不变量（用户 2026-10-09）。
       this.draft={...this.startPart,...partOrientation(this.pivot.quaternion)};
       const probe=createPart({...this.draft,x:0,y:0,z:0});
       const center=new THREE.Box3().setFromObject(probe).getCenter(new THREE.Vector3());
       probe.traverse(o=>{if(o instanceof THREE.Mesh && o.geometry.type!=='BoxGeometry')o.geometry.dispose();});
-      this.draft.x=Math.round((this.startPosition.x-center.x)*1000)/1000;
+      this.draft.x=gridSnap(this.startPosition.x-center.x);
       this.draft.y=Math.round((this.startPosition.y-center.y)*1000)/1000;
-      this.draft.z=Math.round((this.startPosition.z-center.z)*1000)/1000;
+      this.draft.z=gridSnap(this.startPosition.z-center.z);
     }
     this.draw();
     this.guide.show(this.draft!,this.preview!,this.targets,Boolean(placementError(this.draft!)));
@@ -390,7 +393,10 @@ export class BuildMoveHandle {
   private async save(color?:string){
     if(!this.part||!this.draft||this.pending)return;
     const delta=new THREE.Vector3(this.draft.x-this.part.x,this.draft.y-this.part.y,this.draft.z-this.part.z);
-    const extras=this.companions.map(row=>({...row.part,color:color || row.part.color,x:Math.round((row.part.x+delta.x)*1000)/1000,
+    // 整组平移：同伴按同一个 delta 走，再兜一次 `snapHorizontal`——那样"跟着走的同伴"也不可能离格
+    // （不变量面前不留例外，用户 2026-10-09）。
+    const extras=this.companions.map(row=>snapHorizontal({...row.part,color:color || row.part.color,
+      x:Math.round((row.part.x+delta.x)*1000)/1000,
       y:Math.round((row.part.y+delta.y)*1000)/1000,z:Math.round((row.part.z+delta.z)*1000)/1000}));
     const error=[this.draft,...extras].map(placementError).find(Boolean);
     if(error){this.options.hint(error);this.draft={...this.part};this.draw();this.pose();return;}

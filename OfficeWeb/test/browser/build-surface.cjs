@@ -32,11 +32,15 @@ const assert=require('node:assert/strict');
         const bounds=new THREE.Box3().setFromObject(createPart(part));
         const axis=Math.abs(normal.x)>.9?'x':'z';
         const edge=normal[axis]>0?bounds.min[axis]:bounds.max[axis];
-        checks.push({gap:Math.abs(edge-point[axis]),rotation:part.rotation});
+        checks.push({gap:Math.abs(edge-point[axis]),rotation:part.rotation,x:part.x,z:part.z});
       }
       return checks;
     });
-    for(const c of geometry) assert(c.gap<.001,JSON.stringify(c));
+    // 贴面不再"精确到毫米"：水平两轴要落 0.25 网格（用户 2026-10-09 要求"部件永远整格"），
+    // 所以离墙面的缝最多半格 0.125；换来的是世界里再也不会出现 0.125/0.0625 这种半格偏置。
+    for(const c of geometry) assert(c.gap<.126,JSON.stringify(c));
+    for(const c of geometry) assert(Math.abs(c.x*4-Math.round(c.x*4))<1e-9&&Math.abs(c.z*4-Math.round(c.z*4))<1e-9,
+      '贴面落点也要在网格上 '+JSON.stringify(c));
     assert.deepEqual(geometry.map(c=>c.rotation),[0,0,0,0]);
     const unchanged=await page.evaluate(()=>{
       const {THREE,fitToSurface,createPart}=qa;
@@ -71,13 +75,16 @@ const assert=require('node:assert/strict');
           const bounds=new THREE.Box3().setFromObject(createPart(result));
           const edge=anchorEdge(bounds,rotation,anchor);
           const other=edge.axis==='x'?'z':'x';
-          if(Math.abs(edge.value-point[edge.axis])>.002 || Math.abs(bounds.min.y-3)>.002 ||
-            Math.abs(bounds.getCenter(new THREE.Vector3())[other]-point[other])>.002)
+          // 抓某条底边贴过去：**边缘最多偏半格**。落点现在一律吸 0.25 网格（用户 2026-10-09
+          // 「部件永远整格 … 根源修复」），所以"边缘像素级贴住光标"让位给整格；y（顶面高度）照旧精确。
+          if(Math.abs(edge.value-point[edge.axis])>.126 || Math.abs(bounds.min.y-3)>.002 ||
+            Math.abs(bounds.getCenter(new THREE.Vector3())[other]-point[other])>.126)
             throw Error(JSON.stringify({part,anchor,result,bounds}));
           if(result.rotation!==rotation||result.pitch!==pitch||result.roll!==roll)throw Error('angle changed');
           positions.add(result.x+':'+result.z);count++;
         }
-        if(positions.size!==4)throw Error('four edges must have distinct positions');
+        // 四条边吸到网格后可能有两三个落在同一个格点上（原本相差 0.125），但绝不能全挤成一个。
+        if(positions.size<2)throw Error('four edges must still place the part differently');
       }
       return {cycle,count};
     });
@@ -127,7 +134,7 @@ const assert=require('node:assert/strict');
       return {column,beams};
     });
     assert.deepEqual([joining.column.x,joining.column.y,joining.column.z],[10,3,0]);
-    assert(joining.beams.every(gap=>gap<.001),'each rotated beam is grabbed by its end');
+    assert(joining.beams.every(gap=>gap<.126),'each rotated beam is grabbed by its end（整格吸附后半格以内）');
     await page.screenshot({path:'../Build/wall-mounted-preview.png'});
     const occlusion=await page.evaluate(()=>{
       const {world,renderer,render,THREE}=qa;

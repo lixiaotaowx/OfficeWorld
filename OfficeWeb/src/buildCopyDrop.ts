@@ -15,12 +15,10 @@ export type DropSource = Pick<BuildPart, 'x' | 'y' | 'z'>;
 const PARALLEL = 0.18;
 const GRID = 0.25;
 
-const snapDown = (value: number) => Math.floor(value / GRID) * GRID;
-/** 保留原件的小数偏置，再按 25 厘米取整：非整格原点也不会跳半格。 */
-const align = (value: number, origin: number) => {
-  const bias = origin - snapDown(origin);
-  return Math.round((value - bias) / GRID) * GRID + bias;
-};
+/** 落点直接吸附 0.25 网格。以前这里"保留原件的小数偏置"，那是为了迁就老存档里的离格件——
+ *  现在不变量是"水平两轴永远整格"（`buildGrid.snapHorizontal` + 服务端 `cleanPart`），
+ *  再保留偏置就等于让副本继续离格，所以整条去掉。`+ 0` 把 `-0` 归一成 `0`（断言与存档都更干净）。 */
+const align = (value: number) => Math.round(value / GRID) * GRID + 0;
 
 export function copyDropPoint(
   part: DropSource, ray: THREE.Ray, plane: DropPlane = 'ground',
@@ -31,9 +29,9 @@ export function copyDropPoint(
   const point = ray.intersectPlane(new THREE.Plane(axis, constant), new THREE.Vector3());
   if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.z)) return undefined;
   return {
-    x: align(point.x, part.x),
+    x: align(point.x),
     y: part.y,
-    z: align(point.z, part.z),
+    z: align(point.z),
   };
 }
 

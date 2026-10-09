@@ -89,8 +89,8 @@ async function confirmLook(page){
     for(const part of strays){await build.post({action:'remove',id:part.id,version:part.version});await sleep(400);}
     assert.equal(mine(await build.get()).length,0,'开跑前自己那块地上不该有残留');
     assert.equal((await build.get()).parts.length,before-strays.length,'清理只许动自己那块地上的件');
-    // 基线＝清掉自己的残留之后的世界件数；结尾必须回到这个数（一件别人的都没动）。
-    const baseline=(await build.get()).parts.length;
+    // 基线＝清掉自己的残留之后"自己那块地之外"的件数；结尾必须回到这个数（一件别人的都没动）。
+    const baseline=((await build.get()).parts||[]).filter(p=>!nearSite(p)).length;
     const seen=new Set(await page.evaluate(()=>window.__officeDebug.__scene.children
       .filter(c=>c.userData.buildId).map(c=>c.userData.buildId)));
 
@@ -218,15 +218,32 @@ async function confirmLook(page){
     assert.equal(hopped[1],to.z);
     await page.screenshot({path:'../Build/teleport-live-build.png'});
 
-    // ③ 收尾：把自己那块地上的件删干净，别留在正式世界里。
+    // ④ 服务端闸门（在正式站真发一次离格坐标）：存下来必须是整格。
+    //    「部件永远整格」这条不变量靠 `build-store.mjs` 的 `cleanPart()` 兜底，所以旧版客户端就算照发
+    //    毫米值也污染不了世界（用户 2026-10-09：「确保不会有步长不统一的部件 … 根源修复」）。
+    const offGrid={action:'add',part:{kind:'block',rotation:0,x:PLOT.x+1.11,y:.105,z:PLOT.z+1.06,color:'#f3dfc5'}};
+    const stored=(await build.post(offGrid)).changed;
+    const onGrid=v=>Math.abs(v*4-Math.round(v*4))<1e-9;
+    console.log('离格写入 '+JSON.stringify([PLOT.x+1.11,PLOT.z+1.06])+' → 正式存档 '+JSON.stringify([stored.x,stored.z]));
+    assert.ok(stored&&onGrid(stored.x)&&onGrid(stored.z),'正式后端要把离格的 x/z 落回 0.25 网格');
+    assert.equal(stored.y,.105,'y 是接触高度，原样保留');
+    await build.post({action:'remove',id:stored.id,version:stored.version});
+    await sleep(400);
+
+    // ⑤ 收尾：把自己那块地上的件删干净，别留在正式世界里。
     for(let pass=0;pass<4;pass++){
       const left=mine(await build.get());
       if(!left.length)break;
       for(const part of left){await build.post({action:'remove',id:part.id,version:part.version});await sleep(400);}
     }
     assert.equal(mine(await build.get()).length,0,'验收用的几件要清干净');
-    assert.equal((await build.get()).parts.length,baseline,'正式世界必须和开跑前一模一样（总件数不变，一件别人的都没动）');
+    // 世界的其余部分一件都不能动。用"自己那块地之外"的件数比对：用户可能正在旁边施工，
+    // 所以只断言"我没碰别人的"，并把两边数字写进失败信息里，便于区分并发编辑与本用例出错。
+    const outside=json=>((json&&json.parts)||[]).filter(p=>!nearSite(p)).length;
+    const rest=outside(await build.get());
+    assert.equal(rest,baseline,`正式世界自己那块地之外的件数必须不变（开跑 ${baseline} → 现在 ${rest}；`
+      +'如果这期间用户在别处施工，这个数字会变）');
     assert.deepEqual(errors,[]);
-    console.log('PASS 正式站：直梯/传送点可点击建造、传送点可瞬移（验收用的几件已删除，世界总件数未变）');
+    console.log('PASS 正式站：直梯/传送点可点击建造、传送点可瞬移、离格写入被落格（验收件已删，世界总件数未变）');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

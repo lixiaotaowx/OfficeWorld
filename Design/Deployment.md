@@ -1,3 +1,16 @@
+## 2026-10-09 「部件永远整格」改成不变量（服务端闸门＋客户端产出即整格＋老存档迁移），并删掉「对齐网格」按钮
+
+用户：「将来确保不会有步长不统一的部件 所以就不需要对齐网格的按钮 你理解吗 根源修复 而不是打补丁」。
+
+- **三层保证**：① `build-store.mjs` 的 `cleanPart()` 把 x/z 落格——**唯一的写入闸门**，`add`/`move`/`moveMany`/`duplicate` 与撤销重放全走它，所以旧版客户端照发毫米值也污染不了世界；② 客户端每条产出路径都过 `src/buildGrid.ts` 的 `snapHorizontal`（放置候选件的出口、`fitToSurface`/`fitToPlane`、`gapPlacement`、旋转时反推的 x/z、整组移动的同伴、Shift+D 复制落点——最后一条顺手删掉了"保留原件小数偏置"的老逻辑）；③ `createBuildStore()` 启动时把历史离格件整盘回格，原文件另存 `.before-grid.json`、journal 记件数、幂等。**y 一个字节都不取整**（接触高度是毫米级），y 的步长仍由 `snapMove` 保证整格。
+- **代价（有意，别再改回去）**：贴面/抓底边不再毫米级精确，最多差半格 **0.125**。`test/browser/build-surface.cjs` 的断言跟着从 `gap<.001` 放宽到 `<.126`，并新增"落点必须在网格上"；"四条边四个不同位置"放宽成"至少两个不同"（吸到网格后可能有两三个落在同一格点）。
+- **产物（前端）**：`npm run build`（`public-parity` 90 个文件一致）→ `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-8JoPwKyd.js`**（851,302 字节，公网 200 且哈希一致），线上 bundle 里已经查不到「对齐网格」。
+- **产物（后端，必须一起发）**：先核对服务器 `~/officeweb/build-store.mjs` 与 git HEAD **逐字节一致**（md5 `6b99af1…`）再 `scp` 上传（新 md5 `eadcd00…`），然后 `sudo -n systemctl restart officeweb` → **active**。目录 `build-catalog.json` 未改，没有重启之外的额外动作（重启不影响持久存档）。
+- **正式站迁移结果**：重启日志 `[build-store] 水平回格迁移：58 件离格部件对齐到 0.25 网格（原文件备份为 /home/ubuntu/officeweb/build-world.json.before-grid.json）`；我另外手动备份了一份 `build-world.json.before-grid-deploy-20261009.json`。迁移后拉正式存档复核：**182 件、离格 0 件**（用户当时正在施工，件数比前一天记录的 177 多，他重建了直梯）。
+- **验证**：全量 **383 项**单测全绿（其中新增 `test/build-grid-invariant.test.mjs` 5 项：服务端四种命令 + 目录 70 件 × 贴面/地面/手动高度/搭桥/拖动/复制 + 顶面辅助吸附 + 迁移与备份 + `snapHorizontal` 语义）；真浏览器 `build-surface`/`build-gap`/`build-top`/`build-experience`/`editable-scene`/`build-copy-teleport`/`build-hints` 全 PASS；**正式站** `build-parts-live.cjs` PASS —— 里面真发一次离格坐标（41.11/41.06）→ 正式存档回 **41/41**、`y=0.105` 原样，随后把验收件删净。
+- **删掉的东西**：`BuildToolbar` 的「对齐网格」按钮与 `onAlign`、`BuildInteraction.alignSelected()`、`buildMoveSnap.alignToGrid()`、两条 `build-align-grid*` 用例（它们的教训——正式站面板挡住画布 / `role=dialog` 让 Ctrl+Z 静默失效 / Esc 是"回漫游"——已并入 AGENTS.md）。
+- **回滚点**：前端回 `assets/main-DKeDnhq7.js`（或 git HEAD 的 `OfficeWeb/`），后端回 git HEAD 的 `build-store.mjs`，存档用线上自动留的 `build-world.json.before-grid.json`（58 件原坐标）。
+
 ## 2026-10-09 正式站验收用例曾经删掉用户自己建的部件（已修 + 传送点已放回）
 
 - **事故**：`OfficeWeb/test/browser/build-parts-live.cjs` 开跑前按**类型**清理——把正式世界里所有 `ladder`/`teleport-pad` 都 `remove` 掉，于是把**用户自己建的两根直梯和一块传送点**（x≈-25 与 (3.5,0,-1.5)）一起删了。2026-10-08 那轮的验收记录里「复核正式存档里 `ladder`/`teleport-pad` 各 0 件」其实把这件事当成了通过条件。

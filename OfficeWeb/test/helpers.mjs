@@ -26,9 +26,26 @@ export async function loadTs(name, urls = new Map()) {
     { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
   const relatives = [...new Set([...js.matchAll(/from\s*['"](\.[^'"]+)['"]/g)].map(match => match[1]))];
   for (const specifier of relatives) {
+    // JSON（`buildFixtures.ts` 要 import `../scene-scenery.json`）不能被当成 TS 转译：直接按
+    // JSON 模块内联成 data URL，并带上 Node 要求的 import attribute。
+    if (specifier.endsWith('.json')) {
+      const raw = readFileSync(fileURLToPath(new URL(`../src/${specifier.replace(/^\.\//, "")}`, import.meta.url)));
+      const json = "data:application/json;base64," + raw.toString("base64");
+      js = js.split(`from '${specifier}'`).join(`from '${json}' with { type: 'json' }`)
+        .split(`from "${specifier}"`).join(`from '${json}' with { type: 'json' }`);
+      continue;
+    }
     const url = await loadTs(`${specifier.replace(/^\.\//, "")}.ts`, urls);
     js = js.split(`from '${specifier}'`).join(`from '${url}'`)
       .split(`from "${specifier}"`).join(`from '${url}'`);
+  }
+  // 裸包名（`three`、`three/examples/jsm/...`）在 data URL 模块里解析不了，换成解析出来的地址。
+  const packages = [...new Set([...js.matchAll(/from\s*['"]([^.'"][^'"]*)['"]/g)].map(match => match[1]))];
+  for (const name of packages) {
+    let resolved;
+    try { resolved = import.meta.resolve(name); } catch { continue; }
+    js = js.split(`from '${name}'`).join(`from '${resolved}'`)
+      .split(`from "${name}"`).join(`from '${resolved}'`);
   }
   const url = "data:text/javascript;base64," + Buffer.from(js).toString("base64");
   urls.set(name, url);

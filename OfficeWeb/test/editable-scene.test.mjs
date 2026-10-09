@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,readFileSync,writeFileSync} from 'node:fs';
+import {mkdtempSync,existsSync,readFileSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createBuildStore} from '../build-store.mjs';
@@ -17,7 +17,9 @@ test('legacy migration backs up exact bytes, preserves user state and runs once'
  assert.equal(readFileSync(file+'.before-editable-scene.json','utf8'),bytes);
  assert.deepEqual(snapshot.parts[0],old.parts[0]);
  assert.equal(snapshot.parts.length,1+initialFixtures().length);
- assert.equal(snapshot.revision,42);
+ // 两次一次性迁移各推进一次版本：①原场景 67 件迁入（42）②水平两轴回格（43，见 build-grid-invariant 用例）。
+ assert.equal(snapshot.revision,43);
+ assert.equal(existsSync(file+'.before-grid.json'),true,'回格迁移也要留一份原文件');
  assert.deepEqual(JSON.parse(readFileSync(file)).chests,old.chests);
  const distant=snapshot.parts.find(p=>p.fixture==='distant-0-top');
  store.mutate({action:'remove',id:distant.id,version:1},user);

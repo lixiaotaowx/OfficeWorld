@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createPart } from './buildMeshes';
 import { collisionBoxes } from './buildArch';
 import { fitToPlane } from './buildSurface';
-import { gridSnap } from './buildGrid';
+import { gridSnap, snapHorizontal } from './buildGrid';
 import type { BuildAnchor, BuildPart } from './buildTypes';
 
 type Support = { id: string; box: THREE.Box3 };
@@ -72,5 +72,7 @@ export function gapPlacement(part: BuildPart, ray: THREE.Ray, supports: Support[
         (Math.abs(area-best.area)<.0001 && offset<best.offset)) best={part:candidate,distance,area,offset};
     }
   }
-  return best?.part;
+  // 出口再兜一次整格：不确定锚点模式（anchor!=='auto'）会走 `fitToPlane`，那条路已经落格，
+  // 这里保证**任何**返回都满足"水平两轴永远整格"。
+  return best ? snapHorizontal(best.part) : undefined;
 }

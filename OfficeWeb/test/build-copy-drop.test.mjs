@@ -20,14 +20,16 @@ const aim=(x,z)=>new THREE.Raycaster(new THREE.Vector3(0,8,0),
   new THREE.Vector3(x,-8,z).normalize()).ray;
 const source3=(x,y,z)=>({x,y,z});
 
-test('拖拽落点按 25 厘米吸附，并保留原件的小数偏置',()=>{
+test('拖拽落点按 25 厘米吸附到网格（不再保留原件的小数偏置）',()=>{
   const drop=copyDropPoint(source3(2,0,0),aim(2,0));
   assert.deepEqual([drop.x,drop.y,drop.z],[2,0,0]);
-  // 原点本身偏半格（0.125）时，副本也要落在 n*0.25+0.125 上（2.4 取到 2.375），不跳整格。
+  // 以前这里"保留原件的小数偏置"，好让离格的老部件不被拽跳半格；现在不变量是"水平两轴永远整格"
+  // （用户 2026-10-09：「确保不会有步长不统一的部件 … 根源修复」），所以 2.4 → 2.5、-0.6 → -0.5，
+  // 起点就算带 0.125 偏置也不会把副本带离网格。
   const biased=copyDropPoint(source3(2.125,0,0),aim(2.4,-0.6));
-  assert.deepEqual([biased.x,biased.z],[2.375,-0.5]);
-  // 偏置必须保住：2.375 落在 n*0.25+0.125 这条线上，而不是整格上的 2.25/2.5。
-  assert.equal(Math.round((biased.x-.125)/.25*8)%1,0);
+  assert.deepEqual([biased.x,biased.z],[2.5,-0.5]);
+  assert.equal(biased.x%0.25===0,true,'副本落点必须在整格上');
+  assert.equal(biased.z%0.25===0,true);
 });
 
 test('高度保持不变：副本沿水平面跟鼠标，竖向交给手柄',()=>{

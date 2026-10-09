@@ -16,9 +16,10 @@ test('group moves commit once, preserve offsets and undo/redo with earlier histo
   const group={action:'moveMany',items:[a,b].map(p=>({id:p.id,version:p.version,part:{...p,x:p.x+.13,y:-2}}))};
   send(group);assert.equal(store.snapshot().revision,revision+1);
   const positions=()=>store.snapshot().parts.filter(p=>[a.id,b.id].includes(p.id)).map(p=>[p.x,p.y]);
-  assert.deepEqual(positions(),[[20.13,-2],[22.63,-2]]);
+  // 整组一起走：位移一致（两件都是 +0.13），但落点按不变量落到 0.25 网格上（+0.13 → 20.25 / 22.75）。
+  assert.deepEqual(positions(),[[20.25,-2],[22.75,-2]]);
   send(history.peek('undo'),'undo');assert.deepEqual(positions(),[[20,0],[22.5,0]]);
-  send(history.peek('redo'),'redo');assert.deepEqual(positions(),[[20.13,-2],[22.63,-2]]);
+  send(history.peek('redo'),'redo');assert.deepEqual(positions(),[[20.25,-2],[22.75,-2]]);
   send(history.peek('undo'),'undo');send(history.peek('undo'),'undo');send(history.peek('undo'),'undo');
   assert.deepEqual(positions(),[]);
   assert.deepEqual(createBuildStore(path).snapshot(),store.snapshot());

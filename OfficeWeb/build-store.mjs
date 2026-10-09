@@ -4,6 +4,24 @@ import { randomUUID } from 'node:crypto';
 
 export const catalog = JSON.parse(readFileSync(new URL('./build-catalog.json', import.meta.url), 'utf8'));
 export const palette = ['#f3dfc5', '#e9b8b5', '#b9c9df', '#b4c5a0', '#cabddd', '#c69770', '#596679'];
+
+/**
+ * **水平两轴永远吸附 0.25 网格**——"部件不会离格"这条不变量的**最后一道闸门**。
+ *
+ * 用户 2026-10-09：「将来确保不会有步长不统一的部件 所以就不需要对齐网格的按钮 … 根源修复 而不是打补丁」。
+ * 客户端（`src/buildGrid.ts` 的 `snapHorizontal`）已经在每条放置/拖动/复制路径上算对了，这里再强制一次：
+ * 旧版客户端、以后新加的某条路径、手工调接口，都写不进离格的 x/z。**y 不动**（接触高度/桌面高度是毫米级，
+ * 强行取整会让叠着的东西浮起或陷进去；y 的步长仍由客户端保证是整格）。
+ */
+export const BUILD_GRID = .25;
+export const gridSnap = value => Math.round(value / BUILD_GRID) * BUILD_GRID + 0;
+/** 只有 x/z 都是有限数的部件才落格：老存档里可能存在残缺条目（缺 x/z），迁移时不能把它们变成 NaN。 */
+export const snapHorizontal = part => Number.isFinite(part.x) && Number.isFinite(part.z)
+  ? { ...part, x: gridSnap(part.x), z: gridSnap(part.z) } : part;
+/** 存档里还离格的部件（启动时的迁移与自查都用它）。 */
+export const offGridParts = parts => parts.filter(p => Number.isFinite(p.x) && Number.isFinite(p.z)
+  && (Math.abs(p.x - gridSnap(p.x)) > 1e-9 || Math.abs(p.z - gridSnap(p.z)) > 1e-9));
+
 export function dimensions(part) {
   const item = catalog.find(item => item.id === part.kind);
   if (!item) throw Error('没有这个部件');
@@ -18,7 +36,8 @@ function cleanPart(raw) {
   if (![raw.x, raw.y, raw.z, raw.rotation].every(Number.isFinite)) throw Error('无效的位置');
   if (!Number.isInteger(raw.rotation) || raw.rotation < 0 || raw.rotation > 3) throw Error('旋转角度无效');
   for (const axis of ['pitch','roll']) if (raw[axis] !== undefined && (!Number.isInteger(raw[axis]) || raw[axis]<0 || raw[axis]>3)) throw Error('翻转角度无效');
-  const part = { ...(raw.pitch ? {pitch:raw.pitch} : {}), ...(raw.roll ? {roll:raw.roll} : {}), kind: raw.kind, color: raw.color, x: raw.x, y: raw.y, z: raw.z, rotation: raw.rotation };
+  // 水平两轴在这里落格：这是"部件不会离格"的最后一道闸门（见 snapHorizontal 的说明）。
+  const part = snapHorizontal({ ...(raw.pitch ? {pitch:raw.pitch} : {}), ...(raw.roll ? {roll:raw.roll} : {}), kind: raw.kind, color: raw.color, x: raw.x, y: raw.y, z: raw.z, rotation: raw.rotation });
   if (raw.fixture !== undefined) {
     const fixture=fixtureFor(raw);
     if(!fixture || fixture.kind!==raw.kind)throw Error('场景部件无效');
@@ -36,7 +55,7 @@ function cleanPart(raw) {
   dimensions(part);
   if (![part.x, part.y, part.z].every(n => Number.isSafeInteger(Math.round(n*1000))))
     throw Error('位置无效');
-  // Face thicknesses and tabletop heights are not multiples of the placement grid.
+  // x/z 已经被 snapHorizontal 落格；这里只再确认毫米精度（y 是接触高度，允许毫米）。
   if (![part.x, part.y, part.z].every(n => Math.abs(n * 1000 - Math.round(n * 1000)) < 0.001))
     throw Error('请对齐网格');
   return part;
@@ -89,6 +108,24 @@ export function createBuildStore(path) {
     next.editableScene=1;
     commit(next);
   }
+  /**
+   * 一次性把**老存档里已经离格的部件**整盘回格（用户 2026-10-09：「确保不会有步长不统一的部件」）。
+   *
+   * 以后不会再产生离格件（`cleanPart` 强制 + 客户端每条路径都过 `snapHorizontal`），但之前贴面/搭桥
+   * 留下的毫米偏置得清一次，否则世界里那些件会一直是"拖一格才回格"的例外。**只动 x/z，y 原样保留**；
+   * 改之前先把原文件另存一份 `<path>.before-grid.json`，日志里记清改了几件，方便回溯。
+   */
+  const migrateGrid = () => {
+    const moved = offGridParts(state.parts);
+    if (!moved.length) return 0;
+    writeFileSync(path + '.before-grid.json', readFileSync(path));
+    const next = structuredClone(state);
+    next.parts = next.parts.map(snapHorizontal);
+    commit(next);
+    console.log(`[build-store] 水平回格迁移：${moved.length} 件离格部件对齐到 ${BUILD_GRID} 网格（原文件备份为 ${path}.before-grid.json）`);
+    return moved.length;
+  };
+  migrateGrid();
   return {
     snapshot,
     chest(id) {
