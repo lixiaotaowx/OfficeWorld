@@ -6,6 +6,47 @@ const CELL = 4;
 const STEP = 0.25;
 const STEP_HEIGHT = 0.255;
 const BODY_HEIGHT = 1.3;
+/** 爬梯子比走路慢一点，寻路里也按这个比例算代价（≥1 才是可采纳的启发式）。 */
+const CLIMB_COST = 1.2;
+/**
+ * 可攀爬的柱体（直梯）。梯子里没有"能站的踏面"：人一进这个柱体就改成抓着梯子，
+ * 高度由按键（W/↑ 往上爬、S/↓ 往下退）自己控制，见 `buildClimb.ts`。
+ */
+export type Climb = { min: Point; max: Point; normalX: number; normalZ: number };
+/** 抓到梯子时的读数：`faceX/faceZ` 是从人指向梯子的水平方向（人会面朝它）。 */
+export type ClimbHold = { bottom: number; top: number; faceX: number; faceZ: number };
+let climbs: Climb[] = [];
+export function setBuildClimbs(list: Climb[] | null) { climbs = list ? list.slice() : []; }
+/**
+ * 面朝梯子的方向：梯面法线由部件自己声明（`buildArch.climbColumns` 旋转到世界坐标），
+ * 人站在梯子哪一侧就朝哪个方向看。正好压在梯子中线上时返回 (0,0)，交给调用方保持原朝向。
+ */
+function climbFacing(climb: Climb, x: number, z: number) {
+  const middleX = (climb.min.x + climb.max.x) / 2, middleZ = (climb.min.z + climb.max.z) / 2;
+  const side = (x - middleX) * climb.normalX + (z - middleZ) * climb.normalZ;
+  if (Math.abs(side) < 1e-3) return {faceX: 0, faceZ: 0};
+  const sign = side > 0 ? -1 : 1;
+  return {faceX: climb.normalX * sign, faceZ: climb.normalZ * sign};
+}
+/** `(x,z)` 处是否有梯子，且 `y` 在它能抓的范围内。 */
+export function buildClimbAt(x: number, z: number, y: number): ClimbHold | null {
+  for (const climb of climbs) {
+    if (x < climb.min.x - 1e-6 || x > climb.max.x + 1e-6) continue;
+    if (z < climb.min.z - 1e-6 || z > climb.max.z + 1e-6) continue;
+    if (y < climb.min.y - STEP_HEIGHT || y > climb.max.y + STEP_HEIGHT) continue;
+    return { bottom: climb.min.y, top: climb.max.y, ...climbFacing(climb, x, z) };
+  }
+  return null;
+}
+/** 和 `buildClimbAt` 同一批梯子，但不看高度：寻路要在梯子内部上下走。 */
+function climbSpanAt(x: number, z: number): Climb | null {
+  for (const climb of climbs) {
+    if (x < climb.min.x - 1e-6 || x > climb.max.x + 1e-6) continue;
+    if (z < climb.min.z - 1e-6 || z > climb.max.z + 1e-6) continue;
+    return climb;
+  }
+  return null;
+}
 let cells: Map<string, Solid[]> | null = null;
 export function setBuildSolids(solids: Solid[] | null) {
   cells = solids ? new Map() : null;
@@ -35,7 +76,11 @@ export function buildTraverse(start: Point, x: number, z: number): Point | null 
   const count = Math.max(1, Math.ceil(Math.hypot(x-start.x,z-start.z)/0.04));
   let y = start.y;
   for (let i=1; i<=count; i++) {
-    const height = supportHeight(start.x+(x-start.x)*i/count,start.z+(z-start.z)*i/count,y);
+    const px=start.x+(x-start.x)*i/count, pz=start.z+(z-start.z)*i/count;
+    // 梯子不是地面：进去就是抓着它，高度保持不变（往上/往下是按键决定的动作）。
+    const climb = buildClimbAt(px,pz,y);
+    if (climb) { y = Math.max(climb.bottom, Math.min(climb.top, y)); continue; }
+    const height = supportHeight(px,pz,y);
     if (height === null) return null;
     y = height;
   }
@@ -100,6 +145,20 @@ export function buildPath(start: Point, target: Point): Point[] {
       // Prevent diagonal corner cutting across a thin wall.
       if (dx && dz && (!buildTraverse(n,p.x,n.z) || !buildTraverse(n,n.x,p.z))) continue;
       const g=n.g+Math.hypot(dx,dz)*STEP+Math.abs(p.y-n.y)*0.2;
+      if (g >= (best.get(key(p)) ?? Infinity)) continue;
+      best.set(key(p),g);
+      open.push({...p,g,f:g+heuristic(p),parent:n});
+    }
+    // 梯子：同一格上可以一级级往上爬、也可以往下退（梯顶/梯底是硬边界）。
+    const span = climbSpanAt(n.x,n.z);
+    if (span) for (const sign of [1,-1]) {
+      const y = sign > 0
+        ? Math.min(n.y + STEP, span.max.y)
+        : Math.max(n.y - STEP, span.min.y);
+      if (y < span.min.y - 1e-6 || y > span.max.y + 1e-6) continue;
+      if (Math.abs(y - n.y) < 1e-3) continue;
+      const p={x:n.x,y,z:n.z};
+      const g=n.g+Math.abs(y-n.y)*CLIMB_COST;
       if (g >= (best.get(key(p)) ?? Infinity)) continue;
       best.set(key(p),g);
       open.push({...p,g,f:g+heuristic(p),parent:n});

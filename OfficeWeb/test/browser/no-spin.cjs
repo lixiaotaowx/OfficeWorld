@@ -83,10 +83,14 @@ async function account(base, name, seat) {
     await page.waitForTimeout(1500);
 
     // 暂停三维画面：这样量到的 CPU 就只剩页面自己的逻辑，动画/渲染都不算数。
+    // **设置面板现在分页**（默认停在「我的角色」），「暂停三维画面」在「画面与操作」那一页——
+    // 不先切页就永远等不到那个 checkbox（2026-10-08 修）。
     await page.locator('.rail-icon[title="设置"]').click();
+    await page.locator('.settings-nav button', { hasText: "画面与操作" }).click();
     const pause = page.locator('.settings-row input[type="checkbox"]').first();
     await pause.check();
-    await page.locator('.settings-modal button', { hasText: "关闭" }).click();
+    // 关闭按钮现在是右上角那个 `aria-label="关闭设置"` 的 ×（不再是写着"关闭"的文字按钮）。
+    await page.getByRole('button', { name: "关闭设置" }).click();
     await page.waitForTimeout(800);
     assert.equal(await page.evaluate(() => Boolean(document.querySelector(".scene-paused"))), true,
       "三维画面要真的暂停了，否则这个用例量不准");

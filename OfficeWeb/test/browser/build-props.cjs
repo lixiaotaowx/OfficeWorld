@@ -20,8 +20,10 @@ const assert=require('node:assert/strict');
    await page.screenshot({path:'../Build/lounge-props-gallery.png',fullPage:true});
    await page.goto(base+'/test/build-props-harness.html');
    await page.getByRole('button',{name:/打开部件库/}).click();
+   const {catalog}=await import('../../build-store.mjs');
+   const categories=[...new Set(catalog.map(item=>item.category))];
    const tabs=await page.getByRole('tab').allTextContents();
-   assert.equal(tabs.length,8);
+   assert.deepEqual(tabs,categories,'分类页签跟着目录走（加过楼梯/屋顶/玩法等）');
    for(const category of tabs){
      await page.getByRole('tab',{name:category,exact:true}).click();
      await page.waitForFunction(()=>[...document.querySelectorAll('.build-part')].every(e=>e.querySelector('img')?.complete));
@@ -45,6 +47,6 @@ const assert=require('node:assert/strict');
      await page.screenshot({path:`../Build/lounge-props-toolbar-${width}.png`});
    }
    assert.deepEqual(errors,[]);
-   console.log('PASS rendered models ('+rendered+'); 8 categories; search, selection, recolor; compact toolbar at 1600/1000/520');
+   console.log('PASS rendered models ('+rendered+'); '+tabs.length+' categories; search, selection, recolor; compact toolbar at 1600/1000/520');
  }finally{await browser.close();await vite.close();}
 })();

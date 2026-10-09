@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { createPart } from './buildMeshes';
 import { catalog, placementError, type BuildPart, type BuildSettings } from './buildTypes';
-import { setBuildSolids, type Solid } from './buildNavigation';
+import { setBuildClimbs, setBuildSolids, supportHeight, type Climb, type Solid } from './buildNavigation';
+import { isTeleport, landingHeight, teleportTarget } from './buildTeleport';
 import { fixtureSeat } from './buildFixtures';
 import { setBuildSeats, type SittingSpot } from './sittingSpots';
 import { BuildPlacementGuide } from './buildPlacementGuide';
-import { collisionBoxes } from './buildArch';
+import { collisionBoxes, climbColumns } from './buildArch';
 import { fitToSurface, fitToPlane } from './buildSurface';
 import { gapPlacement } from './buildGapPlacement';
 import { topPlacement } from './buildTopPlacement';
@@ -23,6 +24,10 @@ type Options = {
   focus?: (box: THREE.Box3) => void;
   open: (id: string) => void;
   hint: (text: string) => void;
+  /** 单击传送点：立刻站到**点的那一块**上（任何地点都能点，一块就够）。 */
+  teleport?: (target: { x: number; y: number; z: number; heading: number }) => void;
+  /** 自己现在站在哪里（判断"是不是已经站在这一块上了"，用来决定去下一块还是给提示）。 */
+  position?: () => { x: number; z: number } | undefined;
 };
 export class BuildInteraction {
   private parts: BuildPart[] = [];
@@ -87,6 +92,12 @@ export class BuildInteraction {
       solids.push({min:bounds.min,max:bounds.max});
     }
     setBuildSolids(solids);
+    // 可攀爬柱体（直梯）不进 `solids`：它不是地面，是"抓着爬"的通道。
+    const climbs: Climb[] = [];
+    for (const object of this.objects.values()) for (const column of climbColumns(object)) {
+      climbs.push({min:column.min,max:column.max,normalX:column.normalX,normalZ:column.normalZ});
+    }
+    setBuildClimbs(climbs);
     this.contactSolids=[];
     for(const [id,object] of this.objects) for(const box of collisionBoxes(object))
       this.contactSolids.push({id,box});
@@ -110,15 +121,49 @@ export class BuildInteraction {
     if(!source || this.saving || this.handle.working)return;
     this.saving=true;
     try {
-      const result=await this.options.change({action:'duplicate',id:source.id,version:source.version}) as
-        {parts:BuildPart[];changed?:BuildPart} | false;
-      if(!result || !result.changed)return;
-      this.sync(result.parts);
-      if(this.options.settings().mode==='move' && this.handle.selectedPart?.id===source.id){
-        const copy=this.parts.find(p=>p.id===result.changed!.id)!;
-        this.handle.select(copy,this.objects.get(copy.id)!);
-        this.hint('已复制 · 拖动手柄移动副本 · Ctrl+Z 撤销');
+      // 副本沿用原件的 id，所以"这一组"必须**先记下来**：复制一件之后 handle 里已经是新版了，
+      // 再按 id 重新筛会一直复制同一件（整组复制会变成把第一件复制两遍）。
+      const plan=this.handle.selectedIds.map(id=>({id,version:this.parts.find(part=>part.id===id)?.version ?? 0}));
+      let last:{parts:BuildPart[];changed?:BuildPart}|false|undefined;
+      for(const step of plan){
+        const result=await this.options.change({action:'duplicate',id:step.id,version:step.version}) as
+          {parts:BuildPart[];changed?:BuildPart} | false;
+        if(!result || !result.changed){last=undefined;break;}
+        this.sync(result.parts);
+        last=result;
       }
+      if(!last){this.hint('复制未完成，请重试');return;}
+      const copies=this.parts.filter(part=>plan.some(step=>step.id===part.id));      if(this.options.settings().mode==='move'&&copies.length&&copies.every(part=>this.objects.has(part.id))){
+        this.handle.selectCopies(copies);
+        if(this.handle.startFollow(copies))return;
+      }
+      this.hint('已复制 · 拖动手柄移动副本 · Ctrl+Z 撤销');
+    } finally {this.saving=false;}
+  }
+  /**
+   * 删除选中的这一组（移动模式下按 Delete / Backspace）。
+   *
+   * 和复制对称：一组里每一件都要单独发一次 `remove`（服务端没有批量删除），
+   * 所以**先把 id/version 记下来**再逐件删——删掉第一件之后按 id 重新筛会漏掉后面的。
+   * 每删一件都会进历史，Ctrl+Z 按逆序把整组恢复回来。
+   */
+  async removeSelected() {
+    const ids=this.handle.selectedIds;
+    if(!ids.length){this.hint('先点选要删除的部件（Shift 点击可多选）');return false;}
+    const plan=ids.map(id=>({id,version:this.parts.find(part=>part.id===id)?.version ?? 0}));
+    this.saving=true;
+    let removed=0;
+    try {
+      for(const step of plan){
+        const result=await this.options.change({action:'remove',id:step.id,version:step.version}) as
+          {parts:BuildPart[]} | false;
+        if(!result){continue;}
+        removed++;
+        this.sync(result.parts);
+      }
+      if(!removed){this.hint('删除未完成，请重试');return false;}
+      this.hint(`已删除 ${removed} 件 · Ctrl+Z 撤销`);
+      return true;
     } finally {this.saving=false;}
   }
   sampleHovered() {
@@ -147,6 +192,23 @@ export class BuildInteraction {
     return this.ray.intersectObjects([...this.objects.entries()]
       .filter(([id]) => id !== this.picked?.id).map(([, object]) => object), true);
   }
+  /**
+   * 指针下的传送点：单击立刻传过去。**点哪一块就到哪一块**（用户：「不是一对一，是任何地点
+   * 直接传送到点击处，只需要创建一个就行」）；已经站在这一块上再点它就去最近的另一块。
+   */
+  private teleportAt(part: BuildPart | undefined) {
+    if (!part || !isTeleport(part.kind) || this.saving) return undefined;
+    const target = teleportTarget(this.parts, part, this.options.position?.());
+    if (!target) { this.hint('你已经站在这个传送点上了 · 想去别处就再放一块'); return undefined; }
+    // 落点用"脚下能站的那一层"重算一次：存档里的 y 是原点，不一定就是脚底。
+    target.y = landingHeight(supportHeight, target, part.y);
+    return target;
+  }
+  private travel(target: { x: number; y: number; z: number; heading: number }) {
+    this.cancelMove();
+    this.options.hint('已传送 · 面向来路');
+    this.options.teleport?.(target);
+  }
   private hitPart(hit?: THREE.Intersection) {
     let object = hit?.object;
     while (object && !object.userData.buildId) object = object.parent || undefined;
@@ -154,6 +216,8 @@ export class BuildInteraction {
   }
   refresh() {
     const settings = this.options.settings();
+    // 漫游/拆除不该留着安装预览：那圈浅蓝既不是部件也不是可点的东西，留在场上会挡住射线。
+    if(settings.mode==='explore' && this.ghost) this.ghost.visible=false;
     if(settings.mode!=='move' && this.handle.selected)this.handle.clear();
     if(settings.mode==='move' && this.handle.selected) {
       this.handle.settings(settings);
@@ -176,7 +240,12 @@ export class BuildInteraction {
     if (!active || !this.pointer) {
       if (this.ghost) this.ghost.visible = false;
       const label=catalog.find(item=>item.id===hovered?.kind)?.label || '';
-      const hint = hovered ? `${label} · ${settings.mode === 'remove' ? '点击拆除' : settings.mode === 'move' ? '点击显示移动手柄' : hovered.kind === 'chest' ? '点击打开宝箱' : 'E 取同款 · F 聚焦'}` : '';
+      const action=settings.mode === 'remove' ? '点击拆除'
+        : settings.mode === 'move' ? (hovered && isTeleport(hovered.kind) ? '点击传送' : '点击显示移动手柄')
+        : hovered?.kind === 'chest' ? '点击打开宝箱'
+        : hovered && isTeleport(hovered.kind) ? '点击传送'
+        : 'E 取同款 · F 聚焦';
+      const hint = hovered ? `${label} · ${action}` : '';
       this.hint(hint);
       return;
     }
@@ -226,6 +295,8 @@ export class BuildInteraction {
       delete this.ghost.userData.buildId;
       this.ghost.userData.preview = true;
       this.ghost.traverse(object => {
+        // 传送点的粒子条是加法混合的点云：预览里直接藏掉（保留形状与接触标记就够了）。
+        if (object.userData.teleportBeam) { object.visible = false; return; }
         if (!(object instanceof THREE.Mesh)) return;
         // 流动箭头的光晕壳是加法混合的半透明层：预览必须是不透明实体，所以直接藏掉它
         // （它的材质不能被换成 ghost 材质，否则会在预览外圈糊一层实心轮廓）。
@@ -233,6 +304,9 @@ export class BuildInteraction {
         object.material = this.ghostMaterial;
         object.castShadow = false;
       });
+      // 预览不是场景里的部件：不参与拾取。否则它会挡住自身位置上的真部件——
+      // 典型现象是"明明看到传送点就在那儿，点下去却被预览吃掉、根本不传送"。
+      this.ghost.traverse(object => { object.raycast = () => {}; });
       this.world.add(this.ghost);
       this.ghostKey = key;
     }
@@ -256,13 +330,23 @@ export class BuildInteraction {
   click(event: PointerEvent) {
     this.move(event);
     const mode = this.options.settings().mode;
-    const part = this.hitPart(this.hits()[0]);
-    if (mode === 'explore') {
-      if (part?.kind === 'chest') { this.options.open(part.id); return true; }
-      return false;
+    const all = this.hits();
+    const hit = all[0];
+    const part = this.hitPart(hit);
+    const teleport = this.teleportAt(part);
+    // 漫游与**安装**模式里，点传送点就是"传过去"——安装模式也算，因为很多人刚放下传送点
+    // 还在安装模式，那一下要是去放新部件，就会觉得"鼠标只能继续创建、出不来"（用户反馈）。
+    // 移动/拆除模式里传送点是普通部件（能选中、挪动、删除）。
+    if (mode === 'explore' || mode === 'place') {
+      if (teleport) { this.travel(teleport); return true; }
+      if (part && isTeleport(part.kind)) return true;
+      if (mode === 'explore' && part?.kind === 'chest') { this.options.open(part.id); return true; }
+      if (mode === 'explore') return false;
     }
     if(mode === 'move') {
-      if(part)this.handle.select(part,this.objects.get(part.id)!,event.shiftKey);
+      // Shift+D 跟着鼠标的副本：这一下是"放下"，不是改选。
+      if(this.handle.following) { this.handle.commitDuplicate(); return true; }
+      if(part)this.handle.select(part,this.objects.get(part.id)!,event.shiftKey,this.handle.justDropped);
       else if(!event.shiftKey)this.handle.clear();
       return true;
     }
@@ -295,6 +379,7 @@ export class BuildInteraction {
     this.ghostMaterial.dispose();
     for (const object of this.objects.values()) object.removeFromParent();
     setBuildSolids(null);
+    setBuildClimbs(null);
     setBuildSeats([]);
   }
 }

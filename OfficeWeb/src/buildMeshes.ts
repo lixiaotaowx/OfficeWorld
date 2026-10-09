@@ -24,6 +24,19 @@ export function box(parent: THREE.Object3D, color: string, size: number[], posit
   parent.add(mesh);
   return mesh;
 }
+// 传送点的面板要"发亮"（青色辉光）而不是跟着色板走：单独一份材质并缓存复用。
+let teleportMaterial: THREE.MeshStandardMaterial | undefined;
+function teleportPad(root: THREE.Group, size: number[], position: number[]) {
+  teleportMaterial ||= new THREE.MeshStandardMaterial({
+    color: '#bfeee6', emissive: '#2fa79a', emissiveIntensity: 0.85, roughness: 0.4,
+  });
+  const mesh = new THREE.Mesh(geometry, teleportMaterial);
+  mesh.scale.set(size[0], size[1], size[2]);
+  mesh.position.set(position[0], position[1], position[2]);
+  mesh.castShadow = mesh.receiveShadow = true;
+  root.add(mesh);
+  return mesh;
+}
 export function createPart(part: BuildPart) {
   const root = new THREE.Group();
   root.name = `build-${part.id}`;
@@ -116,10 +129,14 @@ export function createPart(part: BuildPart) {
       break;
     default: b([1,1,1], [0,0.5,0]);
   }
+  // 传送点：底座/立柱跟着色板，唯一发光的面板用专属材质——它要在场景里认得出。
+  if (part.kind === 'teleport-pad') teleportPad(root, [1.24, 0.08, 1.24], [0, 0.21, 0]);
   if (part.scale) {
     const scaled = new THREE.Group();
     for (const child of [...root.children]) scaled.add(child);
     scaled.scale.fromArray(part.scale); root.add(scaled);
+    // 可攀爬柱体也要跟着缩放，否则放大/缩小后的梯子爬不上去。
+    root.userData.buildScale = part.scale;
   }
   tiltContents(root,part);
   root.position.set(part.x, part.y, part.z);

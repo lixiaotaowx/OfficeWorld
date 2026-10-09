@@ -5,7 +5,7 @@ const { pathToFileURL } = require('node:url');
 const ts = require('../OfficeWeb/node_modules/typescript');
 const root = path.resolve(__dirname, '..');
 const dest = path.join(root, 'Build/BoxLibraryModules', String(process.pid));
-const sources = ['buildFixtures', 'buildColors', 'buildArchitecture', 'buildOrientation', 'buildArch', 'buildPropFurniture', 'buildPropDetails', 'buildMeshes'];
+const sources = ['buildFixtures', 'buildColors', 'buildBeam', 'buildArchitecture', 'buildOrientation', 'buildArch', 'buildPropFurniture', 'buildPropDetails', 'buildMeshes'];
 async function loadMeshes() {
   fs.mkdirSync(dest, { recursive: true });
   const three = pathToFileURL(path.join(root, 'OfficeWeb/node_modules/three/build/three.module.js')).href;
@@ -25,7 +25,9 @@ async function exportLibrary() {
   const catalog = JSON.parse(fs.readFileSync(path.join(root, 'OfficeWeb/build-catalog.json'), 'utf8'));
   const assets = catalog.map(item => {
     const group = createPart({ id:item.id, kind:item.id, color:'#e9b8b5', x:0, y:0, z:0, rotation:0 });
-    return {...item, boxes:group.children.map(m => ({ size:m.scale.toArray(), position:m.position.toArray(),
+    // 只导出方块：传送点的粒子条是 `Points`（不是几何体），别写进 Blender 可编辑库。
+    const boxes = group.children.filter(m => m.isMesh);
+    return {...item, boxes:boxes.map(m => ({ size:m.scale.toArray(), position:m.position.toArray(),
       ...(m.userData.flagPanel!==undefined ? {flagPanel:m.userData.flagPanel} : {}),
       ...(m.userData.arrowNudge ? {arrowNudge:true} : {}),
       color:'#'+m.material.color.getHexString(), glow:m.material.emissiveIntensity===0.65,

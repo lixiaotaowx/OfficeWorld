@@ -2,32 +2,24 @@ import { fixtureFor } from './buildFixtures';
 import * as THREE from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { createPart } from './buildMeshes';
+import { partQuaternion, angleKey, partOrientation } from './buildPartPose';
+import { catalog, placementError } from './buildTypes';
+import type { BuildPart, BuildSettings } from './buildTypes';
+import { collisionBoxes } from './buildArch';
+import { copyDropPoint, keepsOriginalSpot, type DropPlane, type DropPoint } from './buildCopyDrop';
 
 import { applyGizmoLook, styleGizmo, type GizmoKind } from './buildGizmoStyle';
-import { collisionBoxes } from './buildArch';
 import { BuildPlacementGuide } from './buildPlacementGuide';
 import { snapMove } from './buildMoveSnap';
-import { catalog, placementError, type BuildPart, type BuildSettings } from './buildTypes';
 
-const quarter=Math.PI/2;
-const quaternion=(p:BuildPart)=>new THREE.Quaternion().setFromEuler(new THREE.Euler(
-  (p.pitch || 0)*quarter,p.rotation*quarter,(p.roll || 0)*quarter,'YXZ'));
-function orientation(q:THREE.Quaternion) {
-  let best={rotation:0,pitch:0,roll:0},score=-1,cost=Infinity;
-  for(let rotation=0;rotation<4;rotation++)for(let pitch=0;pitch<4;pitch++)for(let roll=0;roll<4;roll++) {
-    const next={rotation,pitch,roll};
-    const dot=Math.abs(q.dot(quaternion(next as BuildPart)));
-    const nextCost=Math.min(pitch,4-pitch)+Math.min(roll,4-roll);
-    if(dot>score+1e-8 || (Math.abs(dot-score)<1e-8 && nextCost<cost)){score=dot;cost=nextCost;best=next;}
-  }
-  return best;
-}
+const quaternion = partQuaternion;
 type Options={
   change:(command:Record<string,unknown>)=>unknown;
   hint:(text:string)=>void;
   orient?:(part:BuildPart)=>void;
   lock?:(locked:boolean)=>void;
 };
+type Row={part:BuildPart;object:THREE.Group};
 
 /** A selected part stays put until an axis or ring is dragged. */
 export class BuildMoveHandle {
@@ -50,12 +42,26 @@ export class BuildMoveHandle {
   private localBoxes:THREE.Box3[]=[];
   private targets:THREE.Box3[]=[];
   private guide:BuildPlacementGuide;
+  private follow?:{sources:BuildPart[];plane:DropPlane;anchor:DropPoint;since:DropPoint};
+  /** 服务端最新的一份部件表与它们的场景节点：重装整组时按 id 取。 */
+  private parts:BuildPart[]=[];
+  private objects=new Map<string,THREE.Group>();
+  /** Shift+D 之后各副本的"身份"：整组复制时每次重选都得把整组重新装回来。 */
+  private copies:BuildPart[]=[];
+  private frozen=false;
+  /** 副本已存好、正在收尾：这一段里服务端还会重放一次"旧版本"，别把选中清掉。 */
+  private settling=false;
+  private ray=new THREE.Raycaster();
   private companions:{part:BuildPart;object:THREE.Group;preview:THREE.Group;outline:THREE.Box3Helper}[]=[];
   private outline=new THREE.Box3Helper(new THREE.Box3(),0xffd280);
   constructor(private world:THREE.Scene,private camera:THREE.Camera,private element:HTMLElement,private options:Options) {
     this.guide=new BuildPlacementGuide(world);
     this.guide.root.name='build-move-contact-guide';
     this.root.name='build-move-handle';this.root.userData.preview=true;
+    this.root.userData.selectedIds=[];
+    // 手柄只是交互层：命中检测由 TransformControls 自己那套隐形 picker 负责，
+    // 视觉网格一律不吃射线——否则选中后它们会挡住"点空白/点别处"，改选就点不动了。
+    this.root.traverse(object=>{object.raycast=()=>{};});
     this.pivot.name='build-move-pivot';
     this.translate=new TransformControls(camera);
     this.rotate=new TransformControls(camera);
@@ -90,7 +96,7 @@ export class BuildMoveHandle {
       this.root.add(helper);
     }
     this.translate.setMode('translate');this.translate.setTranslationSnap(null);
-    this.rotate.setMode('rotate');this.rotate.setRotationSnap(quarter);
+    this.rotate.setMode('rotate');this.rotate.setRotationSnap(Math.PI/2);
     this.resize.setMode('scale');this.resize.setSpace('local');
     this.outline.raycast=()=>{};this.world.add(this.outline);this.outline.visible=false;
     world.add(this.root,this.pivot);this.root.visible=false;
@@ -102,14 +108,34 @@ export class BuildMoveHandle {
   }
   get selectedPart(){return this.part ? {...this.part} : undefined;}
   get selected(){return Boolean(this.part);}
+  /** 当前选中的整组 id（主选中在前）；没选中时是空数组。 */
+  get selectedIds(){return this.part ? [this.part.id,...this.companions.map(row=>row.part.id)] : [];}
   get working(){return Boolean(this.active)||this.pending;}
-  select(part:BuildPart,object:THREE.Group,additive=false) {
+  /** Shift+D 已建好副本，正等鼠标把它放到想要的位置。 */
+  get following(){return Boolean(this.follow);}
+  /** 副本刚放下：紧接着的这一次点击该保留整组，而不是改选成单件。 */
+  get justDropped(){return this.frozen;}
+  select(part:BuildPart,object:THREE.Group,additive=false,keep=false) {
     if(this.pending)return;
-    let rows=additive && this.part && this.original ? [{part:this.part,object:this.original},...this.companions] : [];
-    if(rows.some(row=>row.part.id===part.id))rows=rows.filter(row=>row.part.id!==part.id);
+    const previous=this.part&&this.original?{part:this.part,object:this.original}:undefined;
+    // `copies` 是"刚复制出来的那一组"：整组装回来，不要走下面的增减逻辑——那一步本意是
+    // "点已选中的那件就取消它"，而副本的 id 与主选中相同，会把刚落下的副本自己删掉。
+    if(keep&&this.copies.length){
+      const rows:Row[]=this.copies.filter(copy=>this.objects.has(copy.id))
+        .map(copy=>({part:copy,object:this.objects.get(copy.id)!}));
+      if(rows.length){this.copies=[];this.frozen=false;this.selectRows(rows);return;}
+    }
+    const rows:Row[]=(additive||keep)&&previous ? [previous,...this.companions] : [];
+    this.copies=[];
+    this.frozen=false;
+    if(rows.some(row=>row.part.id===part.id))rows.splice(rows.findIndex(row=>row.part.id===part.id),1);
     else rows.push({part,object});
+    this.selectRows(rows);
+  }
+  /** 真正装好这一组：清掉上一组，重建预览与手柄。 */
+  private selectRows(rows:Row[]) {
     this.clear();if(!rows.length)return;
-    ({part,object}=rows[0]);this.part={...part};this.draft={...part};this.original=object;
+    let {part,object}=rows[0];this.part={...part};this.draft={...part};this.original=object;
     for(const row of rows.slice(1)){
       const preview=createPart(row.part);delete preview.userData.buildId;
       preview.name='build-multi-preview';preview.userData.preview=true;
@@ -125,7 +151,7 @@ export class BuildMoveHandle {
     this.rotate.enabled=!this.companions.length;
     if(this.companions.length)this.rotate.detach();
     this.options.orient?.(part);
-    this.options.hint(`已选 ${rows.length} 件 · Shift 点击增减选择 · 拖动时 Shift 关闭贴面吸附`);
+    this.options.hint(`已选 ${rows.length} 件 · Shift 点击增减选择 · Delete 删除 · 拖动时 Shift 关闭贴面吸附`);
   }
   private angleKey(p:{rotation:number;pitch?:number;roll?:number}){return `${p.rotation}:${p.pitch || 0}:${p.roll || 0}`;}
   settings(settings:BuildSettings) {
@@ -143,23 +169,90 @@ export class BuildMoveHandle {
     }
   }
   sync(parts:BuildPart[],objects:Map<string,THREE.Group>) {
+    this.parts=parts;this.objects=objects;
     if(!this.part)return;
     for(const row of this.companions){
-      const next=parts.find(p=>p.id===row.part.id);
-      if(!next || (!this.pending && next.version!==row.part.version)){
-        this.clear();this.options.hint('所选部件已更新，请重新选择');return;
-      }
+      const next=this.has(row.part.id);
+      if(!next){this.clear();this.options.hint('所选部件已更新，请重新选择');return;}
       row.object=objects.get(next.id)!;row.object.visible=false;
     }
-    const next=parts.find(p=>p.id===this.part!.id);
+    const next=this.has(this.part.id);
     if(!next){this.clear();return;}
-    if(next.version!==this.part.version && !this.pending){
-      this.clear();this.options.hint('部件已更新，请重新选择');return;
-    }
+    // 同事改过这一件：正在保存时让服务端去判版本，否则退出编辑让用户重选。
+    if(!this.owns()){this.clear();this.options.hint('部件已更新，请重新选择');return;}
     this.original=objects.get(next.id);
     if(this.original)this.original.visible=false;
-    if(this.pending){this.part={...next};}
+    if(this.pending)this.reconcile();
   }
+  private has(id:string){return this.parts.find(part=>part.id===id);}
+  /** 版本变了就是同事改过：拖手柄/复制都不是在改这个版本，应该退出让用户重选。 */
+  private owns(){return this.pending||this.has(this.part!.id)?.version===this.part!.version;}
+  /** 把"我这边记的版本"和服务端对齐：整组保存后主选中会落后同伴一个版本。 */
+  private reconcile(){
+    if(!this.part)return;
+    const rows:BuildPart[]=[this.part,...this.companions.map(row=>row.part)];
+    let changed=false;
+    for(const row of rows){
+      const next=this.has(row.id);
+      if(next&&next.version!==row.version){row.version=next.version;changed=true;}
+    }
+    if(changed&&this.draft)this.draft={...this.draft,version:this.part.version};
+  }
+  /** 副本建好了：整组选中它们开始跟随鼠标（`copies` 就是刚复制出来的那几件）。 */
+  selectCopies(copies:BuildPart[]) {
+    this.copies=[...copies];
+    // 加选语义：`select` 会先清空再把 rows 装回来，第一个参数那件不能被丢掉。
+    try{this.select(copies[0],this.objects.get(copies[0].id)!,true,true);}
+    catch(error){this.options.hint('复制后重选失败：'+String(error));}
+  }
+  /**
+   * 开始跟随鼠标摆放刚复制出来的副本：移动鼠标换位置，单击确认。
+   * `copies` 是**副本**（它们的 id 与原件相同，只是新版本）。
+   */
+  startFollow(copies?:BuildPart[]) {
+    if(!this.part||!this.preview)return false;
+    const sources=copies?.length?copies:[this.part];
+    if(sources.some(source=>!this.parts.some(p=>p.id===source.id)))return false;
+    const anchor={x:this.part.x,y:this.part.y,z:this.part.z};
+    this.follow={sources,plane:'ground',anchor,since:anchor};
+    this.frozen=false;
+    this.options.hint(`已复制 ${sources.length} 件 · 移动鼠标摆位置 · 单击放下 · Esc 取消`);
+    this.busy();
+    return true;
+  }
+  /**
+   * 放下副本：冻结跟随（`frozen`）并把它存到服务端。
+   *
+   * 一次点击会先后触发 `pointerup`（这里放一次）和随后的 `click`，两次都带着同一个
+   * 鼠标位置；不冻住的话第二次会把副本挪回鼠标下、把刚落好的位置覆盖掉。
+   * 位置就是最后一帧的 `draft`：没有挪动时它等于原件位置（原位放下，Blender 同样）。
+   */
+  commitDuplicate() {
+    if(!this.follow||this.frozen)return false;
+    this.frozen=true;
+    this.busy();
+    void this.save();
+    return true;
+  }
+  private followMove(pointer:PointerEvent) {
+    const follow=this.follow;if(!follow||this.frozen||!this.part||!this.draft)return;
+    const rect=this.element.getBoundingClientRect();
+    this.ray.setFromCamera(new THREE.Vector2((pointer.clientX-rect.left)/rect.width*2-1,
+      -(pointer.clientY-rect.top)/rect.height*2+1),this.camera);
+    const at=copyDropPoint(follow.anchor,this.ray.ray,follow.plane);
+    if(!at)return;
+    const x=follow.since.x+(at.x-follow.anchor.x);
+    const z=follow.since.z+(at.z-follow.anchor.z);
+    if(x===this.draft.x&&z===this.draft.z)return;
+    this.draft={...this.draft,x,z};
+    this.draw();this.pose();
+    // `copyDrop` 给浏览器用例读：鼠标没挪出半格时是 false（等于原位放下）。
+    this.root.userData.copyDrop=!keepsOriginalSpot(follow.since,{x,y:follow.since.y,z});
+    this.options.hint(placementError(this.draft) || (this.frozen
+      ? '副本已放下 · 拖动手柄微调 · Ctrl+Z 撤销'
+      : '移动鼠标摆位置 · 单击放下 · Esc 取消'));
+  }
+
   private draw() {
     const key=`${this.draft!.kind}:${this.draft!.color}:${this.angleKey(this.draft!)}:${this.draft!.scale?.join(',') || ''}`;
     if(!this.preview || this.previewKey!==key){
@@ -188,7 +281,11 @@ export class BuildMoveHandle {
   }
   /** Automation hook: a drag is refused while a previous save is in flight, so
    *  harnesses wait for this flag instead of racing the round trip. */
-  private busy(){this.root.userData.working=Boolean(this.active)||this.pending;}
+  private busy(){
+    this.root.userData.working=Boolean(this.active)||this.pending;
+    // 浏览器用例读这个标记等"跟随摆放"结束（等 userData.working 会一直被 true 挡住）。
+    this.root.userData.copyFollowing=this.following;
+  }
   private releasePreview(){
     this.preview?.removeFromParent();
     this.preview?.traverse(o=>{if(o instanceof THREE.Mesh && o.geometry.type!=='BoxGeometry')o.geometry.dispose();});
@@ -231,6 +328,7 @@ export class BuildMoveHandle {
   };
   private move=(e:PointerEvent)=>{
     if(!this.active){
+      if(this.follow)this.followMove(e);
       if(this.part && !this.pending){
         const pointer=this.point(e);
         this.translate.pointerHover(pointer);this.rotate.pointerHover(pointer);
@@ -260,7 +358,7 @@ export class BuildMoveHandle {
       scale[index]=Math.max(.25,Math.round(base[index]*scale[index]*factor*4)/4)/base[index];
       this.draft={...this.startPart,scale};
     }else{
-      this.draft={...this.startPart,...orientation(this.pivot.quaternion)};
+      this.draft={...this.startPart,...partOrientation(this.pivot.quaternion)};
       const probe=createPart({...this.draft,x:0,y:0,z:0});
       const center=new THREE.Box3().setFromObject(probe).getCenter(new THREE.Vector3());
       probe.traverse(o=>{if(o instanceof THREE.Mesh && o.geometry.type!=='BoxGeometry')o.geometry.dispose();});
@@ -275,7 +373,9 @@ export class BuildMoveHandle {
   };
   private finish(){
     this.guide.hide();
-    this.active?.pointerUp({button:0} as PointerEvent);this.active=undefined;this.busy();
+    this.active?.pointerUp({button:0} as PointerEvent);this.active=undefined;
+    if(this.follow)this.commitDuplicate();
+    this.busy();
     if(this.pointerId!==undefined && this.element.hasPointerCapture(this.pointerId))this.element.releasePointerCapture(this.pointerId);
     this.pointerId=undefined;this.options.lock?.(false);
   }
@@ -295,8 +395,12 @@ export class BuildMoveHandle {
     const error=[this.draft,...extras].map(placementError).find(Boolean);
     if(error){this.options.hint(error);this.draft={...this.part};this.draw();this.pose();return;}
     const previous=this.part,next={...this.draft};
-    if(JSON.stringify(previous.scale)===JSON.stringify(next.scale) && ['x','y','z','rotation','pitch','roll','color'].every(k=>(previous[k as keyof BuildPart] || 0)===(next[k as keyof BuildPart] || 0)))return;
-    this.pending=true;this.busy();
+    // 没挪动就没有要保存的；但"放下副本"必须收尾（退出跟随），原位放下也是合法结果。
+    if(JSON.stringify(previous.scale)===JSON.stringify(next.scale) && ['x','y','z','rotation','pitch','roll','color'].every(k=>(previous[k as keyof BuildPart] || 0)===(next[k as keyof BuildPart] || 0))){
+      if(this.frozen)this.settleCopy();
+      return;
+    }
+    this.pending=true;this.settling=true;this.busy();
     try{
       const items=[next,...extras].map(part=>({id:part.id,version:part.version,part}));
       const ok=await this.options.change(extras.length?{action:'moveMany',items}:
@@ -308,11 +412,21 @@ export class BuildMoveHandle {
     }catch{if(this.part){this.part=previous;this.options.hint('未保存，已恢复原位置，请重新调整');}}
     finally{
       this.pending=false;this.busy();
+      if(this.part)this.settleCopy();
       if(this.part){this.draft={...this.part};this.angles=this.angleKey(this.part);this.draw();this.pose();this.options.orient?.(this.part);}
+      this.settling=false;this.busy();
     }
   }
+  /** 副本存好了：退出"跟着鼠标"，把它当成普通选中的一组。存不上就放回跟随，让用户接着摆。 */
+  private settleCopy(){
+    if(!this.follow)return;
+    this.follow=undefined;
+    this.options.hint('副本已放下 · 拖动手柄微调 · Ctrl+Z 撤销');
+    this.busy();
+  }
   clear(){
-    this.finish();if(this.original)this.original.visible=true;
+    this.finish();this.follow=undefined;this.frozen=false;
+    if(this.original)this.original.visible=true;
     for(const row of this.companions){
       row.object.visible=true;row.preview.removeFromParent();row.outline.removeFromParent();
       row.outline.geometry.dispose();(row.outline.material as THREE.Material).dispose();

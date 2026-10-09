@@ -51,14 +51,20 @@ export function useDockBridge(input: {
   useEffect(() => {
     const bridge = typeof window === 'undefined' ? undefined : window.officeDesktop;
     if (!bridge?.dockState) return;
-    if (!input.enabled) {
-      // 没登录/不是客户端：让主进程把头像是清空并藏起来。
-      // 顺手把"上一份推过什么"清掉：不然重新可用时那份状态和 `lastSent` 一模一样，
-      // 会被当成"没变"跳过，小窗就一直停在"藏起来"那一份（2026-09-22 顺手修）。
+    // **把条子交还回去**：清空名单并藏起来。顺手把"上一份推过什么"清掉：不然重新可用时
+    // 那份状态和 `lastSent` 一模一样，会被当成"没变"跳过，小窗就一直停在"藏起来"那一份。
+    //
+    // 这件事**卸载时也得做**（用户 2026-10 报「被挤掉线之后为啥头像都还在 所有人的都在」）：
+    // 被别的设备顶下线 / 会话失效 / 被请出 / 主动退出，走的都是 App 卸载回到登录页，
+    // `enabled` 这个入参压根不会变 false（它只表示"这台机器有没有 dockState 这道桥"），
+    // 所以以前收尾只 `clearInterval` 的话，小窗永远停在最后那一份名单上——登录页都出来了，
+    // 任务栏上还挂着一排同事（连已经掉线的我自己）的头像。
+    const release = () => {
       lastSent.current = '';
-      void bridge.dockState({ people: [], sharing: false, missed: 0, hidden: true });
-      return;
-    }
+      void bridge.dockState?.({ people: [], sharing: false, missed: 0, hidden: true })
+        ?.catch(() => undefined);
+    };
+    if (!input.enabled) { release(); return; }
     const push = () => {
       const current = latest.current;
       const now = Date.now();
@@ -84,7 +90,7 @@ export function useDockBridge(input: {
     };
     push();
     const timer = setInterval(push, PUSH_MS);
-    return () => clearInterval(timer);
+    return () => { clearInterval(timer); release(); };
   }, [input.enabled]);
 
   useEffect(() => {

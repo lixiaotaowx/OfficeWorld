@@ -14,6 +14,9 @@ test('new models fit declared collision envelopes in every rotation and use shar
     const group=createPart({id:item.id,kind:item.id,color:'#e9b8b5',x:0,y:0,z:0,rotation});
     assert(group.children.length>1, item.id+' cannot fall back to a single generic cube');
     for(const mesh of group.children) {
+      // 传送点还挂着粒子条（`THREE.Points`）和一块**隐形拾取助手**（比部件本身大、故意不吃碰撞）：
+      // 两者都不是模型方块，几何/实测尺寸都不算它们。
+      if(!mesh.isMesh || mesh.userData.pickHelper) continue;
       geometry ||= mesh.geometry;
       assert.equal(mesh.geometry,geometry,'geometry must be shared');
       for(let i=0;i<3;i++) {

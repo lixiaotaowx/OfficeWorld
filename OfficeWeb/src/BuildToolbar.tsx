@@ -7,6 +7,8 @@ import { buildColor } from './buildColors';
 type Props = {
   settings: BuildSettings; onChange: (settings: BuildSettings) => void;
   ready: boolean; busy: boolean; message: string; hint: string;
+  /** 常驻提示（例如"传送点要成对"）：优先级高于 transient 的 `hint`，而且自己不会消失。 */
+  tip?: string;
   sound: boolean; onSound: () => void; onUndo: () => void; undoCount: number;
   onRedo?: () => void; redoCount?: number;
 };
@@ -14,7 +16,29 @@ export function BuildToolbar(props: Props) {
   const [category, setCategory] = useState('建筑');
   const [expanded, setExpanded] = useState(false);
   const [search, setSearch] = useState('');
+  /**
+   * 操作提示（`hint`）：以前这个 prop 收下了却**从来没渲染过**，所以「再放一个传送点才能传过去」
+   * 这类话用户根本看不到，看起来就是"点了没反应"（用户报「传送点无效」）。现在显示成画面上方的
+   * 悬浮提示条，几秒后自己消失；`position:fixed` 不影响工具栏高度（用户要求悬停/提示不许让按钮跳动）。
+   */
+  const [banner, setBanner] = useState('');
+  useEffect(() => {
+    if (!props.hint) return;
+    setBanner(props.hint);
+    const timer = setTimeout(() => setBanner(''), 4500);
+    return () => clearTimeout(timer);
+  }, [props.hint]);
   const parts = useRef<HTMLDivElement>(null);
+  // 切到安装模式就把部件库打开（点"安装"按钮本来就会展开；点传送点自动切过去时也要一致，
+  // 否则用户只看到安装模式、却看不到"传送点"被选中）。
+  useEffect(() => { if (props.settings.mode === 'place') setExpanded(true); }, [props.settings.mode]);
+  // 被选中的部件换了分类（E 取同款、点传送点自动切过来）就把分类页跟着切过去，
+  // 否则库里显示的还是上一类，用户看不到"传送点"被选中。
+  useEffect(() => {
+    if (search.trim()) return;
+    const item = catalog.find(row => row.id === props.settings.kind);
+    if (item) setCategory(item.category);
+  }, [props.settings.kind]);
   useEffect(() => {
     const row = parts.current;
     if (!row) return;
@@ -42,6 +66,7 @@ export function BuildToolbar(props: Props) {
         aria-pressed={settings.color===color} onClick={() => change({ color })} />)}</div>;
   const modes: [BuildMode, string, string][] = [['explore','↗','漫游'],['place','＋','安装'],['move','↔','移动'],['remove','−','拆除']];
   return <div className="build-ui" aria-label="方块建造工具">
+    {(props.tip || banner) && <span className="build-hint" role="status">{props.tip || banner}</span>}
     {expanded && <div className="build-library">
       <div className="build-library-options">
       <div className="build-categories" role="tablist" aria-label="部件分类">

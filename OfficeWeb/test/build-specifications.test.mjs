@@ -42,3 +42,28 @@ test('new stair modules keep 25cm risers and 50cm treads',()=>{
   });
  }
 });
+
+test('玩法两件：直梯是可攀爬柱体、传送点面板会发光',()=>{
+  // 直梯不是"窄楼梯"：`buildNavigation` 的 0.255m 抬腿高度走不上去，横档叠在同一个 z 上时
+  // 上面那级还会把下面那级封死。所以它是**可攀爬柱体**：横档只是外观、两根立柱参与碰撞，
+  // `localClimb` 才决定玩法（W/↑ 往上爬、S/↓ 往下退，寻路在柱体里生成上下边）。
+  const ladder=make('ladder');
+  const rungs=ladder.children.filter(mesh=>mesh.userData.noBuildCollision);
+  const rails=ladder.children.filter(mesh=>!mesh.userData.noBuildCollision);
+  assert.equal(rungs.length,15,'15 根横档');
+  assert.equal(rails.length,2,'两根立柱');
+  rungs.forEach((rung,i)=>assert.equal(+(rung.position.y).toFixed(3),(i+1)*.25,`第 ${i+1} 根横档`));
+  assert.deepEqual(ladder.userData.localClimb,{min:[-.35,0,-.25],max:[.35,3.75,.25],normal:[0,0,1]});
+  assert.equal(ladder.userData.localClimb.max[1],3.75,'净爬升 3.75m');
+
+  // 只看方块：传送点还挂着粒子条（Points，没有 emissive）和一块隐形拾取盒。
+  const blocks=part=>part.children.filter(mesh=>mesh.isMesh);
+  const glowing=mesh=>mesh.material.emissive?.getHexString?.()!=='000000';
+  const pad=blocks(make('teleport-pad'));
+  const panel=pad.find(glowing);
+  assert(panel,'传送点必须有一块自发光面板，否则场景里认不出来');
+  assert.equal(panel.material.emissive.getHexString(),'2fa79a');
+  // 色板换颜色不该动发光面板（它自己一份材质）。
+  const other=blocks(make('teleport-pad')).find(glowing);
+  assert.equal(panel.material,other.material);
+});

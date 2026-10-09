@@ -15,8 +15,9 @@ import {
   STANDING_POSE,
   type SitPoseId,
 } from "./sitPoses";
-import { findPath, pathLength, traverse } from "./navigation";
+import { findPath, pathLength } from "./navigation";
 import { advancePath } from './avatarPath';
+import { walkStep } from './avatarWalk';
 import { SEAT_HEIGHT } from "./seats";
 import { sittingSpot, type SittingSpot } from "./sittingSpots";
 import { groundSeatedFeet } from "./seatedFeet";
@@ -214,6 +215,20 @@ export class OfficeAvatar {
     this.path = findPath(this.root.position, target);
     if (!this.path.length) this.report("这里无法到达，请点击通道");
   }
+  /**
+   * 传送点：原地消失，下一秒直接站在目的地上（不走过去）。
+   *
+   * 落点 y 由调用方按"脚下能站的那一层"算好；这里只负责收尾——像 `stand()` 那样退掉
+   * 座位认领、清掉寻路，再把朝向摆到面向来路，落地的第一帧就已经站稳。
+   */
+  teleportTo(point: { x: number; y: number; z: number }, heading: number) {
+    this.stand();
+    this.path = [];
+    this.root.position.set(point.x, point.y, point.z);
+    this.root.rotation.set(0, heading, 0);
+    this.moving = false;
+    this.report("已传送");
+  }
   sit(seatIndex: number) {
     void this.sitAt(`desk-${seatIndex}`);
   }
@@ -343,37 +358,17 @@ export class OfficeAvatar {
     }
     if (!this.sitBlend && !this.sitTarget && this.keys.size && this.model) {
       this.path = [];
-      const forward = new THREE.Vector3();
-      this.camera.getWorldDirection(forward);
-      forward.y = 0;
-      forward.normalize();
-      const right = new THREE.Vector3().crossVectors(
-        forward,
-        new THREE.Vector3(0, 1, 0),
-      );
-      const direction = new THREE.Vector3();
-      if (this.keys.has("KeyW") || this.keys.has("ArrowUp"))
-        direction.add(forward);
-      if (this.keys.has("KeyS") || this.keys.has("ArrowDown"))
-        direction.sub(forward);
-      if (this.keys.has("KeyD") || this.keys.has("ArrowRight"))
-        direction.add(right);
-      if (this.keys.has("KeyA") || this.keys.has("ArrowLeft"))
-        direction.sub(right);
-      direction.normalize();
       // 按 Shift 跑（尺子腿短，走太慢）；路径行走也按距离自动跑。
       const speed = this.keys.has("ShiftLeft") || this.keys.has("ShiftRight")
         ? RUN_SPEED : WALK_SPEED;
       this.speed = speed;
-      const next = this.root.position
-        .clone()
-        .addScaledVector(direction, dt * speed);
-      const supported = traverse(this.root.position, next);
-      if (supported) {
-        this.root.position.copy(supported);
-        moving = direction.lengthSq() > 0;
+      // 走 / 跑 / 爬梯都在 `avatarWalk.walkStep` 里（离了浏览器也能单测）。
+      const step = walkStep(this.root.position, this.keys, this.camera, dt, speed);
+      if (step.moving) {
+        this.root.position.copy(step.position);
+        this.root.rotation.set(0, step.rotationY, 0);
+        moving = true;
       }
-      if (moving) this.root.rotation.set(0, Math.atan2(direction.x, direction.z), 0);
     } else if (!this.sitBlend && !this.sitTarget && this.path.length && this.model) {
       // 路很长就跑：先量整条路的长度（点击远处地面时不必让一块板子慢慢挪）。
       const speed = pathLength(this.root.position, this.path) > RUN_DISTANCE ? RUN_SPEED : WALK_SPEED;
@@ -382,7 +377,8 @@ export class OfficeAvatar {
       advancePath(this.root.position, this.path, dt * speed);
       const traveled = this.root.position.clone().sub(frameStart);
       moving = traveled.lengthSq() > 0.00000001;
-      if (moving) {
+      // 纯竖直那一段（爬梯子）没有水平方向可朝：保持进梯子时的朝向，别被 atan2(0,0) 拧到 +Z。
+      if (moving && Math.hypot(traveled.x, traveled.z) > 1e-4) {
         const rotation = new THREE.Quaternion().setFromAxisAngle(
           new THREE.Vector3(0, 1, 0),
           Math.atan2(traveled.x, traveled.z),

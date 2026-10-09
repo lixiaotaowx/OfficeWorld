@@ -292,7 +292,9 @@ export default function OfficeScene(props: Props) {
       const span=Math.max(...box.getSize(new THREE.Vector3()).toArray(),1.5);
       goalPosition.copy(goalTarget).addScaledVector(away,span*2.3/Math.min(1,Math.max(.35,camera.aspect)));
       traveling=true;
-    }, locked => { controls.enabled=!locked; if(locked)controls.dispatchEvent({type:'start'}); });
+    }, locked => { controls.enabled=!locked; if(locked)controls.dispatchEvent({type:'start'}); },
+    target => avatar.teleportTo(target,target.heading),
+    () => ({x:avatar.root.position.x, z:avatar.root.position.z}));
     const refreshBuild = () => buildController.refresh();
     const leaveBuild = () => buildController.leave();
     controls.addEventListener('change',refreshBuild);

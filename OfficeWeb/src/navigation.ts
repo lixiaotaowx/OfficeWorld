@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { buildNavigationActive, buildPath, buildTraverse } from './buildNavigation';
+import { buildClimbAt, buildNavigationActive, buildPath, buildTraverse } from './buildNavigation';
 
 export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
   if (buildNavigationActive()) {
@@ -7,6 +7,11 @@ export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
     return point ? new THREE.Vector3(point.x, point.y, point.z) : null;
   }
   return segmentWalkable(start.x,start.z,target.x,target.z) ? target : null;
+}
+
+/** 梯子柱体（`(x,z)` 处、`y` 够得着）：在梯子上时移动键改成往上爬 / 往下退。 */
+export function climbAt(x: number, z: number, y: number) {
+  return buildNavigationActive() ? buildClimbAt(x, z, y) : null;
 }
 
 // Seat transforms live in seats.ts so the ring markers, the avatar and the

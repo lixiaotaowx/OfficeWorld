@@ -1,3 +1,104 @@
+## 2026-10-08 被顶下线后任务栏头像条还挂着一排人（用户：「被挤掉线之后为啥头像都还在 所有人的都在 这不合理吧」）
+
+用户：「被挤掉线之后为啥头像都还在 所有人的都在 这不合理吧」。
+
+- **真因**：办公室页其实已经回到登录页了（App 卸载），但 `src/useDockBridge.ts` 的 effect 收尾只 `clearInterval(timer)`，**没有把小窗交还回去**——主进程里那份状态还是"上一次推送的那一排人"，所以任务栏头像条继续显示所有同事（连已经掉线的我自己）。那个 `enabled` 入参**只表示"这台机器有没有 dockState 这道桥"**，被顶下线/会话失效/被请出/主动退出都不会让它变 false，"不可用就清空"那条分支在客户端里从来没跑到。
+- **修法**：把清空抽成 `release()`（清 `lastSent` + 推 `{people: [], sharing: false, missed: 0, hidden: true}`），**"不可用"分支与卸载收尾共用它**；清 `lastSent` 是为了再登进来能重新推（否则那份状态与上次一样会被"没变"跳过，条子永远回不来）。**纯前端，不用发新客户端**。
+- **产物**：`npm run build`（`public-parity` 90 个文件一致）→ `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-D9gS2QH7.js`**（851,320 字节，本地/远端 SHA256 一致，公网 200 且哈希相同），`index.html` 同步更新。**只传了这两个文件**（没有 `scp -r`、没有碰 `dist/download/`）；**后端未动、没有重启 `officeweb`**（`build-catalog.json` 审计一致）。
+- **验证（修复前先复现，红的）**：新增 `test/browser/dock-session-end.mjs` —— 真服务器 + 真账号，浏览器里装假桌面桥记录每一次 `dockState` 推送：A 注册进办公室（条子上有头像）→ B 用同一账号登录把 A 顶掉 → A 回登录页。**修复前实测最后一份仍是 `{"people":[…],"hidden":false}`（用例当场红）**，修复后 `{"people":0,"hidden":true}`，并且再登回来条子又亮起来。配套源码断言 `test/dock-session-end.test.mjs`（别改回"只清定时器"）。
+- **上线核验（正式站）**：`BOX_LIVE=1 node test/browser/dock-session-end.mjs` PASS —— 正式站上真实在线的另外两位（小桃1、IRIS）都在 `people` 里，被顶下线那一刻推给小窗的最后一份是空名单 + `hidden`，重新登录后又变回 3 个人。另跑全量 **377 项单测**全绿 + `tsc --noEmit` 通过 + 回归浏览器 `test/browser/dock.cjs` PASS。
+
+
+
+## 2026-10-08 拖动步长统一成整格：部件不再"离格走一辈子"
+
+用户：「有些部件额移动单位有问题 没有按照一个格子的大小步长，完整检查」。
+
+- **先量**：拉正式存档逐件核对 0.25 网格 → **179 件里 63 件离格**：`small`/`block`/`arch`/`lamp`/`fern` 那一簇（x≈-23～-26、y≈-1.855，就是用户自己在修的"地下小房间"）、`beam`/`pillar`/`floor` 正好差 0.125、`cinema-screen` y 差 0.065、`desk` 差 0.017。
+- **三个来源**：①`buildMoveSnap` 的贴面磁吸直接写毫米值，而且步长是"相对保存原点加整格"→ 一旦离格就永远回不来；②`gapPlacement` 的"把每只脚吸到柱子中心"写的是 `b-a` 的毫米值（**两柱之间搭的梁**，正好对上 beam/pillar 那 0.125）；③贴面/接点/顶面放置**本来就有意**允许毫米精度（叠在 1.42m 桌面 / 0.34m 方块顶上必须精确落层）——这条不动。
+- **改法**：拖动时**水平两轴（x/z）落点吸附到 0.25 网格**（不再"相对原点"），离格的老部件拖一下就回格、之后每一步正好一格；磁吸候选也过同一套取整，两个部件都整格时依旧精确贴面，否则最多差半格；**y 保持原点+整格与毫米接触精度**。
+- **产物**：`npm run build` → `node Build/deploy-web.cjs --upload --verify`；正式站入口 **`assets/main-BEXmWtfw.js`**（`index.html` 引用的就是它）。没动后端。
+- **验证**：`node --test test/build-move-snap.test.mjs`（4 项，含"全部 70 件部件"扫描：任何方向拖多少，落点都在网格上、位移都是整数格、方向不反；非整格齐平点也落回网格）+ 全量 **377 项单测**全绿；`test/browser/editable-scene.cjs` 加了"真拖一次后 saved x/z 在网格上"的断言；`build-surface`/`build-gap`/`build-experience` 全过；正式站 `build-parts-live.cjs` PASS。
+- **说明**：老存档里已经离格的部件**不会自动搬**（那是用户自己搭的），但它们**下一次被拖动时就会回到格子上**。
+
+## 2026-10-08 传送点规则改成"点到哪一块就传到那一块"（用户澄清后的返工）
+
+用户：「传送你理解错了 不是一对一 是任何地点 直接传送到点击处，只需要创建一个就行，创建后不要鼠标只能继续创建从而出不来」。
+
+- **返工原因**：第一版把传送点做成**配对的两个点互相传**（点是"入口"），只有一块时点了什么都不发生。用户要的是**点到哪一块就传到那一块**（点是"目的地"），一块就够。
+- **改了什么**（`src/buildTeleport.ts` 纯函数）：①点哪一块就到哪一块（一块就够）；②已经站在这一块上（0.6m 内）再点它 → 去最近的那一块（人多时来回跳），世界上只有这一块时给一句「你已经站在这个传送点上了」而不是静默失败；③落地朝向 = 面向来路（`from` 现在是人所在的位置）。**模式**：漫游和**安装**模式点传送点都是"传过去"——安装模式也算，正是用户说的"创建后不要鼠标只能继续创建从而出不来"；移动/拆除里传送点仍是普通部件（能选中/挪动/删除）。**放下传送点后自动回到漫游**，流程变成"放一块 → 点它就走"。**粒子条不再表示"能不能配对"**：所有传送点共用一份亮青材质、一直亮着（`syncBeams`/`partner`/`hasTwoPads` 全部删掉）。`BuildInteraction` 新增 `position?: () => {x,z}`（`OfficeScene` 传 `avatar.root.position`），用来判断"是不是已经站在这一块上了"。
+- **产物**：`npm run build` → `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-CWMLtePT.js`**（公网核验：`index.html` 引用的就是它，bundle 里查得到 `你已经站在这个传送点上了` / `teleportBeam` / `传送点＝目的地`）。**没动后端**，不需要重启 `officeweb`。
+- **验证**：`node --test test/build-teleport.test.mjs`（重写：一块就够/点哪去哪/站在上面再点去下一块/落地朝向）+ `test/build-beam.test.mjs` + 全量 **377 项单测**全绿；真浏览器 `build-teleport-beam.cjs`（粒子条在冒 → 从老远点它就站上去 → 站在上面再点给提示 → 装第二块后自动回漫游 → 站在第一块上点它去第二块）、`build-copy-teleport.cjs` ④⑤（先用 `teleportTo` 放一个确定出发点，落点朝向才可断言）、`build-experience`/`editable-scene`/`build-props` 全过；**正式站** `build-parts-live.cjs` PASS（从 x=4 点 -2.5 那一块 → 直接站到 -2.5；站在上面再点 → 去 -8.5；跑完世界无残留）。
+
+## 2026-10-08 传送点「无效」修复 + 粒子条（用户：传送点无效，请修复；并且要粒子条往上出现，简约、注意性能）
+
+用户：「传送点无效，请修复 并且传送点要有粒子条往上出现，简约的做一个，注意性能」。
+
+- **先查正式世界**（`~/officeweb/build-world.json`）：里面只有**一块**传送点（3.5,0,-1.5；另外两根直梯在 x≈-25）。一块自己传自己等于原地不动，所以点下去确实什么都不发生。**更关键的是 `BuildToolbar` 收下了 `hint` prop 却从来没渲染** —— `buildInteraction` 里所有操作提示（「再放一个传送点才能传过去」、放置错误、「已传送」…）用户**一个字都看不到**，"点了没反应"多半就是这个。
+- **改了什么**：①工具栏把 `hint` 渲染成画面上方**悬浮提示条**（`.build-hint`，`position:fixed` 不会顶动按钮，4.5s 自动消失）＋新的常驻 `tip`（不自动消失）；②常驻提示：在「安装 + 传送点 + 世界里只有 1 块」时说「传送点要成对：再点一下地面放下第二块…」；③**漫游模式**点只有一块的传送点 → 自动切到「安装 + 传送点」（部件库展开、分类页切到「玩法」），用户再点一下地面就配好对（移动模式不变：那里点它是选中来挪动/删除）；④传送点加一块隐形**拾取助手**（1.7×0.9×1.7，`userData.pickHelper`），0.34m 高的东西隔着几步很容易差一点打到旁边的地板；⑤**粒子条**（`src/buildBeam.ts`）：每块传送点一根往上冒的光点柱（18 点、2.3m、上下淡出），**所有传送点共用一份几何与 2 份材质**，每帧只更新一次共享顶点属性，世界里没有传送点时零开销；不吃拾取、不参与碰撞、挂空包围盒（不撑大实测尺寸）。粒子条颜色就是配对状态：**亮青＝两块以上能传送，暗灰＝只有一块**。
+- **产物**：`npm run build` → `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-BaWgcRX6.js`**（851,267 字节，公网核验 200，bundle 里查得到 `teleportBeam`/`传送点要成对`/`pickHelper`）。**这次没动后端**（目录没变），不需要重启 `officeweb`。
+- **验证**：`node --test test/build-beam.test.mjs`（点数/共用几何与材质/不吃拾取/不进碰撞/不撑大目录尺寸/上下淡出）+ 全量 **374 项单测**全绿；真浏览器 `node test/browser/build-teleport-beam.cjs`（粒子条在冒 → 一块时给提示并切到安装且选中传送点 → 放下第二块后粒子条变亮 → 点它真的站到另一块）；回归 `build-copy-teleport`/`build-experience`/`build-props`/`build-hints`/`arrow-glow`/`editable-scene` 全过；**正式站** `test/browser/build-parts-live.cjs` PASS（并新增断言：正式站的传送点粒子条 18 点、一块时暗、两块时亮）。
+
+
+
+## 2026-10-08 爬梯子时的朝向修正（用户报「爬梯子时的面朝向不对」）
+
+用户：「很好 但是 爬梯子时的面朝向不对」。
+
+- **原因**：爬梯那几帧的朝向一直取的是**相机的水平朝向**。爬梯是纯竖直位移，只要镜头不在梯子正后方（绕到侧面、或从斜角走近），角色就会朝着镜头方向"侧着身子"上升；自动寻路爬梯那一段更明显——`OfficeAvatar` 里 `atan2(traveled.x, traveled.z)` 在纯竖直位移上等于 `atan2(0,0)`，会把角色拧到 +Z。
+- **修法**：①`localClimb` 里连同**梯面法线**（本地 +Z，梯子薄的那一轴）一起声明，`buildArch.climbColumns()` 把世界盒（`Box3.applyMatrix4`，取 8 个角的 AABB）和法线一起变换出来（`normalX/normalZ`），`buildNavigation.buildClimbAt()` 顺带返回 `faceX/faceZ` —— 人站梯子哪一侧就朝哪一侧看；人正好压在梯子中线上时返回 (0,0)，保持原朝向。**不用"世界盒哪根轴薄"猜法线**：梯子被 scale 拉过之后比例会反过来。②`buildClimb.climbStep()` 上下爬用这个朝向，只有"到顶踏出去 / 到底退出来"那一步才跟着**实际移动方向**（等于走路朝向）。③寻路跟随只有水平位移 > 1e-4 才转朝向，纯竖直段保持进梯子时的朝向。
+- **产物**：`npm run build` → `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-BWNNqnjH.js`**（848,865 字节，公网核验 200、bundle 里查得到 `localClimb`/`normalX`/`faceX`）。**这次没动后端**（`build-catalog.json` 与上一版一致），所以不必重启 `officeweb`。
+- **验证**：`node --test test/build-ladder.test.mjs`（新增「爬梯朝向」用例：站在梯子前面/背面、梯子旋转 90° 后从侧面爬、以及正好在中线上四种情况）+ 全量 **371 项单测全绿**；真浏览器 `node test/browser/build-ladder-climb.cjs`（爬到一半把镜头甩到 +X 侧再继续按 W：还在往上爬、朝向仍 ≈0 弧度；寻路爬梯那一段也采样一次朝向）PASS；正式站 `node test/browser/build-parts-live.cjs` 在新 bundle 上重跑 PASS（建直梯+两块传送点、Delete+Ctrl+Z、传送），跑完正式世界仍是 135 件、无残留。
+
+
+
+## 2026-10-08 直梯改成真的能爬的梯子（上下通行 + 方向键 + 自动寻路）
+
+用户：「新增直梯是可以通行的，不管是上和下，可以用方向键通行，就类似于游戏，以及自动寻路也可以」。
+
+- **为什么重做**：第一版直梯是把横档按 0.25m 叠成"台阶"，但 `buildNavigation` 的抬腿高度只有 0.255m、身高 1.3m，横档叠在同一个 z 上时上面那级会把下面那级**整个封死**（`supportHeight` 只认最顶上一级）→ 只能"站上去"不能"走上去"；改成每级退后 0.25m 的窄楼梯虽然真能走，但那是个 **0.7 × 3.8m 的楼梯**、不是梯子。现在改成**可攀爬柱体**：两根立柱实心（能贴墙/选中/有实测尺寸），15 根横档只当外观（`noBuildCollision`），玩法由 `localClimb` 世界盒 + `buildClimb.climbStep()` 决定。
+- **规则**：柱体里 **W/↑ 往上爬、S/↓ 往下退**（`CLIMB_SPEED=1.15m/s`，比走路慢），A/D 仍然横着挪；到梯顶还按上就朝相机方向迈一步踏上平台、到梯底还按下就退着走出来（落点由 `traverse` 校验，平台上下差 ≤0.255m 都行）。寻路：`buildNavigation` 在柱体内生成上下相邻边，`avatarPath.advancePath` 跟随时**先把高度挪到路径点再横着走**（`traverse` 在梯子里不改高度）。
+- **产物**：`npm run build`（`public-parity` 90 个文件）→ `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-Dx6lTObp.js`**。**目录按实测改了 `size:[0.7,3.8,0.5]`、`dimensions:[0.6,3.78,0.08]`**，所以按老规矩同时 `scp OfficeWeb/build-catalog.json ubuntu@…:~/officeweb/build-catalog.json` + `sudo -n systemctl restart officeweb`（`build-catalog.json` 是**启动时读进内存**的，只发前端不算数）。`build-world.json` 是运行数据，不动。
+- **验证**：本地 `node --test test/build-ladder.test.mjs`（几何/柱体内外/按键爬上退下/自由行走一路按 W 爬到平台/`buildPath` 顺着梯子到 3.75m 平台）+ 370 项单测全绿；**真浏览器** `node test/browser/build-ladder-climb.cjs`（真键盘 W 爬到 4.0m 平台、↑↓ 退下来、`moveTo()` 寻路也能爬到平台）；回归 `build-copy-teleport`/`build-props`/`build-architecture`/`build-surface`/`editable-scene`/`build-experience` 全过。
+- **上线核验（正式站）**：`node Build/deploy-web.cjs --upload --verify` → 上传 `assets/main-Dx6lTObp.js`/`index.html`/`build-catalog.json`（本地与远端逐文件一致，公网 HEAD 全 200）；`~/officeweb/build-catalog.json` 的 sha256 `e098fe68…2c84` 与本地一致，`sudo -n systemctl restart officeweb` 后 **active**；公网 bundle 里查得到新代码的 `localClimb`；`test/browser/build-teleport-live.cjs` PASS（136 件、玩法分类含直梯/传送点）、`test/browser/build-parts-live.cjs` PASS（真鼠标建直梯+两块传送点落进存档、移动模式 Delete 真删掉再 Ctrl+Z 恢复、点传送点瞬移），跑完正式世界回到 135 件、`ladder`/`teleport-pad` 各 0 件（无残留）。**这条正式站用例顺手修了一个测试写法**：梯子变薄（0.08m 进深）后，"斜着看、瞄准腰高"的射线会先打到梯子前面的地板，于是删掉的不是梯子；现在改成**正上方俯视 + 按手柄 `selectedIds` 逐个候选点确认**。
+
+
+
+用户：「请在选择工具下选择物体后，可以按 delete 删除」。
+
+- **实现**：`BuildInteraction.removeSelected()`——先把选中那一组的 id/version 记下来，再逐件 `remove`（服务端没有批量删除），每件都进历史，**Ctrl+Z 按逆序整组恢复**；`useBuildEditor` 的 keydown 只在 `mode==='move'` 接管、`event.repeat` 与输入框都不触发。**顺带修一个真 bug**：`pickable()` 原本把传送点在移动模式里排除出拾取，导致"选中后 Delete"对传送点完全无效；现在传送点照常可命中，点击语义改成"两块以上时点它就是传过去、一块时不响应"（`hasTwoPads()`），**要删/挪传送点走「拆除」模式**。
+- 发布：`npm run build`（`public-parity` 90 个文件）→ `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-V1bypZoW.js`**（831,361 字节源码字节数；本地/远端 SHA256 一致），线上 `index.html` 引用的就是它，`removeSelected` / `已删除` / `Backspace` / `hasTwoPads` 都能在线上包里查到。后端未改、未重启。
+- 验证：本地 `test/browser/build-copy-teleport.cjs`（整组 Delete 删 2 件 → Ctrl+Z 两次整组恢复；单件 Backspace；拆除模式删传送点 + 撤销）全过；**正式站** `test/browser/build-parts-live.cjs` 里真按了一次 Delete（直梯）并 Ctrl+Z 恢复，随后两块传送点的传送与收尾仍通过。364 项单测 + `build-experience`/`editable-scene`/`build-gizmo`/`build-surface`/`build-seats`/`build-wall-app` 全绿。
+
+
+## 2026-10-08 报障修复「这俩点不上去啊 无法点击建造」（直梯 / 传送点）
+
+用户在上一次上线后报：「这俩点不上去啊 无法点击建造」。**两个真因都不是"前端没发上去"**：
+
+1. **后端目录没更新**。`build-store.mjs` 在**进程启动时**把 `build-catalog.json` 读进内存（`JSON.parse(readFileSync(...))`），上一次只重传了前端产物、没有更新服务器上的目录文件，也没有重启 → 正式站那份还是 2026-09-30 的旧目录，每次 `add` 都回 **400「没有这个部件」**。前端只把这句显示在底部状态条上，看画面就像"点了没反应"。
+   - 处置：备份 `~/officeweb/backups/copy-teleport-20261008-133347/build-catalog.json.before` → `scp OfficeWeb/build-catalog.json ubuntu@…:~/officeweb/build-catalog.json`（sha256 `7e00dfb0…5164`，与本地一致）→ `sudo -n systemctl restart officeweb` → **active**，日志 `OfficeWeb ready on http://127.0.0.1:3108 (livekit: wss://115.159.43.237)`。`build-world.json` 是运行数据，重启不影响。
+2. **安装预览挡住射线**：`BuildInteraction.refresh()` 里的浅蓝预览（ghost）是可拾取网格，站在预览/真部件重叠处点击时射线命中预览 → `teleportAt` 拿到 `undefined` → 不传送、人反而走开。现在预览创建后整体 `raycast=()=>{}`（它不是场景里的部件），并在 `refresh()` 里漫游模式直接 `ghost.visible=false`。
+
+- 发布：`npm run build`（`public-parity` 90 个文件一致）→ `node Build/deploy-web.cjs --upload --verify`，逐文件上传 `index.html` + `assets/main-DnKjfKvM.js`，本地与远端 SHA256 一致、公网 8 个引用资源全部 200 且哈希一致。**没有 `scp -r`、没有碰 `dist/download/`**；后端只换了目录文件并重启，`server.mjs` 未改。
+- **正式站端到端核验**（新增 `OfficeWeb/test/browser/build-parts-live.cjs`，真鼠标点场景）：建出直梯 @(3.5, 12.25) 与传送点 @(-2.5, 12.25) 且都落进存档 → 页面自己再建第二块 @(-8.5, 12.25) → 点第一块，人**立刻**出现在第二块上（`y=0.25` 是站在地砖面），截图 `Build/teleport-live-build.png`；结尾把验收件删干净（复核正式存档里 `ladder`/`teleport-pad` 各 0 件）。
+- 该用例踩过的五个坑（都写在文件头）：登录要走页面表单（手工塞会话 cookie 会停在身份选择页、画布根本不存在）；**每次登录会吊销该账号的其他会话**，所以校验走浏览器自己的 `context.request`，别另开 Node 会话；要点掉"先捏一下你的角色"，否则面板盖住画布、真实鼠标点在 DOM 上（合成 PointerEvent 能绕过，极易误判成功）；登录/选身份会冲掉 `?debug=1`，探针装不上，要重新带上再进一次；**每件都要先把镜头对准落点再点**，否则目标偏出画面、射线打到别处。
+- 本地回归：364 项单测全绿；`build-copy-teleport`、`build-experience`、`editable-scene`、`build-surface`、`build-top`、`build-gap`、`build-seats`、`build-props` 全过。
+
+
+## 2026-10-08 移动模式 Shift+D 拖拽复制 + 玩法两件（直梯 / 传送点）
+
+用户：「在移动模式下，shift d拖拽时复制 类似blender，支持多选」「新增部件：直梯和传送点，单击传送点可以原地消失，直接传送过去开黑吧」。
+
+- **Shift+D 变成 Blender 式**：按下即在原位建好副本并进入跟随态，鼠标移动副本跟着走，**单击放下**并保存；没挪动就是原位放下。单件与整组多选都支持（整组先记下 `selectedIds.map(id=>({id,version}))` 再逐件复制，整组重选走加选语义 `selectCopies()`）。细节与六个坑见 `OfficeWeb/AGENTS.md` 同日条目。
+- **新部件**：`ladder`（踏面严格 0.25m 分级，`buildNavigation` 的 0.255m 抬腿高度真能爬上去）、`teleport-pad`（底座跟色板、面板单独自发光材质）。单击传送点 → 传到**水平最近的另一块**并面向来路；`OfficeAvatar.teleportTo()` 是瞬移，不走寻路。
+- 发布：**纯前端**，后端未改、**没有重启 officeweb**。`npm run build`（含 `postbuild` 的 `public-parity`：`public/` 与产物一致 90 个文件）→ `node Build/deploy-web.cjs --upload --verify`：
+  - 上传 `index.html`、`assets/main-CqzdezW0.js`（844,914 字节）、`assets/main-CuG_y9Nd.css`（87,490 字节）；其余 11 个文件哈希已一致，没有重复上传，**没有 `scp -r`、没有碰 `dist/download/`**（安装器 0.1.17/0.1.21/0.1.22/0.1.25 原样）。
+  - 上传后复验「本地与远端逐文件一致」；公网逐个取值核验：`main-CqzdezW0.js`、`main-CuG_y9Nd.css`、`dock-C_2bFltL.js`、`dock-CMqxuJsV.css`、`dockGreeting-B406LHoz.js`、`characterModel-D-HunoXp.js`、`index.html`、`dock.html` 全部 **200 且 SHA256 与本地一致**。
+  - 回滚点：`~/officeweb/backups/copy-teleport-20261008-133347/`（上一版 `index.html`）。
+- **线上核验**：`node test/browser/build-teleport-live.cjs`（真账号注册 + 只替换 `/api/auth/me` 为"访客+已捏过人"，避免捏人/选座弹窗）打正式站：场景载入 **130 件**已保存部件、部件库出现新的 **玩法** 分类且 `直梯`／`传送点` 各一个、无页面错误、非 socket 资源无 4xx/5xx，截图 `Build/teleport-live-parts.png`。本地那一版另有完整交互回归 `node test/browser/build-copy-teleport.cjs`（单击放下、整组复制、整组拖走、传送与回程朝向）。
+- 说明：`test/browser/deployed-smoke.mjs` 仍等在 2026-09-14 就被替换掉的旧选座 UI（`.seat-picker`），跑正式站会超时失败；这是 `Design/TODO.md` 里早就记着的过期用例，不是这次发布造成的。
+
+
 ## 2026-09-30 宝箱视频链接显示封面缩略图、点开即放大观看
 
 用户：「宝箱里面的视频链接，我希望有一个缩略图放的图片，我希望别人点开的时候可以放大观看」，并确认要**自动抓取平台封面**（不是让上传者自己挑图）。

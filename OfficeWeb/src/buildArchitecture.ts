@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createTeleportBeam, updateTeleportBeams } from './buildBeam';
 type Box=(size:number[],position:number[],color?:string)=>THREE.Mesh;
 // One conventional arrow silhouette, with a thin shaft and a crisp triangular tip.
 const outline=new THREE.Shape();
@@ -61,6 +62,45 @@ export function buildArchitecture(kind:string,root:THREE.Group,box:Box) {
     for(let i=0;i<steps;i++)box([width,(i+1)*.25,.5],[0,(i+1)*.125,steps*.25-.25-i*.5]);
     return true;
   }
+  if(kind==='ladder') {
+    // 直梯：**真的能爬的梯子**（用户：「新增直梯是可以通行的，不管是上和下，可以用方向键通行，
+    // 就类似于游戏，以及自动寻路也可以」）。
+    //
+    // 两根立柱是实心碰撞（能贴墙放置、能选中、有实测尺寸），横档只是外观（`noBuildCollision`），
+    // 因为"能站人的踏面"不是梯子的玩法——`buildNavigation` 的 0.255m 抬腿高度走不上去，
+    // 叠在同一个 z 上时上面那级还会把下面那级封死。所以梯子改成**可攀爬柱体**
+    // （`root.userData.localClimb`）：进了这个柱体就是抓着梯子，W/↑ 往上爬、S/↓ 往下退，
+    // 寻路在同一格上也能一级级上下（见 `buildNavigation` 的爬梯边、`buildClimb.ts`）。
+    for(const x of [-.26,.26]) box([.08,3.78,.08],[x,1.89,0]);
+    for(let i=0;i<15;i++){
+      const rung=box([.6,.06,.06],[0,.25+i*.25,0]);
+      rung.userData.noBuildCollision=true;
+    }
+    // 净爬升 3.75m（15 档 × 0.25m），柱体留一点余量让人能走近它（别开太宽，
+    // 否则从梯子旁边走过按 W 也会被"抓"上去）。`normal` 是梯面法线（本地 +Z，梯子很薄的那一轴）：
+    // 爬梯时人朝它看，由 `buildArch.climbColumns` 跟着旋转一起变换到世界坐标。
+    root.userData.localClimb={min:[-.35,0,-.25],max:[.35,3.75,.25],normal:[0,0,1]};
+    return true;
+  }
+  if(kind==='teleport-pad') {
+    // 传送点：底座 + 会发光的面板 + 四角立柱。发光由 createPart 单独给材质，
+    // 这里只把形状摆好（与其他部件一样，原点在底面中心）。
+    box([1.5,.18,1.5],[0,.09,0]);
+    box([1.24,.08,1.24],[0,.21,0]);
+    for(const x of [-.62,.62]) for(const z of [-.62,.62]) box([.1,.34,.1],[x,.17,z]);
+    // 往上冒的粒子条（共用几何/材质，见 `buildBeam.ts`）。
+    createTeleportBeam(root);
+    // 一个**看不见但吃拾取**的盒子：传送点只有 0.34m 高，隔着几步点它很容易差一点点
+    // 打到旁边的地板，看上去就是"传送点无效"。它有空包围盒（不进实测尺寸）也不参与碰撞。
+    const pick=box([1.7,.9,1.7],[0,.45,0]);
+    pick.name='teleport-pick';
+    pick.visible=false;
+    pick.userData.noBuildCollision=true;
+    // 明说这是"拾取助手"：它比部件本身大，不能算进目录实测尺寸/声明范围（测试按这个标记跳过）。
+    pick.userData.pickHelper=true;
+    (pick as THREE.Mesh&{boundingBox?:THREE.Box3}).boundingBox=new THREE.Box3();
+    return true;
+  }
   if(kind!=='roof' && kind!=='roof-flag')return false;
   for(let i=0;i<4;i++)box([4-i,.25,4],[0,.125+i*.25,0]);
   if(kind==='roof-flag') {
@@ -78,6 +118,8 @@ export function buildArchitecture(kind:string,root:THREE.Group,box:Box) {
 /** Animate decoration only; the roof's collision and placement origin never move. */
 export function updateBuildFlags(world:THREE.Scene,time:number) {
   const pulse=arrowPulse(time);
+  // 传送点的粒子条用**共享几何**，所以一帧只算一次（世界上一块都没有时它是空转，立刻返回）。
+  updateTeleportBeams(world,time);
   for(const root of world.children) {
     const arrows=root.userData.arrowPanels as THREE.Mesh[]|undefined;
     if(arrows)for(const panel of arrows) {

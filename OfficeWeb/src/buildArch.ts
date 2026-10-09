@@ -45,3 +45,27 @@ export function collisionBoxes(object: THREE.Object3D) {
   });
   return boxes;
 }
+
+/**
+ * 可攀爬柱体（直梯）：部件本地点写在 `userData.localClimb` 里，跟着部件的移动/旋转/缩放走。
+ * 除了世界盒，还要把**梯面法线**（本地 +Z）一起旋转到世界坐标——爬梯时人就朝这个方向看；
+ * 直接按世界盒的长宽猜"哪根轴薄"会被缩放误导，所以用部件自己声明的轴。
+ */
+export function climbColumns(object: THREE.Object3D) {
+  const local=object.userData.localClimb as {min:number[];max:number[];normal?:number[]} | undefined;
+  if(!local) return [];
+  object.updateWorldMatrix(true,false);
+  const scale=(object.userData.buildScale as number[] | undefined) ?? [1,1,1];
+  const point=(row:number[],i:number)=>row[i]*scale[i];
+  // 盒必须走 `Box3.applyMatrix4`（它会取 8 个角的轴对齐包围盒）；只把 min/max 两个角转过去，
+  // 旋转 90° 后 z 区间会反过来，`climbAt` 就永远判定"不在梯子里"（踩过）。
+  const box=new THREE.Box3(
+    new THREE.Vector3(point(local.min,0),point(local.min,1),point(local.min,2)),
+    new THREE.Vector3(point(local.max,0),point(local.max,1),point(local.max,2)),
+  ).applyMatrix4(object.matrixWorld);
+  const normal=new THREE.Vector3(...((local.normal ?? [0,0,1]) as [number,number,number]))
+    .transformDirection(object.matrixWorld).setY(0);
+  if(normal.lengthSq()<1e-9) normal.set(0,0,1);
+  normal.normalize();
+  return [{min:box.min,max:box.max,normalX:normal.x,normalZ:normal.z}];
+}

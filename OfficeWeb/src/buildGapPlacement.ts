@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createPart } from './buildMeshes';
 import { collisionBoxes } from './buildArch';
 import { fitToPlane } from './buildSurface';
+import { gridSnap } from './buildGrid';
 import type { BuildAnchor, BuildPart } from './buildTypes';
 
 type Support = { id: string; box: THREE.Box3 };
@@ -50,9 +51,12 @@ export function gapPlacement(part: BuildPart, ray: THREE.Ray, supports: Support[
     if(new Set(nearby.map(s=>s.id)).size<2) continue;
     const candidates=[base];
     // Small magnetic correction centres each real foot on its column top.
+    // 取整到 0.25 网格：以前直接写 `b-a`（毫米级），于是"两根柱子之间搭的梁"会落在
+    // 半格偏置上（用户报"有些部件移动单位有问题，没有按照一个格子的大小步长"），
+    // 而且此后每次拖动都带着这个偏置。
     for(const foot of feet) for(const {box} of nearby) {
       const a=foot.getCenter(new THREE.Vector3()),b=box.getCenter(new THREE.Vector3());
-      const x=round(b.x-a.x),z=round(b.z-a.z);
+      const x=gridSnap(round(b.x-a.x)),z=gridSnap(round(b.z-a.z));
       if(Math.abs(x-base.x)<=.35 && Math.abs(z-base.z)<=.35) candidates.push({...base,x,z});
     }
     for(const candidate of candidates) {

@@ -99,6 +99,9 @@ const assert=require('node:assert/strict');
   await page.waitForFunction(id=>window.__officeDebug.__scene.getObjectByName('build-'+id).userData.version===2,distant.id);
   const moved=store.snapshot().parts.find(p=>p.id===distant.id);
   assert.notEqual(moved.x,distant.x);assert.equal((moved.x-distant.x)*4%1,0);
+  // 2026-10-08：水平落点必须**吸附在 0.25 网格上**（用户：「有些部件移动单位有问题 没有按照一个格子的大小步长」）。
+  assert.equal(Math.abs(moved.x*4-Math.round(moved.x*4))<1e-9,true,`落点要在网格上（x=${moved.x}）`);
+  assert.equal(Math.abs(moved.z*4-Math.round(moved.z*4))<1e-9,true,`落点要在网格上（z=${moved.z}）`);
   await page.screenshot({path:'../Build/editable-scene-'+(process.env.BOX_LIVE?'live':'local')+'.png'});
   await page.keyboard.press('Escape');await focus(moved);
   await page.getByRole('button',{name:/拆除/}).click();await click(moved,.8);

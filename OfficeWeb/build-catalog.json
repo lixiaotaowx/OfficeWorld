@@ -66,5 +66,7 @@
   {"id":"cactus","label":"仙人掌","category":"自然","size":[0.29,0.71,0.29],"dimensions":[0.29,0.71,0.29]},
   {"id":"fern","label":"蕨类盆栽","category":"自然","size":[0.42,0.583,0.42],"dimensions":[0.42,0.5825,0.42]},
   {"id":"trailing-plant","label":"垂吊绿植","category":"自然","size":[0.366,1.18,0.5],"dimensions":[0.366,1.12,0.3625]},
-  {"id":"flower-vase","label":"花瓶插花","category":"自然","size":[0.28,0.518,0.17],"dimensions":[0.28,0.5175,0.17]}
+  {"id":"flower-vase","label":"花瓶插花","category":"自然","size":[0.28,0.518,0.17],"dimensions":[0.28,0.5175,0.17]},
+  {"id":"ladder","label":"直梯","category":"玩法","size":[0.7,3.8,0.5],"dimensions":[0.6,3.78,0.08]},
+  {"id":"teleport-pad","label":"传送点","category":"玩法","size":[1.5,0.5,1.5],"dimensions":[1.5,0.34,1.5]}
 ]
