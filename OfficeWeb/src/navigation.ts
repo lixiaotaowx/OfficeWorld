@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { buildClimbAt, buildNavigationActive, buildPath, buildTraverse } from './buildNavigation';
+import { buildClimbAt, buildNavigationActive, buildPath, buildStepOff, buildTraverse } from './buildNavigation';
 
 export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
   if (buildNavigationActive()) {
@@ -7,6 +7,11 @@ export function traverse(start: THREE.Vector3, target: THREE.Vector3) {
     return point ? new THREE.Vector3(point.x, point.y, point.z) : null;
   }
   return segmentWalkable(start.x,start.z,target.x,target.z) ? target : null;
+}
+
+/** 走出边缘：只有方块世界有"高度"这一说，老场景里永远走不出去。 */
+export function stepOff(start: THREE.Vector3, x: number, z: number) {
+  return buildNavigationActive() ? buildStepOff(start, x, z) : false;
 }
 
 /** 梯子柱体（`(x,z)` 处、`y` 够得着）：在梯子上时移动键改成往上爬 / 往下退。 */

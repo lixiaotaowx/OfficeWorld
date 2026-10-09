@@ -48,9 +48,13 @@ function climbSpanAt(x: number, z: number): Climb | null {
   return null;
 }
 let cells: Map<string, Solid[]> | null = null;
+/** 全世界最低那一件的底面：掉落判死的参照线（见 `avatarFall`）。 */
+let lowestBottom: number | null = null;
 export function setBuildSolids(solids: Solid[] | null) {
   cells = solids ? new Map() : null;
+  lowestBottom = null;
   for (const solid of solids || []) {
+    if (lowestBottom === null || solid.min.y < lowestBottom) lowestBottom = solid.min.y;
     for (let x = Math.floor(solid.min.x / CELL); x <= Math.floor(solid.max.x / CELL); x++) {
       for (let z = Math.floor(solid.min.z / CELL); z <= Math.floor(solid.max.z / CELL); z++) {
         const key = `${x},${z}`;
@@ -61,6 +65,8 @@ export function setBuildSolids(solids: Solid[] | null) {
     }
   }
 }
+/** 最低部件组合的底面（一件都没有时返回 null）。掉落掉到它下面就算死。 */
+export function lowestSolidBottom() { return lowestBottom; }
 export function buildNavigationActive() { return cells !== null; }
 function nearby(x: number, z: number) {
   return cells?.get(`${Math.floor(x / CELL)},${Math.floor(z / CELL)}`) || [];
@@ -70,6 +76,38 @@ export function supportHeight(x: number, z: number, fromY: number): number | nul
   const levels = solids.map(b => b.max.y).filter(y => y <= fromY+STEP_HEIGHT && y >= fromY-STEP_HEIGHT);
   levels.sort((a,b) => b-a);
   return levels.find(y => !solids.some(b => b.max.y > y+0.01 && b.min.y < y+BODY_HEIGHT-0.01)) ?? null;
+}
+/**
+ * 从 `fromY` 往下：`(x,z)` 处能站上去的最高那一层（没有就是 null）。
+ *
+ * `supportHeight` 那个 ±0.255 的窗口是给"走路抬腿上下一级"用的；下落时一帧能掉好几米，
+ * 拿旧窗口去问会直接穿过楼板，所以掉落要的是"我下面最高的那层地"。
+ */
+export function supportBelow(x: number, z: number, fromY: number): number | null {
+  const solids = nearby(x,z).filter(b => x >= b.min.x-1e-6 && x <= b.max.x+1e-6 && z >= b.min.z-1e-6 && z <= b.max.z+1e-6);
+  const levels = solids.map(b => b.max.y).filter(y => y <= fromY+1e-6);
+  levels.sort((a,b) => b-a);
+  return levels.find(y => !solids.some(b => b.max.y > y+0.01 && b.min.y < y+BODY_HEIGHT-0.01)) ?? null;
+}
+/** 身体会不会被实体挡住：既抬不上去（顶面高过抬腿高度），又钻不过去（底面低过头顶）。 */
+export function blocksBody(x: number, z: number, y: number): boolean {
+  return nearby(x,z).some(b => x >= b.min.x-1e-6 && x <= b.max.x+1e-6 && z >= b.min.z-1e-6 && z <= b.max.z+1e-6
+    && b.max.y > y + STEP_HEIGHT + 1e-6 && b.min.y < y + BODY_HEIGHT - 0.02);
+}
+/**
+ * 走出边缘（掉落的第一步）：水平方向没有挡住身体的实体、目的地脚下又没有能站的那一层。
+ *
+ * 以前这种情况被当成"撞住不动"——用户要的是**可以走下去**（掉到下层建筑上，或者掉进深渊）。
+ * 被墙/高台阶挡住时仍然返回 false，那时人是真的走不过去。
+ */
+export function buildStepOff(start: Point, x: number, z: number): boolean {
+  const count = Math.max(1, Math.ceil(Math.hypot(x-start.x,z-start.z)/0.04));
+  for (let i=1; i<=count; i++) {
+    const px=start.x+(x-start.x)*i/count, pz=start.z+(z-start.z)*i/count;
+    if (buildClimbAt(px,pz,start.y)) return false;   // 梯子里不走"踏空"这条路
+    if (blocksBody(px,pz,start.y)) return false;     // 被墙/台阶挡住，不是边缘
+  }
+  return supportHeight(x,z,start.y) === null;
 }
 /** Substep every segment: a fast frame cannot skip a riser, a wall or a gap. */
 export function buildTraverse(start: Point, x: number, z: number): Point | null {

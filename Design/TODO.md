@@ -807,4 +807,6 @@ Do not call the project complete while required items remain failed, unimplement
 
 - [x] 2026-10-09 移动模式新增「⌗ 对齐网格」：选中的（可 Shift 多选）离格部件一键回到 0.25 网格，只动水平两轴、y 保持毫米接触精度，逐件进历史可 Ctrl+Z 逆序还原；不做老存档自动迁移。本地与正式站（`build-align-grid.cjs` / `build-align-grid-live.cjs`）均 PASS，正式站入口 `assets/main-DKeDnhq7.js`。**同日作废**：按用户要求改成根源修复，按钮与相关代码/用例已删除（见下条）。
 
-- [x] 2026-10-09 「部件整格」升级成不变量并删除「对齐网格」按钮：服务端 `cleanPart()` 强制水平两轴落格（唯一写入闸门）、客户端每条产出路径过 `snapPart`（放置/贴面/顶面/搭桥/旋转/整组同伴/复制落点）、启动时一次性迁移把历史 58 件离格件回格并留 `.before-grid.json`；随后按用户报的「两个拱门对不齐」补上**结构件（建筑/玩法）三轴落格**（家具/摆件与背景 fixture 的 y 保留精确接触）。全量 383 项单测 + 7 条浏览器回归 + 正式站 `build-parts-live.cjs`（结构件写入落格、摆件 y 原样）全 PASS；前端 `assets/main-9ZUaF2Oo.js`，后端两次 `build-store.mjs` 已随重启上线；正式世界 189 件、离格 0，两根拱门同高 −4.5。**代价**：贴面/抓底边最多差半格 0.125。
+- [x] 2026-10-09 「部件整格」升级成不变量并删除「对齐网格」按钮：服务端 `cleanPart()` 强制落格（唯一写入闸门）、客户端每条产出路径过 `snapPart`（放置/贴面/顶面/搭桥/旋转/整组同伴/复制落点）、启动时一次性迁移把历史 58 件离格件回格并留 `.before-grid.json`；随后按用户报的「两个拱门对不齐」补上**结构件（建筑/玩法）三轴落格**（家具/摆件与背景 fixture 的 y 保留精确接触，否则桌面上的杯子会浮起来）。全量 383 项单测 + 浏览器回归 + 正式站 `build-parts-live.cjs`（结构件写入落格、摆件 y 原样）全 PASS；正式世界离格 0，两根拱门同高 −4.5。**代价**：贴面/抓底边最多差半格 0.125。
+
+- [x] 2026-10-09 移动模式多选后也能旋转和缩放（Blender median-pivot 语义）：三个手柄都挂上，`posed()` 是唯一算法（预览/存档/键盘同一套），整组绕组中心转 yaw、按同因子摊开缩放，只有 yaw 转位置（位置仍整格、高度不变）、翻面按件原地；多选整组改颜色也一并解开。新增 `test/browser/build-group-transform.cjs` PASS，回归 `build-experience`/`build-copy-teleport`/`editable-scene`/`build-gizmo` 全过；正式站入口 `assets/main-a8DVwXAe.js`（只发前端）。踩到并修掉：拖过头给负因子会镜像整组、存档后必须重置组变换状态。

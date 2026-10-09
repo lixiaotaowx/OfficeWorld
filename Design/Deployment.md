@@ -1,3 +1,15 @@
+## 2026-10-09 移动模式多选后也能旋转和缩放（Blender 的 median pivot 语义）
+
+用户：「请移动工具下在多选之后也可以旋转和缩放」。
+
+- **以前为什么不行**：`buildMoveHandle.selectRows()` 在多选时把 rotate/resize 两个手柄 `detach()` 并 `enabled=false` 了，`settings()` 也在多选时直接 `return`——多选只剩平移。
+- **现在**：三个手柄都挂上，`posed(part)` 是唯一算法（预览、`moveMany` 存档、键盘 Q/R/X/Z 都调它）。整组绕**这一组的中心**（`groupCenter()`，取到格点）转 yaw、按同一组因子摊开缩放；**只有 yaw 会转位置**（绕组中心转 90° 是刚性变换，位置仍是 0.25 整数倍、高度不变，不变量不受影响），翻面按件原地；缩放时间距一起放大、每件尺寸按同一因子取整到 0.25。顺带解开：多选也能整组改颜色。
+- **两个坑（都写进 AGENTS.md）**：①拖过头越过手柄原点时 TransformControls 给**负**因子 → 会镜像整组而尺寸不能为负 → 取 `Math.abs` + 25% 下限（浏览器用例第一次跑就踩到）；②变换落进存档后必须 `resetGroupTransform()`，否则 `save()` 收尾的 `draw()` 会再乘一次。
+- **产物**：`npm run build` → `deploy-web.cjs --upload --verify`，正式站入口 **`assets/main-a8DVwXAe.js`**（840.20 kB，公网 200 + 哈希一致；线上 bundle 里查得到「整体绕中心旋转 / 整组缩放」）。**只发前端**：后端在上一轮已经是 `eadcd00…`，本次没改。
+- **验证**：新增 `node test/browser/build-group-transform.cjs` PASS —— Shift 多选两根立柱 → 三个手柄都抓得到 → 拖旋转环（两件朝向一致、绕中心 82 刚性旋转、间距 4→4、仍在格上、高度不变）→ 拖缩放方头（因子从松手前的 `userData.group.scale` 读，位置因子 0.25 时间距 4→1、两件尺寸同因子取整到 0.5、仍在格上）→ 两次 Ctrl+Z 还原；回归 `build-experience`/`build-copy-teleport`/`editable-scene`/`build-gizmo` 全 PASS；全量 **383 项**单测不受影响。
+
+
+
 ## 2026-10-09 两个拱门「对不齐」的真正原因：高度的步长是从各自原点算的 → 结构件三轴落格
 
 用户：「我有两个拱门 差距一直都是一个小缝 对不齐」。
