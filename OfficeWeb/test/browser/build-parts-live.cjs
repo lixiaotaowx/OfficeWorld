@@ -21,10 +21,19 @@ const SITE='https://115.159.43.237';
  *
  * 会在正式存档里放三件（直梯 + 两块传送点，第二块由页面自己建，免得受轮询同步时序影响）并在结尾删掉。
  * 写接口 120ms/账号节流，所以删除之间要留间隔；用访客身份，不占工位。
+ *
+ * **只许动自己那块地**（2026-10-08 的教训，别再犯）：早期版本按"类型"清理——`ladder`/`teleport-pad`
+ * 全删，于是把用户自己建的两根直梯和一块传送点一起删了（那几件是他在 x≈-25 和 (3.5,0,-1.5) 搭的，
+ * 服务器没有回滚，找不回来）。现在验收件一律摆在 **`PLOT` 这块 25m 内没有别的东西的空地**上，
+ * 清理只按"离 PLOT 12m 以内"筛（比落点范围宽一点），并在开头/结尾核对**世界总件数不变**。
  */
 const NAME='玩法上线验收', PASSWORD='partslive';
 const KIND_LABEL={'ladder':'直梯','teleport-pad':'传送点'};
 const partsOf=json=>((json&&json.parts)||[]).filter(p=>KIND_LABEL[p.kind]);
+/** 验收件专用的空地：正式世界是 x −42.75~13.5 / z −26~24，这里 25m 内一件都没有。 */
+const PLOT={x:40,z:40}, NEAR=12;
+const nearSite=part=>Math.hypot(part.x-PLOT.x,part.z-PLOT.z)<NEAR;
+const mine=json=>partsOf(json).filter(nearSite);
 const sleep=ms=>new Promise(done=>setTimeout(done,ms));
 
 /** 点掉"先捏一下你的角色"（没有它就直接返回）。 */
@@ -73,16 +82,19 @@ async function confirmLook(page){
     assert.equal(await page.evaluate(()=>Boolean(document.elementFromPoint(760,480)?.closest('.scene'))),true,
       '画面中央不能有面板挡着');
 
-    // 开跑前清掉上一次可能残留的两件（测试自己收尾，但失败时会留）。
-    for(const part of partsOf(await build.get())){await build.post({action:'remove',id:part.id,version:part.version});await sleep(400);}
-    assert.equal(partsOf(await build.get()).length,0,'开跑前正式世界里不该有这两件');
+    // 开跑前只清掉**自己那块地**上的残留（用例自己收尾，失败时会留），并记下世界总件数：
+    // 结尾要核对"正式世界和开跑前一样多"，防止再出现"顺手删了用户的件"。
+    const before=(await build.get()).parts.length;
+    const strays=mine(await build.get());
+    for(const part of strays){await build.post({action:'remove',id:part.id,version:part.version});await sleep(400);}
+    assert.equal(mine(await build.get()).length,0,'开跑前自己那块地上不该有残留');
+    assert.equal((await build.get()).parts.length,before-strays.length,'清理只许动自己那块地上的件');
+    // 基线＝清掉自己的残留之后的世界件数；结尾必须回到这个数（一件别人的都没动）。
+    const baseline=(await build.get()).parts.length;
     const seen=new Set(await page.evaluate(()=>window.__officeDebug.__scene.children
       .filter(c=>c.userData.buildId).map(c=>c.userData.buildId)));
 
-    const anchor=await page.evaluate(()=>{
-      const child=window.__officeDebug.__scene.children.find(c=>c.userData.buildId);
-      return child?[child.position.x,child.position.z]:[0,0];
-    });
+    const anchor=[PLOT.x,PLOT.z];
     const aim=async(x,z)=>{await page.evaluate(([x,z])=>{const d=window.__officeDebug,c=d.__camera,k=d.controls();
       k.dispatchEvent({type:'start'});k.target.set(x,1,z);c.position.set(x,7,z+9);c.lookAt(k.target);c.updateMatrixWorld(true);},[x,z]);
       await sleep(300);};
@@ -113,7 +125,7 @@ async function confirmLook(page){
       console.log(`已建造 ${label} @ 屏幕 ${JSON.stringify(at)} → 世界 (${fresh[1]}, ${fresh[2]})`);
       await sleep(250);
     }
-    const listed=partsOf(await build.get());
+    const listed=mine(await build.get());
     console.log('正式存档里的新部件 '+JSON.stringify(listed.map(p=>[p.kind,p.x,p.y,p.z])));
     assert(listed.some(p=>p.kind==='ladder')&&listed.some(p=>p.kind==='teleport-pad'),
       '两件都要真的落进正式存档（后端目录如果是旧的，add 会回 400「没有这个部件」）');
@@ -136,12 +148,12 @@ async function confirmLook(page){
     await page.mouse.down();await page.mouse.up();
     await page.getByText('已保存 · 所有人可见',{exact:true}).waitFor({timeout:15000});
     await sleep(500);
-    const pads=partsOf(await build.get()).filter(p=>p.kind==='teleport-pad');
+    const pads=mine(await build.get()).filter(p=>p.kind==='teleport-pad');
     assert(pads.length>=2,'两块传送点都要在存档里，实际 '+pads.length);
     // 顺手在正式站验一次"移动模式 Delete 删除选中"：拿**直梯**试（两块传送点摆好后，
     // 移动模式点传送点是"传过去"，不会选中它），删掉再 Ctrl+Z 恢复。
     await page.getByRole('button',{name:/移动/}).click();
-    const ladder=partsOf(await build.get()).find(p=>p.kind==='ladder');
+    const ladder=mine(await build.get()).find(p=>p.kind==='ladder');
     const solidsBefore=await page.evaluate(()=>window.__officeDebug.__scene.children.filter(c=>c.userData.buildId).length);
     // 直梯现在很薄（0.6×3.78×**0.08**）：原来那套"斜着看、瞄准腰高"的射线会先打到梯子前面的地板。
     // 改成**正上方俯视**，再按"手柄里选中的到底是不是这根梯子"逐个候选点确认。
@@ -164,11 +176,11 @@ async function confirmLook(page){
     await page.keyboard.press('Delete');
     await page.waitForFunction(n=>window.__officeDebug.__scene.children.filter(c=>c.userData.buildId).length<=n,solidsBefore-1);
     await sleep(800);
-    assert.equal(partsOf(await build.get()).filter(p=>p.kind==='ladder').length,0,
+    assert.equal(mine(await build.get()).filter(p=>p.kind==='ladder').length,0,
       'Delete 要真的把这件从正式存档里删掉');
     await page.keyboard.press('Control+z');
     await sleep(1200);
-    assert.equal(partsOf(await build.get()).filter(p=>p.kind==='teleport-pad').length,pads.length,
+    assert.equal(mine(await build.get()).filter(p=>p.kind==='teleport-pad').length,pads.length,
       'Ctrl+Z 要把它恢复回来');
     console.log('正式站 Delete 删除 + Ctrl+Z 撤销通过');
     const from=pads[0], to=pads.find(p=>p.id!==from.id);
@@ -206,14 +218,15 @@ async function confirmLook(page){
     assert.equal(hopped[1],to.z);
     await page.screenshot({path:'../Build/teleport-live-build.png'});
 
-    // ③ 收尾：把自己放的两件删掉，别留在正式世界里。
+    // ③ 收尾：把自己那块地上的件删干净，别留在正式世界里。
     for(let pass=0;pass<4;pass++){
-      const left=partsOf(await build.get());
+      const left=mine(await build.get());
       if(!left.length)break;
       for(const part of left){await build.post({action:'remove',id:part.id,version:part.version});await sleep(400);}
     }
-    assert.equal(partsOf(await build.get()).length,0,'验收用的两件要清干净');
+    assert.equal(mine(await build.get()).length,0,'验收用的几件要清干净');
+    assert.equal((await build.get()).parts.length,baseline,'正式世界必须和开跑前一模一样（总件数不变，一件别人的都没动）');
     assert.deepEqual(errors,[]);
-    console.log('PASS 正式站：直梯/传送点可点击建造、传送点可瞬移（验收用的两件已删除）');
+    console.log('PASS 正式站：直梯/传送点可点击建造、传送点可瞬移（验收用的几件已删除，世界总件数未变）');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
