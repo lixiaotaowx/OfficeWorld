@@ -131,22 +131,25 @@ test('按键爬梯：W/↑ 一级级往上爬，S/↓ 能原路退下来',()=>{
   }finally{setBuildSolids(null);setBuildClimbs(null);}
 });
 
-test('自由行走：一路按 W 走到梯子前就开始爬，爬完停在梯顶不会掉下去',()=>{
+test('自由行走：一路按 W 走到梯子前就开始爬，爬到平台上继续走就是踏空（掉落机制）',()=>{
   climbState();
   try{
     const cam=camera(0,1);
     let position=new THREE.Vector3(0,0,-2);
     const dt=1/60;
-    let climbed=false;
+    let climbed=false,last;
     for(let i=0;i<1200;i++){
       const step=walkStep(position,keys('KeyW'),cam,dt,1.65);
+      last=step;
       if(!step.moving)break;
       if(step.position.y>0.01)climbed=true;
       position=step.position;
     }
     assert(climbed,'走着走着就该爬上梯子，而不是撞住不动');
-    assert(Math.abs(position.y-TOP)<.05,`最后要停在梯顶（现在 ${position.y}）`);
+    assert(Math.abs(position.y-TOP)<.05,`一路爬到梯顶高度（现在 ${position.y}）`);
     assert(position.z>0.2,`要到平台上（现在 z=${position.z}）`);
+    // 平台外侧没有地面：继续往前走是**踏空**（2026-10-09 的掉落机制），不是撞住不动。
+    assert.equal(last.falling,true,'走到平台边缘要报踏空，剩下的交给 avatarFall 往下掉');
   }finally{setBuildSolids(null);setBuildClimbs(null);}
 });
 
@@ -199,5 +202,96 @@ test('爬梯速度比走路慢，而且不会一帧跳上去',()=>{
     assert(step.moving);
     assert(Math.abs(step.position.y-CLIMB_SPEED/60)<1e-9,'一帧就爬 CLIMB_SPEED/60');
     assert(CLIMB_SPEED<1.65,'爬梯比走路慢');
+  }finally{setBuildSolids(null);setBuildClimbs(null);}
+});
+
+/**
+ * **摞起来的直梯**（用户 2026-10-09：「把直梯摞得很高之后，怎么不能自动寻路了」）。
+ *
+ * 真因：`climbSpanAt(x,z)` 只返回命中 `(x,z)` 的**第一根**梯子、而且不看高度，于是摞上去以后整个柱体
+ * 被卡在最下面那根的顶上（A=0~3.75、B=3.75~7.5，A\* 在 3.75 处往上的边被 `min(y,A.max)` 夹回 3.75，
+ * 永远上不去）；手动爬也一样——接缝处 `y` 已经等于 A 的顶，`climbStep` 把它当成"到顶了"、改成往相机
+ * 方向踏出去，于是人在接缝上卡住。现在 `setBuildClimbs()` 会把投影重叠且竖直相接的柱体**并成一根**，
+ * 接缝只是这根长梯子的中间某一格。
+ */
+test('摞起来的直梯：并成一根，接缝处能继续上下，寻路也能一路爬到顶',()=>{
+  const lower=createPart({...LADDER,y:0});
+  const upper=createPart({...LADDER,y:TOP});
+  const STACK=TOP*2;                                   // 7.5
+  const ground={min:{x:-3,y:-0.5,z:-3},max:{x:3,y:0,z:-0.05}};
+  const platform={min:{x:-1,y:STACK-0.5,z:0.05},max:{x:1,y:STACK,z:3}};
+  const solids=[...collisionBoxes(lower),...collisionBoxes(upper)].map(box=>({min:box.min,max:box.max}));
+  setBuildSolids([...solids,ground,platform]);
+  setBuildClimbs([...climbColumns(lower),...climbColumns(upper)]);
+  try{
+    // ① 并成了一根：接缝（3.75）上下都算在梯子里，底/顶是整根长梯子的两端。
+    assert.equal(buildClimbAt(0,0,0)?.top,STACK,'下半段看到的顶是整根梯子的顶');
+    assert.equal(buildClimbAt(0,0,STACK)?.bottom,0,'上半段看到的底是整根梯子的底');
+    assert.equal(buildClimbAt(0,0,TOP+.2)?.top,STACK,'接缝以上仍然在梯子上');
+    assert.equal(buildClimbAt(0,0,STACK+.5),null,'整根梯子之上就不是梯子了');
+    // ② 接缝处按 W 继续往上（不能当成"到顶了"改成踏出去）：连按几帧要越过 3.75。
+    let seam=new THREE.Vector3(0,TOP-.05,-0.1);
+    for(let i=0;i<20;i++){
+      const step=climbStep(seam,keys('KeyW'),new THREE.Vector3(0,0,1),1/60,1.65);
+      assert(step&&step.moving,'接缝处按 W 要继续往上爬');
+      assert.equal(step.position.z,-0.1,'爬梯时不该横着飘出去');
+      seam=step.position.clone();
+    }
+    assert(seam.y>TOP+.2,`接缝处连按 W 要越过 3.75 继续往上（现在 ${seam.y}）`);
+    // ③ 接缝处按 S 继续往下（同理，不能退出去）。
+    let back=new THREE.Vector3(0,TOP+.05,-0.1);
+    for(let i=0;i<20;i++){
+      const step=climbStep(back,keys('KeyS'),new THREE.Vector3(0,0,1),1/60,1.65);
+      assert(step&&step.moving,'接缝处按 S 要继续往下退');
+      back=step.position.clone();
+    }
+    assert(back.y<TOP-.2,`接缝处连按 S 要退到 3.75 以下（现在 ${back.y}）`);
+    // ④ 一路按 W 从地面爬到 7.5。
+    let position=new THREE.Vector3(0,0,-0.1);
+    for(let i=0;i<1200&&position.y<STACK-1e-4;i++){
+      const step=climbStep(position,keys('KeyW'),new THREE.Vector3(0,0,1),1/60,1.65);
+      assert(step,'一路按 W 都该在爬');
+      position=step.position.clone();
+      assert(position.y<=STACK+1e-6,'不能爬出整根梯子');
+    }
+    assert.equal(+position.y.toFixed(3),STACK,'一路爬到 7.5');
+    // ⑤ 自动寻路：从地面点到 7.5 的平台，路径要顺着这根摞起来的梯子爬上去。
+    const path=buildPath({x:0,y:0,z:-2},{x:0,y:STACK,z:2});
+    assert(path.length>0,'摞起来的梯子也要能寻路上去');
+    assert.equal(path.at(-1).y,STACK,'终点在 7.5 的平台上');
+    assert(path.map(p=>p.y).some(y=>y>TOP+.2&&y<STACK-.2),'路径要越过接缝继续往上');
+    const walking=new THREE.Vector3(0,0,-2);
+    const points=path.map(p=>new THREE.Vector3(p.x,p.y,p.z));
+    for(let i=0;i<8000&&points.length;i++)advancePath(walking,points,1.65/60);
+    assert(Math.abs(walking.y-STACK)<.05,`跟着路径要能到 7.5（现在 ${walking.y}）`);
+    console.log('摞梯寻路：'+path.length+' 个路径点，最高 '+Math.max(...path.map(p=>p.y)));
+  }finally{setBuildSolids(null);setBuildClimbs(null);}
+});
+
+test('摞五根（正式世界里的真实摆法：x/z 相同、每 3.75m 一根）要并成一根长梯',()=>{
+  // 正式存档实测：x=-3.5 z=-22.5，y = -8 / -4.25 / -0.5 / 3.25 / 7 —— 正好每 3.75m 一根。
+  const bases=[-8,-4.25,-0.5,3.25,7], bottom=bases[0], top=bases[bases.length-1]+TOP;   // -8 → 10.75
+  const parts=bases.map(y=>createPart({...LADDER,x:-3.5,y,z:-22.5}));
+  const ground={min:{x:-6,y:bottom-0.5,z:-25},max:{x:0,y:bottom,z:-22.55}};
+  const platform={min:{x:-4.5,y:top-0.5,z:-22.45},max:{x:-2.5,y:top,z:-20}};
+  setBuildSolids(parts.flatMap(part=>collisionBoxes(part)).map(box=>({min:box.min,max:box.max})).concat([ground,platform]));
+  setBuildClimbs(parts.flatMap(part=>climbColumns(part)));
+  try{
+    assert.equal(buildClimbAt(-3.5,-22.5,bottom)?.top,top,'整根长梯的顶是 10.75');
+    assert.equal(buildClimbAt(-3.5,-22.5,top)?.bottom,bottom,'底是 −8');
+    assert.equal(buildClimbAt(-3.5,-22.5,top+1),null,'长梯之上不是梯子');
+    // 从最下面一路按 W 爬到顶（要越过 4 个接缝）。
+    let position=new THREE.Vector3(-3.5,bottom,-22.6);
+    for(let i=0;i<4000&&position.y<top-1e-4;i++){
+      const step=climbStep(position,keys('KeyW'),new THREE.Vector3(0,0,-1),1/60,1.65);
+      assert(step,'一路按 W 都该在爬');
+      position=step.position.clone();
+    }
+    assert.equal(+position.y.toFixed(3),top,'一路爬到 10.75');
+    // 自动寻路：从最下面的地面点到 10.75 的平台。
+    const path=buildPath({x:-3.5,y:bottom,z:-24},{x:-3.5,y:top,z:-21});
+    assert(path.length>0,'五根摞起来的梯子也要能寻路上去');
+    assert.equal(path.at(-1).y,top,'终点在 10.75 的平台');
+    console.log('五根摞梯：'+path.length+' 个路径点，从 '+bottom+' 爬到 '+top);
   }finally{setBuildSolids(null);setBuildClimbs(null);}
 });

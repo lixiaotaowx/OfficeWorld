@@ -809,4 +809,6 @@ Do not call the project complete while required items remain failed, unimplement
 
 - [x] 2026-10-09 「部件整格」升级成不变量并删除「对齐网格」按钮：服务端 `cleanPart()` 强制落格（唯一写入闸门）、客户端每条产出路径过 `snapPart`（放置/贴面/顶面/搭桥/旋转/整组同伴/复制落点）、启动时一次性迁移把历史 58 件离格件回格并留 `.before-grid.json`；随后按用户报的「两个拱门对不齐」补上**结构件（建筑/玩法）三轴落格**（家具/摆件与背景 fixture 的 y 保留精确接触，否则桌面上的杯子会浮起来）。全量 383 项单测 + 浏览器回归 + 正式站 `build-parts-live.cjs`（结构件写入落格、摆件 y 原样）全 PASS；正式世界离格 0，两根拱门同高 −4.5。**代价**：贴面/抓底边最多差半格 0.125。
 
+- [x] 2026-10-09 摞起来的直梯不能自动寻路：`climbSpanAt()` 只认命中 `(x,z)` 的第一根且不看高度，整个柱体被夹在最下面那根的顶上（A\* 上不去、手动爬也卡在接缝）。新增 `mergeClimbs()`：`setBuildClimbs()` 把 (x,z) 重叠 + 竖直相接的柱体并成一根（法线按段记），接缝变成中间一格。正式世界的真实摆法（5 根、x=−3.5/z=−22.5、每 3.75m 一根 → −8~10.75）已写进 `test/build-ladder.test.mjs`（寻路 86 点）；全量 393 项单测 + `build-ladder-climb`/`build-parts-live` 全 PASS；正式站入口 `assets/main-DATeyWq7.js`。
+
 - [x] 2026-10-09 移动模式多选后也能旋转和缩放（Blender median-pivot 语义）：三个手柄都挂上，`posed()` 是唯一算法（预览/存档/键盘同一套），整组绕组中心转 yaw、按同因子摊开缩放，只有 yaw 转位置（位置仍整格、高度不变）、翻面按件原地；多选整组改颜色也一并解开。新增 `test/browser/build-group-transform.cjs` PASS，回归 `build-experience`/`build-copy-teleport`/`editable-scene`/`build-gizmo` 全过；正式站入口 `assets/main-a8DVwXAe.js`（只发前端）。踩到并修掉：拖过头给负因子会镜像整组、存档后必须重置组变换状态。

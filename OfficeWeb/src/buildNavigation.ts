@@ -12,21 +12,69 @@ const CLIMB_COST = 1.2;
  * 可攀爬的柱体（直梯）。梯子里没有"能站的踏面"：人一进这个柱体就改成抓着梯子，
  * 高度由按键（W/↑ 往上爬、S/↓ 往下退）自己控制，见 `buildClimb.ts`。
  */
-export type Climb = { min: Point; max: Point; normalX: number; normalZ: number };
+export type Climb = { min: Point; max: Point; normalX: number; normalZ: number;
+  /** 摞起来的梯子并成一根以后，每一段的 y 区间与法线（爬的时候按人所在那一段取朝向）。 */
+  segments?: { minY: number; maxY: number; normalX: number; normalZ: number }[] };
+/** 上下两根梯子最多差这么点就算"接上了"（正好摞上去是 0，差半格以内也爬得过去）。 */
+const CLIMB_GAP = STEP_HEIGHT;
+/**
+ * 把 `(x,z)` 投影重叠、竖直方向相接的柱体**并成一根**。
+ *
+ * 用户 2026-10-09：「把直梯摞得很高之后，怎么不能自动寻路了」——以前 `climbSpanAt()` 只返回
+ * 命中 `(x,z)` 的**第一根**梯子，而且不看高度，于是摞起来以后整个柱体被卡在最下面那根的顶上
+ * （A 是 0~3.75、B 是 3.75~7.5，A* 在 3.75 处往上的边被 `min(y, A.max)` 夹回 3.75，永远上不去）；
+ * 手动爬也一样：在接缝处 `y` 已经等于 A 的顶，`climbStep` 把它当成"到顶了"，改成尝试往相机方向踏出去。
+ * 并成一根以后，接缝只是这根梯子的中间某一格，上和下都能继续。
+ */
+export function mergeClimbs(list: Climb[]): Climb[] {
+  const out: Climb[] = [];
+  for (const climb of list) {
+    const row: Climb = { min: { ...climb.min }, max: { ...climb.max }, normalX: climb.normalX, normalZ: climb.normalZ,
+      segments: climb.segments ? [...climb.segments]
+        : [{ minY: climb.min.y, maxY: climb.max.y, normalX: climb.normalX, normalZ: climb.normalZ }] };
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = out.length - 1; i >= 0; i--) {
+        const other = out[i];
+        // `(x,z)` 投影要重叠（上下摞在一起的梯子本来就对齐），竖直方向相接或重叠。
+        if (row.min.x > other.max.x + 1e-6 || other.min.x > row.max.x + 1e-6) continue;
+        if (row.min.z > other.max.z + 1e-6 || other.min.z > row.max.z + 1e-6) continue;
+        if (row.min.y > other.max.y + CLIMB_GAP || other.min.y > row.max.y + CLIMB_GAP) continue;
+        row.min = { x: Math.max(row.min.x, other.min.x), y: Math.min(row.min.y, other.min.y), z: Math.max(row.min.z, other.min.z) };
+        row.max = { x: Math.min(row.max.x, other.max.x), y: Math.max(row.max.y, other.max.y), z: Math.min(row.max.z, other.max.z) };
+        row.segments = [...(row.segments || []), ...(other.segments || [])].sort((a, b) => a.minY - b.minY);
+        out.splice(i, 1);
+        changed = true;
+      }
+    }
+    out.push(row);
+  }
+  return out;
+}
+export function setBuildClimbs(list: Climb[] | null) { climbs = list ? mergeClimbs(list) : []; }
 /** 抓到梯子时的读数：`faceX/faceZ` 是从人指向梯子的水平方向（人会面朝它）。 */
 export type ClimbHold = { bottom: number; top: number; faceX: number; faceZ: number };
 let climbs: Climb[] = [];
-export function setBuildClimbs(list: Climb[] | null) { climbs = list ? list.slice() : []; }
 /**
  * 面朝梯子的方向：梯面法线由部件自己声明（`buildArch.climbColumns` 旋转到世界坐标），
  * 人站在梯子哪一侧就朝哪个方向看。正好压在梯子中线上时返回 (0,0)，交给调用方保持原朝向。
+ * 摞起来的梯子取**人所在那一段**的法线（上下两根朝向不同时也能朝对）。
  */
-function climbFacing(climb: Climb, x: number, z: number) {
+function climbFacing(climb: Climb, x: number, z: number, y: number) {
+  let segment = climb.segments?.[0];
+  let bestDistance = Infinity;
+  for (const row of climb.segments || []) {
+    const distance = Math.abs(y - Math.min(Math.max(y, row.minY), row.maxY));
+    if (row.minY <= y && y <= row.maxY) { segment = row; break; }
+    if (distance < bestDistance) { bestDistance = distance; segment = row; }
+  }
+  const normalX = segment?.normalX ?? climb.normalX, normalZ = segment?.normalZ ?? climb.normalZ;
   const middleX = (climb.min.x + climb.max.x) / 2, middleZ = (climb.min.z + climb.max.z) / 2;
-  const side = (x - middleX) * climb.normalX + (z - middleZ) * climb.normalZ;
-  if (Math.abs(side) < 1e-3) return {faceX: 0, faceZ: 0};
+  const side = (x - middleX) * normalX + (z - middleZ) * normalZ;
+  if (Math.abs(side) < 1e-3) return { faceX: 0, faceZ: 0 };
   const sign = side > 0 ? -1 : 1;
-  return {faceX: climb.normalX * sign, faceZ: climb.normalZ * sign};
+  return { faceX: normalX * sign, faceZ: normalZ * sign };
 }
 /** `(x,z)` 处是否有梯子，且 `y` 在它能抓的范围内。 */
 export function buildClimbAt(x: number, z: number, y: number): ClimbHold | null {
@@ -34,7 +82,7 @@ export function buildClimbAt(x: number, z: number, y: number): ClimbHold | null 
     if (x < climb.min.x - 1e-6 || x > climb.max.x + 1e-6) continue;
     if (z < climb.min.z - 1e-6 || z > climb.max.z + 1e-6) continue;
     if (y < climb.min.y - STEP_HEIGHT || y > climb.max.y + STEP_HEIGHT) continue;
-    return { bottom: climb.min.y, top: climb.max.y, ...climbFacing(climb, x, z) };
+    return { bottom: climb.min.y, top: climb.max.y, ...climbFacing(climb, x, z, y) };
   }
   return null;
 }
@@ -95,19 +143,26 @@ export function blocksBody(x: number, z: number, y: number): boolean {
     && b.max.y > y + STEP_HEIGHT + 1e-6 && b.min.y < y + BODY_HEIGHT - 0.02);
 }
 /**
- * 走出边缘（掉落的第一步）：水平方向没有挡住身体的实体、目的地脚下又没有能站的那一层。
- *
- * 以前这种情况被当成"撞住不动"——用户要的是**可以走下去**（掉到下层建筑上，或者掉进深渊）。
- * 被墙/高台阶挡住时仍然返回 false，那时人是真的走不过去。
+ * 这一段水平路线上有没有挡住身体的东西（台阶/墙/梯子），**不管脚下有没有地面**。
+ * 走路用它判断"是撞住了还是走到了边缘"，空中控制也用它。
  */
-export function buildStepOff(start: Point, x: number, z: number): boolean {
+export function buildClearPath(start: Point, x: number, z: number): boolean {
   const count = Math.max(1, Math.ceil(Math.hypot(x-start.x,z-start.z)/0.04));
   for (let i=1; i<=count; i++) {
     const px=start.x+(x-start.x)*i/count, pz=start.z+(z-start.z)*i/count;
     if (buildClimbAt(px,pz,start.y)) return false;   // 梯子里不走"踏空"这条路
     if (blocksBody(px,pz,start.y)) return false;     // 被墙/台阶挡住，不是边缘
   }
-  return supportHeight(x,z,start.y) === null;
+  return true;
+}
+/**
+ * 走出边缘（掉落的第一步）：水平方向没有挡住身体的实体、目的地脚下又没有能站的那一层。
+ *
+ * 以前这种情况被当成"撞住不动"——用户要的是**可以走下去**（掉到下层建筑上，或者掉进深渊）。
+ * 被墙/高台阶挡住时仍然返回 false，那时人是真的走不过去。
+ */
+export function buildStepOff(start: Point, x: number, z: number): boolean {
+  return buildClearPath(start, x, z) && supportHeight(x,z,start.y) === null;
 }
 /** Substep every segment: a fast frame cannot skip a riser, a wall or a gap. */
 export function buildTraverse(start: Point, x: number, z: number): Point | null {
