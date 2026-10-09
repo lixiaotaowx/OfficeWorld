@@ -6,16 +6,18 @@ import {loadTs} from './helpers.mjs';
 const require=createRequire(import.meta.url);
 const {catalog}=await import('../build-store.mjs');
 const {snapMove}=await import(await loadTs('buildMoveSnap.ts'));
-const {BUILD_GRID,gridSnap}=await import(await loadTs('buildGrid.ts'));
+const {BUILD_GRID,gridSnap,isStructural}=await import(await loadTs('buildGrid.ts'));
 const box=(x,y,z,w,h,d)=>new Box3(new Vector3(x,y,z),new Vector3(x+w,y+h,z+d));
 const part={id:'p',kind:'floor',color:'#f3dfc5',x:20,y:.495,z:0,rotation:0,version:1};
 void createRequire;
 
 /**
- * 拖动步长（用户 2026-10-08：「有些部件额移动单位有问题 没有按照一个格子的大小步长，完整检查」）。
+ * 拖动步长（用户 2026-10-08：「有些部件额移动单位有问题 没有按照一个格子的大小步长，完整检查」→
+ * 2026-10-09「我有两个拱门 差距一直都是一个小缝 对不齐」）。
  *
- * 规则：**水平两轴拖动一定落在 0.25 网格上，而且每一次正好走整数格**（离格的老部件拖一下就回格上）；
- * y 仍按原点加整格、保留毫米接触精度（叠在桌面 1.42m / 方块顶 0.34m 上的东西不能被拽到 0.25 的整数倍上）。
+ * 规则：**水平两轴一定落在 0.25 网格上、每次正好走整数格**；**结构件（建筑/玩法）的高度也落格**
+ * ——两件各自站在略有差异的面上时（−4.605 / −4.564），落格之后拖一下就能对齐；**家具/摆件的 y 仍按
+ * 原点加整格、保留毫米接触精度**（叠在 1.42m 桌面上必须精确落在那一层）。
  */
 test('拖动＝整格：水平两轴落点吸附到网格，离格的老部件拖一下回格',()=>{
   const local=[box(-2,0,-2,4,.25,4)];
@@ -29,10 +31,15 @@ test('拖动＝整格：水平两轴落点吸附到网格，离格的老部件�
   assert.equal(off.part.x,20.5,'20.033 + 0.5 → 吸到 20.5（离格偏置被抹掉）');
   assert.equal(off.part.z,0,'没拖的轴不许动');
   assert.equal(snapMove({...part,z:-3.11},-.02,'z',local,[]).part.z,-3,'小于半格也把落点拉回网格');
-  // y 例外：地铁/桌面那种毫米级接触高度要保住（目录里 50/70 件尺寸本来就不是整格）。
-  assert.equal(snapMove(part,0,'y',local,[]).part.y,.495);
-  assert.equal(snapMove(part,.252,'y',local,[]).part.y,.745);
-  assert.equal(snapMove(part,-.252,'y',local,[]).part.y,.245);
+  // 结构件（floor 是「建筑」）的高度也落格：0.495 → 0.5，一步就是一格。
+  assert.equal(snapMove(part,0,'y',local,[]).part.y,.5);
+  assert.equal(snapMove(part,.252,'y',local,[]).part.y,.75);
+  assert.equal(snapMove(part,-.252,'y',local,[]).part.y,.25);
+  // 家具/摆件的 y 保留毫米接触精度（书桌 1.42m、方块顶 0.34m 这种层不能被拽到整格上）。
+  const prop={...part,kind:'mug',y:.495};
+  assert.equal(snapMove(prop,0,'y',local,[]).part.y,.495);
+  assert.equal(snapMove(prop,.252,'y',local,[]).part.y,.745);
+  assert.equal(snapMove(prop,-.252,'y',local,[]).part.y,.245);
 });
 
 test('磁吸只在网格上生效：正好整格贴合时贴上去，否则退回整格步长',()=>{
@@ -49,10 +56,13 @@ test('磁吸只在网格上生效：正好整格贴合时贴上去，否则退�
   // Shift（fine）不吸附，但步长仍然是整格。
   assert.equal(snapMove(start,.162,'x',local,targets,true).part.x,20.25);
   assert.equal(snapMove(start,.162,'x',local,targets,true).aligned,false);
-  // y 的接触磁吸保留毫米精度（贴到桌面/地下那一层）。
+  // y 的接触磁吸：结构件吸到整格（-2.505 → -2.5），家具/摆件保留毫米精度。
   const step=snapMove({...part,y:-2},-.49,'y',[box(-.1,0,-.1,.2,.2,.2)],[box(19,-3,-1,2,.495,2)]);
-  assert.equal(step.part.y,-2.505);
+  assert.equal(step.part.y,-2.5);
   assert.equal(step.aligned,true);
+  const prop=snapMove({...part,kind:'mug',y:-2},-.49,'y',[box(-.1,0,-.1,.2,.2,.2)],[box(19,-3,-1,2,.495,2)]);
+  assert.equal(prop.part.y,-2.505);
+  assert.equal(prop.aligned,true);
 });
 
 test('空门框不会把门吞进洞里做磁吸',()=>{
@@ -80,8 +90,15 @@ test('全部 70 件部件：任何方向拖多少，水平落点都在网格上�
         assert.equal(Math.abs(Math.abs(again)-BUILD_GRID)<1e-9,true,`${item.id} ${axis} 第二步要正好一格`);
       }
     }
-    // y 只保证整格步长，不保证绝对整格（接触高度可以是毫秒级）。
-    const stepY=snapMove(start,.25,'y',[],[]).part.y-start.y;
-    assert.equal(Math.abs(stepY-BUILD_GRID)<1e-9,true,`${item.id} y 一步一格`);
+    // y：结构件（建筑/玩法）必须**绝对整格**（这样两件永远能对齐）；家具/摆件只保证整格步长，
+    // 接触高度可以是毫米级（桌面 1.42m 那一层）。
+    const moved=snapMove(start,.25,'y',[],[]).part.y;
+    if(isStructural(item.id)){
+      assert.equal(Math.abs(moved-gridSnap(moved))<1e-9,true,`${item.id} 结构件高度要落在网格上（${moved}）`);
+      assert.equal(moved,gridSnap(start.y+.25),`${item.id} 结构件 1.37 → 1.5`);
+    }else{
+      assert.equal(Math.abs((moved-start.y)-BUILD_GRID)<1e-9,true,`${item.id} 摆件 y 一步一格`);
+      assert.equal(moved,1.62,`${item.id} 摆件高度保留毫米精度`);
+    }
   }
 });

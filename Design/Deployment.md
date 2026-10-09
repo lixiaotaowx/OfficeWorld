@@ -1,7 +1,21 @@
-## 2026-10-09 「部件永远整格」改成不变量（服务端闸门＋客户端产出即整格＋老存档迁移），并删掉「对齐网格」按钮
+## 2026-10-09 两个拱门「对不齐」的真正原因：高度的步长是从各自原点算的 → 结构件三轴落格
+
+用户：「我有两个拱门 差距一直都是一个小缝 对不齐」。
+
+- **先量**：拉正式存档看那两个拱门——`arch` y=**−4.605** 与 y=**−4.564**，x 差 0.5（正好是它们的进深，水平是齐的）。**高度的步长是"从各自的原点加整格"**，两件起点差 4.1cm，再怎么拖都永远凑不到同一高度——这才是"对不齐"（不是水平缝）。上一轮只把 x/z 落了格，y 故意留给"接触高度"，于是这个洞留在那儿。
+- **改法**：`buildGrid.ts` 新增 `snapPart()` + `isStructural()`——**结构件（目录分类「建筑」「玩法」：墙、地板、方块、柱、梁、拱门、楼梯、门、窗、屋顶、直梯、传送点…）三轴都落格**（放置/贴面/顶面辅助/搭桥/拖动/旋转/整组同伴全过它，服务端 `cleanPart()` 再兜一层）；**家具/摆件的 y 保留毫米接触**（书桌 1.42m、圆桌 0.8m，取整会让杯子浮在桌面或陷进去），**原场景 fixture 的 y 也不动**（island 基座 −0.6、柱子配重 −4.15 是背景几何，动它会把地面抬高）。`offGridParts()` 与迁移用同一套判定（`part.fixture` 跳过 y），否则每次开服都白写一次存档、版本号一直涨。
+- **产物**：`npm run build` → `deploy-web.cjs --upload --verify`，正式站入口 **`assets/main-9ZUaF2Oo.js`**（836.98 kB，公网 200 + 哈希一致）；后端 `scp build-store.mjs`（md5 `eadcd00…` 再变一次）+ `systemctl restart officeweb` → active。
+- **正式站迁移**：`[build-store] 回格迁移：31 件离格部件对齐到 0.25 网格`（原文件另存 `build-world.json.before-grid.json`；**上一轮的备份我先另存成 `build-world.json.before-grid-xz.json`**，免得被覆盖；`build-world.json.before-grid-deploy-20261009.json` 仍是最初那份）。
+- **核验（正式站）**：拉存档复核——**189 件**、水平离格 **0**、结构件高度离格 **0**、摆件高度非整格 9 件（有意保留）；三个拱门现在是 `y=0 / y=-4.5 / y=-4.5`（那两根**同高了**）。`build-parts-live.cjs` 真发两次写入：结构件 (41.11, 0.105, 41.06) → 存档 **(41, 0, 41)**；摆件 `mug` y=1.42 → **原样 1.42**。
+- **回归**：全量 **383 项**单测（`build-grid-invariant` 覆盖结构件/摆件两类 + 迁移里"两个拱门对齐到同一高度、摆件与 fixture 的 y 不动"）+ 真浏览器 `build-surface`/`build-gap`/`build-top`/`build-experience`/`editable-scene` 全过。**代价（有意）**：结构件放在"顶面不在格上"的支撑上时会落格，最多差半格 0.125。
+
+
+
+## 2026-10-09 「部件整格」改成不变量（服务端闸门＋客户端产出即整格＋老存档迁移），并删掉「对齐网格」按钮
 
 用户：「将来确保不会有步长不统一的部件 所以就不需要对齐网格的按钮 你理解吗 根源修复 而不是打补丁」。
 
+- **三层保证**：① `build-store.mjs` 的 `cleanPart()` 把 x/z 落格——**唯一的写入闸门**，`add`/`move`/`moveMany`/`duplicate` 与撤销重放全走它，所以旧版客户端照发毫米值也污染不了世界；② 客户端每条产出路径都过 `src/buildGrid.ts` 的 `snapHorizontal`（放置候选件的出口、`fitToSurface`/`fitToPlane`、`gapPlacement`、旋转时反推的 x/z、整组移动的同伴、Shift+D 复制落点——最后一条顺手删掉了"保留原件小数偏置"的老逻辑）；③ `createBuildStore()` 启动时把历史离格件整盘回格，原文件另存 `.before-grid.json`、journal 记件数、幂等。（**同日晚些时候又补了高度规则**：结构件三轴落格、家具/摆件的 y 保留毫米——见上一条，两件拱门"对不齐"就是这么修的。）
 - **三层保证**：① `build-store.mjs` 的 `cleanPart()` 把 x/z 落格——**唯一的写入闸门**，`add`/`move`/`moveMany`/`duplicate` 与撤销重放全走它，所以旧版客户端照发毫米值也污染不了世界；② 客户端每条产出路径都过 `src/buildGrid.ts` 的 `snapHorizontal`（放置候选件的出口、`fitToSurface`/`fitToPlane`、`gapPlacement`、旋转时反推的 x/z、整组移动的同伴、Shift+D 复制落点——最后一条顺手删掉了"保留原件小数偏置"的老逻辑）；③ `createBuildStore()` 启动时把历史离格件整盘回格，原文件另存 `.before-grid.json`、journal 记件数、幂等。**y 一个字节都不取整**（接触高度是毫米级），y 的步长仍由 `snapMove` 保证整格。
 - **代价（有意，别再改回去）**：贴面/抓底边不再毫米级精确，最多差半格 **0.125**。`test/browser/build-surface.cjs` 的断言跟着从 `gap<.001` 放宽到 `<.126`，并新增"落点必须在网格上"；"四条边四个不同位置"放宽成"至少两个不同"（吸到网格后可能有两三个落在同一格点）。
 - **产物（前端）**：`npm run build`（`public-parity` 90 个文件一致）→ `node Build/deploy-web.cjs --upload --verify`；正式站入口现为 **`assets/main-8JoPwKyd.js`**（851,302 字节，公网 200 且哈希一致），线上 bundle 里已经查不到「对齐网格」。

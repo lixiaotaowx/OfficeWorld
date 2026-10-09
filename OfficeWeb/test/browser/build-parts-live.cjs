@@ -219,15 +219,22 @@ async function confirmLook(page){
     await page.screenshot({path:'../Build/teleport-live-build.png'});
 
     // ④ 服务端闸门（在正式站真发一次离格坐标）：存下来必须是整格。
-    //    「部件永远整格」这条不变量靠 `build-store.mjs` 的 `cleanPart()` 兜底，所以旧版客户端就算照发
-    //    毫米值也污染不了世界（用户 2026-10-09：「确保不会有步长不统一的部件 … 根源修复」）。
+    //    「整格」这条不变量靠 `build-store.mjs` 的 `cleanPart()` 兜底，所以旧版客户端就算照发毫米值也
+    //    污染不了世界（用户 2026-10-09：「确保不会有步长不统一的部件 … 根源修复」；随后又报「我有两个
+    //    拱门 差距一直都是一个小缝 对不齐」→ **结构件连高度也落格**，两件才能靠整格步长对齐）。
+    const onGrid=v=>Math.abs(v*4-Math.round(v*4))<1e-9;
     const offGrid={action:'add',part:{kind:'block',rotation:0,x:PLOT.x+1.11,y:.105,z:PLOT.z+1.06,color:'#f3dfc5'}};
     const stored=(await build.post(offGrid)).changed;
-    const onGrid=v=>Math.abs(v*4-Math.round(v*4))<1e-9;
-    console.log('离格写入 '+JSON.stringify([PLOT.x+1.11,PLOT.z+1.06])+' → 正式存档 '+JSON.stringify([stored.x,stored.z]));
-    assert.ok(stored&&onGrid(stored.x)&&onGrid(stored.z),'正式后端要把离格的 x/z 落回 0.25 网格');
-    assert.equal(stored.y,.105,'y 是接触高度，原样保留');
+    console.log('结构件离格写入 '+JSON.stringify([PLOT.x+1.11,.105,PLOT.z+1.06])+' → 正式存档 '+JSON.stringify([stored.x,stored.y,stored.z]));
+    assert.ok(stored&&onGrid(stored.x)&&onGrid(stored.y)&&onGrid(stored.z),'正式后端要把结构件的 x/y/z 都落回 0.25 网格');
     await build.post({action:'remove',id:stored.id,version:stored.version});
+    await sleep(400);
+    // 摆件（家具类）的高度必须**原样保留**：放在 1.42m 桌面上的东西不能被拽到 1.5。
+    const prop=await build.post({action:'add',part:{kind:'mug',rotation:0,x:PLOT.x+1.11,y:1.42,z:PLOT.z+1.06,color:'#f3dfc5'}});
+    console.log('摆件写入 y=1.42 → 正式存档 y='+prop.changed.y);
+    assert.ok(onGrid(prop.changed.x)&&onGrid(prop.changed.z),'摆件水平两轴也要落格');
+    assert.equal(prop.changed.y,1.42,'摆件高度保持精确接触');
+    await build.post({action:'remove',id:prop.changed.id,version:prop.changed.version});
     await sleep(400);
 
     // ⑤ 收尾：把自己那块地上的件删干净，别留在正式世界里。

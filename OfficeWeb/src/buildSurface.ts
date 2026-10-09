@@ -1,4 +1,4 @@
-import { gridSnap, snapHorizontal } from './buildGrid';
+import { gridSnap, snapPart } from './buildGrid';
 import * as THREE from 'three';
 import { createPart } from './buildMeshes';
 import type { BuildAnchor, BuildPart } from './buildTypes';
@@ -39,9 +39,9 @@ export function fitToSurface(part: BuildPart, hit: THREE.Intersection, manualHei
   const edge = normal[axis] > 0 ? bounds.min[axis] : bounds.max[axis];
   next[axis] = millimetres(hit.point[axis] - edge);
   const target = targetBounds || new THREE.Box3().setFromObject(hit.object);
-  return snapHorizontal(snapAnchors(next,bounds,hit.point,axis,target,anchor,manualHeight));
+  return snapPart(snapAnchors(next,bounds,hit.point,axis,target,anchor,manualHeight));
 }
 
 export function fitToPlane(part: BuildPart, point: THREE.Vector3, anchor: BuildAnchor = 'auto') {
-  return snapHorizontal(snapAnchors(part,localBounds(part),point,'y',undefined,anchor,part.y));
+  return snapPart(snapAnchors(part,localBounds(part),point,'y',undefined,anchor,part.y));
 }

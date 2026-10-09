@@ -807,4 +807,4 @@ Do not call the project complete while required items remain failed, unimplement
 
 - [x] 2026-10-09 移动模式新增「⌗ 对齐网格」：选中的（可 Shift 多选）离格部件一键回到 0.25 网格，只动水平两轴、y 保持毫米接触精度，逐件进历史可 Ctrl+Z 逆序还原；不做老存档自动迁移。本地与正式站（`build-align-grid.cjs` / `build-align-grid-live.cjs`）均 PASS，正式站入口 `assets/main-DKeDnhq7.js`。**同日作废**：按用户要求改成根源修复，按钮与相关代码/用例已删除（见下条）。
 
-- [x] 2026-10-09 「部件永远整格」升级成不变量并删除「对齐网格」按钮：服务端 `cleanPart()` 强制水平两轴落格（唯一写入闸门）、客户端每条产出路径过 `snapHorizontal`（放置/贴面/顶面/搭桥/旋转/整组同伴/复制落点）、启动时一次性迁移把历史 58 件离格件回格并留 `.before-grid.json`；y 仍保留毫米接触精度。全量 383 项单测 + 7 条浏览器回归 + 正式站 `build-parts-live.cjs`（真发离格坐标→存档 41/41）全 PASS；前端 `assets/main-8JoPwKyd.js`，后端 `build-store.mjs` 已随重启上线。**代价**：贴面/抓底边最多差半格 0.125。
+- [x] 2026-10-09 「部件整格」升级成不变量并删除「对齐网格」按钮：服务端 `cleanPart()` 强制水平两轴落格（唯一写入闸门）、客户端每条产出路径过 `snapPart`（放置/贴面/顶面/搭桥/旋转/整组同伴/复制落点）、启动时一次性迁移把历史 58 件离格件回格并留 `.before-grid.json`；随后按用户报的「两个拱门对不齐」补上**结构件（建筑/玩法）三轴落格**（家具/摆件与背景 fixture 的 y 保留精确接触）。全量 383 项单测 + 7 条浏览器回归 + 正式站 `build-parts-live.cjs`（结构件写入落格、摆件 y 原样）全 PASS；前端 `assets/main-9ZUaF2Oo.js`，后端两次 `build-store.mjs` 已随重启上线；正式世界 189 件、离格 0，两根拱门同高 −4.5。**代价**：贴面/抓底边最多差半格 0.125。

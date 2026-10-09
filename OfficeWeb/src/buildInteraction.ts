@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createPart } from './buildMeshes';
 import { catalog, placementError, type BuildPart, type BuildSettings } from './buildTypes';
 import { setBuildClimbs, setBuildSolids, supportHeight, type Climb, type Solid } from './buildNavigation';
-import { snapHorizontal } from './buildGrid';
+import { snapPart } from './buildGrid';
 import { isTeleport, landingHeight, teleportTarget } from './buildTeleport';
 import { fixtureSeat } from './buildFixtures';
 import { setBuildSeats, type SittingSpot } from './sittingSpots';
@@ -292,7 +292,7 @@ export class BuildInteraction {
     // **唯一的放置出口**：贴面（接触轴原来是毫米级）、顶面辅助吸附、两侧搭桥、地板续铺算完之后
     // 一律把水平两轴落回 0.25 网格——预览与存档因此永远一致（用户 2026-10-09：「确保不会有步长
     // 不统一的部件…根源修复，而不是打补丁」）。y 不动：接触高度是毫米级的。
-    part = snapHorizontal(part);
+    part = snapPart(part);
     const key = `${part.kind}:${part.color}:${part.pitch || 0}:${part.roll || 0}`;
     if (key !== this.ghostKey) {
       this.ghost?.removeFromParent();

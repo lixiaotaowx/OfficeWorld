@@ -110,9 +110,13 @@ const assert=require('node:assert/strict');
         const target=new THREE.Box3(new THREE.Vector3(9,1,-2),new THREE.Vector3(10,1.25,2));
         const floor=fitToSurface(part,hit,0,anchor,target);
         if(floor.y!==1)throw Error('adjacent floors not level');
-        // Exact support heights remain exact even for deliberately offset furniture.
+        // 结构件（地板是「建筑」）的高度一律落格：支撑面在 1.037 时也放到 1.0，最多差半格。
+        // 用户 2026-10-09：「我有两个拱门 差距一直都是一个小缝 对不齐」——只有高度落格，两件才能对齐。
         hit.point.y=1.037;hit.face.normal.set(0,1,0);
-        if(fitToSurface(part,hit,0,anchor,target).y!==1.037)throw Error('surface gap introduced');
+        if(fitToSurface(part,hit,0,anchor,target).y!==1)throw Error('structural height must land on the grid');
+        // 家具/摆件仍要精确贴合支撑面（放在 1.037 桌面上的相框不能被拽到整格上）。
+        const prop={id:'prop',version:1,kind:'photo-frame',color:'#cabddd',x:10,y:0,z:0,rotation:0};
+        if(fitToSurface(prop,hit,0,anchor,target).y!==1.037)throw Error('surface gap introduced for props');
       }
       return result.length;
     });
