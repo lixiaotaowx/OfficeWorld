@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createPart } from './buildMeshes';
 import { catalog, placementError, type BuildPart, type BuildSettings } from './buildTypes';
 import { setBuildClimbs, setBuildSolids, supportHeight, type Climb, type Solid } from './buildNavigation';
+import { alignToGrid } from './buildMoveSnap';
 import { isTeleport, landingHeight, teleportTarget } from './buildTeleport';
 import { fixtureSeat } from './buildFixtures';
 import { setBuildSeats, type SittingSpot } from './sittingSpots';
@@ -169,6 +170,36 @@ export class BuildInteraction {
   sampleHovered() {
     const part=this.hitPart(this.hits()[0]);
     if(part) {this.cancelMove();this.options.sample?.(part);}
+  }
+  /**
+   * 把选中的部件对齐到 0.25 网格（移动模式工具栏的「对齐网格」）。
+   *
+   * 老存档里有些部件是离格的（早期贴面/双柱桥接留下的毫米偏置，正式世界 179 件里有 63 件），
+   * 拖动现在会把它们拉回网格，但一件一件拖太麻烦——这里一次把**选中的整组**逐件对齐。
+   * 和删除/复制同一套写法：先记 id/version 再逐件 `move`（服务端没有批量移动），每件都进历史，
+   * **Ctrl+Z 按逆序还原**。只动水平两轴：y 是接触高度，强行取整会让叠着的东西浮起/陷进去。
+   */
+  async alignSelected() {
+    const ids=this.handle.selectedIds;
+    if(!ids.length){this.hint('先点选要对齐的部件（Shift 点击可多选）');return false;}
+    const plan=ids.map(id=>({id,version:this.parts.find(part=>part.id===id)?.version ?? 0}));
+    this.saving=true;
+    let aligned=0;
+    try {
+      for(const step of plan){
+        const part=this.parts.find(row=>row.id===step.id);
+        if(!part)continue;
+        const next=alignToGrid(part);
+        if(next.x===part.x&&next.z===part.z)continue;
+        const result=await this.options.change({action:'move',id:step.id,version:step.version,part:next}) as
+          {parts:BuildPart[]} | false;
+        if(!result){continue;}
+        aligned++;
+        this.sync(result.parts);
+      }
+      this.hint(aligned?`已把 ${aligned} 件对齐到 0.25 网格 · Ctrl+Z 撤销`:'这些部件本来就在网格上');
+      return true;
+    } finally {this.saving=false;}
   }
   focusHovered() {
     const part=this.hitPart(this.hits()[0]);

@@ -109,6 +109,7 @@ export function useBuildEditor(accountId: string) {
   const ui = <>
     <BuildToolbar settings={settings} onChange={change} ready={store.ready} busy={store.busy}
       message={store.message} hint={hint} tip={tip} sound={sound} onSound={() => setSound(!sound)}
+      onAlign={() => void interaction.current?.alignSelected()}
       onUndo={() => void store.undo()} undoCount={store.undoCount}
       onRedo={() => void store.redo()} redoCount={store.redoCount} />
     {chest && <BuildChest key={chest} id={chest} accountId={accountId} onClose={() => setChest('')} />}

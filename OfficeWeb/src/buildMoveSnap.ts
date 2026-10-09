@@ -39,3 +39,12 @@ export function snapMove(start:BuildPart,delta:number,axis:Axis,localBoxes:THREE
   if(best!==undefined)part[axis]=place(best);
   return {part,aligned:best!==undefined,step};
 }
+
+/**
+ * 把一件已经离格的部件（老存档里贴面/桥接留下的毫米偏置）对齐到 0.25 网格。
+ * 只动**水平两轴**：y 是接触高度（叠在桌面/方块顶上），强行取整会让它浮起或陷进去。
+ * 由移动模式工具栏的「对齐网格」按钮逐件调用（可多选）。
+ */
+export function alignToGrid(part:BuildPart) {
+  return {...part,x:mm(gridSnap(part.x)),z:mm(gridSnap(part.z))};
+}

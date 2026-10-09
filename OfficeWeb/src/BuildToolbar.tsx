@@ -11,6 +11,8 @@ type Props = {
   tip?: string;
   sound: boolean; onSound: () => void; onUndo: () => void; undoCount: number;
   onRedo?: () => void; redoCount?: number;
+  /** 把**选中的**部件对齐到 0.25 网格（老存档里离格的部件一键收拾；只在移动模式可用）。 */
+  onAlign?: () => void;
 };
 export function BuildToolbar(props: Props) {
   const [category, setCategory] = useState('建筑');
@@ -100,6 +102,8 @@ export function BuildToolbar(props: Props) {
         接点 {anchorLabels[settings.anchor || 'auto']}</button>
       <button title="Ctrl+Z：撤销自己的上一步" disabled={!props.undoCount || props.busy || !props.ready} onClick={props.onUndo}>↶ 撤销</button>
       <button title="Ctrl+Shift+Z：重做" disabled={!props.redoCount || props.busy || !props.ready} onClick={props.onRedo}>↷ 重做</button>
+      {props.onAlign && <button title="把选中的部件对齐到 0.25 网格（老存档里的离格部件；只动水平位置，高度不动）"
+        disabled={settings.mode!=='move' || props.busy || !props.ready} onClick={props.onAlign}>⌗ 对齐网格</button>}
       <button aria-label="建造音效" aria-pressed={props.sound} onClick={props.onSound}>{props.sound ? '♪' : '♩'}</button>
       <span className="build-live" title={props.message}><i className={props.ready ? '' : 'offline'} />{props.busy ? '正在保存…' : props.message}</span>
     </div>

@@ -804,3 +804,5 @@ Do not call the project complete while required items remain failed, unimplement
 - [ ] 2026-09-30 正式页面宝箱额外回归：chest-people.cjs 的自动滚动瞬间捕获断言超时（第33行）；模型与箭头无关，需复查是否错过短暂滚动或受用户操作取消。
 
 - [x] 2026-09-30 观看头像/来电绿色提示改为轻薄无实边柔光，客户端0.1.36已发布并核验整包；用户更新客户端后生效。
+
+- [x] 2026-10-09 移动模式新增「⌗ 对齐网格」：选中的（可 Shift 多选）离格部件一键回到 0.25 网格，只动水平两轴、y 保持毫米接触精度，逐件进历史可 Ctrl+Z 逆序还原；不做老存档自动迁移。本地与正式站（`build-align-grid.cjs` / `build-align-grid-live.cjs`）均 PASS，正式站入口 `assets/main-DKeDnhq7.js`。
