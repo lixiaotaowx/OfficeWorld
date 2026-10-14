@@ -1,3 +1,4 @@
+import type { DockActionKind, DockMeetingCreate, DockVideoChunk } from './dock-meeting-contract';
 export interface DesktopDisplay {
   id: string;
   name: string;
@@ -16,7 +17,8 @@ export interface UpdateProgress {
 
 /** 头像条的点击：看对方屏幕 / 把我的屏幕给他 / 语音通话。 */
 export interface DockCommand {
-  kind: 'watch' | 'share' | 'call';
+  kind: DockActionKind;
+  meeting?: DockMeetingCreate;
   personId: string;
 }
 
@@ -59,7 +61,7 @@ declare global {
        * （用户 2026-09-21）。
        */
       dockGreet?(payload: { id?: string; name?: string; appearance?: LookAppearance;
-        mode?: 'peek' | 'call'; requestId?: string; kind?: 'screen' | 'voice';
+        mode?: 'peek' | 'call'; requestId?: string; kind?: 'screen' | 'voice' | 'meeting';
         offer?: boolean }): Promise<boolean>;
       /**
        * Seconds since the last mouse/keyboard input **anywhere in Windows**, plus
@@ -91,6 +93,8 @@ declare global {
         clear(): Promise<boolean>;
       };
       /** 任务栏头像条：把在线状态推给主进程（由它转发给那个小窗）。 */
+      dockVideo?(payload: DockVideoChunk): Promise<boolean>;
+      onDockVideoWant?(callback: (id: string) => void): () => void;
       dockState?(payload: unknown): Promise<boolean>;
       /** 把某个人的最近一帧交给头像条。 */
       dockPreview?(payload: { id: string; image: string }): Promise<boolean>;
@@ -135,11 +139,13 @@ declare global {
      * 没有文件系统（见 OfficeDesktop/desktop-dock-preload.cjs）。
      */
     officeDock?: {
+      videoWant?(id: string): Promise<boolean>;
+      onVideo?(callback: (payload: DockVideoChunk) => void): () => void;
       state?(): Promise<unknown>;
       onState?(callback: (state: unknown) => void): () => void;
       requestPreview?(personId: string): Promise<boolean>;
       onPreview?(callback: (payload: { id: string; image: string }) => void): () => void;
-      action?(kind: DockCommand['kind'], personId: string): Promise<boolean>;
+      action?(kind: DockCommand['kind'], personId: string, meeting?: DockMeetingCreate): Promise<boolean>;
       /** 接听 / 拒绝某一通来电（用户 2026-09-21）。老客户端没有这个方法，按钮就不显示。 */
       answer?(requestId: string, accept: boolean): Promise<boolean>;
       drag?(dx: number, dy: number): Promise<unknown>;
@@ -150,10 +156,11 @@ declare global {
        * 用户 2026-09-21）。
        */
       layout?(input: { expanded: boolean; stage?: boolean; stageMode?: 'peek' | 'call' | '';
-        stagePx?: number; width: number }): Promise<unknown>;
+        stagePx?: number; cardPx?: number; width: number;
+        hitRegions?: { x: number; y: number; width: number; height: number }[] }): Promise<unknown>;
       /** 有人在看我的头像 / 有人打电话过来：把那个人的角色拉出来（主窗口 → 主进程 → 这里）。 */
       onGreet?(callback: (payload: { id: string; name?: string; appearance?: LookAppearance;
-        mode?: 'peek' | 'call'; requestId?: string; kind?: 'screen' | 'voice';
+        mode?: 'peek' | 'call'; requestId?: string; kind?: 'screen' | 'voice' | 'meeting';
         offer?: boolean }) => void): () => void;
       onVisibility?(callback: (payload: { visible: boolean; reason?: string }) => void): () => void;
       /**

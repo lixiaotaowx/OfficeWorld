@@ -80,6 +80,12 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
       kind: payload?.kind === 'voice' || payload?.kind === 'screen' ? payload.kind : '',
       offer: payload?.offer === true }),
   /** 任务栏头像条：把在线状态推给主进程（它转发给小窗）。 */
+  dockVideo: payload => ipcRenderer.invoke('office:dock-video', payload),
+  onDockVideoWant(callback) {
+    const listener = (_event, id) => callback(id);
+    ipcRenderer.on('office:dock-video-want', listener);
+    return () => ipcRenderer.removeListener('office:dock-video-want', listener);
+  },
   dockState: payload => ipcRenderer.invoke('office:dock-publish', payload),  /** 把某个人的最近一帧交给头像条。 */
   dockPreview: payload => ipcRenderer.invoke('office:dock-preview', payload),
   /** 头像条上点了按钮（看屏幕/分享我的/语音）。 */

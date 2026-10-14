@@ -6,9 +6,11 @@ import { partQuaternion, angleKey, partOrientation } from './buildPartPose';
 import { catalog, placementError } from './buildTypes';
 import type { BuildPart, BuildSettings } from './buildTypes';
 import { collisionBoxes } from './buildArch';
-import { copyDropPoint, keepsOriginalSpot, type DropPlane, type DropPoint } from './buildCopyDrop';
+import { BuildModalTransform } from './BuildModalTransform';
 
-import { applyGizmoLook, styleGizmo, type GizmoKind } from './buildGizmoStyle';
+import { createMoveGizmos } from './buildMoveGizmos';
+import { groupPose, sameMovePart } from './buildGroupPose';
+import { updateMovePreview, createCompanion, moveBounds, renderMainPreview } from './buildMovePreview';
 import { BuildPlacementGuide } from './buildPlacementGuide';
 import { snapMove } from './buildMoveSnap';
 import { gridSnap, isStructural, snapPart } from './buildGrid';
@@ -42,7 +44,9 @@ export class BuildMoveHandle {
   private localBoxes:THREE.Box3[]=[];
   private targets:THREE.Box3[]=[];
   private guide:BuildPlacementGuide;
-  private follow?:{sources:BuildPart[];plane:DropPlane;anchor:DropPoint;since:DropPoint};
+  private modal:BuildModalTransform;
+  private modalDrafts=new Map<string,BuildPart>();
+  private copied=false;
   /** 服务端最新的一份部件表与它们的场景节点：重装整组时按 id 取。 */
   private parts:BuildPart[]=[];
   private objects=new Map<string,THREE.Group>();
@@ -51,7 +55,6 @@ export class BuildMoveHandle {
   private frozen=false;
   /** 副本已存好、正在收尾：这一段里服务端还会重放一次"旧版本"，别把选中清掉。 */
   private settling=false;
-  private ray=new THREE.Raycaster();
   private companions:{part:BuildPart;object:THREE.Group;preview:THREE.Group;outline:THREE.Box3Helper}[]=[];
   private outline=new THREE.Box3Helper(new THREE.Box3(),0xffd280);
   /** 多选整体变换的状态：绕 `groupPivot` 转 `groupRotate`×90°，翻面按件原地，缩放绕中心摊开。 */
@@ -70,58 +73,69 @@ export class BuildMoveHandle {
     // 视觉网格一律不吃射线——否则选中后它们会挡住"点空白/点别处"，改选就点不动了。
     this.root.traverse(object=>{object.raycast=()=>{};});
     this.pivot.name='build-move-pivot';
-    this.translate=new TransformControls(camera);
-    this.rotate=new TransformControls(camera);
-    this.resize=new TransformControls(camera);
-    const controls:[GizmoKind,TransformControls][]=[
-      ['translate',this.translate],['rotate',this.rotate],['scale',this.resize]];
-    for(const [kind,control] of controls) {
-      // Events are routed here so orbit/selection never start on a handle drag.
-      control.domElement=element;
-      control.setSpace('world');
-      control.setSize(kind==='translate'? .7:kind==='scale'?1.15:.9);
-      styleGizmo(control,kind);
-      const helper=control.getHelper();
-      const update=helper.updateMatrixWorld.bind(helper);
-      helper.updateMatrixWorld=(force?:boolean)=>{
-        update(force);
-        // Single axes only: hidden plane slabs, free-rotation ball and the drag
-        // helper lines stay out of the way. The translate centre diamond is kept
-        // as the styled pivot hub.
-        helper.traverse(o=>{
-          if(kind==='translate' && o.name==='XYZ')return;
-          if(['XY','YZ','XZ','XYZ','E','XYZE','START','END','DELTA','AXIS'].includes(o.name))o.visible=false;
-        });
-        applyGizmoLook(control);
-      };
-      helper.traverse(o=>{
-        const material=(o as THREE.Mesh).material;
-        // Handles draw over their own part: depthTest off keeps them grabbable
-        // even when the selected geometry would swallow them.
-        if(material)for(const m of Array.isArray(material)?material:[material]){m.depthTest=false;m.depthWrite=false;}
-      });
-      this.root.add(helper);
-    }
-    this.translate.setMode('translate');this.translate.setTranslationSnap(null);
-    this.rotate.setMode('rotate');this.rotate.setRotationSnap(Math.PI/2);
-    this.resize.setMode('scale');this.resize.setSpace('local');
+    const gizmos=createMoveGizmos(camera,element,this.root);
+    this.translate=gizmos.translate;this.rotate=gizmos.rotate;this.resize=gizmos.resize;
+    this.modal=new BuildModalTransform(camera,element,{
+      selection:()=>this.part?[this.part,...this.companions.map(row=>row.part)]:[],
+      pivot:()=>this.pivot.position.clone(),
+      preview:parts=>{
+        if(!this.part)return;
+        this.modalDrafts=new Map(parts.map(p=>[p.id,p]));this.draft={...parts[0]};
+        this.draw();this.pose();
+        this.root.userData.copyDrop=parts.some(p=>{const from=this.has(p.id);
+          return from && Math.hypot(p.x-from.x,p.y-from.y,p.z-from.z)>.124;});
+      },
+      commit:()=>{this.frozen=this.copied;void this.save();this.busy();},
+      rollback:()=>{this.modalDrafts.clear();this.copied=false;this.frozen=false;},
+      lock:locked=>this.options.lock?.(locked),hint:text=>this.options.hint(text),
+      state:state=>{
+        this.root.userData.modal=state;
+        if(state)this.copied=Boolean(state.copied);
+        this.busy();
+      },
+    });
     this.outline.raycast=()=>{};this.world.add(this.outline);this.outline.visible=false;
     world.add(this.root,this.pivot);this.root.visible=false;
     element.addEventListener('pointerdown',this.down,true);
-    element.addEventListener('pointermove',this.move,true);
+    window.addEventListener('pointermove',this.move,true);
     element.addEventListener('pointerup',this.up,true);
     element.addEventListener('pointercancel',this.cancel,true);
     window.addEventListener('blur',this.cancel);
+    element.addEventListener('contextmenu',this.contextMenu);
   }
   get selectedPart(){return this.part ? {...this.part} : undefined;}
+  get anchor(){return this.pivot.position;}
   get selected(){return Boolean(this.part);}
   /** 当前选中的整组 id（主选中在前）；没选中时是空数组。 */
   get selectedIds(){return this.part ? [this.part.id,...this.companions.map(row=>row.part.id)] : [];}
-  get working(){return Boolean(this.active)||this.pending;}
+  get working(){return Boolean(this.active)||this.pending||this.modal.active;}
   /** Shift+D 已建好副本，正等鼠标把它放到想要的位置。 */
-  get following(){return Boolean(this.follow);}
+  get following(){return this.modal.copied;}
   /** 副本刚放下：紧接着的这一次点击该保留整组，而不是改选成单件。 */
   get justDropped(){return this.frozen;}
+  shortcut(event:Pick<KeyboardEvent,'key'|'shiftKey'|'repeat'|'altKey'>) {
+    if(this.modal.active)return this.modal.key(event);
+    if(this.active){if(event.key==='Escape')this.cancel();return true;}
+    const key=event.key.toLowerCase();
+    if(this.pending)return ['g','s','r','2','a','escape'].includes(key);
+    if(key==='a'){
+      if(!event.repeat){if(event.altKey)this.clear();else this.selectRows(this.parts
+        .filter(p=>this.objects.has(p.id)).map(part=>({part,object:this.objects.get(part.id)!})));}
+      return true;
+    }
+    if(['g','s','r','2'].includes(key)){
+      if(!event.repeat && !this.modal.begin(key==='g'?'translate':key==='s'?'scale':'rotate'))
+        this.options.hint('先点选部件；Shift 点击可多选');
+      return true;
+    }
+    return false;
+  }
+  cancelTransform(){return this.modal.cancel() || (Boolean(this.active) && (this.cancel(),true));}
+  get selectionBounds(){
+    if(!this.preview)return undefined;
+    const bounds=moveBounds(this.preview,this.companions);
+    return bounds;
+  }
   select(part:BuildPart,object:THREE.Group,additive=false,keep=false) {
     if(this.pending)return;
     const previous=this.part&&this.original?{part:this.part,object:this.original}:undefined;
@@ -144,11 +158,7 @@ export class BuildMoveHandle {
     this.clear();if(!rows.length)return;
     let {part,object}=rows[0];this.part={...part};this.draft={...part};this.original=object;
     for(const row of rows.slice(1)){
-      const preview=createPart(row.part);delete preview.userData.buildId;
-      preview.name='build-multi-preview';preview.userData.preview=true;
-      preview.traverse(o=>{o.raycast=()=>{};});row.object.visible=false;
-      const outline=new THREE.Box3Helper(new THREE.Box3(),0xffd280);outline.raycast=()=>{};
-      this.world.add(preview,outline);this.companions.push({...row,preview,outline});
+      this.companions.push(createCompanion(row,this.world));
     }
     this.original.visible=false;this.angles=this.angleKey(part);
     this.draw();this.pose();
@@ -162,48 +172,8 @@ export class BuildMoveHandle {
       : '已选 1 件 · Shift 点击增减选择 · Delete 删除 · 拖动时 Shift 关闭贴面吸附');
   }
   private angleKey(p:{rotation:number;pitch?:number;roll?:number}){return `${p.rotation}:${p.pitch || 0}:${p.roll || 0}`;}
-  /**
-   * **多选的整体变换**（Blender 的 median-pivot 语义）：绕"这一组的中心"转 yaw、按同一组因子摊开缩放；
-   * 每件自身的朝向/尺寸也跟着改。用户 2026-10-09：「请移动工具下在多选之后也可以旋转和缩放」。
-   *
-   * 几个刻意的取舍：
-   * - **yaw 才转位置**：绕组中心转 90° 是刚性变换，位置仍然是 0.25 的整数倍（中心取在格点上），
-   *   高度也不变，所以"整格"那条不变量不受影响；把位置绕水平轴翻会改变高度、还可能是半格，
-   *   所以 **pitch/roll（翻面）按件原地应用**，只改朝向、不动位置。
-   * - **缩放绕中心摊开**：整组放大时各件之间的距离一起放大（否则只会各自长大、挤在一起），
-   *   每件自身的尺寸按同一个因子走并按 0.25 取整；最后一律过 `snapPart()` 收口。
-   */
   private posed(start:BuildPart):BuildPart {
-    const turn=this.groupRotate*Math.PI/2;
-    const cos=Math.cos(turn),sin=Math.sin(turn);
-    const dx=start.x-this.groupPivot.x,dz=start.z-this.groupPivot.z;
-    const scaled=this.groupScale.some(value=>value!==1);
-    let x=this.groupPivot.x+dx*cos+dz*sin;
-    let z=this.groupPivot.z-dx*sin+dz*cos;
-    let y=start.y;
-    if(scaled) {
-      x=this.groupPivot.x+(x-this.groupPivot.x)*this.groupScale[0];
-      y=this.groupPivot.y+(start.y-this.groupPivot.y)*this.groupScale[1];
-      z=this.groupPivot.z+(z-this.groupPivot.z)*this.groupScale[2];
-    }
-    const next:BuildPart={...start,x,y,z,
-      rotation:(((start.rotation+this.groupRotate)%4)+4)%4,
-      pitch:start.pitch?(start.pitch+this.groupTilt.pitch)%4:undefined,
-      roll:start.roll?(start.roll+this.groupTilt.roll)%4:undefined};
-    if(this.groupTilt.pitch)next.pitch=(((next.pitch||0)+this.groupTilt.pitch)%4+4)%4;
-    if(this.groupTilt.roll)next.roll=(((next.roll||0)+this.groupTilt.roll)%4+4)%4;
-    if(scaled) {
-      const base=fixtureFor(start)?.dimensions || catalog.find(item=>item.id===start.kind)!.dimensions;
-      const scale:[number,number,number]=[...(start.scale || [1,1,1])];
-      for(const index of [0,1,2]) {
-        const factor=this.groupScale[index];
-        if(factor===1)continue;
-        // 和单件缩放同一条规则：乘完之后仍按 0.25 格取整（缩放尺寸必须整格）。
-        scale[index]=Math.max(.25,Math.round(base[index]*scale[index]*factor*4)/4)/base[index];
-      }
-      next.scale=scale;
-    }
-    return snapPart(next);
+    return groupPose(start,this.groupPivot,this.groupRotate,this.groupTilt,this.groupScale);
   }
   /** 这一组当前的整体变换是否生效（平移不算：平移由主选中的磁吸结果反推给同伴）。 */
   private get groupTransforming(){
@@ -216,10 +186,7 @@ export class BuildMoveHandle {
   }
   /** 组的中心：所有选中件预览的包围盒中心，**取到格点上**（旋转后位置才仍然是整数格）。 */
   private groupCenter() {
-    const bounds=new THREE.Box3();
-    if(this.preview)bounds.setFromObject(this.preview);
-    else bounds.set(new THREE.Vector3(),new THREE.Vector3());
-    for(const row of this.companions)bounds.union(new THREE.Box3().setFromObject(row.preview));
+    const bounds=this.preview?moveBounds(this.preview,this.companions):new THREE.Box3(new THREE.Vector3(),new THREE.Vector3());
     const center=bounds.getCenter(new THREE.Vector3());
     return new THREE.Vector3(gridSnap(center.x),gridSnap(center.y),gridSnap(center.z));
   }
@@ -286,79 +253,22 @@ export class BuildMoveHandle {
     try{this.select(copies[0],this.objects.get(copies[0].id)!,true,true);}
     catch(error){this.options.hint('复制后重选失败：'+String(error));}
   }
-  /**
-   * 开始跟随鼠标摆放刚复制出来的副本：移动鼠标换位置，单击确认。
-   * `copies` 是**副本**（它们的 id 与原件相同，只是新版本）。
-   */
+  /** Duplicate starts the same modal operator as G; cancellation keeps copies. */
   startFollow(copies?:BuildPart[]) {
-    if(!this.part||!this.preview)return false;
-    const sources=copies?.length?copies:[this.part];
-    if(sources.some(source=>!this.parts.some(p=>p.id===source.id)))return false;
-    const anchor={x:this.part.x,y:this.part.y,z:this.part.z};
-    this.follow={sources,plane:'ground',anchor,since:anchor};
-    this.frozen=false;
-    this.options.hint(`已复制 ${sources.length} 件 · 移动鼠标摆位置 · 单击放下 · Esc 取消`);
-    this.busy();
-    return true;
+    if(!this.part || copies?.some(p=>!this.parts.some(row=>row.id===p.id)))return false;
+    this.copied=true;this.frozen=false;return this.modal.begin('translate',true);
   }
-  /**
-   * 放下副本：冻结跟随（`frozen`）并把它存到服务端。
-   *
-   * 一次点击会先后触发 `pointerup`（这里放一次）和随后的 `click`，两次都带着同一个
-   * 鼠标位置；不冻住的话第二次会把副本挪回鼠标下、把刚落好的位置覆盖掉。
-   * 位置就是最后一帧的 `draft`：没有挪动时它等于原件位置（原位放下，Blender 同样）。
-   */
-  commitDuplicate() {
-    if(!this.follow||this.frozen)return false;
-    this.frozen=true;
-    this.busy();
-    void this.save();
-    return true;
-  }
-  private followMove(pointer:PointerEvent) {
-    const follow=this.follow;if(!follow||this.frozen||!this.part||!this.draft)return;
-    const rect=this.element.getBoundingClientRect();
-    this.ray.setFromCamera(new THREE.Vector2((pointer.clientX-rect.left)/rect.width*2-1,
-      -(pointer.clientY-rect.top)/rect.height*2+1),this.camera);
-    const at=copyDropPoint(follow.anchor,this.ray.ray,follow.plane);
-    if(!at)return;
-    const x=follow.since.x+(at.x-follow.anchor.x);
-    const z=follow.since.z+(at.z-follow.anchor.z);
-    if(x===this.draft.x&&z===this.draft.z)return;
-    this.draft={...this.draft,x,z};
-    this.draw();this.pose();
-    // `copyDrop` 给浏览器用例读：鼠标没挪出半格时是 false（等于原位放下）。
-    this.root.userData.copyDrop=!keepsOriginalSpot(follow.since,{x,y:follow.since.y,z});
-    this.options.hint(placementError(this.draft) || (this.frozen
-      ? '副本已放下 · 拖动手柄微调 · Ctrl+Z 撤销'
-      : '移动鼠标摆位置 · 单击放下 · Esc 取消'));
-  }
+  commitDuplicate(){return this.following && this.modal.confirm();}
 
   private draw() {
-    const key=`${this.draft!.kind}:${this.draft!.color}:${this.angleKey(this.draft!)}:${this.draft!.scale?.join(',') || ''}`;
-    if(!this.preview || this.previewKey!==key){
-      this.releasePreview();this.preview=createPart(this.draft!);this.previewKey=key;
-      this.preview.name='build-move-preview';
-      delete this.preview.userData.buildId;this.preview.userData.preview=true;
-      this.preview.traverse(o=>{o.raycast=()=>{};});this.world.add(this.preview);
-    }else this.preview.position.set(this.draft!.x,this.draft!.y,this.draft!.z);
+    const rendered=renderMainPreview(this.preview,this.previewKey,this.draft!,this.world);
+    this.preview=rendered.preview;this.previewKey=rendered.key;
     const delta=new THREE.Vector3(this.draft!.x-this.part!.x,this.draft!.y-this.part!.y,this.draft!.z-this.part!.z);
     for(const row of this.companions){
       // 多选整体旋转/缩放：同伴走 `posed()`（绕组的中心转/摊开）；纯平移时跟主选中的同一个位移。
-      const target=this.groupTransforming?this.posed(row.part)
-        :{...row.part,x:row.part.x+delta.x,y:row.part.y+delta.y,z:row.part.z+delta.z};
-      const key=`${target.kind}:${target.color}:${this.angleKey(target)}:${target.scale?.join(',') || ''}`;
-      if(row.preview.userData.partKey!==key) {
-        row.preview.removeFromParent();
-        row.preview.traverse(o=>{if(o instanceof THREE.Mesh&&o.geometry.type!=='BoxGeometry')o.geometry.dispose();});
-        row.preview=createPart({...target,color:row.part.color});delete row.preview.userData.buildId;
-        row.preview.name='build-multi-preview';row.preview.userData.preview=true;
-        row.preview.userData.partColor=row.part.color;row.preview.userData.partKey=key;
-        row.preview.traverse(o=>{o.raycast=()=>{};});this.world.add(row.preview);
-      }
-      row.preview.position.set(target.x,target.y,target.z);
-      row.preview.rotation.y=target.rotation*Math.PI/2;
-      row.outline.box.setFromObject(row.preview);row.outline.updateMatrixWorld(true);
+      const target=this.modalDrafts.get(row.part.id) || (this.groupTransforming?this.posed(row.part)
+        :{...row.part,x:row.part.x+delta.x,y:row.part.y+delta.y,z:row.part.z+delta.z});
+      updateMovePreview(row,target,this.world);
     }
     this.outline.box.setFromObject(this.preview);this.outline.visible=true;this.outline.updateMatrixWorld(true);
     this.root.userData.draft={...this.draft};
@@ -371,7 +281,7 @@ export class BuildMoveHandle {
   /** Automation hook: a drag is refused while a previous save is in flight, so
    *  harnesses wait for this flag instead of racing the round trip. */
   private busy(){
-    this.root.userData.working=Boolean(this.active)||this.pending;
+    this.root.userData.working=this.working;
     // 浏览器用例读这个标记等"跟随摆放"结束（等 userData.working 会一直被 true 挡住）。
     this.root.userData.copyFollowing=this.following;
   }
@@ -382,8 +292,7 @@ export class BuildMoveHandle {
   }
   private pose(){
     if(!this.preview||!this.draft)return;
-    const bounds=new THREE.Box3().setFromObject(this.preview);
-    for(const row of this.companions)bounds.union(new THREE.Box3().setFromObject(row.preview));
+    const bounds=moveBounds(this.preview,this.companions);
     bounds.getCenter(this.pivot.position);
     this.pivot.quaternion.copy(quaternion(this.draft));
     this.pivot.scale.set(1,1,1);
@@ -394,6 +303,11 @@ export class BuildMoveHandle {
     return {x:(e.clientX-r.left)/r.width*2-1,y:-(e.clientY-r.top)/r.height*2+1,button} as PointerEvent;
   }
   private down=(e:PointerEvent)=>{
+    if(this.modal.active && [0,2].includes(e.button)){
+      e.preventDefault();e.stopImmediatePropagation();
+      if(e.button===0)this.modal.confirm();else this.modal.cancel();
+      return;
+    }
     if(!this.part||e.button!==0)return;
     this.root.updateMatrixWorld(true);
     const pointer=this.point(e);
@@ -422,8 +336,9 @@ export class BuildMoveHandle {
     this.pointerId=e.pointerId;this.element.setPointerCapture(e.pointerId);
   };
   private move=(e:PointerEvent)=>{
+    this.modal.move(e);
+    if(this.modal.active){e.preventDefault();e.stopImmediatePropagation();return;}
     if(!this.active){
-      if(this.follow)this.followMove(e);
       if(this.part && !this.pending){
         const pointer=this.point(e);
         this.translate.pointerHover(pointer);this.rotate.pointerHover(pointer);
@@ -496,7 +411,6 @@ export class BuildMoveHandle {
   private finish(){
     this.guide.hide();
     this.active?.pointerUp({button:0} as PointerEvent);this.active=undefined;
-    if(this.follow)this.commitDuplicate();
     this.busy();
     if(this.pointerId!==undefined && this.element.hasPointerCapture(this.pointerId))this.element.releasePointerCapture(this.pointerId);
     this.pointerId=undefined;this.options.lock?.(false);
@@ -505,27 +419,30 @@ export class BuildMoveHandle {
     if(!this.active)return;
     e.preventDefault();e.stopImmediatePropagation();this.finish();void this.save();
   };
+  private contextMenu=(e:Event)=>{if(this.part){e.preventDefault();this.modal.cancel();}};
   private cancel=()=>{
+    if(this.modal.cancel())return;
     if(!this.active)return;
-    this.finish();this.draft={...this.part!};this.draw();this.pose();
+    this.finish();this.resetGroupTransform();this.draft={...this.part!};this.draw();this.pose();
   };
   private async save(color?:string){
     if(!this.part||!this.draft||this.pending)return;
     const delta=new THREE.Vector3(this.draft.x-this.part.x,this.draft.y-this.part.y,this.draft.z-this.part.z);
     // 整组：平移时同伴跟同一个 delta；旋转/缩放时同伴走 `posed()`（和预览完全同一套算法），
     // 最后都过 `snapPart()` 收口——"跟着动的同伴"也不可能离格（不变量面前不留例外，用户 2026-10-09）。
-    const extras=this.companions.map(row=>snapPart(this.groupTransforming
+    const extras=this.companions.map(row=>snapPart(this.modalDrafts.get(row.part.id) || (this.groupTransforming
       ? {...this.posed(row.part),color:color || row.part.color}
       : {...row.part,color:color || row.part.color,
         x:Math.round((row.part.x+delta.x)*1000)/1000,
-        y:Math.round((row.part.y+delta.y)*1000)/1000,z:Math.round((row.part.z+delta.z)*1000)/1000}));
+        y:Math.round((row.part.y+delta.y)*1000)/1000,z:Math.round((row.part.z+delta.z)*1000)/1000})));
+    this.modalDrafts.clear();
     // 变换已经算进 `extras`/`draft` 了：立刻清掉状态，后面 draw()/pose() 才不会再乘一次。
     this.resetGroupTransform();
     const error=[this.draft,...extras].map(placementError).find(Boolean);
     if(error){this.options.hint(error);this.draft={...this.part};this.draw();this.pose();return;}
     const previous=this.part,next={...this.draft};
     // 没挪动就没有要保存的；但"放下副本"必须收尾（退出跟随），原位放下也是合法结果。
-    if(JSON.stringify(previous.scale)===JSON.stringify(next.scale) && ['x','y','z','rotation','pitch','roll','color'].every(k=>(previous[k as keyof BuildPart] || 0)===(next[k as keyof BuildPart] || 0))){
+    if(sameMovePart(previous,next) && extras.every(p=>sameMovePart(this.companions.find(row=>row.part.id===p.id)!.part,p))){
       if(this.frozen)this.settleCopy();
       return;
     }
@@ -548,13 +465,13 @@ export class BuildMoveHandle {
   }
   /** 副本存好了：退出"跟着鼠标"，把它当成普通选中的一组。存不上就放回跟随，让用户接着摆。 */
   private settleCopy(){
-    if(!this.follow)return;
-    this.follow=undefined;
+    if(!this.copied)return;
+    this.copied=false;
     this.options.hint('副本已放下 · 拖动手柄微调 · Ctrl+Z 撤销');
     this.busy();
   }
   clear(){
-    this.finish();this.follow=undefined;this.frozen=false;this.resetGroupTransform();
+    this.modal.discard();this.modalDrafts.clear();this.finish();this.copied=false;this.frozen=false;this.resetGroupTransform();
     if(this.original)this.original.visible=true;
     for(const row of this.companions){
       row.object.visible=true;row.preview.removeFromParent();row.outline.removeFromParent();
@@ -574,9 +491,10 @@ export class BuildMoveHandle {
 
     this.root.removeFromParent();this.pivot.removeFromParent();
     this.element.removeEventListener('pointerdown',this.down,true);
-    this.element.removeEventListener('pointermove',this.move,true);
+    window.removeEventListener('pointermove',this.move,true);
     this.element.removeEventListener('pointerup',this.up,true);
     this.element.removeEventListener('pointercancel',this.cancel,true);
     window.removeEventListener('blur',this.cancel);
+    this.element.removeEventListener('contextmenu',this.contextMenu);
   }
 }

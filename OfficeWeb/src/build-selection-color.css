@@ -1,0 +1,9 @@
+.build-selection-color { position:fixed; z-index:12; display:flex; flex-direction:column; align-items:center; gap:5px; width:64px; color:#3e5045; font-size:11px; pointer-events:auto; }
+.build-selection-color > span { padding:2px 5px; background:#fffef4e8; border-radius:5px; white-space:nowrap; }
+.build-selection-color button { cursor:pointer; padding:0; border-radius:50%; border:2px solid #fffdf4; box-shadow:0 2px 8px #203b3533; }
+.build-color-current { width:28px; height:28px; }
+.build-selection-color button:focus-visible { outline:2px solid #496c59; outline-offset:3px; }
+.build-selection-color button:disabled { cursor:wait; opacity:.55; }
+.build-color-choices { position:absolute; top:55px; left:0; width:148px; display:flex; flex-wrap:wrap; gap:8px; padding:10px; background:#fffef6f5; border:1px solid #d9dfd0; border-radius:10px; box-shadow:0 6px 20px #203b3526; }
+.build-color-choices button { width:24px; height:24px; }
+.build-color-choices button[aria-pressed=true] { outline:2px solid #496c59; outline-offset:2px; }

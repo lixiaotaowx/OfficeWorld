@@ -1,3 +1,6 @@
+import type { DockPrivateState } from './dock-private-contract';
+import type { DockCommand } from './desktop';
+import type { DockMeetingState, DockActionKind } from './dock-meeting-contract';
 // 主窗口这边把状态推给头像条、并接收它的点击。
 //
 // 铁律：小窗不连 socket、不碰媒体。所以这里由主窗口（唯一的连接与媒体拥有者）负责：
@@ -13,10 +16,18 @@ import type { Person } from './types';
 
 const PUSH_MS = 1000;
 
-export type DockCommandKind = 'watch' | 'share' | 'call';
+export type DockCommandKind = DockActionKind;
 
 export function useDockBridge(input: {
   enabled: boolean;
+  statuses?: Record<string, string>;
+  onStatus?: () => void;
+  onStatusClear?: () => void;
+  statusControl?: { busy: boolean; error: string };
+  privateCalls?: DockPrivateState;
+  onPrivateCommand?: (value: DockCommand) => boolean;
+  meeting?: DockMeetingState;
+  onMeetingCommand?: (value: DockCommand) => boolean;
   people: Person[];
   myId?: string;
   previews: Record<string, string>;
@@ -43,6 +54,9 @@ export function useDockBridge(input: {
   const latest = useRef(input);
   latest.current = input;
   const lastSent = useRef('');
+  const pushNow = useRef<() => void>();
+  // A new invitation or call control result must not wait for the roster heartbeat.
+  useEffect(() => { pushNow.current?.(); }, [JSON.stringify(input.privateCalls)]);
   /** 这份 people 是什么时候到的：离座时长 = awayFor + 距今（不比较双方时钟）。 */
   const pushedAt = useRef(Date.now());
 
@@ -83,14 +97,22 @@ export function useDockBridge(input: {
         // 文件直传的进度（用户 2026-09-22）：小窗只画一条线，摘要这里算好给它。
         transfers: current.transfers,
       });
+      state.meeting = current.meeting;
+      state.privateCalls = current.privateCalls;
+      state.statusControl = current.statusControl;
+      for (const row of state.people) {
+        const clientId = current.people.find(person => person.id === row.id)?.clientId;
+        row.status = clientId ? current.statuses?.[clientId] || '' : '';
+      }
       const serialized = JSON.stringify(state);
       if (serialized === lastSent.current) return;   // 没变就不打扰主进程
       lastSent.current = serialized;
       void bridge.dockState?.(state).catch(() => undefined);
     };
+    pushNow.current = push;
     push();
     const timer = setInterval(push, PUSH_MS);
-    return () => { clearInterval(timer); release(); };
+    return () => { pushNow.current = undefined; clearInterval(timer); release(); };
   }, [input.enabled]);
 
   useEffect(() => {
@@ -110,6 +132,11 @@ export function useDockBridge(input: {
     let dwell: WatchDwell | null = null;
     let dwellTimer: ReturnType<typeof setTimeout> | undefined;
     const offWant = bridge.onDockPreviewWant((personId) => {
+        if (!personId) {
+          if (dwellTimer) clearTimeout(dwellTimer);
+          dwellTimer = undefined; dwell = null;
+          return;
+        }
       const state = dwellWatch(dwell, personId, Date.now());
       dwell = state.dwell;
       if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = undefined; }
@@ -133,6 +160,10 @@ export function useDockBridge(input: {
     const offCommand = bridge.onDockCommand((payload) => {
       const kind = payload?.kind as DockCommandKind;
       const personId = String(payload?.personId || '');
+      if (kind === 'status' && personId === latest.current.myId) { latest.current.onStatus?.(); return; }
+      if (kind === 'status-clear' && personId === latest.current.myId) { latest.current.onStatusClear?.(); return; }
+      if (latest.current.onMeetingCommand?.(payload)) return;
+      if (latest.current.onPrivateCommand?.(payload)) return;
       if (!personId || !['watch', 'share', 'call'].includes(kind)) return;
       latest.current.onCommand(kind, personId);
     });

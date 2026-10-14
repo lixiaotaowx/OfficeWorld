@@ -1,9 +1,13 @@
+const { cleanPrivateCalls } = require('./dock-private-bridge.cjs');
+const { cleanMeeting, installMeetingVideo } = require('./dock-meeting-bridge.cjs');
+const { grantDockCapture } = require('./dock-capture-intent.cjs');
 // 头像条与主窗口之间的中转（主进程侧）。
 //
 // 铁律：小窗只是"显示 + 遥控"。它不连 socket、不碰媒体、不认识任何业务逻辑；所有状态都
 // 由主窗口推过来（它才是唯一的连接与媒体拥有者），所有点击都转发回主窗口执行。主窗口
 // 与主进程之间靠 IPC，两侧各自有可信来源校验，别的页面调不动。
 const { trusted } = require('./policy.cjs');
+const { cleanHitRegions } = require('./dock-pointer.cjs');
 
 /** 舞台的场合只认这两个值（用户 2026-09-20）：其余一律当"没说"，按老样子放大舞台。 */
 const dockStageMode = value => (value === 'peek' || value === 'call' ? value : '');
@@ -92,6 +96,7 @@ function installDockBridge(dependencies) {
 
   // ---- 主窗口 → 主进程 ----
   // 状态：缓存一份并转发给小窗。
+  installMeetingVideo({ ipcMain, allowApp, allowDock, toApp, getDock: () => dock });
   ipcMain.handle('office:dock-publish', (event, payload) => {
     allowApp(event);
     const people = Array.isArray(payload?.people) ? payload.people.slice(0, 64) : [];
@@ -109,7 +114,12 @@ function installDockBridge(dependencies) {
         unread: Math.max(0, Number(person?.unread) || 0),
         self: person?.self === true, missed: person?.missed === true,
         away: typeof person?.away === 'string' ? person.away.slice(0, 24) : '',
+        ...(typeof person?.status === 'string' ? { status: person.status.slice(0, 80) } : {}),
       })).filter(person => person.id),
+      ...(payload?.privateCalls ? { privateCalls: cleanPrivateCalls(payload.privateCalls) } : {}),
+      ...(payload?.meeting ? { meeting: cleanMeeting(payload.meeting) } : {}),
+      ...(payload?.statusControl ? { statusControl: { busy: payload.statusControl.busy === true,
+        error: String(payload.statusControl.error || '').slice(0, 160) } } : {}),
       sharing: payload?.sharing === true,
       missed: Math.max(0, Number(payload?.missed) || 0),
       hidden: payload?.hidden === true,
@@ -142,7 +152,7 @@ function installDockBridge(dependencies) {
     // 有几个头像就把窗口做多宽，别白白盖住任务栏上别人的图标。
     dock?.resize?.(state.people.length);
     // 自己正在共享屏幕时把自己藏起来，免得连小窗一起被共享出去。
-    return dock?.setVisible(!state.sharing && !state.hidden, state.sharing ? 'sharing' : '') || false;
+    return dock?.setVisible((!state.sharing || state.meeting?.active === true || state.privateCalls?.sessions.length > 0 || state.privateCalls?.invitations.length > 0) && !state.hidden, state.sharing ? 'sharing' : '') || false;
   });
   // 主窗口把某个人的最近一帧交过来 → 转给小窗。
   ipcMain.handle('office:dock-preview', (event, payload) => {
@@ -161,15 +171,29 @@ function installDockBridge(dependencies) {
   ipcMain.handle('office:dock-action', (event, payload) => {
     allowDock(event);
     const kind = String(payload?.kind || '');
-    if (!['watch', 'share', 'call', 'focus'].includes(kind)) throw Error('Unknown dock action');
+    if (!['status', 'status-clear', 'watch', 'share', 'call', 'focus', 'meeting', 'meeting-create', 'meeting-mute', 'meeting-share', 'meeting-view', 'meeting-fullscreen',
+      'meeting-leave', 'meeting-end', 'meeting-accept', 'meeting-decline', 'private-share', 'private-mute'].includes(kind)) throw Error('Unknown dock action');
     const personId = String(payload?.personId || '');
+    const privateSession = state.privateCalls?.sessions.find(row => row.id === personId);
+    if (kind.startsWith('private-') && (!privateSession?.connected || state.privateCalls.busy || state.meeting?.active)) return false;
     // 点按钮就把办公室窗口抬到前面来，通话界面在那里。
     const window = getWindow();
-    if (window && !window.isDestroyed()) {
+    // Explicit dock clicks lose Chromium activation across IPC. Both share
+    // entries use the same receiver-bound, expiring, one-shot intent.
+    if ((['share', 'meeting-share'].includes(kind) || kind === 'private-share' && !privateSession.sharing) && window && !window.isDestroyed()) {
+      grantDockCapture(window.webContents);
+    }
+    if (!kind.startsWith('private-') && kind !== 'status-clear' && (!kind.startsWith('meeting-') || ['meeting-view', 'meeting-fullscreen'].includes(kind)) && window && !window.isDestroyed()) {
       if (window.isMinimized()) window.restore();
       window.show(); window.moveTop(); window.focus();
     }
-    return toApp('office:dock-command', { kind, personId });
+    const meeting = kind === 'meeting-create' ? {
+      title: String(payload?.meeting?.title || '').slice(0, 60),
+      invitees: (Array.isArray(payload?.meeting?.invitees) ? payload.meeting.invitees : [])
+        .filter(id => typeof id === 'string').slice(0, 32).map(id => id.slice(0, 64)),
+      microphone: payload?.meeting?.microphone === true,
+    } : undefined;
+    return toApp('office:dock-command', { kind, personId, ...(meeting ? { meeting } : {}) });
   });
   ipcMain.handle('office:dock-drag', (event, payload) => {
     allowDock(event);
@@ -181,6 +205,12 @@ function installDockBridge(dependencies) {
     allowDock(event);
     const requestId = String(payload?.requestId || '').slice(0, 64);
     if (!requestId) return false;
+    const invitation = state.privateCalls?.invitations.find(row => row.id === requestId);
+    if (state.privateCalls && (!invitation || state.privateCalls.busy)) return false;
+    if (payload?.accept === true && invitation?.kind === 'screen' && !invitation.offer) {
+      const window = getWindow();
+      if (window && !window.isDestroyed()) grantDockCapture(window.webContents);
+    }
     return toApp('office:dock-answer', { requestId, accept: payload?.accept === true });
   });
   // 有人把文件拖到了某个头像上（用户 2026-09-22）：小窗只认得出路径，发送仍然由主窗口
@@ -200,8 +230,10 @@ function installDockBridge(dependencies) {
     allowDock(event);
     return dock?.applyLayout?.({ expanded: payload?.expanded === true,
       stage: payload?.stage === true, stageMode: dockStageMode(payload?.stageMode),
+      ...(payload?.cardPx ? { cardPx: Math.max(0, Math.min(700, Math.round(Number(payload.cardPx) || 0))) } : {}),
       stagePx: Math.max(0, Math.min(900, Math.round(Number(payload?.stagePx) || 0))),
-      width: Number(payload?.width) || 0 }) || null;
+      width: Number(payload?.width) || 0,
+      ...(Array.isArray(payload?.hitRegions) ? { hitRegions: cleanHitRegions(payload.hitRegions) } : {}) }) || null;
   });
   // 主窗口收到服务端的"有人在看你"、或者有人打电话过来 → 转给头像条：把那个人的角色拉出来
   // （用户 2026-09-18：「把那个看我的人从状态栏头像中跳出来，站在状态栏上很大」）。
@@ -212,7 +244,7 @@ function installDockBridge(dependencies) {
     allowApp(event);
     const id = String(payload?.id || '');
     if (!id) return false;
-    const kind = payload?.kind === 'voice' ? 'voice' : payload?.kind === 'screen' ? 'screen' : '';
+    const kind = ['voice', 'screen', 'meeting'].includes(payload?.kind) ? payload.kind : '';
     return dock?.send('office:dock-greet', {
       id, name: String(payload?.name || '').slice(0, 24),
       // 配色与配件（尺子角色）：小窗照他自己的样子把他拉出来。**这里也是白名单，加字段别漏。**

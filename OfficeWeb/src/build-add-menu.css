@@ -1,0 +1,36 @@
+.build-add-menu {
+  position:fixed; z-index:60; width:min(440px,calc(100vw - 16px));
+  max-height:calc(100dvh - 16px); display:flex; flex-direction:column;
+  box-sizing:border-box; padding:7px; border:1px solid #d5dcd0;
+  border-radius:12px; background:#f7f8f1fa; color:#35463d;
+  box-shadow:0 12px 45px #1b302b30; backdrop-filter:blur(18px);
+  font-family:inherit; font-size:12px; line-height:1.4; pointer-events:auto;
+}
+.build-add-menu header { display:flex; align-items:center; gap:12px; height:auto; min-height:0; flex-shrink:0; margin:0; border:0; background:transparent; padding:2px 6px 8px; font-size:12px; }
+.build-add-menu header > span { font-weight:600; }
+.build-add-menu kbd { margin-left:auto; font-family:inherit; font-size:10px; color:#839080; }
+.build-add-menu button { font:inherit; color:inherit; border:0; cursor:pointer; background:transparent; border-radius:6px; }
+.build-add-menu header button { width:25px; height:24px; font-size:18px; color:#79877c; }
+.build-add-menu > input {
+  flex-shrink:0; min-width:0; margin:0 4px 7px; padding:7px 9px;
+  border:1px solid #dce2d6; border-radius:6px; background:#ffffff9c; color:inherit; font-family:inherit; font-size:12px;
+}
+.build-add-columns { display:grid; grid-template-columns:150px minmax(0,1fr); min-height:0; height:min(450px,calc(100dvh - 108px)); }
+.build-add-categories, .build-add-submenu { overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; max-height:min(450px,calc(100dvh - 108px)); }
+.build-add-categories { padding-right:5px; border-right:1px solid #dce2d6; }
+.build-add-submenu { padding-left:5px; }
+.build-add-menu [role=menuitem] { width:100%; text-align:left; display:flex; align-items:center; gap:8px; min-height:39px; padding:3px 6px; }
+.build-add-menu [role=menuitem]:hover, .build-add-menu [aria-expanded=true] { background:#e2eadc; }
+.build-add-menu button:focus-visible, .build-add-menu input:focus-visible { outline:2px solid #7d9c88; outline-offset:-2px; }
+.build-add-menu img, .build-add-fallback { width:42px; height:34px; object-fit:contain; flex-shrink:0; }
+.build-add-categories img, .build-add-categories .build-add-fallback { width:28px; height:28px; }
+.build-add-fallback { display:grid; place-items:center; color:#8c9c88; font-size:23px; }
+.build-add-categories small { margin-left:auto; color:#859280; font-size:10px; }
+.build-add-categories b { font-size:17px; font-weight:400; }
+.build-add-submenu small { display:block; color:#87917e; font-size:9px; margin-top:2px; }
+.build-add-empty { padding:14px 8px; color:#87917e; }
+@media (max-width:420px) {
+  .build-add-columns { grid-template-columns:120px minmax(0,1fr); }
+  .build-add-menu [role=menuitem] { gap:5px; padding:3px 4px; }
+  .build-add-menu img { width:34px; }
+}

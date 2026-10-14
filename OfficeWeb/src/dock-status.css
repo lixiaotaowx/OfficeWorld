@@ -1,0 +1,17 @@
+.dock-status-bubble {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  width: 46px; box-sizing: border-box; padding: 4px 0; border-radius: 7px;
+  background: #e7edda; color: #344332; border: 1px solid #a9b997;
+  font: 11px/1.35 "Microsoft YaHei", sans-serif; font-weight: 400;
+  box-shadow: 0 2px 5px #16241420; pointer-events: none;
+}
+.dock-status-bubble span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.dock-status-bubble::after { content: ''; position: absolute; top: 100%; left: calc(50% - 3px); border: 3px solid transparent; border-top-color: #a9b997; }
+.edge-top .dock-status-bubble { bottom: auto; top: calc(100% + 8px); }
+.edge-top .dock-status-bubble::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: #a9b997; }
+.dock-status-menu { position: relative; padding: 36px 10px 10px; max-width: 230px; border-radius: 12px; color: #29392c; background: #f3f5ed; box-shadow: 0 5px 20px #0003; pointer-events: auto; }
+.dock-status-menu button { padding: 6px 12px; border: 0; border-radius: 7px; background: #dbe5cd; color: inherit; cursor: pointer; margin: 2px; }
+.dock-status-menu .dock-status-close { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; margin: 0; padding: 0; display: grid; place-items: center; font-size: 20px; line-height: 1; background: transparent; }
+.dock-status-menu .dock-status-close:hover { background: #dbe5cd; }
+.dock-status-menu p, .dock-person-status { margin: 4px 0 8px; font-size: 12px; overflow-wrap: anywhere; }
+.dock-person-status { grid-column: 1 / -1; padding: 6px 12px; color: var(--dock-ink); }

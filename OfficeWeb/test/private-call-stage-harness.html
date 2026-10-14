@@ -10,7 +10,8 @@ ctx.fillStyle='#fff'; ctx.font='60px sans-serif'; ctx.fillText('SHARED SCREEN',9
 const stream=canvas.captureStream(5);
 const noop=async()=>{};
 const office={
-  requests:[], outgoing:[], people:[{id:'peer',name:'林木'}], clientId:'me',
+  requests:[], outgoing:[], people:[{id:'peer',name:'林木'}], clientId:'me', accountId:'me',
+  callAlerts:[], dismissCallAlert:noop,
   sessions:[{id:'call',peer:'peer',kind:'screen',room:'call-1'}],
   callStates:{call:{voice:'已开启',connected:true,sharing:false}},
   videos:{call:stream}, annotations:[],

@@ -97,7 +97,7 @@ const GREET_APPEARANCE = { color: "navy", accessories: { glasses: "black", hair:
 
     // 悬停有预览的人：先要一帧，主进程回帧后卡片里出现图片。
     await page.locator('.dock-avatar[aria-label="同事乙"]').hover();
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(() => window.__want.filter(id => id === 'p1').length >= 2);
     const want = await page.evaluate(() => window.__want.slice());
     assert.ok(want.includes("me"), "悬停自己要过帧：" + JSON.stringify(want));
     assert.equal(want.at(-1), "p1", "悬停谁就索取谁的最近一帧");
@@ -110,7 +110,7 @@ const GREET_APPEARANCE = { color: "navy", accessories: { glasses: "black", hair:
     const card = await page.evaluate(() => {
       const node = document.querySelector(".dock-card");
       return { text: node.textContent.replace(/\s+/g, " ").trim(),
-        buttons: [...node.querySelectorAll("button")].map(b => b.getAttribute("title")),
+        buttons: [...node.querySelectorAll(".dock-card-actions button")].map(b => b.getAttribute("title")),
         image: node.querySelector("img")?.getAttribute("alt") };
     });
     console.log("card:", JSON.stringify(card));
@@ -161,7 +161,7 @@ const GREET_APPEARANCE = { color: "navy", accessories: { glasses: "black", hair:
     assert.equal(awayChip.text, "离座 6 分钟", "离座要写成字");
     assert.match(awayChip.background, /143, 58, 44/, "离座是暗红：" + awayChip.background);
     await page.locator('.dock-avatar[aria-label="同事乙"]').hover();
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => document.querySelector('.dock-card-state')?.textContent === '在座');
     const hereChip = await page.evaluate(() => {
       const node = document.querySelector(".dock-card-state");
       return { text: node.textContent, background: getComputedStyle(node).backgroundColor };

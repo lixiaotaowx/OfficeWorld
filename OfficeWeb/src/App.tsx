@@ -1,3 +1,7 @@
+import { useDockPrivateCalls } from './useDockPrivateCalls';
+import { useDockMeetings } from './useDockMeetings';
+import { usePresenceStatus } from './usePresenceStatus';
+import MeetingScreenViewer from './MeetingScreenViewer';
 import { useBuildWorkstations } from './buildWorkstations';
 import FileTransferPanel from "./FileTransferPanel";
 import PrivateCallPanel from "./PrivateCallPanel";
@@ -44,6 +48,7 @@ function Stream({ stream }: { stream: MediaStream }) {
 }
 export default function App({ account, onLogout }: { account: Account; onLogout: () => void }) {
   const office = useOffice(account);
+  const presence = usePresenceStatus(account.id);
   useBuildWorkstations();
   // 有人用三种方式打过来：所有屏幕绿起来 + 头像条把那个人的角色用当前大小拉出来招手
   // （用户 2026-09-20）。只看"还有没有没处理的邀请"，一通电话响多久就提醒多久。
@@ -57,9 +62,21 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const handleUnread = useCallback((_count: number, byPerson: Record<string, number>) => {
     setUnreadByPerson(previous => mergeUnreadCounts(previous, byPerson));
   }, []);
+  const [meetingOpen, setMeetingOpen] = useState(false);
+  const [meetingView, setMeetingView] = useState<{ id: string; fullscreen: boolean } | null>(null);
+  const dockMeetings = useDockMeetings(office.meetings, office.videos, office.people,
+    office.myId, account.id, () => setMeetingOpen(true), (id, fullscreen) => setMeetingView({ id, fullscreen }));
   // 任务栏头像条：把在线状态与缩略图推给那个小窗，并接收它的点击（用户 2026-09-17）。
+  const dockPrivate = useDockPrivateCalls(office);
   useDockBridge({
+    privateCalls: dockPrivate.state, onPrivateCommand: dockPrivate.command,
     enabled: Boolean(window.officeDesktop?.dockState),
+    meeting: dockMeetings.state,
+    statuses: presence.statuses,
+    onStatus: presence.show,
+    onStatusClear: presence.clear,
+    statusControl: presence.control,
+    onMeetingCommand: dockMeetings.command,
     people: office.people,
     myId: office.myId,
     previews: office.previews,
@@ -71,7 +88,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
     // 有人在小窗里看我/别人的工位：告诉服务端，被看的人屏幕闪一圈绿光（别人来看我了）。
     onPreviewWant: office.notifyWatching,
     // 头像条上直接按了「接听 / 拒绝」（用户 2026-09-21）：跟通话面板上那两个按钮同一条路。
-    onAnswer: (requestId, accept) => { void office.respond(requestId, accept); },
+    onAnswer: dockPrivate.answer,
     onCommand: (kind, personId) => {
       // 看对方屏幕 / 把我的屏幕给他 / 语音通话——和右侧详情卡上的三个按钮同一条路。
       if (kind === 'call') office.request(personId, 'voice');
@@ -101,7 +118,6 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   const [tab, setTab] = useState<"people" | "chat">("people");
   const [help, setHelp] = useState(false);
   const [renderPaused, setRenderPaused] = useState(false);
-  const [meetingOpen, setMeetingOpen] = useState(false);
   // 切换"共享 / 预览"用哪块屏幕的菜单，右键自己的显示器或成员列表里的自己都会打开它。
   const [screenMenu, setScreenMenu] = useState<{ x: number; y: number } | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -176,6 +192,7 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   };
   return (
     <div className="app">
+      {presence.dialog}
       <header className="rail" aria-label="办公室导航">
         <a className="brand" href="/" aria-label="Office World">
           <span className="brand-mark">o<span>·</span></span>
@@ -433,6 +450,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
       {/* 文件直传：进度 + 完事的「打开 / 打开文件夹」（用户 2026-09-22）。 */}
       <FileTransferPanel files={office.files} />
       {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
+      {meetingView && dockMeetings.streams[meetingView.id] && <MeetingScreenViewer
+        stream={dockMeetings.streams[meetingView.id]} fullscreen={meetingView.fullscreen}
+        label={`${office.people.find(p => p.id === meetingView.id)?.name || '同事'}的共享屏幕`}
+        onClose={() => setMeetingView(null)} />}
       <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} annotation={office.annotation} />
       {help && (
         <SettingsDialog

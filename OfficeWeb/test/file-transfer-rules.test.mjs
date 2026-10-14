@@ -175,7 +175,7 @@ test('头像条拖拽失败必须说出来（用户 2026-09-21 报「头像拖�
   assert.match(dock, /if \(!carriesFiles\(event\)\) return;\s*\n\s*event\.preventDefault\(\);[\s\S]{0,200}if \(row\.self\) return;/,
     '只要带着文件就先 preventDefault 并高亮，不能先判 canDrop');
   // 条子宽度变了要重报一次，否则那句话说出去会被窗口裁掉。
-  assert.match(dock, /\}, \[hovered, state, greet, dropNotice\]\)/);
+  assert.match(dock, /\}, \[hovered, state, greet, dropNotice, cardPx, meetingPerson, statusMenu\]\)/);
 });
 
 test('错误信息要能看懂：剥掉 Electron 的 invoke 外壳（真机实测它直接漏到卡片上了）', () => {

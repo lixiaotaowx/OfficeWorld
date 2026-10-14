@@ -15,8 +15,12 @@ import { BuildRotationGuide } from './buildRotationGuide';
 import { BuildMoveHandle } from './buildMoveHandle';
 import { BuildSelection } from './buildSelection';
 import { BuildChestPeople } from './buildChestPeople';
+import { BuildChestUnread } from './buildChestUnread';
+import type { BuildColorTarget } from './buildColorTarget';
+import { BuildCinemaScreens } from './BuildCinemaScreens';
 
 type Options = {
+  accountId?: string;
   settings: () => BuildSettings;
   lock?: (locked:boolean) => void;
   change: (command: Record<string, unknown>) => unknown;
@@ -31,6 +35,7 @@ type Options = {
   position?: () => { x: number; z: number } | undefined;
 };
 export class BuildInteraction {
+  private cinema:BuildCinemaScreens;
   private parts: BuildPart[] = [];
   private objects = new Map<string, THREE.Group>();
   private ghost?: THREE.Group;
@@ -44,15 +49,21 @@ export class BuildInteraction {
   private guide: BuildPlacementGuide;
   private selection: BuildSelection;
   private chestPeople: BuildChestPeople;
+  private chestUnread: BuildChestUnread;
   private rotationGuide: BuildRotationGuide;
   private saving=false;
+  private copying=false;
+  private copyKeys:Pick<KeyboardEvent,'key'|'shiftKey'|'repeat'|'altKey'>[]=[];
   private handle: BuildMoveHandle;
+  private colorPoint=new THREE.Vector3();
   private contactSolids: {id:string;box:THREE.Box3}[] = [];
   constructor(private world: THREE.Scene, private camera: THREE.Camera, private element: HTMLElement, private options: Options) {
     this.handle=new BuildMoveHandle(world,camera,element,options);
     this.guide=new BuildPlacementGuide(world);
     this.selection=new BuildSelection(world);
+    this.cinema=new BuildCinemaScreens(camera);
     this.chestPeople=new BuildChestPeople(world);
+    this.chestUnread=new BuildChestUnread(world, options.accountId || '');
     this.rotationGuide=new BuildRotationGuide(world);
   }
   sync(parts: BuildPart[]) {
@@ -72,6 +83,8 @@ export class BuildInteraction {
       object.updateMatrixWorld(true);
     }
     this.chestPeople.sync(parts,this.objects);
+    this.chestUnread.sync(parts,this.objects);
+    this.cinema.sync(parts,this.objects);
     const seats: SittingSpot[] = [];
     for (const p of parts) {
       if (p.pitch || p.roll || !['desk','chair','sofa'].includes(p.kind)) continue;
@@ -111,16 +124,42 @@ export class BuildInteraction {
     this.refresh();
   }
   isEditing() { return this.options.settings().mode !== 'explore'; }
+  colorTarget():BuildColorTarget | undefined {
+    if(this.options.settings().mode!=='move')return;
+    const part=this.handle.selectedPart;
+    if(!part)return;
+    const point=this.colorPoint.copy(this.handle.anchor).project(this.camera);
+    if(point.z < -1 || point.z > 1 || Math.abs(point.x)>1 || Math.abs(point.y)>1)return;
+    const rect=this.element.getBoundingClientRect();
+    return {id:this.handle.selectedIds.join(','),color:part.color,busy:this.handle.working || this.saving,
+      x:rect.left+(point.x+1)*rect.width/2,y:rect.top+(1-point.y)*rect.height/2};
+  }
   cancelMove() {
     this.handle.clear();
     if(this.picked) { const object=this.objects.get(this.picked.id);if(object)object.visible=true; }
     this.picked=undefined;
     this.refresh();
   }
+  shortcut(event:KeyboardEvent) {
+    if(this.copying){
+      if(!event.repeat && this.copyKeys.length<32)this.copyKeys.push({key:event.key,
+        shiftKey:event.shiftKey,repeat:false,altKey:event.altKey});
+      return true;
+    }
+    if(this.handle.shortcut(event))return true;
+    if(event.key==='.' || event.code==='NumpadDecimal'){
+      if(!event.repeat)this.focusHovered();return true;
+    }
+    return false;
+  }
+  cancelTransform(){
+    if(this.copying){this.copyKeys=[{key:'Escape',shiftKey:false,repeat:false,altKey:false}];return true;}
+    return this.handle.cancelTransform();
+  }
   async duplicateSelected() {
     const source=this.handle.selectedPart;
     if(!source || this.saving || this.handle.working)return;
-    this.saving=true;
+    this.saving=true;this.copying=true;this.copyKeys=[];
     try {
       // 副本沿用原件的 id，所以"这一组"必须**先记下来**：复制一件之后 handle 里已经是新版了，
       // 再按 id 重新筛会一直复制同一件（整组复制会变成把第一件复制两遍）。
@@ -136,10 +175,13 @@ export class BuildInteraction {
       if(!last){this.hint('复制未完成，请重试');return;}
       const copies=this.parts.filter(part=>plan.some(step=>step.id===part.id));      if(this.options.settings().mode==='move'&&copies.length&&copies.every(part=>this.objects.has(part.id))){
         this.handle.selectCopies(copies);
-        if(this.handle.startFollow(copies))return;
+        if(this.handle.startFollow(copies)){
+          for(const key of this.copyKeys){this.handle.shortcut(key);if(key.key==='Escape')break;}
+          return;
+        }
       }
       this.hint('已复制 · 拖动手柄移动副本 · Ctrl+Z 撤销');
-    } finally {this.saving=false;}
+    } finally {this.saving=false;this.copying=false;this.copyKeys=[];}
   }
   /**
    * 删除选中的这一组（移动模式下按 Delete / Backspace）。
@@ -149,6 +191,7 @@ export class BuildInteraction {
    * 每删一件都会进历史，Ctrl+Z 按逆序把整组恢复回来。
    */
   async removeSelected() {
+    if(this.saving || this.handle.working)return false;
     const ids=this.handle.selectedIds;
     if(!ids.length){this.hint('先点选要删除的部件（Shift 点击可多选）');return false;}
     const plan=ids.map(id=>({id,version:this.parts.find(part=>part.id===id)?.version ?? 0}));
@@ -172,6 +215,8 @@ export class BuildInteraction {
     if(part) {this.cancelMove();this.options.sample?.(part);}
   }
   focusHovered() {
+    const selected=this.handle.selectionBounds;
+    if(selected){this.options.focus?.(selected);return;}
     const part=this.hitPart(this.hits()[0]);
     const object=part?this.objects.get(part.id):this.ghost?.visible?this.ghost:undefined;
     if(object)this.options.focus?.(new THREE.Box3().setFromObject(object));
@@ -243,7 +288,7 @@ export class BuildInteraction {
       const label=catalog.find(item=>item.id===hovered?.kind)?.label || '';
       const action=settings.mode === 'remove' ? '点击拆除'
         : settings.mode === 'move' ? (hovered && isTeleport(hovered.kind) ? '点击传送' : '点击显示移动手柄')
-        : hovered?.kind === 'chest' ? '点击打开宝箱'
+        : hovered?.kind === 'cinema-screen' ? '点击设置影院屏幕' : hovered?.kind === 'chest' ? '点击打开宝箱'
         : hovered && isTeleport(hovered.kind) ? '点击传送'
         : 'E 取同款 · F 聚焦';
       const hint = hovered ? `${label} · ${action}` : '';
@@ -345,7 +390,7 @@ export class BuildInteraction {
     if (mode === 'explore' || mode === 'place') {
       if (teleport) { this.travel(teleport); return true; }
       if (part && isTeleport(part.kind)) return true;
-      if (mode === 'explore' && part?.kind === 'chest') { this.options.open(part.id); return true; }
+      if (mode === 'explore' && part && ['chest','cinema-screen'].includes(part.kind)) { this.options.open(part.id); return true; }
       if (mode === 'explore') return false;
     }
     if(mode === 'move') {
@@ -375,7 +420,9 @@ export class BuildInteraction {
     finally {this.saving=false;}
   }
   dispose() {
+    this.cinema.dispose();
     this.chestPeople.dispose();
+    this.chestUnread.dispose();
     this.handle.dispose();
     this.rotationGuide.dispose();
     this.selection.dispose();

@@ -97,6 +97,15 @@ function fixture(overrides = {}) {
     event, state, files, calls, handlers, wc, displays, displayFile, win, sent, toasts, timers, stops };
 }
 
+test('最大化视频的唤起命令显示并抬高主窗口', () => {
+  const f = fixture();
+  f.win.visible = false; f.win.focused = false;
+  assert.equal(f.call('focus'), true);
+  assert.equal(f.win.visible, true);
+  assert.equal(f.win.focused, true);
+  assert.equal(f.win.raised, 3, 'show、moveTop 和 focus 都要执行');
+});
+
 test('自动低清只枚举屏幕、维持比例，双屏切换与断开回退', async () => {
   const f = fixture();
   assert.equal((await f.call('displays')).length, 2);

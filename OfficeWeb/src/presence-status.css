@@ -1,0 +1,13 @@
+.presence-overlay { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: #15231b66; }
+.presence-editor { width: min(390px, 92vw); padding: 22px; border-radius: 18px; background: #f8f7f1; color: #29382c; box-shadow: 0 20px 70px #14221833; }
+.presence-editor header, .presence-editor footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.presence-editor p { font-size: 13px; color: #63705f; }
+.presence-editor button { border: 1px solid #d6dccc; border-radius: 9px; padding: 7px 11px; background: #f0f1e9; color: inherit; cursor: pointer; }
+.presence-editor button:disabled { opacity: .5; cursor: default; }
+.presence-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0; font-size: 12px; }
+.presence-editor label { font-size: 13px; }
+.presence-editor textarea { display: block; box-sizing: border-box; width: 100%; min-height: 82px; resize: vertical; margin-top: 7px; padding: 10px; border: 1px solid #bdc8b6; border-radius: 10px; font: inherit; color: inherit; background: #fffefa; }
+.presence-editor small { display: block; margin: 8px 0 20px; color: #73806c; }
+.presence-editor footer { justify-content: flex-end; }
+.presence-editor button[type=submit] { background: #425b42; color: white; }
+.presence-editor [role=alert] { color: #a14b36; }

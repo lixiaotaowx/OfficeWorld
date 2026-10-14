@@ -46,7 +46,7 @@ test('每对用户独立授权，第三人不能加入；语音不会获得屏�
   const grant = (socketId, requested) => grantRoom({ socketId, requested, people, sessions });
   assert.equal(grant('c', 'call-ab'), null); assert.equal(grant('b', 'call-ac'), null);
   assert.equal(grant('a', 'call-ab'), 'call-ab');
-  assert.deepEqual(privateSources('call-ab', 'a', sessions), [TrackSource.MICROPHONE, TrackSource.SCREEN_SHARE]);
+  assert.deepEqual(privateSources('call-ab', 'a', sessions), [TrackSource.MICROPHONE, TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO]);
   assert.deepEqual(privateSources('call-ab', 'b', sessions), [TrackSource.MICROPHONE]);
   assert.deepEqual(privateSources('call-ac', 'a', sessions), [TrackSource.MICROPHONE]);
   sessions.delete('ab'); assert.equal(grant('a', 'call-ab'), null);

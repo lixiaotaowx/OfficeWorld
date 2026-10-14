@@ -7,6 +7,7 @@ export const palette = ['#f3dfc5', '#e9b8b5', '#b9c9df', '#b4c5a0', '#cabddd', '
 export type BuildPart = {
   id: string; kind: string; color: string; seatIndex?: number;
   chestPeople?: ChestPeople; fixture?: string; fixtureCopy?: boolean;
+  cinemaVersion?:number;
   scale?: [number, number, number];
   x: number; y: number; z: number; rotation: number; pitch?: number; roll?: number; version: number;
 };

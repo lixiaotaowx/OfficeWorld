@@ -1,0 +1,38 @@
+import { useEffect, useState } from 'react';
+import { cardTipOffset } from './dockRules';
+import DockMeetingVideo from './DockMeetingVideo';
+import ScreenViewControls from './ScreenViewControls';
+import type { DockMeetingState } from './dock-meeting-contract';
+export default function DockMeetingScreens({ meeting }: { meeting?: DockMeetingState }) {
+  const [tips, setTips] = useState<Record<string, number>>({});
+  const key = meeting?.screens.map(screen => screen.id).join('|') || '';
+  useEffect(() => {
+    const measure = () => {
+      const next: Record<string, number> = {};
+      document.querySelectorAll<HTMLElement>('.dock-share-bubble').forEach(bubble => {
+        const avatar = [...document.querySelectorAll<HTMLElement>('.dock-avatar')]
+          .find(row => row.dataset.personId === bubble.dataset.person);
+        if (!avatar) return;
+        const rect = bubble.getBoundingClientRect(), row = avatar.getBoundingClientRect();
+        const offset = cardTipOffset(rect.left, rect.width, row.left + row.width / 2);
+        if (offset !== null) next[bubble.dataset.person!] = offset;
+      });
+      setTips(next);
+    };
+    measure(); window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [key]);
+  if (!meeting?.screens.length) return null;
+  return <div className={`dock-meeting-screens${meeting.screens.length > 1 ? ' multiple' : ''}`} aria-label="会议共享屏幕">
+    {meeting.screens.map(screen => <section className="dock-share-bubble" key={screen.id} data-person={screen.id}>
+      <header><strong>{screen.name}</strong><span>共享中</span></header>
+      <div className="dock-share-picture">
+        <DockMeetingVideo id={screen.id} streamId={screen.streamId} />
+        <ScreenViewControls label={`${screen.name} 的共享屏幕`}
+          onMaximize={() => { void window.officeDock?.action?.('meeting-view', screen.id); }}
+          onFullscreen={() => { void window.officeDock?.action?.('meeting-fullscreen', screen.id); }} />
+      </div>
+      {tips[screen.id] !== undefined && <i className="dock-card-tip" aria-hidden="true" style={{ left: tips[screen.id] }} />}
+    </section>)}
+  </div>;
+}

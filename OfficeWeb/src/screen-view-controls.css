@@ -1,0 +1,15 @@
+.screen-stage-bar.minimal {
+  position: absolute; left: auto; top: auto; right: 10px; bottom: 10px;
+  display: flex; align-items: center; gap: 6px; z-index: 2; padding: 0;
+  background: transparent; border: 0; box-shadow: none; opacity: 1;
+  pointer-events: auto; -webkit-app-region: no-drag;
+}
+.screen-stage-bar.minimal .screen-stage-expand {
+  position: static; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px; font-size: 12px;
+  color: #f4f2eb; background: #1d2a24d9; border: 1px solid #ffffff2e;
+  box-shadow: 0 6px 18px #0b161033; backdrop-filter: blur(4px); cursor: pointer;
+  pointer-events: auto; -webkit-app-region: no-drag;
+}
+.screen-stage-bar.minimal .screen-stage-expand:hover { background: #26362e; }
+.screen-stage-expand svg { width: 14px; height: 14px; }

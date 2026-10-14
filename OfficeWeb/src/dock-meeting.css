@@ -1,0 +1,66 @@
+.dock-popup-stack {
+  position: absolute; bottom: calc(var(--dock-h) + 8px); right: 0;
+  width: 330px; max-height: min(680px, calc(100vh - var(--dock-h) - 12px));
+  display: flex; flex-direction: column; gap: 8px; pointer-events: auto;
+}
+.dock.popup-right .dock-popup-stack { right: auto; left: 0; }
+.dock.edge-top .dock-popup-stack { bottom: auto; top: calc(var(--dock-h) + 8px); }
+.dock-popup-stack .dock-card { position: relative; bottom: auto; top: auto; right: auto; left: auto; width: 330px; box-sizing: border-box; flex-shrink: 0; }
+.dock-popup-stack .dock-card-name { height: auto; min-height: 24px; }
+.dock-start-meeting { flex-shrink: 0; }
+.dock-meeting-panel, .dock-share-bubble {
+  box-sizing: border-box; border-radius: 16px; padding: 12px;
+  color: var(--dock-ink); background: var(--dock-card-bg);
+  border: 1px solid var(--dock-line); box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  backdrop-filter: blur(22px); font-size: 12px;
+}
+.dock-meeting-panel { max-height: 370px; overflow-y: auto; flex-shrink: 0; }
+.dock-meeting-panel.active { max-height: none; overflow: visible; }
+.dock-meeting-actions { display: flex; gap: 6px; }
+.dock-meeting-members { display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 0 0 9px; }
+.dock-meeting-member { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; line-height: 1.5; }
+.dock-meeting-member > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock-meeting-member i { font-style: normal; color: #c6b887; }
+.dock-meeting-member[data-status=joined] i { color: #9dcead; }
+.dock-meeting-member[data-status=left], .dock-meeting-member[data-status=declined] { opacity: .55; }
+.dock-meeting-actions button { padding: 5px 6px; white-space: nowrap; }
+.dock-popup-stack .dock-meeting-folded { align-self: flex-end; width: 24px; height: 20px; padding: 0; border-radius: 7px; }
+.dock.popup-right .dock-meeting-folded { align-self: flex-start; }
+.dock-meeting-confirm button + button { margin-left: 6px; }
+.dock-meeting-panel header, .dock-share-bubble header { display: flex; align-items: center; gap: 6px; margin-bottom: 9px; }
+.dock-meeting-panel header strong, .dock-share-bubble header strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock-popup-stack button, .dock-meeting-controls button {
+  border: 1px solid rgba(255,255,255,.18); border-radius: 9px;
+  padding: 5px 8px; background: #f3f5f1; color: #25332b; font: inherit; cursor: pointer;
+}
+.dock-popup-stack button:disabled { opacity: .55; cursor: wait; }
+.dock-popup-stack button:focus-visible { outline: 2px solid #80bca0; outline-offset: 2px; }
+.dock-meeting-panel form { display: grid; gap: 10px; }
+.dock-meeting-panel .meeting-title { display: grid; gap: 5px; }
+.dock-meeting-panel input[type=text], .dock-meeting-panel input:not([type]) {
+  box-sizing: border-box; width: 100%; border: 1px solid #879a8f; border-radius: 8px;
+  padding: 7px; background: rgba(255,255,255,.09); color: inherit;
+}
+.dock-meeting-panel fieldset { border: 1px solid #879a8f; border-radius: 10px; max-height: 160px; overflow-y: auto; }
+.dock-meeting-panel fieldset label { display: flex; gap: 7px; padding: 5px; align-items: center; }
+.dock-meeting-panel .meeting-meta { opacity: .7; margin: 0; line-height: 1.5; }
+.dock-meeting-panel [role=alert] { color: #efb1a9; }
+.dock-meeting-error { padding: 8px 12px; border-radius: 10px; background: var(--dock-card-bg); color: #efb1a9; font-size: 12px; }
+.dock-meeting-controls { display: flex; align-items: center; gap: 4px; margin-left: 7px; }
+.dock-meeting-controls button { display: flex; align-items: center; gap: 3px; font-size: 11px; height: 27px; white-space: nowrap; }
+.dock-meeting-controls svg { width: 14px; height: 14px; }
+.dock-meeting-controls .dock-meeting-mic { width: 29px; justify-content: center; padding: 5px; }
+.dock-meeting-controls [aria-pressed=true] { background: #c8e6d1; }
+.dock-meeting-screens { overflow-y: auto; min-height: 140px; max-height: 440px; display: grid; gap: 8px; }
+.dock-share-bubble header span { color: #87b99a; font-size: 10px; }
+.dock-share-picture { position: relative; }
+.dock-meeting-video { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 9px; overflow: hidden; background: #101512; }
+.dock-meeting-video video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.dock-meeting-video span { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: #bcc8bf; pointer-events: none; }
+
+.dock-popup-stack .dock-card { grid-template-columns: minmax(0, 1fr) 84px; }
+.dock-popup-stack .dock-shot { width: 100%; }
+
+.dock-share-bubble { position: relative; }
+.dock-meeting-screens:not(.multiple) { overflow: visible; flex-shrink: 0; }
+.dock-popup-stack .dock-start-meeting { font-size: 11px; padding: 3px 6px; }

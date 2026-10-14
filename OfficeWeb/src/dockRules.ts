@@ -1,3 +1,5 @@
+import type { DockPrivateState } from './dock-private-contract';
+import type { DockMeetingState } from './dock-meeting-contract';
 // 任务栏头像条要显示什么——纯规则，方便单测。
 //
 // 小窗只做"显示 + 遥控"，所以这里把主窗口手里的东西压成一份小快照：谁在线、在不在座、
@@ -9,6 +11,7 @@ import type { Appearance } from './look';
 import type { DockTransferRow } from './fileTransferRules';
 
 export interface DockPerson {
+  status?: string;
   id: string;
   name: string;
   /** 兼容旧桌面桥的外观字符串；旧版也可传单个配色 id。 */
@@ -32,6 +35,9 @@ export interface DockPerson {
 }
 
 export interface DockState {
+  privateCalls?: DockPrivateState;
+  statusControl?: { busy: boolean; error: string };
+  meeting?: DockMeetingState;
   people: DockPerson[];
   sharing: boolean;
   missed: number;
@@ -296,7 +302,7 @@ export interface DockGreet {
    * 来电，再加一个接听的按钮」）：头像条据此写清"是谁、怎么打过来的"，并直接把这一通接起来。
    */
   requestId?: string;
-  kind?: 'screen' | 'voice';
+  kind?: 'screen' | 'voice' | 'meeting';
   offer?: boolean;
   /** 客户端收到的时间（心跳会不断刷新它，动画不会被打断着重播）。 */
   at: number;
@@ -305,6 +311,7 @@ export interface DockGreet {
 /** 来电那一条气泡上写什么：谁 + 怎么打过来的（用户 2026-09-21）。 */
 export function callLabel(call: { name?: string; kind?: string; offer?: boolean }): string {
   const who = call.name || '同事';
+  if (call.kind === 'meeting') return `${who}发起的会议`;
   // 老客户端（≤0.1.26）不转发邀请的种类：那会儿就只说"谁来电"，别瞎猜是语音还是屏幕。
   if (call.kind !== 'voice' && call.kind !== 'screen') return `${who} 来电`;
   if (call.kind === 'voice') return `${who} 来电 · 语音通话`;

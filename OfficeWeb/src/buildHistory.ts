@@ -1,7 +1,8 @@
 import type { BuildPart } from './buildTypes';
+import type {CinemaContent} from './cinemaTypes';
 
 type Command = Record<string, unknown>;
-type Result = { previous?: BuildPart; changed?: BuildPart;previousMany?:BuildPart[];changedMany?:BuildPart[] };
+type Result = { previous?: BuildPart; changed?: BuildPart;previousMany?:BuildPart[];changedMany?:BuildPart[];previousCinema?:CinemaContent };
 export type HistoryMode = 'normal' | 'undo' | 'redo';
 
 function inverse(command: Command, result: Result): Command | undefined {
@@ -10,7 +11,7 @@ function inverse(command: Command, result: Result): Command | undefined {
     return {action:'moveMany',items:result.previousMany.map(part=>({action:'move',id:part.id,
       version:result.changedMany!.find(p=>p.id===part.id)!.version,part}))};
   if(['add','duplicate'].includes(String(command.action)) && changed) return {action:'remove',id:changed.id,version:changed.version};
-  if(command.action==='remove' && previous) return {action:'add',part:previous};
+  if(command.action==='remove' && previous) return {action:'add',part:previous,...(result.previousCinema?{cinemaContent:result.previousCinema}:{})};
   if(command.action==='move' && changed && previous)
     return {action:'move',id:changed.id,version:changed.version,part:previous};
 }

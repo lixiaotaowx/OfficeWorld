@@ -3,11 +3,13 @@ import { createBuildWorkstations } from './build-workstations.mjs';
 import { createBuildStore } from './build-store.mjs';
 import { resolveBuildLink } from './build-link.mjs';
 import { buildCover } from './build-cover.mjs';
+import { createCinemaMedia } from './cinema-media.mjs';
 
 const originalSeatId=p=>p && !p.fixtureCopy ? fixtureFor(p)?.seat?.id || '' : '';
 
 export function createBuildHttp(path, occupied = () => false) {
   let store;
+  const cinemaMedia=createCinemaMedia(path+'.media');
   const registry=createBuildWorkstations(path+'.seats.json',()=>{store ||= createBuildStore(path);return store.snapshot().parts;});
   const limits = new Map();
   const handle = async (req, res, accounts) => {
@@ -44,7 +46,11 @@ export function createBuildHttp(path, occupied = () => false) {
         return true;
       }
       store ||= createBuildStore(path);
+      if(['GET','HEAD'].includes(req.method) && url.searchParams.has('cinemaFile')) {
+        cinemaMedia.serve(req,res,url.searchParams.get('cinemaFile'));return true;
+      }
       if (req.method === 'GET') {
+        if(url.searchParams.has('cinema')){send(200,store.screen(url.searchParams.get('cinema')));return true;}
         const id = url.searchParams.get('chest');
         const snapshot = store.snapshot();
         send(200, id ? { entries: store.chest(id), people: store.people(id) } :
@@ -60,6 +66,13 @@ export function createBuildHttp(path, occupied = () => false) {
           chunks.push(chunk);
         }
         const command = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if(url.searchParams.has('cinemaUpload')){
+          const id=url.searchParams.get('cinemaUpload');store.screen(id);
+          if(command.offset===0)cinemaMedia.prune(store.screenSources());
+          send(200,cinemaMedia.upload(id,account,command));return true;
+        }
+        if(command.action==='cinema' && command.content?.src?.startsWith('/api/build?cinemaFile=')
+          && !cinemaMedia.exists(command.content.src))throw Error('影片尚未上传完成');
         const modifiedIds=command.action==='moveMany' && Array.isArray(command.items)
           ? command.items.map(item=>item.id) : ['move','remove'].includes(command.action) ? [command.id] : [];
         if (modifiedIds.some(id=>occupied(`build-seat-${id}`) || occupied(originalSeatId(store.snapshot().parts.find(p=>p.id===id))) || (registry.index(id)!==undefined && occupied(`desk-${registry.index(id)}`)))) {

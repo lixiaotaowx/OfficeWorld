@@ -38,12 +38,28 @@ function harness(options = {}) {
   const appEvent = { sender: appWindow.webContents, senderFrame: appFrame };
   const intruder = { sender: { send: () => true }, senderFrame: { url: OFFICE_URL } };
   const bridge = installDockBridge({ dock, getWindow: () => appWindow, ipcMain });
-  return { bridge, handlers, dockSent, dockVisible, appSent, event, appEvent, intruder, layouts,
+  return { bridge, handlers, dockSent, dockVisible, appSent, appWindow, event, appEvent, intruder, layouts,
     setTheme: next => { themeValue = next; },
     settle: () => new Promise(resolve => setTimeout(resolve, 0)),
     call: (name, ...args) => handlers[name](event, ...args),
     fromApp: (name, ...args) => handlers[name](appEvent, ...args) };
 }
+
+test('personal status survives IPC and its editor command focuses the main window', () => {
+  const h = harness();
+  h.fromApp('office:dock-publish', { people: [{ id: 'me', self: true, status: '吃饭去了' }] });
+  assert.equal(h.dockSent.at(-1).payload.people[0].status, '吃饭去了');
+  h.call('office:dock-action', { kind: 'status', personId: 'me' });
+  assert.deepEqual(h.appSent.at(-1).payload, { kind: 'status', personId: 'me' });
+  assert.ok(h.appWindow.shown > 0);
+  const shown = h.appWindow.shown;
+  h.call('office:dock-action', { kind: 'status-clear', personId: 'me' });
+  assert.deepEqual(h.appSent.at(-1).payload, { kind: 'status-clear', personId: 'me' });
+  assert.equal(h.appWindow.shown, shown, 'clearing must not open or focus the main window');
+  h.fromApp('office:dock-publish', { people: [], statusControl: { busy: true, error: '保存失败' } });
+  assert.deepEqual(h.dockSent.at(-1).payload.statusControl, { busy: true, error: '保存失败' });
+  assert.throws(() => h.handlers['office:dock-action'](h.intruder, { kind: 'status', personId: 'me' }));
+});
 
 test('主窗口推状态：缓存一份、转发给小窗，共享屏幕时把自己藏起来', () => {
   const h = harness();
@@ -140,6 +156,20 @@ test('点按钮：把小窗的意图转给主窗口，并把办公室窗口抬�
     assert.deepEqual(h.appSent.at(-1), { channel: 'office:dock-command', payload: { kind, personId: 'p1' } });
   }
   assert.equal(h.appEvent.sender === h.intruder.sender, false);
+});
+
+test('只有明确的分享按钮把一次性屏幕采集意图转给主窗口', () => {
+  const { consumeDockCapture } = require('../dock-capture-intent.cjs');
+  const h = harness();
+  for (const kind of ['watch', 'call', 'share', 'meeting-share']) {
+    h.call('office:dock-action', { kind, personId: 'p1' });
+    assert.equal(consumeDockCapture(h.appWindow.webContents),
+      kind === 'share' || kind === 'meeting-share', kind);
+    assert.equal(consumeDockCapture(h.appWindow.webContents), false, '不能重复采集');
+  }
+  assert.throws(() => h.handlers['office:dock-action'](h.intruder,
+    { kind: 'share', personId: 'p1' }), /Untrusted/);
+  assert.equal(consumeDockCapture(h.appWindow.webContents), false, '不可信窗口不能授权');
 });
 
 test('未知动作直接拒绝', () => {
@@ -267,4 +297,99 @@ test('状态清洗：人数上限、未读数取整、空 id 丢掉', () => {
   assert.equal(state.people.length, 1, '空 id 丢掉');
   assert.equal(state.people[0].id, 'bad');
   assert.equal(state.people[0].unread, 0, '负数抹平');
+});
+
+
+test('会议快照与命令经过白名单，小窗不重建媒体连接', () => {
+  const h = harness();
+  h.fromApp('office:dock-publish', { people: [{ id: 'me' }], sharing: true,
+    meeting: { active: true, id: 'meeting-a', host: true, mic: true, sharing: true, title: '讨论',
+      invitations: [{ id: 'meeting-b', personId: 'peer', name: 'CCC', secret: 'discard' }],
+      members: [{id:'account',name:'同事',status:'joined',secret:'discard'},
+        {id:'pending',name:'等待者',status:'invited'}, {id:'bad',status:'bogus'}, null],
+      candidates: [{ id: 'account', personId: 'peer', name: '同事', secret: 'discard' }],
+      screens: [{ id: 'peer', name: '同事', streamId: 'video' }], secret: 'discard' } });
+  const meeting = h.bridge.state().meeting;
+  assert.equal(meeting.active, true);
+  assert.equal(meeting.id, 'meeting-a');
+  assert.equal(meeting.host, true);
+  assert.deepEqual(meeting.members, [{id:'account',name:'同事',status:'joined'},
+    {id:'pending',name:'等待者',status:'invited'}]);
+  assert.deepEqual(meeting.invitations, [{ id: 'meeting-b', personId: 'peer', name: 'CCC' }]);
+  assert.equal(meeting.secret, undefined);
+  assert.equal(meeting.candidates[0].secret, undefined);
+  assert.equal(h.dockVisible.at(-1).visible, true, '会议共享时头像条保留操作入口');
+  h.call('office:dock-action', { kind: 'meeting-create', personId: 'peer',
+    meeting: { title: '主题', invitees: ['account', 42], microphone: false, secret: 'discard' } });
+  assert.deepEqual(h.appSent.at(-1).payload.meeting, { title: '主题', invitees: ['account'], microphone: false });
+  assert.equal(h.appWindow.shown, 0, '小窗创建会议不抢主窗口焦点');
+  for (const kind of ['meeting-mute', 'meeting-share', 'meeting-view', 'meeting-fullscreen',
+    'meeting-leave', 'meeting-end', 'meeting-accept', 'meeting-decline']) {
+    h.call('office:dock-action', { kind, personId: 'peer' });
+    assert.equal(h.appSent.at(-1).payload.kind, kind);
+  }
+});
+
+test('共享视频中转只认两个受信窗口，并限制类型与体积', () => {
+  const h = harness();
+  const video = { id: 'peer', epoch: 'epoch', mime: 'video/webm;codecs=vp8', bytes: new ArrayBuffer(10) };
+  assert.equal(h.fromApp('office:dock-video', video), true);
+  assert.equal(h.dockSent.at(-1).channel, 'office:dock-video');
+  assert.equal(h.fromApp('office:dock-video', { ...video, bytes: new ArrayBuffer(3 * 1024 ** 2) }), false);
+  assert.equal(h.fromApp('office:dock-video', { ...video, mime: 'text/html' }), false);
+  assert.throws(() => h.handlers['office:dock-video'](h.intruder, video));
+  assert.throws(() => h.call('office:dock-video', video));
+  h.call('office:dock-video-want', 'peer');
+  assert.deepEqual(h.appSent.at(-1), { channel: 'office:dock-video-want', payload: 'peer' });
+});
+
+
+test('private snapshots retain ringing and in-call dock, with bounded trusted state', () => {
+  const h = harness();
+  const privateCalls = { invitations:[{id:'r',personId:'visitor',name:'访客',kind:'screen',offer:false,secret:'drop'}],
+    sessions:[], busy:false, error:'' };
+  h.fromApp('office:dock-publish', { people:[], sharing:true, privateCalls });
+  assert.equal(h.dockVisible.at(-1).visible, true);
+  assert.deepEqual(h.call('office:dock-state').privateCalls.invitations,
+    [{id:'r',personId:'visitor',name:'访客',kind:'screen',offer:false}]);
+  privateCalls.invitations = [];
+  privateCalls.sessions = [{id:'s',name:'访客',connected:true,mic:false,sharing:true}];
+  h.fromApp('office:dock-publish', { people:[], sharing:true, privateCalls });
+  assert.equal(h.dockVisible.at(-1).visible, true);
+  privateCalls.sessions = [];
+  h.fromApp('office:dock-publish', { people:[], sharing:true, privateCalls });
+  assert.equal(h.dockVisible.at(-1).visible, false);
+});
+
+test('private commands validate exact session; only explicit start-share or watch acceptance grants capture', () => {
+  const { consumeDockCapture } = require('../dock-capture-intent.cjs');
+  const h = harness();
+  const privateCalls = {invitations:[],sessions:[{id:'s',name:'访客',connected:true,mic:false,sharing:false}]};
+  const publish = () => h.fromApp('office:dock-publish', { people:[], privateCalls });
+  publish();
+  for (const kind of ['private-share','private-mute']) {
+    assert.equal(h.call('office:dock-action', {kind,personId:'wrong'}), false);
+    assert.throws(() => h.handlers['office:dock-action'](h.intruder, {kind,personId:'s'}));
+  }
+  assert.equal(consumeDockCapture(h.appWindow.webContents), false);
+  h.call('office:dock-action', {kind:'private-share',personId:'s'});
+  assert.equal(consumeDockCapture(h.appWindow.webContents), true);
+  assert.equal(consumeDockCapture(h.appWindow.webContents), false);
+  h.call('office:dock-action', {kind:'private-mute',personId:'s'});
+  assert.equal(consumeDockCapture(h.appWindow.webContents), false);
+  assert.equal(h.appWindow.shown, 0, 'toolbar controls do not raise the main window');
+  privateCalls.sessions[0].sharing=true; publish();
+  h.call('office:dock-action', {kind:'private-share',personId:'s'});
+  assert.equal(consumeDockCapture(h.appWindow.webContents), false, 'stop is not a capture intent');
+  for (const [kind,offer,expected] of [['voice',false,false],['screen',true,false],['screen',false,true]]) {
+    privateCalls.invitations=[{id:'r',personId:'visitor',kind,offer}]; publish();
+    assert.equal(h.call('office:dock-answer', {requestId:'expired',accept:true}),false);
+    h.call('office:dock-answer', {requestId:'r',accept:false});
+    assert.equal(consumeDockCapture(h.appWindow.webContents),false);
+    h.call('office:dock-answer', {requestId:'r',accept:true});
+    assert.equal(consumeDockCapture(h.appWindow.webContents),expected);
+  }
+  privateCalls.busy=true; publish();
+  assert.equal(h.call('office:dock-action', {kind:'private-mute',personId:'s'}),false);
+  assert.equal(h.call('office:dock-answer', {requestId:'r',accept:true}),false);
 });

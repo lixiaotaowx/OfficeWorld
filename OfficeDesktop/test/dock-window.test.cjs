@@ -106,12 +106,12 @@ test('建窗：无边框透明、不进任务栏、不抢焦点、贴任务栏�
   assert.equal(win.options.frame, false);
   assert.equal(win.options.transparent, true);
   assert.equal(win.options.skipTaskbar, true);
-  assert.equal(win.options.focusable, false, '点它不该抢走办公室窗口的焦点');
+  assert.equal(win.options.focusable, true, '允许点击控件，显示仍使用 showInactive 避免抢焦点');
   assert.equal(win.options.resizable, false);
   assert.equal(win.options.hasShadow, false);
   assert.equal(win.options.webPreferences.session.name, 'persist:office-world', '和主窗口同会话');
   assert.equal(win.options.webPreferences.nodeIntegration, false);
-  assert.deepEqual(win.alwaysOnTop, [[true, 'screen-saver']], '任务栏是最顶层，要同级才压得住');
+  assert.deepEqual(win.alwaysOnTop, [[false, undefined]], '创建时不抢占最高层，层级由任务栏适配器决定');
   assert.equal(win.url, 'https://115.159.43.237/dock.html');
 });
 
@@ -126,7 +126,7 @@ test('位置：贴着任务栏下边缘、右端留出托盘宽度（量不到�
   assert.equal(win.bounds.x + win.bounds.width, 1920 - TRAY_RESERVE, '右端留出托盘宽度（估算值）');
 });
 
-test('悬停卡片打开：窗口向上长高一个卡片空间，宽度至少放得下卡片；关掉就收回', () => {
+test('悬停卡片开合保持预留窗口尺寸，头像条不闪动', () => {
   const h = harness();
   h.dock.ensure();
   const win = h.window();
@@ -135,15 +135,26 @@ test('悬停卡片打开：窗口向上长高一个卡片空间，宽度至少�
   assert.deepEqual(h.dock.applyLayout({ expanded: true, width: 0 }),
     { expanded: true, stage: false, peek: false, stagePx: 0, width: 400 });
   assert.equal(win.bounds.height, 48 + CARD_SPACE, '卡片要有地方画');
-  assert.equal(win.bounds.y, stripY - CARD_SPACE, '往上长，头像条自己不动');
+  assert.equal(win.bounds.y, stripY, '打开预览不移动透明窗口');
   // 页面量出来的真实宽度以它为准（估算值差过 30px，用户看得见）。
   assert.deepEqual(h.dock.applyLayout({ expanded: true, width: 156 }),
     { expanded: true, stage: false, peek: false, stagePx: 0, width: 156 });
   assert.equal(win.bounds.width, CARD_WIDTH, '展开时仍不能窄于卡片');
   assert.deepEqual(h.dock.applyLayout({ expanded: false, width: 156 }),
     { expanded: false, stage: false, peek: false, stagePx: 0, width: 156 });
-  assert.equal(win.bounds.width, 156, '收起时窗口宽度严格等于页面量出来的条子宽度');
-  assert.equal(win.bounds.height, 48, '收起时窗口就是头像条本身');
+  assert.equal(win.bounds.width, CARD_WIDTH, '收起仍预留预览宽度，透明区域由命中区域穿透');
+  assert.equal(win.bounds.height, 48 + CARD_SPACE, '收起不缩小窗口');
+  const stable = win.getBounds();
+  let resized = 0;
+  const setBounds = win.setBounds.bind(win);
+  win.setBounds = next => { resized++; setBounds(next); };
+  for (let i = 0; i < 5; i++) {
+    h.dock.applyLayout({ expanded: true, width: 156, cardPx: 0 });
+    h.dock.applyLayout({ expanded: true, width: 156, cardPx: 200 });
+    h.dock.applyLayout({ expanded: false, width: 156, cardPx: 0 });
+    assert.deepEqual(win.getBounds(), stable);
+  }
+  assert.equal(resized, 0, '首帧到测量完成及反复悬停均不触发原生窗口重设尺寸');
 });
 
 test('舞台：打电话用老常量、peek 只留一半地方、高度也可以由页面报（来电气泡）', () => {
@@ -156,7 +167,7 @@ test('舞台：打电话用老常量、peek 只留一半地方、高度也可以
   assert.equal(h.dock.stage(), true);
   assert.equal(h.dock.peek(), false);
   assert.equal(win.bounds.height, 48 + STAGE_SPACE, '要放得下那个大角色');
-  assert.equal(win.bounds.y, stripY - STAGE_SPACE, '往上长，头像条自己不动');
+  assert.equal(win.bounds.y, stripY + CARD_SPACE - STAGE_SPACE, '舞台放大仍固定头像条底边');
   // 只是鼠标停在头像上：人物小一倍，窗口也只留一半地方（用户 2026-09-20）。
   assert.deepEqual(h.dock.applyLayout({ expanded: true, stage: true, stageMode: 'peek', width: 156 }),
     { expanded: true, stage: true, peek: true, stagePx: 0, width: 156 });
@@ -174,7 +185,7 @@ test('舞台：打电话用老常量、peek 只留一半地方、高度也可以
   h.dock.applyLayout({ expanded: false, stage: false, width: 156 });
   assert.equal(h.dock.stage(), false);
   assert.equal(h.dock.peek(), false);
-  assert.equal(win.bounds.height, 48, '收起就是头像条本身');
+  assert.equal(win.bounds.height, 48 + CARD_SPACE, '舞台收起回预览预留尺寸');
 });
 
 test('卡片往哪边画：Win11 条子在最左端只能往右，条子一个像素都不动', () => {
@@ -189,14 +200,14 @@ test('卡片往哪边画：Win11 条子在最左端只能往右，条子一个�
   assert.equal(h.dock.popup(), 'right');
   assert.equal(win.bounds.x, collapsed.x, '窗口左边缘不动（条子就贴在它左边）');
   assert.equal(win.bounds.width, CARD_WIDTH);
-  assert.equal(win.bounds.y, collapsed.y - CARD_SPACE, '往上长，条子本身不动');
+  assert.equal(win.bounds.y, collapsed.y, '预览开合不改变窗口上边缘');
   // 舞台（大角色 / 小人儿）也一样：条子始终在窗口左边。
   h.dock.applyLayout({ expanded: true, stage: true, stageMode: 'call', width: 156 });
   assert.equal(h.dock.popup(), 'right');
   assert.equal(win.bounds.x, collapsed.x);
   h.dock.applyLayout({ expanded: false, stage: false, width: 156 });
   assert.equal(win.bounds.x, collapsed.x, '全部收起后窗口左边缘仍是那一个');
-  assert.equal(win.bounds.height, 48, '窗口收回头像条本身');
+  assert.equal(win.bounds.height, 48 + CARD_SPACE, '窗口保留透明预览空间');
 });
 
 test('托盘量到之后贴在它左边：条子右边缘不许越过托盘左边缘', async () => {
@@ -405,24 +416,34 @@ test('不用点击穿透：窗口自己收成头像条大小，永远接收鼠�
   assert.equal(h.window().ignored, undefined);
 });
 
-test('每次贴位置都重新声明置顶并提到最前：任务栏抢不到我们上面', () => {
-  // 用户 2026-09-18：「有时候会突然跑到状态栏底下看不到了」——同属 topmost 的任务栏
-  // 会压到我们上面，所以要周期性地把自己提回去。
+test('原生层级不可用时降级普通窗口，不反复抢到全屏之上', () => {
   const h = harness();
-  h.dock.ensure();
-  const win = h.window();
-  h.dock.place();
-  const raised = win.raised;
-  assert.ok(raised >= 1);
-  h.dock.place();
-  assert.equal(win.raised, raised + 1, '每次贴位置都会再提一次');
-  // 藏起来的时候不该再往上顶。
-  h.dock.setVisible(false, 'sharing');
-  const hidden = win.raised;
-  h.dock.place();
-  assert.equal(win.raised, hidden);
-  h.dock.setVisible(true);
-  assert.ok(win.raised > hidden, '显示回来又会提一次');
+  try {
+    h.dock.ensure();
+    for (let i = 0; i < 10; i++) h.dock.place();
+    assert.equal(h.window().raised || 0, 0);
+    assert.ok(h.window().alwaysOnTop.every(([value]) => value === false));
+  } finally { h.dock.destroy(); }
+});
+
+test('外部全屏临时隐藏，退出后恢复，但不能覆盖共享或手动隐藏', () => {
+  let fullscreen = false;
+  const zOrder = { start() {}, sync: () => true, blocked: () => fullscreen,
+    watching: () => true, diagnostics: () => ({}), stop() {} };
+  const h = harness({ zOrder });
+  try {
+    h.dock.ensure(); h.dock.place(); assert.equal(h.window().isVisible(), true);
+    fullscreen = true; h.dock.place();
+    assert.equal(h.window().isVisible(), false); assert.equal(h.dock.why(), 'fullscreen');
+    fullscreen = false; h.dock.place(); assert.equal(h.window().isVisible(), true);
+    h.dock.setVisible(false, 'sharing');
+    fullscreen = true; h.dock.place(); fullscreen = false; h.dock.place();
+    assert.equal(h.window().isVisible(), false); assert.equal(h.dock.why(), 'page');
+    h.dock.setVisible(true); h.dock.setEnabled(false);
+    fullscreen = true; h.dock.place(); fullscreen = false; h.dock.place();
+    assert.equal(h.window().isVisible(), false); assert.equal(h.dock.why(), 'manual');
+    h.dock.setEnabled(true); assert.equal(h.window().isVisible(), true);
+  } finally { h.dock.destroy(); }
 });
 
 test('宽度跟着人数走，并且和页面里的条子一样宽（差过 30px 导致偏移）', () => {
@@ -435,7 +456,7 @@ test('宽度跟着人数走，并且和页面里的条子一样宽（差过 30px
   assert.equal(h.window().bounds.width, 400, '页面还没报之前用建窗时的估算值');
   // 页面量出来的真实宽度优先。
   h.dock.applyLayout({ expanded: false, width: 156 });
-  assert.equal(h.window().bounds.width, 156);
+  assert.equal(h.window().bounds.width, CARD_WIDTH);
   assert.equal(h.dock.width(), 156);
 });
 

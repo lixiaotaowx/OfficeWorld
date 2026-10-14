@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type * as THREE from 'three';
 import { BuildInteraction } from './buildInteraction';
-import { BuildToolbar } from './BuildToolbar';
+import { BuildStatus } from './BuildStatus';
+import { BuildSelectionColor } from './BuildSelectionColor';
 import { BuildChest } from './BuildChest';
+import { BuildCinema } from './BuildCinema';
+import { BuildAddMenu, type BuildMenuPoint } from './BuildAddMenu';
 import { buildSound } from './buildAudio';
 import { useBuildWorld } from './useBuildWorld';
 import { nextAnchor, type BuildSettings } from './buildTypes';
@@ -11,39 +14,64 @@ import './build.css';
 export function useBuildEditor(accountId: string) {
   const store = useBuildWorld();
   const [settings, setSettings] = useState<BuildSettings>({ mode: 'explore', kind: 'block', color: '#f3dfc5', rotation: 0, height: 0 });
-  const [sound, setSound] = useState(true);
+  const sound = true;
   const [chest, setChest] = useState('');
   const [hint, setHint] = useState('');
+  const [addMenu,setAddMenu]=useState<BuildMenuPoint>();
+  const pointer=useRef<BuildMenuPoint>();
+  const placementReturn=useRef<'explore'|'move'>('explore');
   const interaction = useRef<BuildInteraction>();
-  const latest = useRef({ store, settings, sound, chest });
-  latest.current = { store, settings, sound, chest };
+  const latest = useRef({ store, settings, sound, chest, addMenu });
+  latest.current = { store, settings, sound, chest, addMenu };
   useEffect(() => { interaction.current?.sync(store.world.parts); }, [store.world.parts]);
   useEffect(() => { interaction.current?.refresh(); }, [settings]);
-  useEffect(() => {
-    const shell = document.querySelector<HTMLElement>('.scene-shell');
-    const bar = document.querySelector<HTMLElement>('.stage .bottom-bar');
-    if (!shell || !bar) return;
-    const observer = new ResizeObserver(() => {
-      shell.style.setProperty('--build-bottom', `${bar.getBoundingClientRect().height + 42}px`);
-    });
-    observer.observe(bar);
-    return () => observer.disconnect();
-  }, []);
   const change = (next: BuildSettings) => {
     if (next.rotation !== latest.current.settings.rotation || next.pitch !== latest.current.settings.pitch || next.roll !== latest.current.settings.roll) buildSound('rotate',latest.current.sound);
     setSettings(next);
   };
+  const openAddMenu=(point?:BuildMenuPoint)=>{
+    if(!latest.current.store.ready){setHint('空间尚未连接，请稍后再创建物体');return;}
+    interaction.current?.cancelTransform();
+    if(latest.current.settings.mode!=='place')placementReturn.current=latest.current.settings.mode==='move'?'move':'explore';
+    setAddMenu(point || pointer.current || {x:window.innerWidth/2,y:window.innerHeight/3});
+  };
   useEffect(() => {
+    const trackPointer=(event:PointerEvent)=>{pointer.current={x:event.clientX,y:event.clientY};};
     const keyboard = (event: KeyboardEvent) => {
       if (document.querySelector('.chest-video-backdrop')) return;
       if ((event.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true]')) return;
-      if (event.key === 'Escape') { setChest(''); interaction.current?.cancelMove();setSettings(s => ({ ...s, mode: 'explore' })); }
+      if (event.key==='Escape' && latest.current.chest){setChest('');return;}
       if (latest.current.chest || document.querySelector('[role="dialog"]')) return;
       const key=event.key.toLowerCase();
+      if(key==='a' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey){
+        event.preventDefault();event.stopImmediatePropagation();
+        if(!event.repeat && !latest.current.addMenu)openAddMenu();
+        return;
+      }
+      if(latest.current.addMenu)return;
+      if(event.key==='Escape' && (event.target as HTMLElement)?.closest('.build-selection-color[data-open=true]'))return;
+      if(event.key==='Tab' && !event.ctrlKey && !event.metaKey && !event.altKey){
+        event.preventDefault();event.stopImmediatePropagation();
+        if(event.repeat)return;
+        interaction.current?.cancelTransform();
+        interaction.current?.cancelMove();
+        const mode=latest.current.settings.mode==='move'?'explore':'move';
+        change({...latest.current.settings,mode});
+        setHint(mode==='move'?'移动模式 · 点击选中物体 · Tab 返回漫游':'漫游模式 · Tab 进入移动');
+        return;
+      }
       if((event.ctrlKey || event.metaKey) && ['z','y'].includes(key) && latest.current.settings.mode!=='explore') {
-        event.preventDefault();
+        event.preventDefault();event.stopImmediatePropagation();
+        interaction.current?.cancelTransform();
         void (key==='y' || event.shiftKey ? latest.current.store.redo() : latest.current.store.undo());
         return;
+      }
+      if(!event.ctrlKey && !event.metaKey && (!event.altKey || key==='a') && latest.current.settings.mode==='move'
+        && interaction.current?.shortcut(event)){
+        event.preventDefault();event.stopImmediatePropagation();return;
+      }
+      if(event.key==='Escape'){
+        event.preventDefault();interaction.current?.cancelMove();setSettings(s=>({...s,mode:'explore'}));return;
       }
       if(event.ctrlKey || event.metaKey || event.altKey) return;
       if(latest.current.settings.mode==='explore') return;
@@ -64,7 +92,7 @@ export function useBuildEditor(accountId: string) {
         event.preventDefault();
         change({...latest.current.settings,anchor:nextAnchor(latest.current.settings.anchor)});
       }
-      if (['q','r','x','z'].includes(key) && ['place','move'].includes(latest.current.settings.mode)) {
+      if (['q','r','x','z'].includes(key) && latest.current.settings.mode==='place') {
         event.preventDefault();
         event.stopImmediatePropagation();
         if(event.repeat) return;
@@ -74,10 +102,15 @@ export function useBuildEditor(accountId: string) {
       }
     };
     window.addEventListener('keydown',keyboard,true);
-    return () => window.removeEventListener('keydown',keyboard,true);
+    window.addEventListener('pointermove',trackPointer,true);
+    return ()=>{
+      window.removeEventListener('keydown',keyboard,true);
+      window.removeEventListener('pointermove',trackPointer,true);
+    };
   }, []);
   function attach(world: THREE.Scene, camera: THREE.Camera, element: HTMLElement, focus?: (box:THREE.Box3)=>void, lock?: (locked:boolean)=>void, teleport?: (target:{x:number;y:number;z:number;heading:number})=>void, position?: () => {x:number;z:number}) {
     const controller = new BuildInteraction(world,camera,element,{
+      accountId,
       settings: () => latest.current.settings,
       hint: setHint,
       focus, lock, teleport, position,
@@ -88,11 +121,10 @@ export function useBuildEditor(accountId: string) {
       change: command => {
         return latest.current.store.mutate(command).then(ok => {
           if (ok) buildSound(command.action === 'remove' ? 'remove' : 'place',latest.current.sound);
-          // 放下传送点后**自动回到漫游**：用户报「创建后鼠标只能继续创建从而出不来」——
-          // 回到漫游后点它就是传过去。想连着放好几块可以再点一次「安装」。
-          if (ok && command.action === 'add' && (command.part as {kind?:string} | undefined)?.kind === 'teleport-pad') {
-            setHint('传送点已放下 · 已回到漫游：在任何地方点它都会立刻传过去');
-            change({...latest.current.settings, mode:'explore'});
+          // 创建是临时操作：放下一件后回到创建前的模式；传送点仍回漫游便于点击使用。
+          if (ok && command.action === 'add' && latest.current.settings.mode==='place') {
+            const teleport=(command.part as {kind?:string} | undefined)?.kind === 'teleport-pad';
+            change({...latest.current.settings, mode:teleport?'explore':placementReturn.current});
           }
           return ok;
         });
@@ -107,11 +139,16 @@ export function useBuildEditor(accountId: string) {
     ? '传送点＝目的地：放下后在**任何地方**点它都会立刻传过去（放一块就够）'
     : '';
   const ui = <>
-    <BuildToolbar settings={settings} onChange={change} ready={store.ready} busy={store.busy}
-      message={store.message} hint={hint} tip={tip} sound={sound} onSound={() => setSound(!sound)}
-      onUndo={() => void store.undo()} undoCount={store.undoCount}
-      onRedo={() => void store.redo()} redoCount={store.redoCount} />
-    {chest && <BuildChest key={chest} id={chest} accountId={accountId} onClose={() => setChest('')} />}
+    {settings.mode==='move' && !addMenu && !chest && <BuildSelectionColor read={()=>interaction.current?.colorTarget()}
+      onChange={color=>change({...latest.current.settings,color})} />}
+    <BuildStatus hint={hint} tip={tip} message={store.message} ready={store.ready} />
+    {addMenu && <BuildAddMenu point={addMenu} color={settings.color} kind={settings.kind}
+      onClose={()=>setAddMenu(undefined)} onChoose={kind=>{
+        setAddMenu(undefined);change({...latest.current.settings,kind,mode:'place'});
+      }} />}
+    {chest && (store.world.parts.find(p=>p.id===chest)?.kind==='cinema-screen'
+      ? <BuildCinema key={chest} id={chest} onClose={()=>setChest('')} />
+      : <BuildChest key={chest} id={chest} accountId={accountId} onClose={() => setChest('')} />)}
   </>;
   return { attach, ui, revision:store.world.revision };
 }

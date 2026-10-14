@@ -1,3 +1,4 @@
+import MeetingStartForm from './MeetingStartForm';
 import { useEffect, useState } from 'react';
 import type { Person } from './types';
 import type { useMeetings } from './useMeetings';
@@ -19,7 +20,6 @@ export default function MeetingCenter({ client, people, accountId, open, onClose
   onClose: () => void; onOpen: () => void; videos: Record<string, MediaStream>;
   annotation: MeetingAnnotation;
 }) {
-  const [title, setTitle] = useState('办公室讨论');
   const [selected, setSelected] = useState<string[]>([]);
   const [microphone, setMicrophone] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -115,13 +115,9 @@ export default function MeetingCenter({ client, people, accountId, open, onClose
           {host && <details><summary>邀请更多同事</summary>{invitePicker}
             <button disabled={busy || !selected.length} onClick={() => void run(() => client.act({ action: 'invite', id: active.id, invitees: selected }))}>发送邀请（{selected.length}）</button>
           </details>}
-        </> : pendingInvitation ? <p>你收到了一份会议邀请，请在下方接受或拒绝。</p> : <form onSubmit={e => { e.preventDefault(); void run(() => client.act({ action: 'create', title, invitees: selected, microphone })); }}>
-          <label className="meeting-title">会议主题<input value={title} onChange={e => setTitle(e.target.value)} maxLength={60} required /></label>
-          {invitePicker}
-          <label className="meeting-mic"><input type="checkbox" checked={microphone} onChange={e => setMicrophone(e.target.checked)} /> 入会时开启麦克风</label>
-          <p className="meeting-meta">默认静音加入；开启麦克风和共享屏幕时会由浏览器请求授权。</p>
-          <button type="submit" className="primary" disabled={busy}>{busy ? '处理中…' : '创建会议并发送邀请'}</button>
-        </form>}
+        </> : pendingInvitation ? <p>你收到了一份会议邀请，请在下方接受或拒绝。</p> : <MeetingStartForm candidates={candidates.map(p => ({ id: p.clientId, name: p.name }))}
+          busy={busy} onMicrophoneChange={setMicrophone}
+          onCreate={value => void run(() => client.act({ action: 'create', ...value }))} />}
         {client.invitations.length > 0 && <section className="meeting-invitations"><h3>邀请与可返回的会议</h3>
           {client.invitations.map(m => <article key={m.id}>
             <strong>{m.title}</strong><p>{m.members.find(p => p.id === m.host)?.name} 发起 · 会议号 {m.code}</p>

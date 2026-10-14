@@ -238,3 +238,12 @@ test('窗口长出来时头像条一个像素都不动（Win11 那条小 bug）'
     assert.equal(box.strip.x, side, '条子钉在窗口靠' + (box.popup === 'right' ? '左' : '右') + '的那条边');
   }
 });
+
+test('会议气泡与 peek 同时打开：按气泡尺寸扩展但头像位置保持不变', () => {
+  const base = { display: display(), width: 160, anchor: 'left' };
+  const closed = dockBounds({ ...base, expanded: false });
+  const open = dockBounds({ ...base, expanded: true, stage: true, peek: true, cardPx: 460 });
+  assert.ok(open.width >= 340);
+  assert.equal(open.height, closed.strip.height + 460);
+  assert.deepEqual(open.strip, closed.strip);
+});

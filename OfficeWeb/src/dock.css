@@ -313,7 +313,7 @@ html, body { background: transparent; }
   gap: 8px;
   max-width: 100%;
   height: 52px;
-  pointer-events: auto;
+  pointer-events: none;
   /* 高度含边框：和下面角色的头顶留出干净的间隙。 */
   box-sizing: border-box;
   padding: 0 6px 0 14px;
@@ -338,6 +338,7 @@ html, body { background: transparent; }
   text-overflow: ellipsis;
 }
 .dock-call-actions { display: flex; align-items: center; gap: 6px; }
+.dock-call-actions button { pointer-events: auto; }
 .dock-call-actions button {
   display: flex;
   align-items: center;

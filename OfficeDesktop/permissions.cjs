@@ -1,5 +1,6 @@
 const { desktopCapturer, screen } = require('electron');
 const { trusted, microphoneOnly } = require('./policy.cjs');
+const { consumeDockCapture } = require('./dock-capture-intent.cjs');
 
 function configurePermissions(session, getWindow, hooks = {}) {
   const current = wc => wc && !wc.isDestroyed() && wc === getWindow()?.webContents && trusted(wc.getURL());
@@ -32,17 +33,21 @@ function configurePermissions(session, getWindow, hooks = {}) {
     const frame = request.frame;
     const wc = getWindow()?.webContents;
     if (!current(wc) || !frame || frame !== wc.mainFrame || !trusted(request.securityOrigin) ||
-        !request.userGesture || !request.videoRequested) {
+        !request.videoRequested) {
       callback({}); return;
     }
+    const dockClick = consumeDockCapture(wc);
+    if (!request.userGesture && !dockClick) { callback({}); return; }
     try {
       // No picker window: sharing follows the display the workstation preview is
       // already using, so a private call and a meeting capture the same screen.
       const source = await hooks.displays?.source(desktopCapturer, screen);
       if (!source || !current(wc) || request.frame !== wc.mainFrame) { callback({}); return; }
       hooks.onDisplayChosen?.(source.display_id || '');
-      // Screen sound and microphone are not implicitly bundled into capture.
-      callback({ video: source });
+      // Electron 44.3 accepts Chromium's loopback device ID. Explicitly exclude
+      // this process tree: restrictOwnAudio alone is ignored in our Windows test.
+      // This keeps received calls out of the outgoing system audio (no echo loop).
+      callback({ video: source, ...(request.audioRequested ? { audio: 'loopbackWithoutChrome' } : {}) });
     } catch { callback({}); }
   });
 

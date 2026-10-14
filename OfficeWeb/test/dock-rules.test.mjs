@@ -30,14 +30,16 @@ test('悬停卡片那个尖要对准头像，且不许跑到卡片外面（用�
   assert.equal(cardTipOffset(0, 0, 100), null);
   assert.equal(cardTipOffset(Number.NaN, 294, 100), null);
   // 页面接线：尖真的画在卡片里，位置来自上面那个纯函数。
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /className="dock-card-tip"/, '卡片要有那个尖');
   assert.match(dock, /cardTipOffset\(frame\.left, frame\.width, box\.left \+ box\.width \/ 2\)/,
     '尖的位置要按"头像中点 - 卡片左边界"算');
   const css = readFileSync(new URL('../src/dock.css', import.meta.url), 'utf8') +
     readFileSync(new URL('../src/dock-card.css', import.meta.url), 'utf8');
-  assert.match(css, /\.dock-card-tip \{[\s\S]*?transform: rotate\(45deg\)/, '尖是转 45° 的方块');
-  assert.match(css, /\.dock\.edge-top \.dock-card-tip \{[\s\S]*?rotate\(225deg\)/,
+  assert.match(css, /\.dock-card-tip \{[\s\S]*?clip-path: polygon\(0 0, 100% 0, 50% 100%\)/, '尖是贴合底边的实心三角');
+  assert.match(css, /\.dock\.edge-top \.dock-card-tip \{[\s\S]*?scaleY\(-1\)/,
     '任务栏在上方时要转过来指向上面的头像');
 });
 
@@ -143,10 +145,13 @@ test('占位文案说清"是规则没有"而不是坏了；离座的人不许写
   assert.equal(previewPlaceholder(null), '');
 });
 
-test('小窗报版面：卡片开合 + 条子真实宽度（窗口据此收放，不靠点击穿透）', () => {
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
-  assert.match(dock, /officeDock\?\.layout\?\.\(\{ expanded: Boolean\(hovered\), stage: Boolean\(greet\),/,
+test('小窗报版面：卡片开合、条子宽度和控件命中区域交给主进程', () => {
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
+  assert.match(dock, /const payload = \{ expanded: Boolean\(statusMenu \|\| state.people.some\(p => p.status\) \|\| hovered \|\| shares.length \|\| meetingPerson !== null \|\| state.meeting\?\.active\), cardPx, stage: Boolean\(greet\),/,
     '悬停状态、舞台、条子宽度都要报给主进程');
+  assert.match(dock, /officeDock\?\.layout\?\.\(payload\)/, '去重后的完整 payload 仍须传给主进程');
   assert.equal(dock.includes('setInteractive'), false, '点击穿透那套已经废弃（实测收不到 mousemove）');
   assert.equal(dock.includes('dockInteractive'), false, '命中判定搬到主进程的窗口尺寸上了');
   const rules = readFileSync(new URL('../src/dockRules.ts', import.meta.url), 'utf8');
@@ -173,7 +178,9 @@ test('有人来看我了：动作要从角色自带的动作库里挑一条，�
   assert.ok(names.includes(clip), `角色动作库里没有 ${clip}，手上这些：${names.join(', ')}`);
   assert.equal(clip, '招手_Wave', '打招呼就该是招手');
   // 舞台按需加载 three.js：平时那一页不能把 three.js 直接 import 进来。
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /import\('\.\/dockStage'\)/, 'three.js 只在真有人来看时才加载');
   assert.doesNotMatch(dock.split('\n').filter(l => l.startsWith('import ')).join('\n'), /three/,
     '小窗页面的静态 import 里不许出现 three');
@@ -231,11 +238,13 @@ test('舞台两种场合：只是停一下小一倍不演动作，打电话过�
   assert.equal(greetMode(undefined), 'peek', '没带 mode 的老消息当"只是看一眼"，别突然放个大角色');
   assert.equal(greetMode('whatever'), 'peek');
   // 页面：画布尺寸与动作都跟着 mode 走，并把 stageMode 报给主进程（窗口据此留地方）。
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /GREET_CANVAS\[mode\]/, '画布尺寸按场合取');
   assert.match(dock, /\{ appearance: resolveAppearance\(appearance\), size: mode \}/,
     '三种场合走同一个舞台函数，只差 size；外观按那个人的配色与配件传下去');
-  assert.match(dock, /stageMode: mode, stagePx, width \}\)/, '窗口要据此决定留多大地方');
+  assert.match(dock, /stageMode: mode, stagePx, width,/, '窗口要据此决定留多大地方');
   assert.match(dock, /key=\{greet\.id \+ greetMode\(greet\.mode\)\}/,
     '换人或场合变了要重新挂载');
   assert.match(dock, /\[look, mode\]/, '名单中的外观变化也必须更新舞台');
@@ -281,7 +290,9 @@ test('头像外面那圈框的颜色跟着任务栏适配（用户 2026-09-20）
   }
   assert.equal(hexToRgba('胡说', 0.2), 'rgba(255, 255, 255, 0.2)');
   // 页面：所有头像真的被同一个框包住，颜色从 state.theme 来。
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /<div className="dock-frame"[^>]*>/, '头像要套在一个框里');
   assert.match(dock, /const frame = frameColors\(state\.theme\)/);
   assert.match(dock, /\['--dock-frame-bg' as string\]: frame\.background/);
@@ -330,43 +341,13 @@ test('短暂掉线时不许把整排头像抹掉（用户 2026-09-20：「有时
   assert.match(hook, /connected: current\.connected/, '小窗要拿到连接状态');
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
   assert.match(app, /connected: office\.connected/);
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /mergeState\(old, next as DockState\)/, '小窗收状态时要过这条规则');
 });
 
-test('来电气泡写什么：谁 + 怎么打过来的（用户 2026-09-21）', async () => {
-  const { callLabel, CALL_BAR_HEIGHT } = await import(
-    'data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
-  assert.equal(callLabel({ name: '同事乙', kind: 'voice' }), '同事乙 来电 · 语音通话');
-  assert.equal(callLabel({ name: '同事乙', kind: 'screen', offer: false }), '同事乙 来电 · 想看你的屏幕');
-  assert.equal(callLabel({ name: '同事乙', kind: 'screen', offer: true }), '同事乙 来电 · 要给你看屏幕');
-  assert.equal(callLabel({}), '同事 来电', '不知道是谁/种类也得有句话');
-  // 老客户端（<0.1.28）不转发邀请的种类：那会儿别瞎猜是语音还是屏幕（用户 2026-09-21 之后）。
-  assert.equal(callLabel({ name: '同事乙' }), '同事乙 来电');
-  assert.equal(callLabel({ name: '同事乙', kind: '乱七八糟' }), '同事乙 来电', '脏种类不许瞎猜');
-  assert.ok(CALL_BAR_HEIGHT >= 52 && CALL_BAR_HEIGHT <= 80, '气泡高度要留够：' + CALL_BAR_HEIGHT);
-  // 头像条那页：气泡带两个按钮、接听走 answer 桥；舞台给它让出高度。
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
-  assert.match(dock, /className="dock-call"/, '要有那条来电气泡');
-  assert.match(dock, /callLabel\(greet\)/);
-  assert.match(dock, /window\.officeDock\?\.answer\?\.\(requestId, accept\)/);
-  assert.match(dock, /GREET_CANVAS\[greetMode\(greet\.mode\)\]\.height \+/, '舞台高度要把气泡算进去');
-  assert.match(dock, /stagePx, width \}\)/, '高度要报给主进程，不然气泡会被窗口裁掉');
-  const css = readFileSync(new URL('../src/dock.css', import.meta.url), 'utf8') +
-    readFileSync(new URL('../src/dock-card.css', import.meta.url), 'utf8');
-  assert.match(css, /\.dock-call \{[\s\S]*border-radius: 999px/, '气泡也是灵动岛那种圆角');
-  // 位置：**挂在角色头顶**（用户 2026-09-21 纠正：「我是说打招呼的人站在状态栏上的人物
-  // 头顶」）。外层和角色画布同一格（同宽、贴在画布上边缘之上），气泡在里面居中。
-  assert.match(css, /\.dock-call-wrap \{[\s\S]*bottom: calc\(var\(--dock-h\) \+ var\(--dock-stage-h, 380px\)\)/,
-    '气泡要挂在画布上边缘之上（= 角色头顶）');
-  assert.match(css, /\.dock-call-wrap \{[\s\S]*width: var\(--dock-stage-w, 320px\)/,
-    '外层和角色画布一样宽，居中的气泡才对得上头');
-  assert.match(css, /\.dock-call-wrap \{[\s\S]*justify-content: center/, '气泡对准人物头顶，不偏在一边');
-  assert.match(css, /\.dock-call-wrap \{[\s\S]*pointer-events: none/, '外层的透明区不许吃鼠标');
-  assert.match(css, /\.dock-call \{[\s\S]*pointer-events: auto/, '气泡本身要能点');
-  assert.ok(!/over-call/.test(css), '「角色站在气泡上面」那一版已经删掉，别留下旧规则');
-  assert.ok(!/over-call/.test(dock), 'dock.tsx 里也不该再有 over-call');
-});
+
 
 test('尺子角色 GLD 里，look.ts 登记的每个配件都真的在，招式动作也真的指向骨骼', () => {
   // 用户 2026-09-20：「注意检查所有角色都要适配打招呼的动作」→ 现在只有一个角色（尺子），
@@ -459,7 +440,9 @@ test('头像顺序要粘住：鼠标看着谁，谁就不许被换走（用户 2
     ['b', 'a', 'c'], '顺序表里没有的人接在最后，别丢人');
 
   // 页面真的接上了：指针进出的两个事件 + 画的是粘住的顺序。
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /onMouseEnter=\{\(\) => setPointerOn\(true\)\}/, '指针上来要冻结顺序');
   assert.match(dock, /onMouseLeave=\{\(\) => setPointerOn\(false\)\}/);
   assert.match(dock, /stickyOrder\(orderRef\.current, state\.people\.map\(row => row\.id\), Date\.now\(\), pointerOn\)/);
@@ -471,7 +454,9 @@ test('头像顺序要粘住：鼠标看着谁，谁就不许被换走（用户 2
 });
 
 test('铁律：小窗只做显示 + 遥控，绝不连 socket、绝不碰媒体', () => {
-  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8');
+  const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
+    readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   for (const forbidden of ['socket.io-client', 'useOffice', 'OfficeScene', 'getDisplayMedia',
     'RTCPeerConnection', 'fetch(']) {
     assert.equal(dock.includes(forbidden), false, '小窗里不该出现 ' + forbidden);

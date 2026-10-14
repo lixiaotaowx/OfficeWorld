@@ -100,7 +100,7 @@ function installDesktopBridge(getWindow, dependencies = {}) {
   handle('office:focus', () => {
     const window = getWindow();
     if (window.isMinimized()) window.restore();
-    window.show(); window.focus(); return true;
+    window.show(); window.moveTop(); window.focus(); return true;
   });
   // Incoming call / voice / meeting alerts. A renderer HTML5 Notification is not
   // dependable once the window is hidden in the tray, so the alert is raised from

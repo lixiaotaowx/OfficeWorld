@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+      <div id="root" style="width:330px;height:190px;transform:translate(30px,40px);overflow:hidden;filter:blur(0)"></div>
+      <script type="module">
+      import React from 'react';import {createRoot} from 'react-dom/client';
+      import ScreenStage from '/src/ScreenStage.tsx';
+      const canvas=document.createElement('canvas');canvas.width=1280;canvas.height=720;
+      canvas.getContext('2d').fillRect(0,0,1280,720);const stream=canvas.captureStream(10);
+      window.__focus=0;let listener;
+      window.officeDesktop={focusWindow:async()=>{window.__focus++;return true},
+        onFullscreenChange:fn=>{listener=fn;return()=>{}},setFullscreen:async v=>{listener(v);return v}};
+      createRoot(document.getElementById('root')).render(React.createElement(ScreenStage,
+        {stream,scope:'meeting',label:'会议共享',annotatable:false,onDraw(){},onClear(){},onUndo(){}}));
+      </script></body></html>

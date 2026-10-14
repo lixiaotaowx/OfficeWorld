@@ -4,6 +4,12 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('officeDock', Object.freeze({
   /** 首帧状态（主进程缓存的主窗口最后一次推送）。 */
+  videoWant: id => ipcRenderer.invoke('office:dock-video-want', id),
+  onVideo(callback) {
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on('office:dock-video', listener);
+    return () => ipcRenderer.removeListener('office:dock-video', listener);
+  },
   state: () => ipcRenderer.invoke('office:dock-state'),
   /** 主窗口后来推的状态。 */
   onState(callback) {
@@ -19,7 +25,7 @@ contextBridge.exposeInMainWorld('officeDock', Object.freeze({
     return () => ipcRenderer.removeListener('office:dock-preview', listener);
   },
   /** 卡片上的三个按钮：看对方屏幕 / 把我的屏幕给他 / 语音通话。 */
-  action: (kind, personId) => ipcRenderer.invoke('office:dock-action', { kind, personId }),
+  action: (kind, personId, meeting) => ipcRenderer.invoke('office:dock-action', { kind, personId, meeting }),
   /** 接听 / 拒绝某一通来电（用户 2026-09-21）：交给主窗口去应答那条邀请。 */
   answer: (requestId, accept) => ipcRenderer.invoke('office:dock-answer',
     { requestId: String(requestId || ''), accept: accept === true }),
@@ -31,7 +37,12 @@ contextBridge.exposeInMainWorld('officeDock', Object.freeze({
     stageMode: input?.stageMode === 'peek' || input?.stageMode === 'call' ? input.stageMode : '',
     // 来电气泡会让舞台更高，所以高度由页面算好报上来（上限挡一下脏数据）。
     stagePx: Math.max(0, Math.min(900, Math.round(Number(input?.stagePx) || 0))),
-    width: Number(input?.width) || 0 }),
+    cardPx: Math.max(0, Math.min(700, Number(input?.cardPx) || 0)),
+    width: Number(input?.width) || 0,
+    // Preserve measured control regions; dropping these makes meeting buttons click through.
+    hitRegions: (Array.isArray(input?.hitRegions) ? input.hitRegions : []).slice(0, 80)
+      .filter(row => row && ['x', 'y', 'width', 'height'].every(key => Number.isFinite(row[key])))
+      .map(({ x, y, width, height }) => ({ x, y, width, height })) }),
   /** 有人在看我的头像：把那个人的角色拉出来演一段动作（主窗口 → 主进程 → 这里）。 */
   onGreet(callback) {
     const listener = (_event, payload) => callback(payload || {});

@@ -317,6 +317,7 @@ export function useOffice(account: Account) {
     if (requestBusy.current) return;
     requestBusy.current = true;
     const request = requests.find(r => r.id === id);
+    if (!request) { requestBusy.current = false; return; }
     let captured: MediaStream | null = null;
     try {
       if (accept && request?.kind === 'screen' && !request.offer && !media.current?.screen?.active) {
@@ -381,8 +382,8 @@ export function useOffice(account: Account) {
     adminKick: seatApi.adminKick,
     share,
     shareInCall: async (id: string) => {
-      try { await media.current?.shareInCall(id); annotations.attach(); }
-      catch (error) { setNotice(error instanceof Error ? error.message : '未开始共享，请重试'); }
+      try { await media.current?.shareInCall(id); annotations.attach(); return true; }
+      catch (error) { setNotice(error instanceof Error ? error.message : '未开始共享，请重试'); return false; }
     },
     stopShare: () => { media.current?.stopScreen(); annotations.detach(); },
     clientId: account.id,
@@ -450,7 +451,8 @@ export function useOffice(account: Account) {
       try {
         await media.current?.toggleMute(media.current?.privateVoiceStatus(sessionId) === '已开启', sessionId);
         setMuted(media.current?.privateVoiceStatus() === '已静音');
-      } catch { setNotice('麦克风开启失败，请检查权限或设备后重试'); }
+        return true;
+      } catch { setNotice('麦克风开启失败，请检查权限或设备后重试'); return false; }
       finally { muteBusy.current = false; setVoiceStatus(media.current?.privateVoiceStatus() || '未通话'); }
     },
   };

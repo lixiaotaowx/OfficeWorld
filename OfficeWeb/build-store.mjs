@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
 import { fixtureFor, initialFixtures } from './scene-fixtures.mjs';
 import { randomUUID } from 'node:crypto';
+import { cleanCinemaContent } from './cinema-content.mjs';
 
 export const catalog = JSON.parse(readFileSync(new URL('./build-catalog.json', import.meta.url), 'utf8'));
 export const palette = ['#f3dfc5', '#e9b8b5', '#b9c9df', '#b4c5a0', '#cabddd', '#c69770', '#596679'];
@@ -105,7 +106,8 @@ export function createBuildStore(path) {
   let state = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : { revision: 0, parts: seedParts(), chests: {} };
   if (!Array.isArray(state.parts) || !state.chests || !Number.isInteger(state.revision)) throw Error('建造存档无效');
   const snapshot = () => ({ revision: state.revision, parts: state.parts.map(p => p.kind === 'chest'
-    ? { ...p, chestPeople: state.chestPeople?.[p.id] || { readers: [] } } : p) });
+    ? { ...p, chestPeople: state.chestPeople?.[p.id] || { readers: [] } } : p.kind==='cinema-screen'
+      ? {...p,cinemaVersion:state.screens?.[p.id]?.revision || 0} : p) });
   const person = user => ({ id: user.id, name: user.name, appearance: user.appearance || null });
   const commit = next => {
     next.revision = state.revision + 1;
@@ -143,6 +145,12 @@ export function createBuildStore(path) {
   migrateGrid();
   return {
     snapshot,
+    screenSources(){return Object.values(state.screens || {}).map(row=>row.content?.src).filter(Boolean);},
+    screen(id) {
+      const part=state.parts.find(p=>p.id===id && p.kind==='cinema-screen');
+      if(!part)throw Error('影院屏幕已被拆除');
+      return {content:state.screens?.[id]?.content || null,version:part.version};
+    },
     chest(id) {
       if (!state.parts.some(p => p.id === id && p.kind === 'chest')) throw Error('宝箱已被拆除');
       return state.chests[id] || [];
@@ -152,6 +160,7 @@ export function createBuildStore(path) {
       const next = structuredClone(state);
       const index = next.parts.findIndex(p => p.id === command.id);
       const previous = next.parts[index];
+      const previousCinema=state.screens?.[command.id]?.content;
       if(command.action==='moveMany') {
         const items=command.items;
         if(!Array.isArray(items)||!items.length||items.length>1000)throw Error('多选数量无效');
@@ -174,10 +183,22 @@ export function createBuildStore(path) {
         const part = { ...cleaned, id: randomUUID(), version: 1 };
         next.parts.push(part);
         if (part.kind === 'chest') (next.chestPeople ||= {})[part.id] = { creator: person(user), readers: [] };
+        if(part.kind==='cinema-screen') {
+          const saved=command.action==='duplicate'?next.screens?.[previous.id]?.content:command.cinemaContent;
+          if(saved)(next.screens ||= {})[part.id]={content:cleanCinemaContent(saved),revision:1};
+        }
         commit(next);
         return { ...snapshot(), changed: part };
       }
       if (!previous) throw Error('部件已被拆除，请刷新位置后重试');
+      if(command.action==='cinema') {
+        if(previous.kind!=='cinema-screen')throw Error('只能设置影院屏幕');
+        if(previous.version!==command.version)throw Error('同事刚修改了影院屏幕，请重新打开');
+        const content=cleanCinemaContent(command.content);
+        (next.screens ||= {})[previous.id]={content,revision:(next.screens?.[previous.id]?.revision || 0)+1};
+        next.parts[index]={...previous,version:previous.version+1};
+        commit(next);return snapshot();
+      }
       if (command.action === 'read') {
         if (previous.kind !== 'chest') throw Error('只能阅读宝箱');
         const people = (next.chestPeople ||= {})[previous.id] ||= { readers: [] };
@@ -192,6 +213,7 @@ export function createBuildStore(path) {
           if ((next.chests[previous.id] || []).length) throw Error('宝箱里还有内容，请先取出内容');
           next.parts.splice(index, 1);
           delete next.chests[previous.id];
+          if(next.screens)delete next.screens[previous.id];
           if (next.chestPeople) delete next.chestPeople[previous.id];
         } else {
           const part = cleanPart({ ...command.part, kind: previous.kind, fixture: previous.fixture, fixtureCopy: previous.fixtureCopy });
@@ -230,7 +252,8 @@ export function createBuildStore(path) {
         next.chests[previous.id] = entries.filter(item => item.id !== entry.id);
       } else throw Error('不支持的操作');
       commit(next);
-      return { ...snapshot(), previous, changed: next.parts.find(p => p.id === previous.id) };
+      return { ...snapshot(), previous, changed: next.parts.find(p => p.id === previous.id),
+        ...(command.action==='remove' && previous.kind==='cinema-screen'?{previousCinema}: {}) };
     },
   };
 }

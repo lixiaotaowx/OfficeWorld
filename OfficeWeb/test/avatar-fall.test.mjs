@@ -23,6 +23,30 @@ const { walkStep } = walk;
 const box = (x, y, z, w, h, d) => ({ min: { x: x - w / 2, y, z: z - d / 2 }, max: { x: x + w / 2, y: y + h, z: z + d / 2 } });
 const HIGH_TOP = 6.25, LOW_TOP = 3.25, DEATH = -4.5;
 
+test('家具挤占身体净空时，地板仍承托角色，行走碰撞不被取消',()=>{
+  setBuildSolids([box(100,-.25,0,4,.25,4),box(100,.44,0,.65,.14,.65)]);
+  try{
+    assert.equal(supportHeight(100,0,0),null,'椅面挡住身体，通行判定仍拒绝');
+    assert.equal(nav.blocksBody(100,0,0),true);
+    assert.equal(supportBelow(100,0,0),0,'重力仍认脚下地板');
+    const rig=new FallRig(),point={x:100,y:0,z:0};
+    for(let i=0;i<120;i++)assert.equal(rig.stranded(point),false);
+    assert.equal(point.y,0);
+    const landed=fallStep(beginFall(point),100,0,1/60,-5);
+    assert.equal(landed.landed,0,'已有下落状态也会被地板接住');
+  }finally{setBuildSolids(null);}
+});
+
+test('近邻地板抬高时脚点恢复到顶面；真正悬空仍下落',()=>{
+  setBuildSolids([box(100,0,0,4,.25,4)]);
+  try{
+    const rig=new FallRig(),point={x:100,y:0,z:0};
+    assert.equal(rig.stranded(point),false);assert.equal(point.y,.25);
+    assert.equal(rig.stranded({x:100,y:2,z:0}),true);
+    assert.equal(rig.stranded({x:110,y:.25,z:0}),true);
+  }finally{setBuildSolids(null);}
+});
+
 function world(extra = []) {
   setBuildSolids([box(100, 6, 0, 4, 0.25, 4), box(100, 3, 4, 4, 0.25, 4), box(140, -4, 0, 1, 1, 1), ...extra]);
 }

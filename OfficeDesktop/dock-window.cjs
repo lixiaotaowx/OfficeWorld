@@ -1,21 +1,20 @@
-// 任务栏头像条那个小窗（用户 2026-09-17：「贴 Windows 任务栏、永远置顶、无边框，
-// 紧贴右侧托盘左边」）。
+// 任务栏头像条：无边框、紧贴任务栏；与任务栏同层，前台全屏时避让。
 //
 // 它只负责"显示 + 遥控"：不连 socket、不碰媒体，状态与预览帧都由主窗口经主进程中转。
 // 位置用 taskbar-position.cjs 算；任务栏自动隐藏、换边、换屏、改 DPI 都会重新贴回去。
 //
-// 鼠标：**窗口始终接收鼠标事件**（不做 setIgnoreMouseEvents 穿透）。原来那版让窗口一直
+// 鼠标：现由 dock-pointer 在主进程读屏幕指针，仅在页面上报的控件区域接收输入。
+// 装饰人物与透明背景穿透；不依赖 forward。下面保留旧方案的实测原因：原来让窗口一直
 // 穿透、靠 Electron 的 `{ forward: true }` 把 mousemove 转给页面，再由页面判断指针是否落在
 // 头像条上来切换穿透（用户 2026-09-17 的做法）。2026-09-18 实测这套在这台机器上**根本不
 // 工作**：ignore+forward 状态下页面收不到任何 mousemove（0 条），于是页面永远判不出"指针
 // 上来了"，悬停卡片与点击全都不响应；把穿透关掉后同样的鼠标轨迹立刻收到 40 条 mousemove、
 // 卡片也画出来了（Build/dock-hover-watch.mjs 是对应的探针）。这类透明窗上的 forward 本来
 // 就不稳（electron#40213），所以改成不依赖它：
-//   · 没人悬停时窗口**就是头像条本身**那么大（一个像素都不多占任务栏，绝不会挡住别人的图标）；
-//   · 头像悬停时页面说一声，窗口向上长高一个卡片空间（右/下边缘不动，所以头像条不会跳），
-//     指针可以顺着走进卡片点按钮；松开关掉卡片后立刻收回去。
+//   · 预留透明卡片空间，悬停开合不重设窗口尺寸，避免 Windows 合成旧画面时闪动；
+//   · dock-pointer 按可见控件的命中区域接收输入，空白和装饰照常穿透。
 const path = require('node:path');
-const { createTaskbarGuard } = require('./dock-taskbar-guard.cjs');
+const { createDockPointer } = require('./dock-pointer.cjs');
 const { createDockZOrder } = require('./dock-z-order.cjs');
 const { dockBounds, dockAnchor, taskbarRect, STRIP_HEIGHT, CARD_SPACE } = require('./taskbar-position.cjs');
 
@@ -51,6 +50,7 @@ function createDockWindow(dependencies = {}) {
   const electron = dependencies.electron || require('electron');
   const BrowserWindow = dependencies.BrowserWindow || electron.BrowserWindow;
   const screenApi = dependencies.screen || electron.screen;
+  const pointer = createDockPointer({ screen: screenApi, getWindow: () => window });
   const sessionApi = dependencies.session || electron.session;
   const preload = dependencies.preload || path.join(__dirname, 'desktop-dock-preload.cjs');
   const url = dependencies.url || '';
@@ -87,8 +87,9 @@ function createDockWindow(dependencies = {}) {
   let edge = 'bottom';     // 任务栏在哪条边：页面据此决定卡片朝上还是朝下画
   let popup = 'left';      // 卡片/舞台画在头像条左边还是右边（Win11 条子在最左，只能往右画）
   let stripHeight = STRIP_HEIGHT;  // 头像条高度 = 任务栏厚度（页面据此定头像大小）
-  let expanded = false;    // 悬停卡片开着：窗口要长高一个卡片空间（没人悬停时窗口 = 头像条）
+  let expanded = false;    // 悬停卡片是否显示；原生窗口始终预留基础卡片空间
   let stage = false;       // 「有人来看我了」的舞台亮着：窗口再长高一大截，放得下那个大角色
+  let cardPx = 0;
   let stagePx = 0;         // 舞台要多高（页面报的，含来电气泡）；0 = 用老常量
   let hiddenStreak = 0;    // 「任务栏不在了」连续读到几次（见 HIDE_AFTER_MISSES）
   let peek = false;        // 只是鼠标停在头像上：人物小一倍，窗口也只留一半地方
@@ -112,15 +113,10 @@ function createDockWindow(dependencies = {}) {
   let destroyed = false;
   // 上一次"为什么显示 / 为什么藏"的结论：只在变化时落盘，给下次排查留证据（见 note()）。
   let lastDecision = '';
-  const canShow = () => !destroyed && pageVisible && manual && lastDecision === 'shown' &&
-    window && !window.isDestroyed() && !systemHidden();
-  const zOrder = dependencies.zOrder || createDockZOrder({ allowed: canShow, repair: () => place() });
-  const taskbarGuard = createTaskbarGuard({
-    screen: screenApi,
-    allowed: () => !zOrder.watching() && canShow() && window.isVisible(),
-    // Only repair z-order: no hide/show, focus, disk reads or geometry changes.
-    raise: () => window.moveTop?.(),
-  });
+  // Keep watching while temporarily hidden, so leaving another app's fullscreen
+  // restores the dock even when no new page state or taskbar mouse event arrives.
+  const canFollow = () => !destroyed && pageVisible && manual && window && !window.isDestroyed();
+  const zOrder = dependencies.zOrder || createDockZOrder({ allowed: canFollow, repair: () => place() });
 
   const display = () => {
     try { return screenApi.getPrimaryDisplay(); } catch { return null; }
@@ -158,7 +154,11 @@ function createDockWindow(dependencies = {}) {
   function layout(overrides = {}) {
     const saved = store.read() || {};
     return position({
-      display: display(), width: widthOf(), expanded, stage, peek, stagePx, anchor,
+      // Keep the transparent preview viewport allocated while idle. Resizing a
+      // Windows layered window on hover briefly presents its old backing buffer
+      // at the new bounds, making the bottom-anchored avatar strip flash upward.
+      // dock-pointer still accepts input only over the reported visible controls.
+      display: display(), width: widthOf(), expanded: true, stage, peek, stagePx, cardPx, anchor,
       // 托盘宽度以量到的为准；量不到就退回估算值（TRAY_RESERVE）。
       rightOffset: saved.rightOffset ?? trayReserve?.rightOffset,
       trayLeft: trayReserve?.trayLeft,
@@ -167,18 +167,12 @@ function createDockWindow(dependencies = {}) {
     });
   }
 
-  /**
-   * 重新声明"最顶层"并提到最前。
-   *
-   * Windows 里任务栏和我们的窗口同属 topmost 那一档，**谁最后调用谁在上面**：点开始菜单、
-   * 点任务栏、Explorer 重启之后，任务栏会重新压到我们上面，条子就"沉到状态栏底下"看不见了
-   * （用户 2026-09-18 报障）。`moveTop()` 不抢焦点，所以不会打断用户正在做的事。
-   */
+  /** Stay next to Explorer in z-order, without jumping over other topmost UI. */
   function raise() {
     if (!window || window.isDestroyed()) return;
     if (zOrder.sync(window)) return;
-    window.setAlwaysOnTop(true, 'screen-saver');
-    window.moveTop?.();
+    // Native observation unavailable: prefer being covered over obscuring video.
+    window.setAlwaysOnTop(false);
   }
 
   /**
@@ -218,9 +212,10 @@ function createDockWindow(dependencies = {}) {
     // 以前共用一个标志时，最后写的那一路会把别的理由顶掉（比如整屏结束后那条事件没来，
     // 页面又一直没再推状态，条子就永远藏着）。
     const system = systemHidden() === true;
+    const fullscreen = zOrder.blocked?.(window) === true;
     const hideReason = taskbarGone ? 'taskbar' : !pageVisible ? 'page'
-      : system ? 'system' : !manual ? 'manual' : '';
-    note(hideReason || 'shown', box, { taskbarGone, system });
+      : system ? 'system' : !manual ? 'manual' : fullscreen ? 'fullscreen' : '';
+    note(hideReason || 'shown', box, { taskbarGone, system, fullscreen });
     if (hideReason) {
       if (window.isVisible()) window.hide();
       return box;
@@ -232,6 +227,11 @@ function createDockWindow(dependencies = {}) {
       window.setBounds(bounds);
     }
     if (!window.isVisible()) window.showInactive();
+    pointer.fallback([{ x: box.strip.x - box.x, y: box.strip.y - box.y,
+      width: box.strip.width, height: box.strip.height }, ...(expanded ? [{
+      x: 0, y: edge === 'top' ? stripHeight : Math.max(0, box.height - stripHeight - CARD_SPACE),
+      width: box.width, height: CARD_SPACE,
+    }] : [])]);
     raise();
     return box;
   }
@@ -267,8 +267,10 @@ function createDockWindow(dependencies = {}) {
       maximizable: false,
       fullscreenable: false,
       skipTaskbar: true,
-      // 点它不要抢走办公室窗口的焦点：它只是个挂件。
-      focusable: false,
+      // showInactive + native NOACTIVATE positioning keep hover passive.
+      // Do not use focusable:false: Windows then returns MA_NOACTIVATEANDEAT
+      // for WM_MOUSEACTIVATE and discards the real button press.
+      focusable: true,
       acceptFirstMouse: true,
       webPreferences: {
         // 和主窗口同一个会话，证书例外/缓存一致；页面本身仍是我们的站点。
@@ -280,17 +282,18 @@ function createDockWindow(dependencies = {}) {
         backgroundThrottling: false,
       },
     });
-    // 任务栏本身是最顶层，同级（screen-saver）才压得住它。
-    window.setAlwaysOnTop(true, 'screen-saver');
+    // The taskbar peer controller chooses the native band after measuring Explorer.
+    window.setAlwaysOnTop(false);
     window.setVisibleOnAllWorkspaces?.(true, { visibleOnFullScreen: false });
+    pointer.start();
     zOrder.start();
-    // 任务栏再抢到前面时（点开始菜单、Explorer 重启）立刻把自己提回去。
+    // 系统重排窗口后重新对齐任务栏层级；全屏时保持隐藏。
     for (const event of ['show', 'restore', 'focus', 'blur']) {
       window.on(event, () => { if (window?.isVisible()) raise(); });
     }
-    // 窗口始终接收鼠标事件：没人悬停时它就只有头像条那么大，不会挡住任务栏上别人的图标；
-    // 悬停时（setExpanded）临时长高一个卡片空间让指针能走进卡片。（为什么不用
-    // setIgnoreMouseEvents + forward：见文件开头的实测记录。）
+    // 窗口按内容调整大小；鼠标仅由 dock-pointer 在真实控件处打开，不拦截装饰人物。
+    // 基础预览空间提前预留，悬停时不再缩放原生窗口；空白由 dock-pointer 穿透。
+    // 不依赖 setIgnoreMouseEvents + forward：见文件开头的实测记录。
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('will-navigate', (event, target) => {
       if (target !== url) event.preventDefault();
@@ -339,7 +342,6 @@ function createDockWindow(dependencies = {}) {
     }, followMs);
     // 这个定时器不该拖住进程退出（也方便单测里直接跑完）。
     follow.unref?.();
-    taskbarGuard.start();
     return window;
   }
 
@@ -379,10 +381,12 @@ function createDockWindow(dependencies = {}) {
     /**
      * 页面报版面：卡片开没开、条子实际多宽。
      *
-     * 卡片开着就把窗口长高一个卡片空间（指针才走得进卡片），关掉立刻收回成"就是头像条
-     * 本身"，免得透明区一直盖着任务栏。宽度则永远跟条子一模一样。
+     * 基础预览开合保持窗口尺寸不变。更大的共享 / 会议内容仍按实测高度分配；
+     * 透明空白是否穿透由可见控件的 hitRegions 决定，不靠缩窗。
      */
     applyLayout(input = {}) {
+      if (Array.isArray(input.hitRegions)) pointer.update(input.hitRegions);
+      const nextCardPx = Math.max(0, Math.min(700, Math.round(Number(input.cardPx) || 0)));
       const nextExpanded = input.expanded === true;
       const nextStage = input.stage === true;
       // `peek` 是"鼠标只是停在头像上"：人物小一倍，窗口也只留一半地方（用户 2026-09-20）。
@@ -393,9 +397,10 @@ function createDockWindow(dependencies = {}) {
       const widthChanged = nextWidth > 0 && nextWidth !== reportedWidth;
       if (nextWidth > 0) reportedWidth = Math.min(MAX_WIDTH, nextWidth);
       if (nextExpanded === expanded && nextStage === stage && nextPeek === peek &&
-          nextStagePx === stagePx && !widthChanged) {
+          nextStagePx === stagePx && nextCardPx === cardPx && !widthChanged) {
         return { expanded, stage, peek, stagePx, width: widthOf() };
       }
+      cardPx = nextCardPx;
       expanded = nextExpanded;
       stage = nextStage;
       peek = nextPeek;
@@ -420,7 +425,7 @@ function createDockWindow(dependencies = {}) {
     },
     bounds: () => (window && !window.isDestroyed() ? window.getBounds() : null),
     reason: () => lastRequested,
-    /** 现在为什么显示/为什么藏（`shown` / `taskbar` / `page` / `system` / `manual`）。 */
+    /** 现在为什么显示/为什么藏（`shown` / `taskbar` / `page` / `system` / `manual` / `fullscreen`）。 */
     why: () => lastDecision,
     ownership: () => ({ attached: false, ...zOrder.diagnostics() }),
     /** 整屏那一路现在是什么状态（排查用；判断本身每次 place() 现算）。 */
@@ -430,8 +435,8 @@ function createDockWindow(dependencies = {}) {
     /** 头像条高度（= 任务栏厚度）：页面据此把头像和条子做成一样高。 */
     stripHeight: () => stripHeight,
     destroy() {
+      pointer.stop();
       destroyed = true;          // 主动收掉（退出、关机）之后 tick 不再自己建回来
-      taskbarGuard.stop();
       zOrder.stop();
       if (follow) clearInterval(follow);
       follow = undefined;

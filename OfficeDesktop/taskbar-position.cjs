@@ -88,7 +88,7 @@ function dockBounds(input) {
   // 免得白白挡住任务栏上方一大片（用户 2026-09-20）。
   const peek = stage && input.peek === true;
   const minWidth = input.minWidth
-    ?? (stage ? (peek ? PEEK_WIDTH : STAGE_WIDTH) : expanded ? CARD_WIDTH : 0);
+    ?? (input.cardPx > 0 ? CARD_WIDTH : stage ? (peek ? PEEK_WIDTH : STAGE_WIDTH) : expanded ? CARD_WIDTH : 0);
   // 展开时窗口至少和卡片一样宽（否则卡片会被窗口边界裁掉），收起时不用。
   const width = Math.max(stripWidth, minWidth);
   const rightOffset = input.rightOffset ?? TRAY_RESERVE;
@@ -100,9 +100,10 @@ function dockBounds(input) {
   // 会一起变高，写死在主进程里气泡就会被窗口边界裁掉。没报（或报得离谱地小）就退回老常量。
   const stagePx = stage && input.stagePx >= MIN_STAGE_PX
     ? clamp(Math.round(input.stagePx), MIN_STAGE_PX, MAX_STAGE_PX) : 0;
+  const cardSpace = expanded ? Math.max(CARD_SPACE, Math.min(700, Number(input.cardPx) || 0)) : 0;
   const height = input.height
-    ?? (stage ? stripHeight + (stagePx || (peek ? PEEK_SPACE : STAGE_SPACE))
-      : expanded ? stripHeight + CARD_SPACE : stripHeight);
+    ?? (stage ? stripHeight + Math.max(Number(input.cardPx) || 0, stagePx || (peek ? PEEK_SPACE : STAGE_SPACE))
+      : expanded ? stripHeight + cardSpace : stripHeight);
   if (!bar.bounds || bar.hidden || bar.thickness <= 0) {
     return { hidden: true, edge: bar.edge, popup: 'left', x: 0, y: 0, width, height,
       strip: { x: 0, y: 0, width: stripWidth, height: stripHeight } };

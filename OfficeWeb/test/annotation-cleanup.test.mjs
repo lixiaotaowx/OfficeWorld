@@ -38,6 +38,7 @@ function screenShare({ capture = true } = {}) {
   const rooms = { get: () => room, run: async (_name, work) => work(room, () => true) };
   const { MeetingScreenShare } = load("meetingScreenShare.ts", {
     "livekit-client": { Track: { Source: { ScreenShare: "screen" } } },
+    screenAudio: { unpublishScreen: async () => {}, screenAudioConstraints: {}, noScreenAudio: "no audio" },
     screenPermission: { waitForScreenPermission: async () => {} },
     // 换屏用的原地换轨；这里只关心开始/结束时谁被清理。
     screenSwitch: { swapScreenTrack: async () => true },

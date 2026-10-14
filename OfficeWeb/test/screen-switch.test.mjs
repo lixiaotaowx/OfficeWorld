@@ -4,15 +4,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 
-// livekit-client 是浏览器库，这里只用到 Track.Source.ScreenShare 这一个常量。
-const LK_STUB = 'data:text/javascript,' + encodeURIComponent(
-  'export const Track = { Source: { ScreenShare: "screen_share" } };');
-const compiled = ts.transpileModule(
-  readFileSync(new URL('../src/screenSwitch.ts', import.meta.url), 'utf8'),
-  { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } },
-).outputText.replace(/['"]livekit-client['"]/, JSON.stringify(LK_STUB));
-const { captureSelectedScreen, swapScreenTrack, switchLiveScreen } = await import(
-  'data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
+import { loadMedia } from './media-test-loader.mjs';
+const { captureSelectedScreen, swapScreenTrack, switchLiveScreen } = loadMedia('screenSwitch');
+const { screenAudioConstraints } = loadMedia('screenAudio');
 
 function fakeTrack(name) {
   const track = { kind: 'video', name, stopped: false, stop() { this.stopped = true; } };
@@ -22,7 +16,7 @@ function fakeTrack(name) {
 }
 
 function fakeStream(track) {
-  return { active: true, getTracks: () => [track], getVideoTracks: () => [track] };
+  return { active: true, getTracks: () => [track], getVideoTracks: () => [track], getAudioTracks: () => [] };
 }
 
 /** A room publishing one screen track, recording every swap it is asked for. */
@@ -36,7 +30,7 @@ function fakeRoom(swaps = []) {
   return {
     name: 'room',
     swaps,
-    localParticipant: { getTrackPublication: () => publication },
+    localParticipant: { getTrackPublication: source => source === 'screen_share' ? publication : undefined },
     publication,
   };
 }
@@ -58,7 +52,7 @@ test('switchLiveScreen 把每个房间都切到新屏幕，每间一份自己的
   const rooms = [fakeRoom(), fakeRoom()];
   let adopted = null;
   const switched = await switchLiveScreen({
-    live: () => live,
+    live: () => adopted || live,
     owner: () => true,
     adopt: next => { adopted = next; },
     publishers: () => rooms,
@@ -102,7 +96,7 @@ test('采集回来后已经不是同一条共享：丢掉新采集，不打断�
   assert.equal(room.swaps.length, 0);
 });
 
-test('采集参数：15fps、不要系统声音', async () => {
+test('采集参数：15fps、请求共享声音并排除自身通话回放', async () => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
   let asked = null;
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {
@@ -110,7 +104,7 @@ test('采集参数：15fps、不要系统声音', async () => {
   } });
   try {
     await captureSelectedScreen();
-    assert.deepEqual(asked, { video: { frameRate: { ideal: 15, max: 20 } }, audio: false });
+    assert.deepEqual(asked, { video: { frameRate: { ideal: 15, max: 20 } }, audio: screenAudioConstraints });
   } finally {
     if (previous) Object.defineProperty(globalThis, 'navigator', previous);
   }

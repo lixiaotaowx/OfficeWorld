@@ -3,6 +3,7 @@ import { catalog, palette, anchorLabels, nextAnchor, type BuildSettings, type Bu
 import { buildThumbnails } from './buildThumbnails';
 import { BuildHeight } from './BuildHeight';
 import { buildColor } from './buildColors';
+import type { BuildMenuPoint } from './BuildAddMenu';
 
 type Props = {
   settings: BuildSettings; onChange: (settings: BuildSettings) => void;
@@ -11,6 +12,7 @@ type Props = {
   tip?: string;
   sound: boolean; onSound: () => void; onUndo: () => void; undoCount: number;
   onRedo?: () => void; redoCount?: number;
+  onAdd?: (point:BuildMenuPoint) => void;
 };
 export function BuildToolbar(props: Props) {
   const [category, setCategory] = useState('建筑');
@@ -29,9 +31,8 @@ export function BuildToolbar(props: Props) {
     return () => clearTimeout(timer);
   }, [props.hint]);
   const parts = useRef<HTMLDivElement>(null);
-  // 切到安装模式就把部件库打开（点"安装"按钮本来就会展开；点传送点自动切过去时也要一致，
-  // 否则用户只看到安装模式、却看不到"传送点"被选中）。
-  useEffect(() => { if (props.settings.mode === 'place') setExpanded(true); }, [props.settings.mode]);
+  // 主界面用创建菜单；独立工具栏沿用原来的自动展开部件库行为。
+  useEffect(() => { if (props.settings.mode === 'place' && !props.onAdd) setExpanded(true); }, [props.settings.mode,props.onAdd]);
   // 被选中的部件换了分类（E 取同款、点传送点自动切过来）就把分类页跟着切过去，
   // 否则库里显示的还是上一类，用户看不到"传送点"被选中。
   useEffect(() => {
@@ -90,7 +91,11 @@ export function BuildToolbar(props: Props) {
     <div className="build-tools">
       <button className="build-toggle" onClick={() => setExpanded(!expanded)} aria-expanded={expanded}>{expanded ? '收起部件' : '打开部件库'} {expanded ? '⌄' : '⌃'}</button>
       <div className="build-modes">{modes.map(([mode,icon,label]) => <button key={mode} aria-pressed={settings.mode === mode}
-        disabled={mode !== 'explore' && !props.ready} onClick={() => { change({ mode }); if (mode === 'place') setExpanded(true); }}>
+        title={mode==='place'?'Shift+A：创建物体':undefined}
+        disabled={mode !== 'explore' && !props.ready} onClick={event => {
+          if(mode==='place' && props.onAdd){props.onAdd({x:event.clientX,y:event.clientY});return;}
+          change({ mode });if (mode === 'place') setExpanded(true);
+        }}>
         <b>{icon}</b>{label}</button>)}</div>
       {settings.mode==='move' && colors}
       <span className="build-divider" />

@@ -25,6 +25,7 @@ import { attachChat } from "./chat-server.mjs";
 import { createChatFiles } from "./chat-files.mjs";
 import { createFileRelay } from "./file-relay.mjs";
 import { createAccounts } from "./accounts.mjs";
+import { createPresenceStatus } from './presence-status.mjs';
 import { createPrivateSessions } from "./privateSessions.mjs";
 import { createMeetings } from "./meetings.mjs";
 import { removeMeetingMedia } from "./livekit.mjs";
@@ -119,6 +120,7 @@ function saveRoster(statePath, roster) {
 export function createOfficeServer(options = {}) {
   const adminPassword = options.adminPassword ?? ADMIN_PASSWORD;
   const statePath = options.statePath || DEFAULT_STATE_PATH;
+  const presenceStatus = createPresenceStatus(join(dirname(statePath), 'presence-status.json'));
   const buildHttp = createBuildHttp(join(dirname(statePath), 'build-world.json'),
     id => [...people.values()].some(person => person.sittingSpot === id) || (id.startsWith('desk-') && !!roster[Number(id.slice(5))]));
   const chatStore = createChatStore(options.chatPath || join(dirname(statePath), "chat-data"));
@@ -137,6 +139,7 @@ export function createOfficeServer(options = {}) {
   );
   const http = createServer(async (req, res) => {
     if (accounts && await accounts.handle(req, res)) return;
+    if (await presenceStatus(req, res, accounts)) return;
     if (await buildHttp(req, res, accounts)) return;
     if (chatFiles.handle(req, res, accounts)) return;
     // The app is served from here in production; in development Vite serves it

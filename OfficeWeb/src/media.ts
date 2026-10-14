@@ -10,8 +10,8 @@ import { MediaAudioFocus } from "./mediaAudioFocus";
 import { MeetingScreenShare } from './meetingScreenShare';
 import { startScreenThumbnails, type ScreenThumbnails } from './screenThumbnails';
 import { captureSelectedScreen, switchLiveScreen } from './screenSwitch';
-import { waitForScreenPermission } from './screenPermission';
 import { meetingVideoKey } from './meetingVideo';
+import { publishPrivateScreen, unpublishScreen, noScreenAudio } from './screenAudio';
 
 interface TokenReply {
   url?: string;
@@ -205,13 +205,10 @@ export class OfficeMedia {
       const owns = () => [...this.privateSessions.values()].some(session => session.room === room.name &&
         session.screenOwners?.includes(this.socket.id || ''));
       if (!owns()) return;
-      const track = this.screen?.getVideoTracks()[0];
-      if (!track || track.readyState !== 'live') throw Error('屏幕共享已停止');
-      if (current.localParticipant.getTrackPublication(Track.Source.ScreenShare)) return;
-      await waitForScreenPermission(current, () => owns() && track.readyState === 'live');
-      await current.localParticipant.publishTrack(track.clone(), {
-        name: 'screen', source: Track.Source.ScreenShare,
-      });
+      const stream = this.screen;
+      if (!stream) throw Error('屏幕共享已停止');
+      await publishPrivateScreen(current, stream, () => owns() && this.screen === stream,
+        message => this.onNotice(message));
     });
   }
 
@@ -245,8 +242,7 @@ export class OfficeMedia {
       catch { this.onNotice('屏幕发布失败，语音通话保留，请重新共享'); }
     } else if (!ownsScreen) {
       await this.connections.run(session.room, async current => {
-        const publication = current.localParticipant.getTrackPublication(Track.Source.ScreenShare);
-        if (publication?.track) await current.localParticipant.unpublishTrack(publication.track, true);
+        await unpublishScreen(current);
       }).catch(() => {});
       if (previous?.screenOwners?.includes(this.socket.id || '')) {
         if (session.screenOwners?.length) this.onNotice('对方已接替屏幕共享，语音通话保留');
@@ -334,6 +330,7 @@ export class OfficeMedia {
       stream.getTracks().forEach(track => track.stop()); return;
     }
     this.screen = stream;
+    if (!stream.getAudioTracks().length) this.onNotice(noScreenAudio);
     this.screenPublic = publicPreview;
     this.onVideo('local-screen', stream);
     stream.getVideoTracks()[0].onended = () => { if (this.screen === stream) this.stopScreen(); };
@@ -380,6 +377,7 @@ export class OfficeMedia {
       },
       publishers: () => this.connections.values()
         .filter(([name]) => this.voiceRooms.has(name)).map(([, room]) => room),
+      run: (room, action) => this.connections.run(room.name, action),
     });
     return privateShare || meeting;
   }
@@ -402,8 +400,7 @@ export class OfficeMedia {
     for (const [name] of this.connections.values()) {
       if (!this.voiceRooms.has(name)) continue;
       void this.connections.run(name, async room => {
-        const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
-        if (publication?.track) await room.localParticipant.unpublishTrack(publication.track, true);
+        await unpublishScreen(room);
       }).catch(error => { if (!this.disposed) this.onNotice(String(error)); });
     }
     const hadScreen = Boolean(this.screen);

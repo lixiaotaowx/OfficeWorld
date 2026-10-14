@@ -16,8 +16,8 @@ const compile = (file, replacements = []) => {
 };
 const { MediaRooms } = await import(compile('mediaRooms.ts',
   [[/['"]livekit-client['"]/, resolve('livekit-client')]]));
-const { captureSelectedScreen } = await import(compile('screenSwitch.ts',
-  [[/['"]livekit-client['"]/, resolve('livekit-client')]]));
+import { loadMedia } from './media-test-loader.mjs';
+const { captureSelectedScreen } = loadMedia('screenSwitch');
 
 /** 白盒：`entries` 是 TS 私有字段，运行时就是普通属性。 */
 function roomOf(name = 'call-a') {

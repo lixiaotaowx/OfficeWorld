@@ -1,26 +1,33 @@
+import DockCallControls from './DockCallControls';
+import { dockGreeting } from './dock-private-contract';
+import DockGreetingStage from './DockGreetingStage';
+import DockStatusMenu from './DockStatusMenu';
+import DockMeetingPanel from './DockMeetingPanel';
+import DockMeetingScreens from './DockMeetingScreens';
+import DockPreviewCard, { type DockPreviewAction } from './DockPreviewCard';
+import { useDockHover } from './useDockHover';
+import './dock-meeting.css';
 // 任务栏头像条（小窗里的页面）。
 //
 // 它只做两件事：把主窗口推来的状态画成一排头像；把鼠标悬停/点击变成"要一帧""发起邀请"
 // 的请求发回去。不连 socket、不认识业务（用户 2026-09-17 定的方案 B）。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { appearanceKey, resolveAppearance, type Appearance } from './look';
-import { previewPlaceholder, cardActions, greetAlive, greetMode, frameColors, mergeState,
-  callLabel, CALL_BAR_HEIGHT, GREET_CANVAS, stickyOrder, orderPeople, cardTipOffset,
-  type DockGreet, type DockOrder, type DockPerson, type DockState, type GreetMode } from './dockRules';
-import { MicIcon, PhoneIcon, PreviewIcon, ScreenIcon } from './icons';
+import { greetAlive, greetMode, frameColors, mergeState,
+  callLabel, CALL_BAR_HEIGHT, GREET_CANVAS, stickyOrder, orderPeople,
+  type DockGreet, type DockOrder, type DockPerson, type DockState } from './dockRules';
+import { MicIcon, PhoneIcon, ScreenIcon } from './icons';
 import './dock.css';
 import { useDockPortrait } from './useDockPortrait';
 import { greetingAppearance } from './dockAppearance';
 import { listenDockGreeting } from './dockGreeting';
+import { watchDockHitRegions } from './dockHitRegions';
 
 const EMPTY: DockState = { people: [], sharing: false, missed: 0, hidden: false };
 /** 悬停多久还没等到画面就显示占位说明。 */
 const PLACEHOLDER_MS = 900;
 /** 悬停期间多久再要一次画面（对方的采集间隔是 6～12 秒，所以要反复问）。 */
 const PREVIEW_POLL_MS = 800;
-/** 从头像挪到卡片要跨过 8px 空隙：给一点宽限，别让卡片在手上消失。 */
-const CLOSE_GRACE_MS = 350;
 /** 条子上那句拖拽结果留多久。 */
 const DROP_NOTICE_MS = 6000;
 /** 舞台亮着的这段时间里多久检查一次"人还在看我吗"。 */
@@ -38,19 +45,21 @@ function initials(name: string) {
 
 function Dock() {
   const [state, setState] = useState<DockState>(EMPTY);
-  const [hovered, setHovered] = useState('');
+  const [statusMenu, setStatusMenu] = useState(false);
+  const closeStatus = useCallback(() => setStatusMenu(false), []);
+  const [meetingPerson, setMeetingPerson] = useState<string | null>(null);
+  const [cardPx, setCardPx] = useState(0);
+  const { hovered, open, focus, close, scheduleClose } = useDockHover(meetingPerson !== null || statusMenu);
   const [frames, setFrames] = useState<Record<string, string>>({});
   const [waiting, setWaiting] = useState(false);
   /** 有人来看我了：那个人的角色蹦出来演一段（用户 2026-09-18）。 */
-  const [greet, setGreet] = useState<DockGreet | null>(null);
+  const [eventGreet, setGreet] = useState<DockGreet | null>(null);
+  const greet = dockGreeting(state, eventGreet);
   /** 文件正悬在谁的头像上（用户 2026-09-22）：那个头像亮起来，松手就开始发。 */
   const [dropTarget, setDropTarget] = useState('');
   /** 拖拽的结果/原因：条子上给一句话，别让失败是静默的（用户 2026-09-21 报障后加）。 */
   const [dropNotice, setDropNotice] = useState('');
   const dropNoticeTimer = useRef<ReturnType<typeof setTimeout>>();
-  const hoveredRef = useRef('');
-  hoveredRef.current = hovered;
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
   /**
    * 指针在不在条子上（含卡片/舞台）。在的时候**头像一个都不许换位**（用户 2026-09-21：
    * 「状态栏的头像位置尽量不要频繁的切换顺序，不然本来鼠标看着一个人闪烁到另一个人了」）。
@@ -64,9 +73,9 @@ function Dock() {
   useEffect(() => {
     const dock = window.officeDock;
     if (!dock) return;
-    let live = true;
-    void dock.state?.().then(next => { if (live && next) setState(old => mergeState(old, next as DockState)); }).catch(() => undefined);
-    const offState = dock.onState?.(next => setState(old => mergeState(old, next as DockState)));
+    let live = true, receivedState = false;
+    void dock.state?.().then(next => { if (live && !receivedState && next) setState(old => mergeState(old, next as DockState)); }).catch(() => undefined);
+    const offState = dock.onState?.(next => { receivedState = true; setState(old => mergeState(old, next as DockState)); });
     const offPreview = dock.onPreview?.(({ id, image }) => {
       if (!id) return;
       // 空帧（对方停采/还没采到）不要把已经拿到的"最后一张"顶掉——离座的人也要看得到他
@@ -115,26 +124,12 @@ function Dock() {
 
   // 心跳停了（`GREET_MS` 内没人再看）就把舞台收起来，头像条回到原样。
   useEffect(() => {
-    if (!greet) return;
+    if (!eventGreet) return;
     const timer = setInterval(() => {
       setGreet(old => (greetAlive(old, Date.now()) ? old : null));
     }, GREET_TICK_MS);
     return () => clearInterval(timer);
-  }, [greet]);
-
-  // 打开某个人的卡片（挪到卡片上也算）；离开时给一点宽限再关。
-  const open = useCallback((id: string) => {
-    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = undefined; }
-    setHovered(id);
-  }, []);
-  const scheduleClose = useCallback(() => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => {
-      closeTimer.current = undefined;
-      setHovered('');
-    }, CLOSE_GRACE_MS);
-  }, []);
-  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
+  }, [eventGreet]);
 
   // 悬停：先要一帧；等不到就给一句解释，并且**一直要到拿到为止**。
   // 主窗口手里也可能还没有这个人的画面（对方 6～12 秒才采一帧、或者刚走开），
@@ -146,39 +141,31 @@ function Dock() {
     setWaiting(true);
     const poll = setInterval(ask, PREVIEW_POLL_MS);
     const timer = setTimeout(() => setWaiting(false), PLACEHOLDER_MS);
-    return () => { clearInterval(poll); clearTimeout(timer); };
+    return () => { clearInterval(poll); clearTimeout(timer); void window.officeDock?.requestPreview?.(''); };
   }, [hovered]);
 
   const person = useMemo(
     () => state.people.find(row => row.id === hovered) || null, [state.people, hovered]);
+  const shares = state.meeting?.screens || [];
+  const sharedHover = shares.some(screen => screen.id === hovered);
   const image = hovered ? frames[hovered] : '';
-  /** 卡片下面那个尖对准头像（用户 2026-09-2X）：量头像中点与卡片左边界的差，夹在卡片里。 */
-  const [tipOffset, setTipOffset] = useState<number | null>(null);
-  useEffect(() => {
-    const id = person?.id;
-    if (!id) { setTipOffset(null); return; }
-    const row = [...document.querySelectorAll('.dock-avatar')]
-      .find(node => node.getAttribute('aria-label') === (person.self ? '我' : person.name));
-    const card = document.querySelector('.dock-card');
-    if (!row || !card) { setTipOffset(null); return; }
-    const box = row.getBoundingClientRect();
-    const frame = card.getBoundingClientRect();
-    setTipOffset(cardTipOffset(frame.left, frame.width, box.left + box.width / 2));
-  }, [person?.id, person?.self, person?.name, image]);
-
-  const act = useCallback((kind: 'watch' | 'share' | 'call') => {
-    if (!hoveredRef.current) return;
-    void window.officeDock?.action?.(kind, hoveredRef.current);
-    setHovered('');
-  }, []);
+  const act = useCallback((kind: DockPreviewAction, personId: string) => {
+    if (!state.people.some(row => row.id === personId && !row.self)) return;
+    close();
+    void window.officeDock?.action?.(kind, personId);
+  }, [state.people, close]);
   // 头像条上直接接听/拒绝（用户 2026-09-21）：把这一通邀请交给主窗口去应答。
   // 老客户端没有这个桥（`answer` 不存在）就不显示按钮，免得点了没反应。
   const canAnswer = typeof window.officeDock?.answer === 'function';
   const answer = useCallback((requestId: string, accept: boolean) => {
     if (!requestId) return;
+    if (greet?.kind === 'meeting') {
+      void window.officeDock?.action?.(accept ? 'meeting-accept' : 'meeting-decline', requestId);
+      return;
+    }
     void window.officeDock?.answer?.(requestId, accept);
     setGreet(null);
-  }, []);
+  }, [greet?.kind]);
 
   // 把文件拖到某个头像上就开始发（用户 2026-09-22：「不需要对方同意，直接就发送到设置好的
   // 位置」）。小窗**只交路径**（Electron 里 `File.path` 已经没了，只有 `webUtils` 拿得到），
@@ -213,9 +200,9 @@ function Dock() {
     const paths = window.officeDock?.filePaths?.(files) || [];
     if (!paths.length) return complain('这一拖没有文件');
     void window.officeDock?.dropFiles?.(person.id, paths);
-    setHovered('');
+    close();
     complain(`正在发给 ${person.name || '同事'}`);
-  }, [canDrop, carriesFiles, complain]);
+  }, [canDrop, carriesFiles, complain, close]);
   // 拖在头像之间的空隙上松手：别让用户以为"拖上去了却没反应"。
   const dropOnStrip = useCallback((event: React.DragEvent) => {
     if (!carriesFiles(event)) return;
@@ -225,27 +212,48 @@ function Dock() {
     complain('请拖到同事的头像上');
   }, [carriesFiles, complain]);
 
-  // 透明的地方不该抢任务栏的点击。小窗现在**始终接收鼠标事件**（Electron 的
-  // ignore+forward 在透明窗上不可靠，实测一条 mousemove 都收不到），所以改成"窗口大小
-  // 跟着状态变"：没人悬停时窗口就只有头像条那么大，绝不盖住任务栏上别人的图标；卡片开着
-  // 才请主进程长高一个卡片空间，指针才能顺着走到卡片上点按钮。
+  // 窗口跟着内容变大，同时上报真正的控件区域。主进程直接读取系统指针来切换穿透，
+  // 不依赖不可靠的 ignore+forward；人物、来电文字与透明背景不占鼠标区域。
   // 顺便把条子的真实宽度报上去（头像数、条子高度、"暂无人在线"那句话都会影响宽度）。
+  const layoutState = useRef({ hovered, state, greet, shares, cardPx, meetingPerson, statusMenu });
+  layoutState.current = { hovered, state, greet, shares, cardPx, meetingPerson, statusMenu };
+  const sentLayout = useRef('');
   useEffect(() => {
-    const strip = document.querySelector('.dock');
-    const width = strip ? Math.ceil(strip.getBoundingClientRect().width) : 0;
-    // 舞台要多高由页面说了算：角色画布 + （打电话时）下面那条来电气泡 + 一点余量。
-    // 写死在主进程里的话，来电气泡会被窗口边界裁掉（用户 2026-09-21 加了接听按钮）。
-    const mode = greet ? greetMode(greet.mode) : '';
-    const stagePx = greet
-      ? GREET_CANVAS[greetMode(greet.mode)].height +
-        (greetMode(greet.mode) === 'call' ? CALL_BAR_HEIGHT : 0) + 10
-      : 0;
     // `stageMode` 让主进程知道这是哪种舞台：peek（鼠标停一下，窗口只留一半地方）
     // 还是 call（打电话过来，人物照现在这么大）。老客户端不认这个字段，按老样子放大舞台。
-    void window.officeDock?.layout?.({ expanded: Boolean(hovered), stage: Boolean(greet),
-      stageMode: mode, stagePx, width });
+    return watchDockHitRegions(rects => {
+      const { hovered, state, greet, shares, cardPx, meetingPerson, statusMenu } = layoutState.current;
+      const strip = document.querySelector('.dock');
+      const width = strip ? Math.ceil(strip.getBoundingClientRect().width) : 0;
+      const mode: '' | 'call' | 'peek' = greet ? greetMode(greet.mode) : '';
+      const stagePx = greet ? GREET_CANVAS[greetMode(greet.mode)].height +
+        (greetMode(greet.mode) === 'call' ? CALL_BAR_HEIGHT : 0) + 10 : 0;
+      const payload = { expanded: Boolean(statusMenu || state.people.some(p => p.status) || hovered || shares.length || meetingPerson !== null || state.meeting?.active), cardPx, stage: Boolean(greet),
+        stageMode: mode, stagePx, width,
+        hitRegions: rects.map(({ x, y, width, height }) => ({ x, y, width, height })) };
+      const key = JSON.stringify(payload);
+      if (key === sentLayout.current) return;
+      sentLayout.current = key;
+      void window.officeDock?.layout?.(payload)?.catch(() => { sentLayout.current = ''; });
+    });
     // `dropNotice` 会改变条子宽度（多一句话），所以要跟着重报一次。
-  }, [hovered, state, greet, dropNotice]);
+  }, []);
+
+  useEffect(() => {
+    const stack = document.querySelector('.dock-popup-stack');
+    if (!stack) return;
+    const measure = () => {
+      const height = Math.max(stack.scrollHeight, stack.getBoundingClientRect().height);
+      setCardPx(height > 0 ? Math.min(700, Math.ceil(height + 18)) : 0);
+    };
+    const observer = new ResizeObserver(measure); observer.observe(stack); measure();
+    return () => observer.disconnect();
+  }, [hovered, shares.length, meetingPerson, state.meeting?.active, statusMenu]);
+  useEffect(() => {
+    close();
+    if (state.hidden || state.meeting?.active) setMeetingPerson(null);
+    if (state.hidden) setStatusMenu(false);
+  }, [state.hidden, state.meeting?.id, state.meeting?.active, close]);
 
   const height = state.stripHeight || 40;
   // 外面那圈框的颜色跟着任务栏走（用户 2026-09-20）：深色任务栏白色浮层、浅色黑色浮层，
@@ -280,8 +288,11 @@ function Dock() {
       {/* 这里画的是**粘住的顺序**（`people`），不是主窗口刚推来的排名（`state.people`）。 */}
       {people.length === 0 && <span className="dock-empty">现在没有其他人在线</span>}
       {people.map(row => <DockAvatar key={row.id} person={row} greeting={greet?.id === row.id}
+        onSelf={() => {
+          close(); setStatusMenu(true);
+        }}
         dropping={dropTarget === row.id} open={hovered === row.id}
-        onEnter={() => open(row.id)} onLeave={scheduleClose}
+        onEnter={() => open(row.id, true)} onFocus={() => focus(row.id)} onLeave={scheduleClose}
         onDragOver={event => {
           // 只要这一拖带着文件就亮——**不看 `canDrop`**：亮不亮本身就是诊断信息
           // （连亮都不亮 = 拖拽根本没有进到这个窗口）。
@@ -294,6 +305,7 @@ function Dock() {
         }}
         onDragLeave={() => setDropTarget(old => (old === row.id ? '' : old))}
         onDrop={event => dropOn(row, event)} />)}
+      <DockCallControls state={state} />
       {/* 拖拽的结果：成功、自己、太旧、或者不是文件——都在条子上说一句（用户 2026-09-21 报障后加）。 */}
       {dropNotice && <span className="dock-notice" role="status">{dropNotice}</span>}
       {/* 正在传的文件：底部一条细线，发送是青色、接收是绿色，失败变红（用户 2026-09-22）。 */}
@@ -307,7 +319,7 @@ function Dock() {
       </span>}
     </div>
     {greet && <DockGreetingStage
-      key={greet.id + greetMode(greet.mode)}
+      key={greet.id + greetMode(greet.mode) + (greet.requestId || '')}
       appearance={greetingAppearance(greet.appearance, state.people.find(row => row.id === greet.id))}
       size={greetMode(greet.mode)}
       id={greet.id}
@@ -318,50 +330,39 @@ function Dock() {
         外层 `.dock-call-wrap` 和角色画布同一格（同样宽、同样贴着条子），气泡在里面居中 =
         正好挂在他头顶；老客户端没有 answer 桥就只显示文字，不给按不动的按钮。 */}
     {greet && greetMode(greet.mode) === 'call' &&
-      <div className="dock-call-wrap">
+      <div className="dock-call-wrap" key={greet.requestId || greet.id}>
       <div className="dock-call" role="dialog" aria-label="来电">
       <span className="dock-call-text">{callLabel(greet)}</span>
       {canAnswer && greet.requestId && <div className="dock-call-actions">
-        <button type="button" className="dock-call-decline" title="拒绝这一通"
+        <button type="button" className="dock-call-decline" title="拒绝这一通" disabled={greet.kind === 'meeting' ? state.meeting?.busy : state.privateCalls?.busy}
           onClick={() => answer(greet.requestId!, false)}>拒绝</button>
-        <button type="button" className="dock-call-answer" title="接听"
+        <button type="button" className="dock-call-answer" title={greet.kind === 'meeting' && state.meeting?.active ? '请先离开当前会议' : '接听'}
+          disabled={greet.kind === 'meeting' ? (state.meeting?.busy || state.meeting?.active) : state.privateCalls?.busy}
           onClick={() => answer(greet.requestId!, true)}><PhoneIcon />接听</button>
       </div>}
     </div>
     </div>}
-    {person && <div className={`dock-card ${image ? 'has-image' : ''}`} role="dialog"
-      aria-label={person.self ? '我的工位预览' : `${person.name} 的屏幕预览`}
-      onMouseEnter={() => open(person.id)} onMouseLeave={scheduleClose}>
-      <div className="dock-shot">
-        {image
-          ? <img src={image} alt={person.self ? '我的工位小图' : `${person.name} 的屏幕小图`} />
-          : <span className="dock-shot-empty">{previewPlaceholder(person, !waiting)}</span>}
-      </div>
-      {cardActions(person).length > 0 && <div className="dock-card-actions">
-        <button type="button" title="请求观看对方屏幕" onClick={() => act('watch')}><PreviewIcon /><span>看屏幕</span></button>
-        <button type="button" title="把我的屏幕分享给对方" onClick={() => act('share')}><ScreenIcon /><span>分享屏幕</span></button>
-        <button type="button" title="邀请语音通话" onClick={() => act('call')}><PhoneIcon /><span>语音通话</span></button>
-      </div>}
-      <div className="dock-card-name">
-        <span className="dock-card-who">
-          {person.self ? `${person.name}（我 · 我的工位）` : person.name}
-        </span>
-        {/* 在座/离座直接写成字，颜色一眼能分（用户 2026-09-18：「在座就显示暗绿色在座
-            离座显示暗红色离座」）；离座时后面跟着离座时长。 */}
-        <span className={`dock-card-state ${person.atDesk ? 'here' : 'away'}`}>
-          {person.atDesk ? '在座' : (person.away || '离座')}
-        </span>
-      </div>
-      {/* 气泡的尖指向下面那个头像（用户 2026-09-2X）。位置由上面那段 effect 量出来。 */}
-      {tipOffset !== null && <i className="dock-card-tip" aria-hidden="true"
-        style={{ left: `${tipOffset}px` }} />}
-    </div>}
+    <div className="dock-popup-stack">
+    {statusMenu && people.find(row => row.self) && <DockStatusMenu person={people.find(row => row.self)!} control={state.statusControl} onClose={closeStatus} />}
+    {(state.meeting?.active || meetingPerson !== null) && <DockMeetingPanel key={state.meeting?.id || 'create'}
+      meeting={state.meeting} initialPerson={meetingPerson || ''}
+      onClose={() => setMeetingPerson(null)} />}
+    <DockMeetingScreens meeting={state.meeting} />
+    {state.privateCalls?.error && <div className="dock-meeting-error" role="alert">{state.privateCalls.error}</div>}
+    {state.meeting?.error && meetingPerson === null &&
+      <div className="dock-meeting-error" role="alert">{state.meeting.error}</div>}
+    {person && !statusMenu && !sharedHover && meetingPerson === null && <DockPreviewCard
+      key={person.id} person={person} image={image} waiting={waiting}
+      onEnter={() => open(person.id)} onLeave={scheduleClose} onAction={act}
+      onMeeting={id => { close(); setMeetingPerson(id); }} />}
+    </div>
   </div>;
 }
 
-function DockAvatar({ person, greeting, dropping, open, onEnter, onLeave, onDragOver, onDragLeave, onDrop }: {
+function DockAvatar({ person, greeting, dropping, open, onEnter, onFocus, onLeave, onSelf, onDragOver, onDragLeave, onDrop }: {
   person: DockPerson; greeting?: boolean; dropping?: boolean; open?: boolean;
-  onEnter: () => void; onLeave: () => void;
+  onEnter: () => void; onFocus: () => void; onLeave: () => void;
+  onSelf: () => void;
   onDragOver?: (event: React.DragEvent) => void;
   onDragLeave?: (event: React.DragEvent) => void;
   onDrop?: (event: React.DragEvent) => void;
@@ -374,13 +375,18 @@ function DockAvatar({ person, greeting, dropping, open, onEnter, onLeave, onDrag
     className={`dock-avatar ${person.atDesk ? 'here' : 'away'} ${person.self ? 'mine' : ''}` +
       (greeting ? ' greeting' : '') + (dropping ? ' dropping' : '') + (open ? ' open' : '') +
       (person.missed || person.unread > 0 ? ' alert' : '')}
+    data-person-id={person.id}
     data-greeting={greeting ? '1' : undefined}
     data-dropping={dropping ? '1' : undefined}
-    onMouseEnter={onEnter} onMouseLeave={onLeave} onFocus={onEnter} onBlur={onLeave}
+    onMouseEnter={onEnter} onMouseLeave={onLeave} onFocus={onFocus}
+    onBlur={event => { if (!event.currentTarget.closest('.dock')?.contains(event.relatedTarget as Node | null)) onLeave(); }}
+    onClick={() => { if (person.self) onSelf(); }}
+    onContextMenu={event => { if (person.self) { event.preventDefault(); onSelf(); } }}
     onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
     style={thumb ? { backgroundImage: `url(${JSON.stringify(thumb)})` } : undefined}
     aria-label={person.self ? '我' : person.name}>
     {!thumb && <span className="dock-initial">{initials(person.name)}</span>}
+    {person.status && <span className="dock-status-bubble" aria-label={`状态：${person.status}`}><span>{person.status}</span></span>}
     <i className={`dock-dot ${person.atDesk ? 'here' : 'away'}`} aria-hidden="true" />
     {person.sharing && <i className="dock-sharing" aria-hidden="true"><ScreenIcon /></i>}
     {person.inCall && <i className="dock-voice" aria-hidden="true"><MicIcon /></i>}
@@ -397,34 +403,6 @@ function DockAvatar({ person, greeting, dropping, open, onEnter, onLeave, onDrag
  * three.js 是**到这一刻才加载**的（动态 import），所以平时小窗还是几 KB；角色 GLB 走的
  * 是浏览器缓存，办公室里已经加载过一次了。
  */
-function DockGreetingStage({ id, appearance, size: mode, name }: {
-  appearance?: Appearance; size: GreetMode; name: string; id: string;
-}) {
-  const canvas = useRef<HTMLCanvasElement | null>(null);
-  const [failed, setFailed] = useState(false);
-  const size = GREET_CANVAS[mode];
-  // 外观对象每次推送都是新对象，用指纹当依赖，别让 effect 空转。
-  const look = appearanceKey(resolveAppearance(appearance));
-  useEffect(() => {
-    let stage: { dispose: () => void } | undefined;
-    let cancelled = false;
-    if (!canvas.current) return;
-    const target = canvas.current;
-    setFailed(false);
-    void import('./dockStage')
-      .then(module => cancelled ? undefined : module.mountDockStage(target, { appearance: resolveAppearance(appearance), size: mode }))
-      .then(mounted => { if (cancelled) mounted?.dispose(); else stage = mounted; })
-      .catch(() => { if (!cancelled) setFailed(true); });
-    return () => { cancelled = true; stage?.dispose(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [look, mode]);
-  return <div className={`dock-stage ${mode}`} role="img"
-    aria-label={`${name || '同事'} 来看你了`} data-greeting={id} data-mode={mode}>
-    <canvas ref={canvas} width={size.width} height={size.height} />
-    {failed && <span className="dock-stage-name">{name || '同事'} 来看你了</span>}
-  </div>;
-}
-
 const root = document.getElementById('root');
 if (root) createRoot(root).render(<Dock />);
 

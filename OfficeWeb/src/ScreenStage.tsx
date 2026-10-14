@@ -2,8 +2,12 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { contentBox, normalizePoint } from './annotations';
 import { CloseIcon, ScreenIcon } from './icons';
 import './screen-stage.css';
+import ScreenViewControls from './ScreenViewControls';
+import { createPortal } from 'react-dom';
+import { useScreenZoom } from './useScreenZoom';
 
 export interface ScreenStageProps {
+  initialMode?: 'maximized' | 'fullscreen';
   stream: MediaStream;
   /** `call-…` / `meeting-…`: which shared screen this board belongs to. */
   scope: string;
@@ -56,8 +60,10 @@ export default function ScreenStage(props: ScreenStageProps) {
   /** True while this stage is the reason the window is in whole-screen mode. */
   const askedFullscreen = useRef(false);
   const [annotating, setAnnotating] = useState(false);
-  const [maximized, setMaximized] = useState(false);
+  const [maximized, setMaximized] = useState(Boolean(props.initialMode));
   const [fullscreen, setFullscreen] = useState(false);
+  const enlarged = maximized || fullscreen;
+  const zoom = useScreenZoom(host, enlarged && !annotating, stream);
 
   useEffect(() => {
     const element = video.current;
@@ -65,7 +71,7 @@ export default function ScreenStage(props: ScreenStageProps) {
     element.srcObject = stream;
     void element.play().catch(() => undefined);
     return () => { element.srcObject = null; };
-  }, [stream]);
+  }, [stream, enlarged]);
 
   useEffect(() => {
     const change = () => setFullscreen(document.fullscreenElement === host.current);
@@ -78,6 +84,15 @@ export default function ScreenStage(props: ScreenStageProps) {
       unsubscribe?.();
     };
   }, []);
+
+  useEffect(() => {
+    if (props.initialMode === 'maximized') void window.officeDesktop?.focusWindow?.().catch(() => undefined);
+    if (props.initialMode !== 'fullscreen' || !window.officeDesktop?.setFullscreen) return;
+    askedFullscreen.current = true;
+    void window.officeDesktop.setFullscreen(true).catch(() => {
+      askedFullscreen.current = false;
+    });
+  }, [props.initialMode]);
 
   const leaveFullscreen = useCallback(() => {
     const bridge = window.officeDesktop;
@@ -229,33 +244,32 @@ export default function ScreenStage(props: ScreenStageProps) {
       return;
     }
     if (document.fullscreenElement === element) void document.exitFullscreen().catch(() => undefined);
-    else void element.requestFullscreen().catch(() => undefined);
+    else {
+      setMaximized(true);
+      requestAnimationFrame(() => { void host.current?.requestFullscreen().catch(() => undefined); });
+    }
   };
 
   const enlarge = () => {
+    void window.officeDesktop?.focusWindow?.().catch(() => undefined);
     if (fullscreen) leaveFullscreen();
     setMaximized(true);
   };
 
-  const enlarged = maximized || fullscreen;
   // Absent means "not told otherwise": the desktop bridge is the only thing that can
   // render a stroke anyway, so defaulting to the tools keeps every existing caller.
   const canAnnotate = props.annotatable !== false;
 
-  return <div ref={host}
+  const stage = <div ref={host}
     className={`screen-stage${maximized ? ' maximized' : ''}${fullscreen ? ' fullscreen' : ''}${annotating ? ' annotating' : ''}`}>
-    <video ref={video} autoPlay muted playsInline aria-label={props.label} />
+    <video ref={video} autoPlay muted playsInline aria-label={props.label}
+      style={{ transform: `scale(${zoom})` }} />
     <canvas ref={ink} className="screen-stage-ink" aria-hidden="true" />
     <div className="screen-stage-draw" onPointerDown={start} onPointerMove={move}
       onPointerUp={finish} onPointerCancel={finish} />
     {/* Inline the stage keeps two compact controls only: a row of buttons in a
         narrow panel overlapped the picture and buried the screen itself. */}
-    {!enlarged && <div className="screen-stage-bar minimal">
-      <button type="button" className="screen-stage-expand" onClick={enlarge}
-        title="在软件窗口内占满"><ScreenIcon />最大化</button>
-      <button type="button" className="screen-stage-expand" onClick={toggleFullscreen}
-        title="占满整个屏幕"><ScreenIcon />全屏</button>
-    </div>}
+    {!enlarged && <ScreenViewControls onMaximize={enlarge} onFullscreen={toggleFullscreen} />}
     {enlarged && <div className="screen-stage-bar">
       <span className="screen-stage-name"><ScreenIcon />{props.label}</span>
       {/* Drawing needs a sharer that can actually put marks on its own screen, so the
@@ -280,6 +294,7 @@ export default function ScreenStage(props: ScreenStageProps) {
       <button type="button" onClick={toggleFullscreen} aria-pressed={fullscreen}
         title="占满整个屏幕">{fullscreen ? '退出全屏' : '全屏'}</button>
       {props.actions}
+      <span className="screen-stage-zoom">{Math.round(zoom * 100)}%</span>
       <button type="button" className="screen-stage-close" onClick={() => {
         leaveFullscreen();
         setMaximized(false);
@@ -291,6 +306,7 @@ export default function ScreenStage(props: ScreenStageProps) {
       <p className="screen-stage-tip">对方在网页里共享屏幕，标注画不到他的屏幕上</p>
     )}
   </div>;
+  return enlarged ? createPortal(stage, document.body) : stage;
 }
 
 /**

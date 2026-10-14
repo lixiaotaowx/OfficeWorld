@@ -15,6 +15,7 @@ function fixture() {
     require(name) {
       if (name === 'electron') return { desktopCapturer: { getSources: async () => { calls.enumerations++; return [source]; } }, screen: {} };
       if (name === './policy.cjs') return policy;
+      if (name === './dock-capture-intent.cjs') return require('../dock-capture-intent.cjs');
       throw Error('Unexpected dependency: ' + name);
     },
   };
@@ -28,6 +29,16 @@ function fixture() {
   }, () => ({ webContents: wc }), { displays });
   return { handlers, calls, source, frame, wc };
 }
+
+test('trusted dock share authorizes only one main-frame capture without a page gesture', async () => {
+  const { handlers, frame, wc, source } = fixture();
+  require('../dock-capture-intent.cjs').grantDockCapture(wc);
+  const request = { frame, securityOrigin: policy.OFFICE_URL, userGesture: false, videoRequested: true };
+  await handlers.display({ ...request, frame: {} }, value => assert.equal(value.video, undefined));
+  await handlers.display({ ...request, securityOrigin: 'https://example.com' }, value => assert.equal(value.video, undefined));
+  await handlers.display(request, value => assert.equal(value.video, source));
+  await handlers.display(request, value => assert.equal(value.video, undefined));
+});
 
 test('microphone authorization requires no dialog or desktop enumeration', () => {
   const { handlers, wc, calls } = fixture();
@@ -86,6 +97,19 @@ test('sharing grants exactly the preview display, with no bundled microphone or 
   assert.equal(granted.video, source, '必须直接给已选显示器，不能弹选择窗');
   assert.equal(granted.audio, undefined);
   assert.equal(calls.resolvings, 1, '显示器只解析一次，没有第二次交互');
+});
+
+test('screen audio is loopback only when requested by an authorized main frame', async () => {
+  const { handlers, frame, source } = fixture();
+  const request = { frame, securityOrigin: policy.OFFICE_URL, userGesture: true,
+    videoRequested: true, audioRequested: true };
+  await handlers.display(request, value => {
+    assert.equal(value.video, source);
+    assert.equal(value.audio, 'loopbackWithoutChrome');
+  });
+  for (const changes of [{ frame: {} }, { securityOrigin: 'https://example.com' }, { userGesture: false }]) {
+    await handlers.display({ ...request, ...changes }, value => assert.equal(value.audio, undefined));
+  }
 });
 
 test('缺少用户手势或没有可用显示器时都不能开始采集', async () => {

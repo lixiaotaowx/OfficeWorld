@@ -126,7 +126,7 @@ export function supportHeight(x: number, z: number, fromY: number): number | nul
   return levels.find(y => !solids.some(b => b.max.y > y+0.01 && b.min.y < y+BODY_HEIGHT-0.01)) ?? null;
 }
 /**
- * 从 `fromY` 往下：`(x,z)` 处能站上去的最高那一层（没有就是 null）。
+ * 从 `fromY` 往下：`(x,z)` 处实体顶面的最高一层（没有就是 null）。
  *
  * `supportHeight` 那个 ±0.255 的窗口是给"走路抬腿上下一级"用的；下落时一帧能掉好几米，
  * 拿旧窗口去问会直接穿过楼板，所以掉落要的是"我下面最高的那层地"。
@@ -135,7 +135,9 @@ export function supportBelow(x: number, z: number, fromY: number): number | null
   const solids = nearby(x,z).filter(b => x >= b.min.x-1e-6 && x <= b.max.x+1e-6 && z >= b.min.z-1e-6 && z <= b.max.z+1e-6);
   const levels = solids.map(b => b.max.y).filter(y => y <= fromY+1e-6);
   levels.sort((a,b) => b-a);
-  return levels.find(y => !solids.some(b => b.max.y > y+0.01 && b.min.y < y+BODY_HEIGHT-0.01)) ?? null;
+  // 重力只问脚下是否有实体；头顶/身体被家具挡住不能使地板失去承托。
+  // 行走与寻路仍使用 supportHeight / blocksBody 的净空判定。
+  return levels[0] ?? null;
 }
 /** 身体会不会被实体挡住：既抬不上去（顶面高过抬腿高度），又钻不过去（底面低过头顶）。 */
 export function blocksBody(x: number, z: number, y: number): boolean {

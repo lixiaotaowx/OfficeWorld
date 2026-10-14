@@ -111,11 +111,11 @@ export function privateSources(room, identity, sessions) {
   if (!room.startsWith('call-')) return undefined;
   const session = sessions.get(room.slice(5));
   return [TrackSource.MICROPHONE,
-    ...(session?.screenOwners?.includes(identity) ? [TrackSource.SCREEN_SHARE] : [])];
+    ...(session?.screenOwners?.includes(identity) ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])];
 }
 
 export const screenSources = (identity, owners = []) => [TrackSource.MICROPHONE,
-  ...(owners.includes(identity) ? [TrackSource.SCREEN_SHARE] : [])];
+  ...(owners.includes(identity) ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])];
 
 export async function updatePrivatePermissions(session) {
   if (!livekit.ready) return;

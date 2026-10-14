@@ -9,28 +9,8 @@ import { ChestPeople } from './ChestPeople';
 import type { ChestPeople as People } from './buildTypes';
 import { useChestScroll } from './useChestScroll';
 import './chest.css';
+import { imageData } from './buildImageData';
 
-async function imageData(file: File) {
-  if (!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size > 20*1024*1024)
-    throw Error('请选择 20 MB 以内的 PNG、JPEG 或 WebP 图片');
-  const bitmap = await createImageBitmap(file);
-  try {
-    const scale = Math.min(1, 1000/Math.max(bitmap.width,bitmap.height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1,Math.round(bitmap.width*scale));
-    canvas.height = Math.max(1,Math.round(bitmap.height*scale));
-    canvas.getContext('2d')!.drawImage(bitmap,0,0,canvas.width,canvas.height);
-    let data = canvas.toDataURL('image/webp',0.8);
-    for (let attempt = 0; data.length > 220000 && attempt < 5; attempt++) {
-      canvas.width = Math.max(1,Math.round(canvas.width*0.8));
-      canvas.height = Math.max(1,Math.round(canvas.height*0.8));
-      canvas.getContext('2d')!.drawImage(bitmap,0,0,canvas.width,canvas.height);
-      data = canvas.toDataURL('image/webp',0.7);
-    }
-    if (data.length > 220000) throw Error('图片内容较复杂，请选择更小的图片');
-    return data;
-  } finally { bitmap.close(); }
-}
 /** 链接条目只显示站点，避免整条 URL 把标题挤走。 */
 function linkHost(value: string) {
   try { return new URL(value).host.replace(/^www\./, ''); } catch { return value; }

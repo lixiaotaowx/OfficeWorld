@@ -16,13 +16,17 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const assert=require('node:assert/strict');
 (async()=>{
   const {createBuildStore}=await import('../../build-store.mjs');
-  const store=createBuildStore(path.join(fs.mkdtempSync(path.join(os.tmpdir(),'fall-')),'world.json'));
+  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'fall-'));
+  const store=createBuildStore(path.join(directory,'world.json'));
   const user={id:'fall-check',name:'掉落验收',role:'visitor',lookConfirmed:true};
   const add=part=>store.mutate({action:'add',part:{rotation:0,...part}},user).changed;
   const high=add({kind:'block',x:100,y:6,z:0,color:'#f3dfc5',scale:[4,0.25,4]});
   add({kind:'block',x:100,y:3,z:4,color:'#b4c5a0',scale:[4,0.25,4]});
   const HIGH_TOP=6.25, LOW_TOP=3.25;
-  const vite=await createServer({configFile:false,root:path.resolve('.'),plugins:[react()],server:{host:'127.0.0.1',port:0}});
+  const probe=require('node:net').createServer();
+  await new Promise(resolve=>probe.listen(0,'127.0.0.1',resolve));
+  const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
+  const vite=await createServer({configFile:false,root:path.resolve('.'),plugins:[react()],server:{host:'127.0.0.1',port,strictPort:true}});
   await vite.listen();
   const browser=await launch();
   try{
@@ -40,7 +44,7 @@ const assert=require('node:assert/strict');
       }
       await r.fulfill({json});
     });
-    const base='http://127.0.0.1:'+vite.httpServer.address().port;
+    const base=process.env.BUILD_UI_SITE || 'http://127.0.0.1:'+vite.httpServer.address().port;
     await page.goto(base+'/?debug=1');
     await page.waitForFunction(id=>Boolean(window.__officeDebug?.__scene.getObjectByName('build-'+id)),high.id);
     // 角色模型挂上来之前按键不算数（`OfficeAvatar` 只在有 model 时走路）。
@@ -78,6 +82,11 @@ const assert=require('node:assert/strict');
       }
       return false;
     };
+
+    // 起始地板的椅面挡住身体净空，不能因此反复穿过脚下地板。
+    await place(0,0,0);await page.waitForTimeout(2500);
+    assert.equal((await fall()).falling,false,'furniture cannot remove floor support');
+    assert.equal((await fall()).deaths,0);assert.equal((await where())[1],0);
 
     // ① 从高台走出去：踏空 → 掉到下层建筑上 → 站住（不掉死）。
     await place(100,HIGH_TOP,0);
@@ -130,5 +139,6 @@ const assert=require('node:assert/strict');
   } finally {
     await browser.close();
     await vite.close();
+    fs.rmSync(directory,{recursive:true,force:true});
   }
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -3,6 +3,7 @@ import type { Socket } from 'socket.io-client';
 import type { MediaRooms } from './mediaRooms';
 import { swapScreenTrack } from './screenSwitch';
 import { waitForScreenPermission } from './screenPermission';
+import { screenAudioConstraints, syncScreenAudio, unpublishScreen, noScreenAudio } from './screenAudio';
 
 type Capture = { lease: string; tracks: LocalTrack[]; cancelled: boolean };
 
@@ -36,8 +37,7 @@ export class MeetingScreenShare {
       void this.action(name, capture.lease, 'release').catch(() => {});
     }
     void this.rooms.run(name, async room => {
-      const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
-      if (publication?.track) await room.localParticipant.unpublishTrack(publication.track, true);
+      await unpublishScreen(room);
     }).catch(() => {});
     // Only a share that was actually running counts as "ended": releasing an
     // already-free room must not wipe marks that belong to somebody else's screen.
@@ -55,14 +55,36 @@ export class MeetingScreenShare {
       const room = this.rooms.get(name);
       if (room?.state !== 'connected') continue;
       try {
-        const tracks = await room.localParticipant.createScreenTracks({ audio: false,
+        const tracks = await room.localParticipant.createScreenTracks({ audio: screenAudioConstraints,
           resolution: { width: 1920, height: 1080, frameRate: 15 }, contentHint: 'text' });
-        const next = tracks[0]?.mediaStreamTrack;
-        tracks.slice(1).forEach(track => track.stop());
-        if (!next) continue;
-        // 发布轨接管 next；上面那个包装不能再 stop，否则会把刚交出去的轨掐掉。
-        if (await swapScreenTrack(room, next)) switched = true;
-        else next.stop();
+        let adopted = false;
+        try {
+          await this.rooms.run(name, async (current, connected) => {
+            if (capture.cancelled || this.captures.get(name) !== capture || !connected()) return;
+            const next = tracks.find(track => track.mediaStreamTrack.kind === 'video')?.mediaStreamTrack;
+            if (!next) return;
+            const clone = next.clone();
+            try {
+              if (!await swapScreenTrack(current, clone)) { clone.stop(); return; }
+            } catch (error) { clone.stop(); throw error; }
+            if (capture.cancelled || this.captures.get(name) !== capture || !connected()) {
+              clone.stop(); return;
+            }
+            capture.tracks.forEach(track => track.stop());
+            capture.tracks = tracks;
+            adopted = true;
+            next.addEventListener('ended', () => {
+              if (this.captures.get(name) === capture && capture.tracks === tracks) this.stop(name);
+            }, { once: true });
+            const audio = tracks.find(track => track.mediaStreamTrack.kind === 'audio')?.mediaStreamTrack;
+            await syncScreenAudio(current, audio).catch(async () => {
+              await syncScreenAudio(current);
+              this.notice('画面已切换，但共享声音失败，请重新共享');
+            });
+            if (!audio) this.notice(noScreenAudio);
+            switched = true;
+          });
+        } finally { if (!adopted) tracks.forEach(track => track.stop()); }
       } catch { /* 一次换屏失败不该弄断已经在跑的共享 */ }
     }
     return switched;
@@ -73,24 +95,38 @@ export class MeetingScreenShare {
     if (room?.state !== 'connected') throw Error('会议媒体尚未连接');
     const generation = (this.generations.get(name) || 0) + 1;
     this.generations.set(name, generation);
-    const tracks = await room.localParticipant.createScreenTracks({ audio: false,
+    const tracks = await room.localParticipant.createScreenTracks({ audio: screenAudioConstraints,
       resolution: { width: 1920, height: 1080, frameRate: 15 }, contentHint: 'text' });
     const capture: Capture = { lease: crypto.randomUUID(), tracks, cancelled: false };
     const valid = () => !capture.cancelled && this.currentRoom() === name &&
       this.generations.get(name) === generation && this.rooms.get(name) === room;
     try {
       if (!valid()) throw Error('共享已取消');
+      if (!tracks.some(track => track.mediaStreamTrack.kind === 'audio')) this.notice(noScreenAudio);
       this.captures.set(name, capture);
       await this.action(name, capture.lease, 'claim');
       if (!valid()) throw Error('共享已被替换或取消');
       await this.rooms.run(name, async (current, connected) => {
         if (!valid() || !connected()) throw Error('共享已取消');
-        await waitForScreenPermission(current, () => valid() && connected());
+        await waitForScreenPermission(current, () => valid() && connected(),
+          tracks.some(track => track.mediaStreamTrack.kind === 'audio'));
         for (const track of tracks) {
-          await current.localParticipant.publishTrack(track, { source: Track.Source.ScreenShare });
-          track.mediaStreamTrack.addEventListener('ended', () => {
-            if (this.captures.get(name) === capture) this.stop(name);
-          }, { once: true });
+          const audio = track.mediaStreamTrack.kind === 'audio';
+          try {
+            await current.localParticipant.publishTrack(track, {
+              source: audio ? Track.Source.ScreenShareAudio : Track.Source.ScreenShare,
+              ...(audio ? { dtx: false, forceStereo: true } : {}),
+            });
+          } catch (error) {
+            if (!audio) throw error;
+            track.stop();
+            this.notice('画面已共享，但共享声音发布失败，请停止后重新共享');
+          }
+          if (!audio) {
+            track.mediaStreamTrack.addEventListener('ended', () => {
+              if (this.captures.get(name) === capture && capture.tracks === tracks) this.stop(name);
+            }, { once: true });
+          }
           if (!valid()) throw Error('共享已被替换');
         }
       });

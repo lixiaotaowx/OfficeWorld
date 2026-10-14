@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"></head>
+<body><div id="root"></div><script type="module">
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { usePresenceStatus } from '/src/usePresenceStatus.tsx';
+import { useDockBridge } from '/src/useDockBridge.ts';
+window.officeDesktop = {
+  dockState: async state => { window.__published = state; },
+  onDockPreviewWant: () => () => {},
+  onDockCommand: callback => { window.__command = callback; return () => {}; },
+};
+function App() {
+  const status = usePresenceStatus('me');
+  useDockBridge({ enabled: true, statuses: status.statuses, onStatus: status.show,
+    onStatusClear: status.clear, statusControl: status.control,
+    people: [{ id: 'socket-me', clientId: 'me', name: '我', appearance: { color: 'kraft', accessories: {} }, atDesk: true }],
+    myId: 'socket-me', previews: {}, unread: {}, missed: new Set(), sharing: false, onCommand: () => {} });
+  return React.createElement('main', null,
+    React.createElement('button', { onClick: status.show }, '加状态'),
+    React.createElement('output', null, JSON.stringify(status.statuses)), status.dialog);
+}
+createRoot(document.getElementById('root')).render(React.createElement(App));
+</script></body></html>
