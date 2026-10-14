@@ -4,19 +4,21 @@
 // hung-up ordinary call used to do (user, 2026-09-15: "挂断后为啥软件还变小了").
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { setWindowFullscreen, isWindowFullscreen } = require('../fullscreen.cjs');
+const { setWindowFullscreen, isWindowFullscreen, hidesDock } = require('../fullscreen.cjs');
 
 function fakeWindow({ fullscreen = false, maximized = false } = {}) {
   const calls = [];
   const scripts = [];
-  const state = { fullscreen };
+  const state = { fullscreen, maximized };
   return {
     calls,
     scripts,
     isDestroyed: () => false,
-    isMaximized: () => maximized,
+    // 跟着 maximize() 真的变：退出整屏要还原成"最大化着看"那一屏，这里得能观察出来。
+    isMaximized: () => state.maximized,
     isFullScreen: () => state.fullscreen,
     setFullScreen(value) { calls.push(['setFullScreen', value]); state.fullscreen = value; },
+    maximize() { calls.push(['maximize']); state.maximized = true; },
     webContents: {
       isDestroyed: () => false,
       executeJavaScript: (script) => { scripts.push(script); return Promise.resolve(); },
@@ -82,4 +84,41 @@ test('"算不算整屏"不能只看 isFullScreen()：自己请求过的也算（
   assert.equal(isWindowFullscreen(external), true);
   assert.equal(isWindowFullscreen(undefined), false);
   assert.equal(isWindowFullscreen({ isDestroyed: () => true }), false, '销毁的窗口不算');
+});
+
+test('头像条该不该藏：整屏与最大化都藏，最小化照旧出现（用户 2026-10-14）', () => {
+  // 用户原话：「当状态栏小窗口出现视频共享画面时，点击最大化，这个小窗口会消失；当最小化时，
+  // 这个小窗口就会出现。这就是这种常见的逻辑」。旧判断只看原生整屏，所以在软件窗口里最大化
+  // 看共享画面时条子不藏（它正好压在画面右下角上）。
+  assert.equal(hidesDock(fakeWindow()), false, '普通大小：条子要出现');
+  assert.equal(hidesDock(fakeWindow({ maximized: true })), true, '最大化：条子让位（这次新加的）');
+  assert.equal(hidesDock(fakeWindow({ fullscreen: true })), true, '整屏：条子让位（原来就有）');
+  // **最小化绝不算**：窗口是普通的（既没整屏也没最大化），屏幕上没有画面要遮，条子要留着。
+  // 千万别把这条改成"只要窗口不是普通大小就藏"——最小化也会被算进去，条子会跟着窗口一起消失。
+  assert.equal(hidesDock(fakeWindow({ minimized: true })), false, '最小化：条子要出现');
+  const lying = fakeWindow();
+  lying.isFullScreen = () => false;
+  setWindowFullscreen(lying, true);
+  assert.equal(hidesDock(lying), true, '自己请求过整屏的窗口也要藏（哪怕 isFullScreen 撒谎）');
+  setWindowFullscreen(lying, false);
+  assert.equal(hidesDock(lying), false, '退出整屏立刻恢复显示');
+  assert.equal(hidesDock(undefined), false);
+  assert.equal(hidesDock({ isDestroyed: () => true }), false, '销毁的窗口不算');
+});
+
+test('最大化着进整屏、退出来还要是最大化（别把窗口缩回旧摆放）', () => {
+  // `setFullScreen(false)` 让 Windows 恢复"上一次的摆放"，对无边框透明窗口来说那一位常常是
+  // 普通大小 —— 一个最大化着看视频的人，退出整屏后不该得到一个缩小过的窗口。
+  const win = fakeWindow({ maximized: true });
+  setWindowFullscreen(win, true);
+  assert.deepEqual(win.calls.filter(call => call[0] === 'setFullScreen'), [['setFullScreen', true]]);
+  setWindowFullscreen(win, false);
+  assert.ok(win.calls.some(call => call[0] === 'maximize'), '退出整屏要把最大化还原回来');
+  assert.equal(win.isMaximized(), true);
+  // 本来就是普通大小进来的：退出时**不许**顺手把它最大化（那就成了另一个 bug）。
+  const plain = fakeWindow();
+  setWindowFullscreen(plain, true);
+  setWindowFullscreen(plain, false);
+  assert.equal(plain.calls.some(call => call[0] === 'maximize'), false, '普通大小不该被最大化');
+  assert.equal(plain.isMaximized(), false);
 });

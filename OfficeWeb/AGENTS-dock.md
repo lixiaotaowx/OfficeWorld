@@ -221,3 +221,33 @@
 - 回归：`node --test test/mic-level.test.mjs`（换算、静音归零、0.01 收敛、落回 0、接线断言）
   + `node test/browser/dock-meeting-controls.cjs`（静音时**没有**波纹；开麦后 `micLevel`
   0 / 0.34 / 1 三档的圈依次变大且封顶 ≤44）。
+
+## 看视频时给画面让位：最大化/整屏就藏，最小化/还原就回来（2026-10-14 用户要求）
+
+需求（用户）：「当状态栏小窗口出现视频共享画面时，点击最大化，这个小窗口会消失；当最小化时，
+这个小窗口就会出现。这就是这种常见的逻辑」。就是播放器全屏时控制条让位那条通用规则。
+
+- **判定只在 `OfficeDesktop/fullscreen.cjs` 的 `hidesDock(window)` 里**：
+  `isWindowFullscreen(window) || window.isMaximized() === true`。`main.cjs` 把它交给
+  `createDockWindow` 的 `systemHidden`，`dock-window.place()` 的 `system` 那一路负责真的藏/显示。
+  - **为什么以前漏了最大化**：旧的 `systemHidden` 只看原生整屏，而"在软件窗口里最大化看共享
+    画面"窗口只是最大化、没进整屏，`isWindowFullscreen` 返回 false —— 条子照旧挂在画面右下角上。
+  - **最小化绝不算藏**：窗口缩下去时屏幕上没有画面要遮，条子应该正常出现（用户那句话的另一半）。
+    别把这条改成"只要窗口不是普通大小就藏"，那会把最小化也算进去，条子跟着窗口一起消失。
+  - `dock-z-order.cjs` 的 `foregroundFullscreen()` 管的是**别的应用**整屏（它是"条子该不该让位"
+    的另一个来源），两者互不代替：最大化过的办公室窗口并不铺满整个显示器，那条路认不出来。
+- **窗口状态一变就重贴一次**（`main.cjs` 监听 `enter-full-screen`/`leave-full-screen`/`maximize`/
+  `unmaximize`/`minimize`/`restore` → `dockWindow.place()`）：藏/显示仍然只由 `place()` 里那个
+  现算的 getter 决定，事件只负责**及时**。少一个事件就会出现"要等 1.5 秒心跳才回来"的延迟；
+  事件漏一次也不会永久藏着（同 2026-09-22 的教训）。
+- **顺手修掉一个真 bug**：`setWindowFullscreen(window, false)` 让 Windows 按"上一次的摆放"
+  恢复窗口，对无边框透明窗口来说那一位常常是普通大小 —— 一个最大化着看视频的人，退出整屏后
+  会得到一个缩小过的窗口。现在进整屏时把 `isMaximized()` 记进 `WAS_MAXIMIZED`，退出时还原。
+  **本来就是普通大小进来的不许被最大化**（那就成了另一个 bug），`fullscreen.test.cjs` 两向都断言。
+- 测试：`node --test test/fullscreen.test.cjs`（`hidesDock` 四态 + 还原最大化两向）、
+  `test/dock-hide-reasons.test.cjs`（最大化藏、还原回来；四个理由互不覆盖；以及"`systemHidden`
+  必须用 `hidesDock`、六个窗口事件一个都不能少"的源码断言）。
+  **没做真机验收**：真实的"点最大化 → 条子消失 / 最小化 → 回来"要用户在自己机器上看一眼。
+- 拆文件：`dock-window.test.cjs` 因为这一批涨到 528 行、超了 500 行上限，把"什么时候藏/显示"
+  那一簇搬进 `test/dock-hide-reasons.test.cjs`，假窗口与 harness 抽到 `test/dock-harness.cjs`
+  给两个文件共用（`test/*.test.cjs` 之外的文件不会被当成用例跑）。

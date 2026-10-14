@@ -9,7 +9,7 @@ const { installTray } = require('./tray.cjs');
 const { installChrome } = require('./chrome.cjs');
 // 「这个窗口算不算整屏」：不能只看 isFullScreen()（这个无边框透明窗口上它不可靠，
 // 2026-09-22 真机实测过），要连"我们自己请求过整屏"那份记录一起算。
-const { isWindowFullscreen } = require('./fullscreen.cjs');
+const { hidesDock } = require('./fullscreen.cjs');
 const { applyWindowIcon } = require('./window-icon.cjs');
 const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 const { createPreviewGlow } = require('./preview-glow.cjs');
@@ -138,16 +138,21 @@ function createWindow() {
       tray: createTrayArea(),
       // 头像条外面那圈框要跟着任务栏的颜色适配（用户 2026-09-20）。
       theme: createTaskbarTheme(),
-      // 整屏时把条子藏起来：**每次现算**，不靠 enter/leave 事件（`fullscreen.cjs` 开头就写着
-      // 这个无边框透明窗口"事件不可靠"，2026-09-22 真机实测连 `isFullScreen()` 都返回 false，
-      // 所以用 `isWindowFullscreen()` = 自己请求过 || 系统说整屏）。事件漏一次也不会永久藏着
-      //（用户 2026-09-22「头像这个 ui 有时候会消失找不到」）。
-      systemHidden: () => isWindowFullscreen(mainWindow) });
+      // 整屏**或最大化**时把条子藏起来：**每次现算**，不靠 enter/leave 事件
+      //（`fullscreen.cjs` 开头就写着这个无边框透明窗口"事件不可靠"，2026-09-22 真机实测连
+      // `isFullScreen()` 都返回 false，所以用 `isWindowFullscreen()` = 自己请求过 || 系统说整屏）。
+      // 事件漏一次也不会永久藏着（用户 2026-09-22「头像这个 ui 有时候会消失找不到」）。
+      // **最大化也要藏**是用户 2026-10-14 提的通用逻辑：在窗口里最大化看共享画面时，条子
+      // 正好压在画面右下角上；窗口最小化时屏幕上没有画面要遮，条子照旧出现。
+      systemHidden: () => hidesDock(mainWindow) });
     installDockBridge({ dock: dockWindow, getWindow: () => mainWindow });
     dockWindow.ensure();
-    // 整屏进出就立刻贴一次（藏/显示由上面那个现算的 getter 决定，这里只负责及时，不写状态）。
-    mainWindow.on('enter-full-screen', () => dockWindow?.place());
-    mainWindow.on('leave-full-screen', () => dockWindow?.place());
+    // 窗口状态一变就立刻重贴一次（藏/显示由上面那个现算的 getter 决定，这里只负责及时，
+    // 不写状态——`place()` 是唯一决定藏不藏的地方）。
+    for (const event of ['enter-full-screen', 'leave-full-screen', 'maximize', 'unmaximize',
+      'minimize', 'restore']) {
+      mainWindow.on(event, () => dockWindow?.place());
+    }
     app.on('before-quit', () => {
       dockWindow?.destroy();
       // 退出前把常驻采集停掉：它会替我们向 Windows 申请"屏幕常亮"，留着只会拖慢关机。

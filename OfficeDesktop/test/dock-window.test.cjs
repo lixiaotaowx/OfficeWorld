@@ -1,5 +1,8 @@
-// 任务栏头像条那个小窗：建窗参数、贴任务栏、跟着任务栏藏、收放、转发消息、加载重试。
+// 任务栏头像条那个小窗：建窗参数、贴任务栏、收放、转发消息、加载重试。
 // （用户 2026-09-17：贴任务栏、永远置顶、无边框、紧贴右侧托盘左边。）
+//
+// **什么时候藏/显示**那一簇搬去了 `dock-hide-reasons.test.cjs`（四个理由互不覆盖 + 用户
+// 2026-10-14 的"最大化看视频时让位"）。假窗口与 harness 两者共用 `dock-harness.cjs`。
 //
 // 注意：这个文件在 2026-09-21 被一次 PowerShell 改写弄坏过编码（`Get-Content -Raw` 按 GBK
 // 读、再写回 UTF-8，中文和换行全乱了）。从 git 恢复的那版还是 0.1.18 的（还在测"点击穿透"、
@@ -10,77 +13,7 @@ const assert = require('node:assert/strict');
 const { createDockWindow, widthFor } = require('../dock-window.cjs');
 const { TRAY_RESERVE, STRIP_HEIGHT, CARD_SPACE, CARD_WIDTH, STAGE_SPACE, PEEK_SPACE } =
   require('../taskbar-position.cjs');
-
-class FakeWindow {
-  constructor(options) {
-    this.options = options;
-    this.bounds = { x: options.x || 0, y: options.y || 0, width: options.width, height: options.height };
-    this.created = true;
-    this.visible = false;
-    this.destroyed = false;
-    this.alwaysOnTop = [];
-    this.sent = [];
-    this.listeners = {};
-    this.url = '';
-    const self = this;
-    this.webContents = {
-      once: (event, fn) => { (self.listeners['wc:' + event] ||= []).push(fn); },
-      on: (event, fn) => { (self.listeners['wc:' + event] ||= []).push(fn); },
-      setWindowOpenHandler: fn => { self.windowOpenHandler = fn; },
-      send: (channel, payload) => self.sent.push({ channel, payload }),
-      isDestroyed: () => self.destroyed,
-      emit: (event, ...args) => { for (const fn of self.listeners['wc:' + event] || []) fn(...args); },
-    };
-  }
-  isDestroyed() { return this.destroyed; }
-  isVisible() { return this.visible && !this.destroyed; }
-  showInactive() { this.visible = true; }
-  hide() { this.visible = false; }
-  setAlwaysOnTop(value, level) { this.alwaysOnTop.push([value, level]); }
-  moveTop() { this.raised = (this.raised || 0) + 1; }
-  setIgnoreMouseEvents(value, options) { this.ignored = { value, options }; }
-  setVisibleOnAllWorkspaces() {}
-  getBounds() { return { ...this.bounds }; }
-  setBounds(next) { this.bounds = { ...next }; }
-  loadURL(url) { this.url = url; return Promise.resolve(); }
-  destroy() { this.destroyed = true; this.visible = false; }
-  on(event, fn) { (this.listeners[event] ||= []).push(fn); }
-  once(event, fn) { (this.listeners[event] ||= []).push(fn); }
-  emit(event, ...args) { for (const fn of this.listeners[event] || []) fn(...args); }
-}
-
-function harness({ display, saved = {}, tray, anchor, loadRetryMs, systemHidden, followMs, zOrder } = {}) {
-  const state = {
-    display: display || { bounds: { x: 0, y: 0, width: 1920, height: 1080 },
-      workArea: { x: 0, y: 0, width: 1920, height: 1032 } },
-    saved: { ...saved },
-  };
-  const windows = [];
-  const decisions = [];
-  const dock = createDockWindow({
-    electron: {},
-    BrowserWindow: class extends FakeWindow { constructor(options) { super(options); windows.push(this); } },
-    screen: { getPrimaryDisplay: () => state.display },
-    session: { fromPartition: name => ({ name }) },
-    preload: 'preload.cjs',
-    url: 'https://115.159.43.237/dock.html',
-    size: { width: 400, height: STRIP_HEIGHT + CARD_SPACE },
-    store: { read: () => state.saved, write: value => { state.saved = value; },
-      decide: value => decisions.push(value) },
-    tray,
-    // Win11 用 'left'（条子贴屏幕最左端），Win10 用 'tray'。
-    ...(anchor ? { anchor } : {}),
-    ...(loadRetryMs ? { loadRetryMs } : {}),
-    ...(systemHidden ? { systemHidden } : {}),
-    ...(followMs ? { followMs } : {}),
-    zOrder: zOrder || { start() {}, sync: () => false, watching: () => false,
-      diagnostics: () => ({}), stop() {} },
-  });
-  return { dock, state, windows, decisions, window: () => windows[0] };
-}
-
-/** 让 ensure() 里那次异步探测落地。 */
-const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+const { FakeWindow, harness, settle } = require('./dock-harness.cjs');
 
 test('原生层级检查正常时不反复置顶，隐藏规则照常，窗口独立于任务栏', () => {
   const zOrder = { start() {}, sync: () => true, watching: () => true,
@@ -304,63 +237,6 @@ test('任务栏换边/换屏/改高度都会重新贴上去', () => {
   h.dock.place();
   assert.equal(h.dock.edge(), 'top');
   assert.equal(h.window().bounds.y, 0, '贴着屏幕上边');
-});
-
-test('应用层要求隐藏（共享屏幕/全屏）就藏，要求显示就回来', () => {
-  const h = harness();
-  h.dock.ensure();
-  h.dock.place();
-  assert.equal(h.window().isVisible(), true);
-  h.dock.setVisible(false, 'sharing');
-  assert.equal(h.window().isVisible(), false);
-  assert.equal(h.dock.reason(), 'sharing');
-  h.dock.setVisible(true);
-  assert.equal(h.window().isVisible(), true);
-  // 托盘里的开关：关掉就一直不显示。
-  h.dock.setEnabled(false);
-  assert.equal(h.window().isVisible(), false);
-  assert.equal(h.dock.enabled(), false);
-  h.dock.setEnabled(true);
-  assert.equal(h.window().isVisible(), true);
-});
-
-test('藏起来的三个理由互不覆盖，整屏那一路绝不会卡住（用户 2026-09-22「头像有时候会消失找不到」）', () => {
-  let fullscreen = false;
-  const h = harness({ systemHidden: () => fullscreen });
-  h.dock.ensure();
-  h.dock.place();
-  assert.equal(h.window().isVisible(), true, '平时是显示的');
-  assert.equal(h.dock.why(), 'shown');
-  // 整屏：藏。**页面那边一直在说"显示"**（它不知道整屏），不许把这一路顶掉。
-  fullscreen = true;
-  h.dock.place();
-  assert.equal(h.window().isVisible(), false);
-  assert.equal(h.dock.why(), 'system');
-  h.dock.setVisible(true);
-  assert.equal(h.window().isVisible(), false, '页面说显示也不能盖过整屏');
-  assert.equal(h.dock.why(), 'system');
-  // 整屏结束：**不靠任何事件**，下一次贴位置自己就回来（以前事件一漏就永久藏着）。
-  fullscreen = false;
-  h.dock.place();
-  assert.equal(h.window().isVisible(), true, '整屏结束必须自己回来');
-  assert.equal(h.dock.why(), 'shown');
-  // 页面那一路（共享屏幕/没登录）照样独立生效、也能自己恢复。
-  h.dock.setVisible(false, 'sharing');
-  assert.equal(h.dock.why(), 'page');
-  assert.equal(h.window().isVisible(), false);
-  h.dock.setVisible(true);
-  assert.equal(h.dock.why(), 'shown');
-  // 托盘开关那一路也是独立的。
-  h.dock.setEnabled(false);
-  assert.equal(h.dock.why(), 'manual');
-  assert.equal(h.window().isVisible(), false);
-  h.dock.setEnabled(true);
-  assert.equal(h.window().isVisible(), true);
-  // 每一次结论变化都留了证据（落到 dock-why.json）。
-  const reasons = h.decisions.map(row => row.why);
-  assert.deepEqual(reasons, ['shown', 'system', 'shown', 'page', 'shown', 'manual', 'shown'],
-    '只有变化时才记，且理由要对得上：' + JSON.stringify(reasons));
-  assert.ok(h.decisions.every(row => typeof row.at === 'string' && 'pageVisible' in row));
 });
 
 test('窗口被销毁（驱动/异常）之后要自己建回来，不能就此永久消失', async () => {

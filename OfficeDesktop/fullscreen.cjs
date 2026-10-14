@@ -20,6 +20,14 @@ const PAGE_CLASSES = (on, maximized) =>
 /** Windows this module has put into whole-screen mode, so it may take them back out. */
 const REQUESTED = new WeakSet();
 
+/**
+ * 这个窗口进整屏之前是不是**最大化**的。退出整屏时要还原成它。
+ *
+ * `setFullScreen(false)` 会让 Windows 恢复窗口"上一次的摆放"，对无边框透明窗口来说那一位
+ * 常常是"普通大小"——于是一个最大化着看视频的人，退出后就得到一个缩小过的窗口。
+ */
+const WAS_MAXIMIZED = new WeakSet();
+
 /** Paint the shell state for the current full-screen value. Idempotent. */
 function applyFullscreenState(window, on) {
   if (!window || window.isDestroyed?.() || window.webContents?.isDestroyed?.()) return false;
@@ -44,8 +52,21 @@ function setWindowFullscreen(window, on) {
     applyFullscreenState(window, false);
     return false;
   }
-  if (wanted) REQUESTED.add(window); else REQUESTED.delete(window);
+  if (wanted) {
+    REQUESTED.add(window);
+    // 记住进来之前是不是最大化（见 WAS_MAXIMIZED）。
+    if (window.isMaximized?.() === true) WAS_MAXIMIZED.add(window);
+    else WAS_MAXIMIZED.delete(window);
+  } else {
+    REQUESTED.delete(window);
+  }
   window.setFullScreen(wanted);
+  if (!wanted && WAS_MAXIMIZED.has(window)) {
+    WAS_MAXIMIZED.delete(window);
+    // 回到"最大化着看"的那一屏，而不是被恢复成一个小窗口（用户 2026-10-14 的通用逻辑：
+    // 最大化看视频 → 退出后还在最大化）。
+    try { window.maximize?.(); } catch { /* 平台不支持就按系统恢复的来 */ }
+  }
   applyFullscreenState(window, wanted);
   return wanted;
 }
@@ -66,4 +87,21 @@ function isWindowFullscreen(window) {
   return REQUESTED.has(window) || window.isFullScreen?.() === true;
 }
 
-module.exports = { applyFullscreenState, setWindowFullscreen, isWindowFullscreen };
+/**
+ * 现在要不要把任务栏头像条藏起来。
+ *
+ * 两种场合（用户 2026-10-14：「当状态栏小窗口出现视频共享画面时，点击最大化，这个小窗口
+ * 会消失；当最小化时，这个小窗口就会出现。这就是这种常见的逻辑」）：
+ *   * **整屏**（`isWindowFullscreen`）—— 条子本来就该让位；
+ *   * **最大化** —— 这一条以前漏了：在软件窗口里最大化看共享画面时，窗口只是"最大化"、
+ *     并没进原生整屏，所以旧判断返回 false，条子照旧挂在画面右下角上。
+ *
+ * **最小化不算**：窗口缩下去的时候屏幕上没有画面要遮，条子应该正常出现（用户那句话的另一半）。
+ * 千万别改成"只要不是普通大小就藏"——最小化也会被算进去，条子会跟着窗口一起消失。
+ */
+function hidesDock(window) {
+  if (!window || window.isDestroyed?.()) return false;
+  return isWindowFullscreen(window) || window.isMaximized?.() === true;
+}
+
+module.exports = { applyFullscreenState, setWindowFullscreen, isWindowFullscreen, hidesDock };
