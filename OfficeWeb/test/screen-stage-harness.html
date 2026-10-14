@@ -25,11 +25,14 @@ const stream=canvas.captureStream(5);
 window.__drawn=[];
 // ?readonly=1 is a sharer that cannot host the annotation layer (a browser tab).
 const sharerHasLayer = !new URLSearchParams(location.search).has('readonly');
+// ?own=1 是"分享者自己那块预览"：只有清屏入口，没有整套标注工具（用户 2026-10-14）。
+const ownBoard = new URLSearchParams(location.search).has('own');
 const root=createRoot(document.getElementById('root'));
 root.render(React.createElement(ScreenStage,{
   stream, scope:'call-harness', label:'对方共享屏幕', selfColor:'hsl(120 74% 46%)',
   annotatable: sharerHasLayer,
-  onDraw:(scope,points,done)=>window.__drawn.push({scope,points,done}),
+  clearsOwnBoard: ownBoard,
+  onDraw:(scope,points,done,color)=>window.__drawn.push({scope,points,done,color}),
   onClear:()=>{ window.__cleared=(window.__cleared||0)+1; }, onUndo:()=>{ window.__undone=(window.__undone||0)+1; },
   hint:'可点「标注」在画面上画线，所有人都能看到',
   actions:React.createElement(React.Fragment,null,

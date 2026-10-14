@@ -15,6 +15,14 @@ import { awayLabel, awayMilliseconds, isAtDesk } from './awayTime';
 import type { Person } from './types';
 
 const PUSH_MS = 1000;
+/**
+ * 只有**麦克风音量**在变时，两次推送之间至少要隔这么久。
+ *
+ * 音量每 60ms 取一次样，直接每次变化都推的话主窗口会以每秒十几次的频率往主进程发
+ * IPC（小窗是另一个窗口，每个 IPC 都要序列化整份名单）。80ms 大约 12fps，波纹看着
+ * 连续，开销又可接受；别的状态变化（来电、共享、名单）**不受这个限制**，照旧立刻推。
+ */
+const METER_PUSH_MS = 80;
 
 export type DockCommandKind = DockActionKind;
 
@@ -54,6 +62,10 @@ export function useDockBridge(input: {
   const latest = useRef(input);
   latest.current = input;
   const lastSent = useRef('');
+  /** 上一份**去掉音量**的快照：用来分辨"这次只有波纹变了"（见 METER_PUSH_MS）。 */
+  const lastSentNoMeter = useRef('');
+  /** 上一次真的推给小窗是什么时候：只给音量波纹限速用。 */
+  const meterSentAt = useRef(0);
   const pushNow = useRef<() => void>();
   // A new invitation or call control result must not wait for the roster heartbeat.
   useEffect(() => { pushNow.current?.(); }, [JSON.stringify(input.privateCalls)]);
@@ -75,6 +87,7 @@ export function useDockBridge(input: {
     // 任务栏上还挂着一排同事（连已经掉线的我自己）的头像。
     const release = () => {
       lastSent.current = '';
+      lastSentNoMeter.current = '';
       void bridge.dockState?.({ people: [], sharing: false, missed: 0, hidden: true })
         ?.catch(() => undefined);
     };
@@ -106,7 +119,15 @@ export function useDockBridge(input: {
       }
       const serialized = JSON.stringify(state);
       if (serialized === lastSent.current) return;   // 没变就不打扰主进程
+      // 只有音量在变时限速（见 METER_PUSH_MS）：去掉音量以后和上一份**推出去的**一样，
+      // 就说明这次变化只是波纹，攒到下一拍再发。别的变化照旧立刻推。
+      const withoutMeter = JSON.stringify({ ...state, meeting: meterStripped(state.meeting),
+        privateCalls: meterStripped(state.privateCalls) });
+      if (withoutMeter === lastSentNoMeter.current
+        && Date.now() - meterSentAt.current < METER_PUSH_MS) return;
       lastSent.current = serialized;
+      lastSentNoMeter.current = withoutMeter;
+      meterSentAt.current = Date.now();
       void bridge.dockState?.(state).catch(() => undefined);
     };
     pushNow.current = push;
@@ -178,4 +199,14 @@ export function useDockBridge(input: {
       offWant?.(); offCommand?.(); offAnswer?.(); offFiles?.();
     };
   }, [input.enabled]);
+}
+
+/**
+ * 去掉音量那几个字段的副本（会议和私聊各带一个 `micLevel`）。只给上面那条限速判断用：
+ * 两份"去掉音量后一样"的快照之间，唯一的差别就是波纹。
+ */
+function meterStripped<T extends { micLevel?: number } | undefined>(value: T): T {
+  if (!value) return value;
+  const { micLevel: _level, ...rest } = value;
+  return rest as T;
 }

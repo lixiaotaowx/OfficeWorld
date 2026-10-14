@@ -26,19 +26,11 @@ export class MediaRooms {
   join(name: string) {
     const existing = this.entries.get(name);
     if (existing) return existing.ready;
-    // 屏幕共享要"看得清字"，所以发布参数是特意定的（用户 2026-09-15：接通后
-    // 很久才清晰、还会突然变糊）：
-    //  - 两层，且**只有两层**：一层 720p@15 垫底 + 一层 1080p@15。默认的
-    //    q/h/f 三层里最低那层很小，对端先订阅到它，看起来就是"很久才清晰"；
-    //    而任何一次抖动把订阅切回低层，就是"突然变糊"。留一层 720p 是因为用户
-    //    明确要"弱网也能看"：下行差的对端至少拿到看得清的 720p，好网络下服务器
-    //    会升到 1080p（升层速度由对端带宽估计决定，页面里没有开关能强制）。
-    //    传一个 preset 就得到两层（源码 `presets.length === 1` → [low, original]）。
-    //  - 码率给足：LiveKit 的默认只有 2.5 Mbps（ScreenSharePresets.h1080fps15），
-    //    而它按目标的 90% 设置 x-google-start-bitrate，所以目标定得高，第一帧就
-    //    接近目标码率，不用等十几秒爬坡。总上行 = 1.5 + 5 = 6.5 Mbps。
-    //  - 分辨率降解由 LiveKit 对屏幕轨默认的 maintain-resolution 负责：带宽不够时
-    //    掉帧、不掉清晰度。
+    // 屏幕共享要"看得清字"，所以发布参数是特意定的（用户 2026-09-15：接通后很久才清晰、
+    // 还会突然变糊）：**只有两层** —— 720p@15 垫底 + 1080p@15 顶层（传一个 preset 就是两层，
+    // `presets.length === 1` → [low, original]）。默认 q/h/f 三层的最低那层很小，对端先订阅到
+    // 它就是"很久才清晰"，抖动切回低层就是"突然变糊"。码率给足：LiveKit 按目标的 90% 设
+    // x-google-start-bitrate。分辨率降解由它对屏幕轨默认的 maintain-resolution 负责。
     const room = new Room({
       adaptiveStream: false,
       dynacast: true,

@@ -141,6 +141,53 @@
   - **会议那条的根因是压根没用 `ScreenStage`**：`MeetingCenter` 里是一个裸的 `<video controls>`（只能播放）。而且会议的画面来源不同 —— 它由 `MeetingScreenShare` 自己采集，**不经过 `media.screen`**，于是 `sharingScreen()` 恒为 false、浮层也从来没 `attach()`，会议里的标注完全不工作。现在：`MeetingCenter` 用 `ScreenStage`（最大化 / 全屏 + 标注 / 撤销 / 清空），`scope = active.room`（`meeting-<id>`；服务端 `collab-annotations.mjs` 的会议分支按 `person.meetingRoom` 校验，`meetings.mjs` 会给参会者写上）；`media.ts` 的会议视频轨**按参与者 identity 作键**（`meetingVideoKey()`；identity = socket id，`server.mjs` 的 mintToken 用的就是 `s.id`），界面才查得到"谁在共享"和他的 `annotate` 能力；`useOffice` 的 `sharingScreen()` 把会议共享也算上，并在 `meetings.sharing` 变真时 `annotations.attach()`。`.meeting-streams .screen-stage video` 单独放行尺寸，别让 `.meeting-streams video` 抢样式。
   - 边界没变：会议里也只有**桌面客户端**共享时才能被标注（`person.annotate`）；浏览器共享一样只给放大/全屏，不给标注工具。
 
+## 标注四改：笔色、署名、清屏（2026-10-14 用户要求）
+
+用户原话四条：「1 分享者清屏按钮需要，2 状态栏静音按钮需要一个声音波纹来看麦的音量，
+3 观众看别人时标记可以修改颜色，4 标记每一笔都会署名，名称去掉」。2 在
+[AGENTS-dock.md](AGENTS-dock.md)（头像条那一段），这里是另外三条。
+
+- **每一笔不再署名**（第 4 条）。浮层原来每条笔画都在起笔处画一个名牌胶囊
+  （`annotation-overlay.js` 的 `label()`：`roundRect` + `fillText`），一整屏标注全是标签。
+  **函数和两处调用都删掉**，浮层里从此不出现任何文字。`name` 仍留在协议里
+  （`annotations.ts` 的 `Stroke.name`、服务端原样转发）——**别顺手把字段删掉**：老页面还在发。
+  回归 `OfficeDesktop/test/annotation-paint.test.cjs`「每一笔不再署名」断言浮层里不许出现
+  `fillText`/`roundRect`/`measureText`，`test/meeting-annotations.test.mjs` 再对着源码核一遍。
+- **观众可以改笔色**（第 3 条）。以前颜色是**按人固定**的（`annotations.colorFor(clientId)`，
+  哈希到色相），观众改不了。现在：色板 `src/inkColors.ts`（`INK_COLORS` 7 色 + `inkLabels`）
+  → 工具条 `src/InkPicker.tsx`（`.screen-stage-inks` 一排小圆点，选中的套白环）
+  → `ScreenStage` 的 `ink` 状态（默认值仍是**这个人的固定色**，`inkColor(selfColor, DEFAULT_INK)`；
+  `selfColor` 变了要跟着换回默认，别把上一个人的选择带过去）。
+  - **颜色是"每条笔画"的属性，不是"每个人"的**：`flush()` 只在**第一批点**（`done === false`）
+    上带颜色，`annotationChannel.draw(scope, points, done, color)` 把它钉在起笔那一刻
+    （`stroke.ink`），续画和收尾都不再改它 —— 中途换色只影响下一笔。浮层 `inkColor()` 只认
+    色板里的值，**不认的一律退回 `colorFor(clientId)`**，所以老客户端（不带 `color`）画出来
+    和以前一模一样。服务端**只原样转发 `color`、不认颜色**，加颜色不用改协议。
+  - **两份颜色表必须一致**：浮层是普通脚本、不能 import TS，所以 `OfficeDesktop/annotation-overlay.js`
+    里复刻了一份 `INKS`。`test/ink-colors.test.mjs` **逐字**核对两份，漂了当场红。
+  - 回归：`test/browser/screen-stage.cjs`（点「用天蓝画」→ 起笔那一条消息带 `#4a9fd8`、
+    本机回显像素偏蓝、收尾那条不带颜色）+ `test/meeting-annotations.test.mjs`（换色只影响下一笔、
+    同一笔共用一个 id）+ `annotation-paint.test.cjs`（色板外的值退回固定色）。
+- **撤销按笔画 id 精确删**。改了颜色以后"删这个人最后一条"会撤错，所以 `annotationChannel.undo()`
+  把当前笔画 id 一起发出去（`annotate-undo { scope, stroke }`），服务端原样转发，浮层
+  `receive({type:'undo'})` **优先按 id 删**、老消息（不带 `stroke`）才退回"这个人最后一条"。
+  回归在 `annotation-paint.test.cjs`（点名的删掉、别人的留着）。
+- **分享者自己也能清屏**（第 1 条）。浮层是**鼠标穿透**的（`setIgnoreMouseEvents(true)`，
+  让点击落到下面的应用上），所以别人画到分享者屏幕上的笔迹，他**在自己桌面上点不到**，
+  只能从自己的页面擦。现在 `ScreenStage` 多一个 `clearsOwnBoard` 开关，为真时在画面上
+  右上角渲染一个「清屏」（`.screen-stage-own-clear`），并给整个 stage 加 `.own-board`
+  类把绘制层关掉（那块预览不吃鼠标，点击照旧还给下面的应用）。
+  - 两条路都要有：会议是 `MeetingCenter` 的 `SharingPreview` 传
+    `scope={active?.room} onClear={annotation.clear}`；私聊是 `PrivateCallPanel` 在
+    `state?.sharing && videos['local-screen']` 时渲染 `SharingPreview`——
+    `useOffice` 因此要把 **`boardScope`**（我正在共享的那张画布）交出去，它的算法和
+    "共享结束时清掉哪些画布"是**同一份**（`shareScopes`），别再写第二套。
+  - 清屏按钮走的是 `clearBoard()`：**先清本机即时回显再 onClear**，否则屏幕上会留下一条
+    幽灵笔迹（回显要等 `ECHO_MS` 才自己消失）。预览收起时清屏挪到标题栏（`.clear-board`），
+    别让人为了擦笔迹先展开窗口。
+  - 回归：`test/browser/screen-stage.cjs` 的 `?own=1` 一档（只有一个「清屏」、绘制层 `display:none`、
+    点一下真的 clear 一次）+ `test/meeting-annotations.test.mjs`。
+
 ## 屏幕共享的清晰度（2026-09-15 用户报障后修订）
 
 - 报障（用户）：「视频接通后需要等待很久才变清晰…另外会有突然变糊的情况也改善一下」。
@@ -250,75 +297,6 @@
   - **"这次要不要从全透明重新亮起"必须由主进程判断**（`preview-glow.cjs` 的 `payload.restart`）：窗口一藏起来，页面里的过渡和计时器就被冻住，淡出那一步可能根本没跑，页面自己记的"我还亮着"是错的——于是第二次悬停时它不再淡入，看起来还是"啪一下亮"。主进程按 `!layer.isVisible()` 给 `restart`，页面据此先**同步**强制一帧（`void glow.offsetWidth`）再改成不透明。**别用 requestAnimationFrame**：这个不可聚焦的小窗有时拿不到帧，rAF 可能一直不回调（实测 opacity 一直 0）。
 - **所有角色都要适配招手**（用户：「注意检查所有角色都要适配打招呼的动作」）。**2026-09-28 换了尺子角色之后**：角色只有一个（`assets/characters/ruler.glb`），但**配色有 10 套**，所以这条改成"每套配色都要能演招手"——`test/dock-rules.test.mjs` 逐个核对 GLB 里的动作与 `look.ts` 登记的每个配件网格名，`test/browser/greet-characters.cjs` 再**真的**把 10 套配色一套套挂上舞台演一遍，量手腕的累计位移（待机约 0.02，招手 0.98～1.08，断言 > 0.15）。舞台的探针 `canvas.__dockStage = { mode, clip, frames, motion }` 仍按名字找 `wrist/hand` 骨骼，**不能写死 `Wrist.R`**：glTF 名字里的点号被 GLTFLoader 去掉了，实际叫 `WristR`（冒号同理会被去掉，`mixamorig:Hips` → `mixamorigHips`）。
 - 量"亮起来有多慢"用 `Build/glow-fade-check.mjs [port] [fade] [--cold]`：连上绿光页面每 150ms 读一次 `#glow` 的实际透明度（CSS 过渡中的 opacity 就是当前插值）。正式客户端实测：0.3s → 0.05、1s → 0.57、**半亮在 1.1 秒**、2 秒到 1.00，之后保持 3.6 秒 + 0.5 秒淡出；冷启动（第一次悬停）与第二次悬停都一样。**别只看页面读数就下结论**：`Build/glow-page-state.mjs` 能打页面自述与 `__glowLog`，`Build/glow-fade-shots.cjs` 是量真实像素那一版（实测那天 DXGI 被别的采集占住，抓不到画面，最后靠三次重复的页面读数定案）。
-
-## 任务栏头像条（dock，2026-09-17 用户要求）
-
-- 需求（用户）：「贴 Windows 任务栏、永远置顶、无边框，锁定在任务栏的图标右侧…紧贴右侧托盘左边」+ 头像悬停看缩略图 + 卡片上三个按钮直接通话。设计与文件分工见 `../Design/Taskbar_Dock_20260917.md`。
-- **铁律：小窗只做「显示 + 遥控」**。主窗口是唯一 socket 与媒体拥有者；服务器 `join` 会把同一 `clientId` 的旧 socket 踢掉（`server.mjs` 270-276 行），所以**小窗绝不能自己连 socket 或碰媒体**，否则会把主窗口顶下线、成员列表出现两个"我"。`test/dock-rules.test.mjs` 里有断言守着（`dock.tsx` 里不许出现 socket.io/useOffice/getDisplayMedia 等）。
-- **窗口**：`dock-window.cjs`（无边框/透明/`alwaysOnTop('screen-saver')`/`skipTaskbar`/`focusable:false`/与主窗口同会话）+ `taskbar-position.cjs`（纯几何）。`dock.html` + `src/dock.tsx` 是独立入口，**不加载 three.js**（约 3KB）；主窗口用 `useDockBridge` 每秒推状态、悬停时把最近一帧交过去（**不需要新协议**）。
-- **放置规则**：默认贴在**任务栏托盘左边 8px**——托盘宽度**真的去量**（`tray-area.cjs`：Win32 的 `Shell_TrayWnd` → `TrayNotifyWnd` 矩形），量不到才退回 220 的估算值；量到之后**还会夹住**：就算用户把条子往右拖、或者估算值偏小，条子右边缘也不许越过托盘左边缘。
-  - **DPI 是这条路上的大坑**（2026-09-18 用户报「那台设备的头像现在又跑到了正中心」）：PowerShell 子进程默认**不是 DPI 感知**的，Windows 会把 `GetWindowRect` 的坐标**虚拟化**（已经除以缩放比例），我们再除一次 `scaleFactor` 就偏小一大截——那台 150% 缩放的机器上条子因此跑到屏幕中间。现在两头都堵住：脚本先 `SetProcessDPIAware()`（坐标保证是物理像素），换算时再**用任务栏高度自校准**（量到的高度 ÷ Electron 给的 DIP 厚度 = 这套坐标系里"1 DIP 等于几个单位"，接近 1 就说明拿到的是已缩放坐标，不能再除）。
-  - **Windows 11 放屏幕最左侧，Windows 10 保持现状**（用户 2026-09-18：「当时Windows11系统的话 就把头像简单放在屏幕最左侧，Windows10保持当下状态」）：`taskbar-position.cjs` 的 `dockAnchor(os.release())` —— build ≥ **22000** 判为 Win11 → `anchor: 'left'`，条子放**屏幕/任务栏最左端**（`LEFT_GAP = 8`，不再受托盘夹紧影响）；否则 `'tray'`，就是上面这套"贴托盘左边 + 量托盘 + 夹住"。`dock-window.cjs` 启动时定一次（`dependencies.anchor` 可注入，测试用）。**本机是 Win10 19045，现场行为不变**（实测 `dockAnchor('10.0.19045') === 'tray'`）。
-  - **卡片/舞台画在哪一侧要挑"有地方的那边"，并且条子一个像素都不许动**（用户 2026-09-20：「鼠标放在上面出现大窗口时头像会自适应位移，需要锁定」+「小窗口出现的方向多变一下」）：`dockBounds` 按两侧的空档挑 `popup`——左边放得下就先左边（老样子），放不下才翻到右边（Win11 条子在屏幕最左端，左边只有 8px，必然往右画）。**参考宽度固定用 `CARD_WIDTH`**，不能用当前状态的 `minWidth`，否则状态一变条子会左右横跳。往右画时窗口**左边缘**对齐条子左边缘，页面用 `.dock.popup-right` 把条子钉在窗口**左**边、卡片/舞台改成左对齐；往左画时是老样子（窗口右边缘对齐条子右边缘、条子钉右边）。主进程通过 `office:dock-state` 的 `popup` 字段告诉小窗（`dock-bridge.cjs` 的白名单清洗里也要带上它，漏了就是老行为）。**不这么做的话**：窗口往左摆、左边缘被屏幕夹住 → 窗口右边缘不再和条子对齐 → 页面里靠右对齐的条子被顶走，用户看到的就是"出现大窗口时头像会自适应位移"（按 156 的条子实测位移 175px）。
-  - **所有头像套一圈灵动岛那种"纯半圆收口"的框，颜色跟着任务栏适配**（用户 2026-09-20：「把所有的头像整体框起来，像是同一个系统内感觉，有个大的圆角框，另外要根据当前状态栏的颜色去适配」，随后追加「大框两侧用纯半圆像是灵动岛那种」）：`.dock-frame` 高度 `calc(var(--dock-h) - 4px)`、**`border-radius: 999px`**（会被浏览器夹成高度的一半 = 两端正好两个半圆），把头像和"暂无人在线"那句话都圈进去；**`.dock` 自己仍然完全透明**（2026-09-18 定的"别有黑底"），框**不能加 `overflow: hidden`**——头像右上角的未读"!"和共享标记是往外凸的，会被切掉。两侧留白必须够宽，否则最边上头像的方角会戳出半圆、把边框线切断：要求 `留白 ≥ 半径 − √(框高 − 3)`（算下来约框高的 0.26～0.35 倍，任务栏越厚越大），所以就是 `padding: 0 calc(var(--dock-h) * .4)`——**别改回固定 px**，厚任务栏上会露馅（测试里按 28/40/48/64 四种厚度验过）。颜色由 `frameColors(state.theme)` 算成三个 CSS 变量：深色任务栏 → 白色浮层（`rgba(255,255,255,.1)` + 白边 `.2`）、浅色 → 黑色浮层（`rgba(0,0,0,.06)` + 黑边 `.16`）、任务栏被强调色着色时边框用强调色（里面再垫 7% 同色）；关掉透明效果时浮层加 4% 浓度。框会占一点宽度（条子从 157 变 169），页面量出来报给主进程，窗口跟着长。
-  - **任务栏的颜色在主进程读注册表**（`OfficeDesktop/taskbar-theme.cjs`）：`SystemUsesLightTheme`（**不是 `AppsUseLightTheme`**——那是应用窗口的主题，本机实测就是"应用浅色、任务栏深色"）、`EnableTransparency`、`ColorPrevalence`、`AccentColor`（`0xAABBGGRR`，低字节是红）。**`reg query` 只认一个 `/v`**：`reg query KEY /v A /v B` 直接报 "Invalid syntax"（实测踩到，整条路静默退回兜底），所以整把键读回来自己挑。结果缓存 30 秒，读不到就退回 Electron 的 `nativeTheme` 明暗（没有强调色），**任何时候都不抛**。`dock-bridge.cjs` 每 20 秒重读一次、**变了就立刻重发一次完整状态**（不然要等主窗口下次推状态才换色），`theme` 同样要过白名单清洗（四个字段、强调色必须 `#rrggbb` 且小写）。验证：`test/taskbar-theme.test.cjs`（解析、ABGR、缓存、兜底）、`test/dock-bridge.test.cjs`（转发与重发）、网页 `dock-rules.test.mjs`（frameColors）、浏览器 `dock.cjs`（框包住所有头像、深/浅/强调色三种配色、换回来就没这个类），放大截图 `Build/dock-frame-zoom-*.png`。
-  - **启动/自启不出现头像、头像忽闪、关机不要被拖住**（用户 2026-09-20：「有时候启动不出现头像，有时候开机自启不出现头像，有时候头像会消失闪烁，问题二不要阻止关机如果可以的话」）：
-    - **启动先藏着**：`dock-bridge.cjs` 的初始状态是 `hidden: true`，装桥时就 `dock.setVisible(false, 'starting')`。以前初始是"显示"，主窗口还没推过任何东西的那一两秒会先亮一条空条子（用户看到的就是"没有头像"）。
-    - **页面加载失败会重试**：`dock-window.cjs` 的 `did-fail-load`（`-3` 是我们自己中断的，不算）→ 按 2s/5s/10s/30s 退避重载；`render-process-gone`（渲染进程崩了）→ 立刻重载。开机自启时网络常常还没起来，老代码那一次 `loadURL` 失败就是永久透明窗口。`dependencies.loadRetryMs` 可注入（测试调快用）。
-    - **不许忽闪**：`place()` 里"任务栏不在了"要**连续三次**（`HIDE_AFTER_MISSES`，每次 1.5 秒）才真藏——息屏、切分辨率、全屏应用、量托盘的 PowerShell 抖一下都会让某一次读数是"没有任务栏"，一次就藏条子就会忽闪忽现；认定真藏之后最多多留三四秒（条子在托盘那侧，底边别处照样能碰出任务栏）。
-    - **短暂掉线不抹名单**：主窗口把 `connected` 一起推给小窗，`dockRules.mergeState()` 在 `connected === false` 且这一份名单为空时沿用上一份（`hidden: true` 时照旧清空）——休眠/切网/服务器重启时 `disconnect` 会先 `setPeople([])`，几秒后连上再推回来，不保留就是"整排消失再冒出来"。
-    - **关机/注销不拖时间**：`main.cjs` 处理 `app.on('session-end')`（Windows 真的结束会话时）→ 收掉头像条、光晕窗口、常驻采集流（它会替我们申请"屏幕常亮"）然后 `app.exit(0)`；`before-quit` 里也停采集。托盘那条"关窗口 = 收进托盘"的 `preventDefault` 早就有 `quitting` 放行（`query-session-end`/`session-end`/`before-quit` 三处），`test/shutdown.test.cjs` 用源码级断言盯着这几处，改掉就红。
-  - **有人打电话过来时，在人物头顶写清"谁来电"+ 直接接听**（用户 2026-09-21：「通话请求时，需要在人物上加上是谁来电，再加一个接听的按钮」，随后纠正：「我是说打招呼的人站在状态栏上的人物头顶」）：小窗那个跳出来的角色照旧站在头像条上（下边缘贴条子上边缘），**来电气泡挂在他头顶**（`.dock-call-wrap` 那一格 + `.dock-call`，灵动岛那种胶囊）：`callLabel()` 出文案（`同事乙 来电 · 语音通话` / `· 想看你的屏幕` / `· 要给你看屏幕`，纯规则；老客户端没带 `kind` 就只说 `同事乙 来电`），右边「拒绝」（红）+「接听」（绿）。
-    - **位置怎么算**（别再挪到下面去）：`.dock-call-wrap` 与角色画布是**同一格**——同样宽（`--dock-stage-w` = `GREET_CANVAS[mode].width`）、底边同样在 `calc(var(--dock-h) + var(--dock-stage-h, 380px))`，也就是**画布上边缘之上**；气泡在里面 `justify-content: center`，而角色站在画布正中，所以气泡正对着他的头（实测气泡中心与画布中心偏差 0px）。外层 `pointer-events: none`、气泡自己 `pointer-events: auto`，透明区不吃鼠标；气泡高 52 且 `box-sizing: border-box`，`white-space: nowrap` + 文字 `flex: 1 1 auto; min-width: 0`（名字长了要省略号，不然"接听"会被顶出窗口右边）。`popup-right` 时外层一起钉左边。**旧的 `.dock-stage.over-call`（角色站气泡上面那一版）已经删掉**，`test/dock-rules.test.mjs` 里有断言禁止它回来。
-    - **舞台多高由页面报**（`layout({ stagePx })`）：气泡让舞台从 380 变成 452（380 画布 + 62 气泡 + 10 余量），写死在主进程里就会被窗口裁掉；`dockBounds` 夹在 120～700（报得离谱地小就当没报，退回 `STAGE_SPACE`），`dock-window.applyLayout` 记下来，`desktop-dock-preload` 与 `dock-bridge` 各清洗一遍。舞台那会儿窗口宽度至少 `STAGE_WIDTH = 320`，所以 320 宽的气泡不会被屏幕/窗口边界裁掉。
-    - **接听走 `office:dock-answer`**（小窗 → 主进程 → 主窗口 → `office.respond(requestId, accept)`），跟通话面板那两个按钮同一条路，小窗自己不碰 socket/媒体。**老客户端没有 `answer` 桥就不渲染按钮**（`typeof window.officeDock?.answer === 'function'`），只显示"谁来电"那行字。
-    - 邀请本身（`requestId`/`kind`/`offer`）由 `callAttention()` 带出来 → `useCallAttention` → `dockGreet`；`dock-bridge.cjs` 里同样过一遍白名单（`kind` 只认 screen/voice、`requestId` 截 64 字符）。验证：桌面 `test/dock-bridge.test.cjs`（转发、来源校验、脏种类、`stagePx` 夹取）、`dock-window.test.cjs`（`stagePx` 三档）、网页 `dock-rules.test.mjs`（`callLabel` 四种）、浏览器 `dock.cjs`（气泡、角色站位、`stagePx=452`、点接听/拒绝记到 `__answers`），截图 `Build/dock-call.png`。
-    - **这条链上有三处会静默丢字段，加字段时三处都要改**（2026-09-21 真机报障"看到名字了、但头顶没有接听/挂断按钮"就是漏了第一处）：
-      1. `OfficeDesktop/desktop-preload.cjs` 的 `dockGreet` **白名单清洗**（主窗口页 → 主进程）：它把载荷重建成一个新对象，只留 `id/name/character/mode`，新加的 `requestId/kind/offer` 就被**静默丢掉** → 气泡有名字、**没有按钮**。现在四个字段都带上，`test/desktop-preview.test.mjs` 逐条盯着。
-      2. `OfficeDesktop/dock-bridge.cjs` 的 `office:dock-greet` 处理（主进程 → 小窗）：`test/dock-bridge.test.cjs` 盯着。
-      3. **反方向**：主窗口页要收得到小窗的接听 —— `desktop-preload.cjs` 必须有 `onDockAnswer`（订阅 `office:dock-answer`），`useDockBridge` 才会 `bridge.onDockAnswer?.(…)`。**这条桥以前根本不存在**，所以就算按钮画出来了，点下去也没反应。漏 `onDockAnswer` 也是静默的（可选链 `?.` 直接跳过）。
-    - **真 Electron 上把这条链整跑一遍**：`& '.\node_modules\electron\dist\electron.exe' test/dock-call-chain.cjs`（两个窗口 + 真 preload + 真 dock-bridge，用协议桩喂夹具页，不碰网络）。它断言：小窗收到 **`{id,mode:'call',requestId,kind,offer}`** 一个不少、脏数据仍被清洗、**小窗点接听 → 主窗口收到 `{requestId, accept}`**。证据写在 `Build/dock-call-chain.json`。**改了任一白名单就跑它**——源码字符串断言只能证明"代码里写着"，这个脚本证明"真的传到了"。
-  - **改文件别走 PowerShell**（2026-09-21 血的教训）：我用 `(Get-Content -Raw)` + `Set-Content` 改 `dock-window.test.cjs`，宿主是 Windows PowerShell 5.1，它按 **GBK** 读 UTF-8、再写回 UTF-8 → 中文和换行整片烂掉，只能从 git 恢复后重写整个文件。**编辑一律用 read/edit/write 工具；PowerShell 只用来跑命令，不要用它重写文本文件。**
-  - 实测这台机器托盘 256~280px（会随图标多少变，所以每 20 秒重量一次），条子右边缘 = 托盘左边 - 8px。
-  - 头像条在任务栏里竖直居中；**没人悬停时窗口就是头像条本身**（宽高都等于条子，一个像素都不多占任务栏），悬停卡片打开时才向上长高一个卡片空间、并宽到至少放得下卡片（`taskbar-position.cjs` 的 `expanded`）。两种状态下窗口**右边缘、下边缘都与头像条对齐**，所以卡片不会被裁、条子也不会跳。任务栏在哪条边、多厚、自动隐藏都由 `bounds`/`workArea` 之差推断，每 1.5 秒复查。
-- **必须跟着藏**：任务栏自动隐藏时藏（否则鼠标碰不到底边、任务栏再也弹不出来）、自己共享屏幕时藏（免得被一起共享出去）、窗口进全屏时藏；托盘菜单「显示任务栏头像条」可手动关。
-  - **但"藏"必须是三个独立理由，谁都不能卡住别的**（2026-09-22 用户报「头像这个 ui 有时候会消失找不到」后改）：`dock-window.cjs` 的 `place()` 现在算的是 `taskbarGone / pageVisible / system / manual` 四路，**任一路说藏就藏、互不覆盖**。以前"页面要求"和"整屏要求"写的是**同一个 `visible` 标志**（最后写的赢），而整屏那一路靠 `enter-full-screen` / `leave-full-screen` 两个事件——事件漏一次（窗口先收进托盘再退全屏、Electron 没发 leave……）条子就**再也不回来**，只能重启客户端。现在整屏改成**现算**：`main.cjs` 传 `systemHidden: () => mainWindow.isFullScreen() === true`，`place()`（每 1.5 秒一次）自己问一遍，事件漏不漏都不影响；`enter/leave-full-screen` 两个监听只负责"立刻贴一次"，不再写状态。
-  - **窗口被异常销毁要能自愈**：`window.on('closed')` 会把 `window` 清空，而以前只有启动时调过一次 `ensure()`——窗口一旦被系统/驱动收掉，条子从此永久消失。现在 `follow` 那个 1.5 秒的 tick 里 `if (!window || window.isDestroyed()) { ensure(); return; }` 自己建回来；主动 `destroy()`（退出/关机）会先置 `destroyed = true`，不会再冒出来。
-  - **"为什么藏"要留证据**：每次结论变化都往 `store.decide` 写一行（`main.cjs` 落到 `%APPDATA%\iruler dream\dock-why.json`：`{at, why, pageVisible, manual, hiddenStreak, strip, screen}`，`why` 是 `shown`/`taskbar`/`page`/`system`/`manual`），只在变化时写、不刷盘。下次再有人说"头像不见了"，先看这个文件，别靠猜。`dock-window.test.cjs` 有断言盯着（三个理由互不覆盖、整屏结束自己回来、报告的理由序列、窗口销毁后重建、主动 destroy 后不再重建）。
-  - 页面那侧顺手修了个小的：`useDockBridge` 在"不可用"分支里推完 `{people: [], hidden: true}` 后把 `lastSent` 清掉——不然重新可用时那份状态和上次一模一样，会被当成"没变"跳过，小窗就一直停在"藏起来"那一份（`test/desktop-preview.test.mjs` 有断言）。**没有加"定期重推状态"那种 keep-alive**：老客户端没有上面那个"整屏现算"，重推会让条子在整屏应用上冒出来（宁可不做，也不引入新问题）。
-  - **被顶下线/退出/被请出时要把条子交还回去**（用户 2026-10-08 报障：「被挤掉线之后为啥头像都还在 所有人的都在 这不合理吧」）：`useDockBridge` 的 `enabled` 入参**只表示"这台机器有没有 `dockState` 这道桥"**（`App.tsx` 里就是 `Boolean(window.officeDesktop?.dockState)`），而**被别的设备顶下线、Cookie 会话失效、被管理员请出、主动退出**走的都是 **App 卸载回登录页**，它压根不会变 false —— 所以以前收尾只 `clearInterval(timer)` 的话，小窗就**永远停在最后那一份名单**上：登录页都出来了，任务栏上还挂着一排同事（连已经掉线的我自己）。现在把清空抽成 `release()`＝清 `lastSent` + 推 `{people: [], sharing: false, missed: 0, hidden: true}`，**"不可用"那条路和卸载收尾共用它**（清 `lastSent` 是为了再登进来能重新推：那份状态和上次一模一样会被"没变"跳过）。回归：`node test/browser/dock-session-end.mjs`（真服务器 + 真账号：A 进办公室 → B 用同账号登录把 A 顶掉 → 登录页出来时小窗最后一份必须是空名单 + hidden，再登回来还要重新亮起来。**修复前必失败**，实测最后一份还是 `{"people":[…],"hidden":false}`）+ `node --test test/dock-session-end.test.mjs`（源码断言，别改回"只清定时器"）。**纯前端修复，刷新页面即生效、不用发新客户端**。
-- **鼠标：不用点击穿透，改成"窗口跟着状态收放"**（2026-09-18 用户报障「我鼠标放上去弹出的窗口我无法点击 快速消失了」）。原设计是窗口一直 `setIgnoreMouseEvents(true, { forward: true })` 穿透、页面靠收到的 mousemove 判断指针在不在条子上再接管点击。**实测这套在这台机器上完全不工作**：ignore+forward 状态下页面**一条 mousemove 都收不到**（`Build/dock-hover-watch.mjs` 探针；关掉穿透后同一条鼠标轨迹立刻收到几十条），于是页面永远判不出"指针上来了"——悬停卡片不出来、出来了也点不动。这类透明窗上的 forward 本来就不稳（electron#40213），所以现在：窗口**始终接收鼠标事件**，页面用 `officeDock.layout({ expanded, width })` 报两件事——卡片开没开、条子实际多宽；主进程据此把窗口收成"就是头像条"或长高一个卡片空间（`dock-window.cjs` 的 `applyLayout`）。宽度**以页面量出来的为准**（`widthFor(count)` 只是页面报之前的估算值），这样窗口和条子永远一样宽，不会盖住任务栏上别人的图标。`setIgnoreMouseEvents` / `dockRules.dockInteractive` 都已删除，`test/dock-rules.test.mjs` 有断言禁止它们回来。
-  - **头像上不挂 `title`**：系统的悬停提示会盖在头像条上，而卡片里已经写清名字、未读和离座时长（用户 2026-09-18 看过截图后定的）。
-  - **验证"点得到"时绝不能真的去点那三个按钮**：它们是真的邀请（`office.request`），点下去对方的电脑真的会弹来电（用户 2026-09-18 直接警告「不要乱打电话」）。要验就用浏览器 `test/browser/dock.cjs` 的 harness，或者**在捕获阶段拦下 click**。注意 `contextBridge.exposeInMainWorld` 暴露出来的对象是 `Object.freeze` 的，**`window.officeDock.action = …` 这种替换会被静默忽略**——2026-09-18 就是"以为拦住了、其实真拨出去了一次"。真要动真格的，也只在 `dock-` 里对**不存在的人**调用。
-- **显示谁**：在线的人 + 我自己（我在最左、带一圈白边），排序 未接来电 → 未读 → 正在共享 → 在座 → 名字，最多 16 个；**访客/浏览器登录/没工位的人永远没有缩略图**（规则如此），卡片显示「此人不广播屏幕预览」。三个按钮走的是和右侧详情卡同一条邀请通道（看对方屏幕 / `offer:true` 分享我的 / 语音），点完主进程把办公室窗口抬到前面。悬停卡片的名字后面跟离座时长（`useDockBridge` 用 `awayTime` 算好一句现成的字交过去，小窗不认时间）。
-- **卡片上的状态要写成字、用暗绿/暗红**（用户 2026-09-18：「在座就显示暗绿色在座 离座显示暗红色离座，不要出现此人不在电脑前的文字 不在的话用最后一张 不要在办公室还关着屏幕」）：名字右边一个小标签，在座 `#2f6b3c`、离座 `#8f3a2c`（`.dock-card-state.here/.away`），离座时标签里直接写「离座 N 分钟」。
-  - **顺序要"粘住"，不许在鼠标底下换位**（用户 2026-09-21：「状态栏的头像位置尽量不要频繁的切换顺序，不然本来鼠标看着一个人闪烁到另一个人了」）：名次（上面那串规则）本身没变，但**显示顺序和名次分开**——`dockRules.stickyOrder()` 是纯函数，两档防抖：① 指针停在条子/卡片上（`.dock` 的 `onMouseEnter/Leave` → `pointerOn`）时**一个都不许挪**，新人接在最后、走掉的人立刻消失；② 没停住也要名次**连续稳定 `ORDER_SETTLE_MS = 2000`** 才真的换序（`since` 记的是"名次第一次和显示对不上"的时刻，**不是**上次换序的时刻——否则下一个心跳就会立刻换，「稳住两秒」等于没做；没稳就返回 `waitMs`，页面到点再看一眼）。**为什么会闪**：离座/在座 10 秒就翻一次，共享开关、未读数也会改名次，主窗口一重排、小窗照着画，鼠标底下就换成别人了（`hovered` 是按 id 走的，DOM 一挪浏览器就会重发 mouseover → 卡片跟着换人）。`orderPeople()` 负责按粘住的顺序摆人头（顺序表里没有的人接最后，**不许丢人**）。
-  - 页面画的是 `people`（粘住的顺序），**不是** `state.people`（刚推来的名次）——`test/dock-rules.test.mjs` 里有断言禁止画回原始顺序。回归：`test/dock-rules.test.mjs`（照排/冻结/新人接尾/走人立刻消失/差 100ms 不换/变回去重新计时/指针压着多久都不换）+ 浏览器 `dock.cjs`（指针在条子上时打乱名次顺序不变、移开 2.6 秒才换）+ 线上核验 `Build/live-dock-verify.cjs`（部署页实测 `before == frozen`，移开后 `["我","客户丙","同事乙"]`）。
-  - **离座不再等于"没有预览"**：`previewPlaceholder()` 里那条「此人不在电脑前，预览已暂停」**删掉了**，不许再回来（`test/dock-rules.test.mjs` 与 `test/browser/dock.cjs` 都有断言）。离座的人照样显示他**最后一张**工位画面：小窗收到空帧时**不覆盖**已有的图（`dock.tsx` 的 `onPreview` 直接 return），主窗口那边也是**有画才发**（`useDockBridge` 的 `onDockPreviewWant` 遇到空帧不推），真的没有画面时只写「暂时没有画面（对方可能没在采集）」。
-  - **悬停期间反复要帧**（`PREVIEW_POLL_MS = 800`）：只问一次的话，"悬停早了"（主窗口手里还没有这个人的画面）就永远是一片白。
-- **服务端记住每个人的最后一张**（`preview-relay.mjs`，2026-09-18）：低清预览的中继从 `server.mjs` 里搬出来，顺便做三件事——校验限速（访客不广播 / 400ms 一帧 / 250KB 封顶）、转发（自己也算，自己桌上的显示器才有画面）、**按账号 `clientId` 缓存最后一帧**。于是：
-  - 人走开（客户端暂停采集、什么都不发）之后，他那张画面继续留在服务端，别人（包括**刚启动的客户端**）都拿得到——`join` 之后服务端会补一份快照（`previewRelay.snapshot(s.id)`）。这就是用户要的「不在的话用最后一张 不要在办公室还关着屏幕」：以前新开的客户端要等每个人下一次采集（最长 12 秒，人不在电脑前就永远不采），整间办公室的屏幕都是黑的。
-  - **只有客户端明说停止广播**（`ambient-sharing:false`：关掉预览、关窗、采集失败）才会发一帧 null 告诉别人"现在没有实时画面"——但**缓存留着**，`useOffice` 收到 null 也**不删手里那一张**（`test/desktop-preview.test.mjs` 有断言守着）。人真的离开空间时才清（`retainPresent` 只保留在场的人）。用户 2026-09-18 实测：显示器关掉会让采集失败 → 客户端发 `ambient-sharing:false` → 以前这一下就把画面抹了，看起来就是"办公室还关着屏幕"。
-  - 同理，任何人走开或断线重连后，`previewSharing` 会回到 false（服务端的人是重连时重建的），要等他下一次出帧才会重新变 true——**这不代表他的客户端坏了**，别据此下结论（2026-09-18 就误判过一次：Elsa 其实是桌面客户端、在座时正常广播）。
-  - 测试：`test/preview-relay.test.mjs`（中继规则本身）+ `test/preview-snapshot.test.mjs`（**真服务端**上验 join 快照、回显、访客兜底、限速）。
-  - 边界：如果一个人**从来没广播过**（浏览器登录、访客、老客户端），服务端也没有他的画面，卡片只会写「暂时没有画面」——这不是坏了，是本来就没有。
-
-
-- **`dock-bridge.cjs` 的白名单清洗是加字段的坑**（2026-09-18 发现）：它把小窗要的人头字段一个个列出来重建，`self` / `missed` / `away` 都曾经漏掉，表现为"自己的头像没有圈也不排最前、未接来电没有 `!`、卡片里没有离座时长"——而浏览器 harness 是直接吃 `buildDockState` 的产物，所以测试全绿、真机上却是坏的。给 `DockPerson` 加字段时**必须同时改这个白名单**，`test/dock-bridge.test.cjs` 现在盯着这三个字段。
-
-- **外观：一层很淡的玻璃 + 白圆按钮**（2026-09-2X 用户给了参考图：「把状态栏上的头像部件改的灵动一些…头像背景和组件降低透明度，以及小窗口的圆角绘制，按钮的白色」）：
-  - 条子（`.dock-frame`）和悬停卡片（`.dock-card`）**共用一套半透明材质**：底色用主进程按任务栏颜色算好的浮层值（深色任务栏白色浮层、浅色黑色浮层），外加 `backdrop-filter: blur(...) saturate(...)`、一圈细边、顶上一道 `::after` 高光；卡片另有**更大的圆角**（18px）。
-    - **但两层的"透"不是一个量级**（用户 2026-09-2X：「弹出的小窗不要完全透明啊 是指状态栏头像设计要改的透明一些」）：**条子**要很透、边很细（白浮层 `.04`、悬停 `.06`、边框 `.14`），**悬停卡片必须够实**（深色 `rgba(20,21,24,.88)`、浅色 `rgba(250,250,250,.93)`）——里面要放工位截图和字，`.52` 那版透到看不清。两套值都在 `.dock` / `.dock[data-theme="light"]` 的 CSS 变量里。
-    - **头像没有自己的小底色**（用户 2026-09-2X：「头像本身的小背景有点黑啊 直接去掉内部小背景」）：`frameColors().chip` 恒为 `transparent`，`.dock-avatar` 不再垫任何底（贴图本身就是透明底的，直接透出任务栏）。**注意连带影响**：那块深垫底原来在 `filter: brightness()` 之下也一起被压暗，去掉后整条平均亮度从 37.4 跳到 67.8，所以要把头像自身的 `brightness` 从 `.86` 补到 `.68`（`saturate 1.7 → 1.55`）。量法：`Build/dock-white-measure.cjs`、`dock-white-regions.cjs`、`dock-avatar-probe.cjs`（问页面要 computed filter/背景/贴图 URL）。
-  - **卡片有一个指向头像的尖**（用户 2026-09-2X：「我希望小窗有一个气泡指向的尖尖那个东西指向头像」）：`.dock-card-tip` 是转 45° 的方块（对角线朝下 = 圆角小三角），`bottom: -11px` 探到**头像条上边缘**、和卡片连成一体；位置由纯函数 `cardTipOffset(cardLeft, cardWidth, avatarCenterX)` 算并**夹在卡片内**（否则被 18px 圆角切掉），页面悬停时量"头像中点 − 卡片左边界"；`.edge-top`（任务栏在上方）时转 225° 指向上面的头像。**不能挂 `border`**（转 45° 后边框变斜线），靠 `inset 0 0 0 1px rgba(255,255,255,.16)` 那道极淡边光才看得出形状；尖的底色比卡片再实一点（`--dock-card-tip-bg`），太小太透会糊成一团（实测截图验证过）。
-  - 卡片上三个动作按钮改成**白色圆按钮**（36px、`border-radius: 50%`、白底 + 深色图标 + 轻阴影，悬停微抬）；缩略图 228×128，卡片实测 294×175，主进程给的 `CARD_SPACE = 210` 装得下。
-  - "灵动"这几处全是**纯 CSS，不动任何通道**：头像悬停/被选中（`.open`）时抬起 1px 并套一圈柔和光环（颜色取任务栏强调色 `--dock-ring`，读不到退回浅蓝）；新人加入时弹一下（`dock-pop`）；有未读/未接来电的头像一呼一吸地柔光（`dock-live`，2.4s，不是闪个不停）。
-  - **"太白"要量，不要凭观感调**（2026-09-2X 用户「还是不好看 太白了 是不是透明的问题」）：白的是**框那层白色浮层**，不是透明问题 —— 所以白色浮层压到 **.05**（悬停 .07）、顶部高光 `.07`、头像垫底改用**暗色** `rgba(10,12,12,.2)`（`frameColors().chip` 按主题给，浅色任务栏才用亮垫底）、卡片底色补到 `rgba(18,18,20,.58)` 保住截图可读性。条子平均亮度实测 **41.7 → 36.4**（`Build/dock-white-measure.cjs` + `Build/dock-white-regions.cjs`：同一假桥 + `#1b1b1b` 任务栏底，逐像素量）。
-    - **踩过的弯路**：我曾按"头像太白"把头像提亮（brightness `.74 → .88`），区域实测头像亮度 **44.3 → 91.8**，方向完全反了；`Build/dock-dim-sweep.cjs` 扫参数时才发现**贴图本身是透明底的暗色角色**——它显示多少亮度完全由 CSS filter 决定。这类判断一律先量。
-  - **两个坑（都实测踩过）**：① `color-mix()` 在**预乘**空间里混合，拿半透明色去 `color-mix(..., #fff)` 会把 RGB 一起拖向白 —— 浅色任务栏那层"黑色浮层"被算成 `rgba(35,35,35,…)`，既有的「浅色 → 黑色浮层」断言当场红；所以悬停提亮的底色**按主题写死**（`--dock-strip-bg-hover`），不要用 color-mix。② `.dock-frame` 上**不能加 `transition: background`**：主题切换时 `getComputedStyle` 读到的是过渡插值（同一份代码两次跑出 `rgba(0,0,0,.06)` 和 `rgba(35,35,35,.063)`），那条断言随机红。
-  - 外观核验工具是 `Build/dock-visual.cjs`（**吃构建产物**，不依赖 Vite dev server）：自己起静态服务器伺服 `Build/OfficeWeb/dock.html`、注入与 `dock.cjs` 相同的假桌面桥、再铺一层"任务栏"背景，截图 `Build/dock-visual-{strip,strip-zoom,card,card-zoom,light}.png` 并打印卡片/按钮实测几何。真正带断言的 `test/browser/dock.cjs` 仍然要跑，两者一起看。
-  - **已上线**（2026-09-2X）：现在是 `main-Dj86UWuF.js` / `dock-D1-Mhz6f.js` / `dock-C4cCZsbU.css`（降白那一版），逐文件哈希核验本地=远端、公网 200 且哈希一致；**后端未动、未重启、未发新客户端**（装着的客户端重启或刷新即可）。线上实测见 `Design/Deployment.md` 顶部那条。
-    - **重建后文件名会变，但内容可能逐字节相同**：同一份源码重建会让 `main-*` 与分块名一起换哈希（实测 `main-ZLu45is8.js` → `main-Dj86UWuF.js`，规范化分块名后两边都是 745,716 字节、逐字节相同）。所以"远端缺失新文件名"**不能**推断成"有别人的改动混进来"，用 `Build/build-drift.cjs` + `Build/same-content.cjs` 规范化比对来证明。
 
 ## 会议室墙面照片（2026-09-15 用户要求）
 

@@ -65,6 +65,7 @@ export default function MeetingCenter({ client, people, accountId, open, onClose
     </aside>}
     {!open && remoteStreams.length > 0 && <button className="meeting-notification" onClick={onOpen}>会议中有人正在共享屏幕 · 点击观看</button>}
     {!open && localStream && <SharingPreview stream={localStream} meeting onOpen={onOpen}
+      scope={active?.room} onClear={annotation.clear}
       onStop={() => void run(client.stopShare)} />}
     {!open && client.invitations.some(m => m.members.find(p => p.id === accountId)?.status === 'invited') &&
       <button className="meeting-notification" onClick={onOpen}>收到会议邀请 · 查看</button>}

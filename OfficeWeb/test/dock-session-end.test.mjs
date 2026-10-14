@@ -17,8 +17,8 @@ test('卸载收尾要推一份"清空名单 + 藏起来"，而不是只清定时
   const source = hook();
   assert.match(source, /people: \[\], sharing: false, missed: 0, hidden: true/,
     '交还条子的状态就是空名单 + hidden');
-  assert.match(source, /return \(\) => \{ clearInterval\(timer\); release\(\); \};/,
-    '卸载时必须 release()');
+  assert.match(source, /return \(\) => \{ pushNow\.current = undefined; clearInterval\(timer\); release\(\); \};/,
+    '卸载时必须 release()（顺手摘掉 pushNow，别再让它指向已经卸载的组件）');
   assert.match(source, /if \(!input\.enabled\) \{ release\(\); return; \}/,
     '"不可用"那条路和卸载走同一份逻辑，别写成两套');
 });

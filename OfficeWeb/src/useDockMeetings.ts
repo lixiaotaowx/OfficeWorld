@@ -7,7 +7,7 @@ import { useDockMeetingVideo } from './useDockMeetingVideo';
 
 export function useDockMeetings(client: ReturnType<typeof useMeetings>, videos: Record<string, MediaStream>,
   people: Person[], myId: string | undefined, accountId: string, onOpen: () => void,
-  onView: (id: string, fullscreen: boolean) => void) {
+  onView: (id: string, fullscreen: boolean) => void, micLevel = 0) {
   const executing = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -28,6 +28,8 @@ export function useDockMeetings(client: ReturnType<typeof useMeetings>, videos: 
         personId: people.find(person => person.clientId === invitation.host)?.id || invitation.host,
         name: invitation.members.find(member => member.id === invitation.host)?.name || '同事' })),
     sharing: client.sharing, busy, error,
+    // 静音按钮外面那圈波纹的高度（0..1，静音时是 0）。主窗口量，小窗只画。
+    micLevel,
     candidates: people.filter(person => person.clientId !== accountId).map(person => ({
       id: person.clientId, personId: person.id, name: person.name,
     })),

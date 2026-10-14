@@ -7,7 +7,7 @@ type Client = Pick<ReturnType<typeof useOffice>, 'requests' | 'sessions' | 'peop
   'connected' | 'meetings' | 'respond' | 'shareInCall' | 'stopShare' | 'mute'>;
 
 /** All media and signaling stay in the main window's existing private-call commands. */
-export function useDockPrivateCalls(client: Client) {
+export function useDockPrivateCalls(client: Client, micLevel = 0) {
   const executing = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -20,6 +20,8 @@ export function useDockPrivateCalls(client: Client) {
       mic: client.callStates[row.id]?.voice === '已开启',
       sharing: client.callStates[row.id]?.sharing === true,
     })), busy, error,
+    // 静音按钮外面那圈波纹的高度（0..1，静音时是 0）。主窗口量，小窗只画。
+    micLevel,
   };
   const run = (operation: () => Promise<unknown>) => {
     if (executing.current) return;

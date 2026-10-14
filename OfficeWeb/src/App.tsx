@@ -10,6 +10,7 @@ import MonitorContextMenu from "./MonitorContextMenu";
 import UpdatePrompt from "./UpdatePrompt";
 import { useAppUpdate } from "./useAppUpdate";
 import { useDockBridge } from "./useDockBridge";
+import { useMicLevel } from "./useMicLevel";
 import { useCallAttention } from "./useCallAttention";
 import { mergeUnreadCounts } from "./unreadCounts";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,8 +32,7 @@ import {
   PersonIcon,
   ScreenIcon,
   PreviewIcon,
-} from "./icons";
-import { WORKSTATIONS, workstationAt } from "./seats";
+} from "./icons";import { WORKSTATIONS, workstationAt } from "./seats";
 import { readStoredAppearance, resolveAppearance, type Appearance } from "./look";
 import { useOffice } from "./useOffice";
 import "./styles.css";
@@ -64,10 +64,12 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
   }, []);
   const [meetingOpen, setMeetingOpen] = useState(false);
   const [meetingView, setMeetingView] = useState<{ id: string; fullscreen: boolean } | null>(null);
+  // 任务栏静音按钮外面那圈波纹：音量只能在主窗口量（小窗不碰媒体），推一个 0..1 的数过去
+  // （用户 2026-10-14：「状态栏静音按钮需要一个声音波纹来看麦的音量」）。
+  const micLevel = useMicLevel(office.activeMic, office.micLive, office.micLive);
   const dockMeetings = useDockMeetings(office.meetings, office.videos, office.people,
-    office.myId, account.id, () => setMeetingOpen(true), (id, fullscreen) => setMeetingView({ id, fullscreen }));
-  // 任务栏头像条：把在线状态与缩略图推给那个小窗，并接收它的点击（用户 2026-09-17）。
-  const dockPrivate = useDockPrivateCalls(office);
+    office.myId, account.id, () => setMeetingOpen(true), (id, fullscreen) => setMeetingView({ id, fullscreen }), micLevel);
+  const dockPrivate = useDockPrivateCalls(office, micLevel);
   useDockBridge({
     privateCalls: dockPrivate.state, onPrivateCommand: dockPrivate.command,
     enabled: Boolean(window.officeDesktop?.dockState),

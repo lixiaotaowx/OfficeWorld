@@ -1,13 +1,17 @@
 import type { DockState } from './dockRules';
+import DockMicWave from './DockMicWave';
 import { MicIcon, MutedMicIcon, ScreenIcon } from './icons';
+import { meterLevel } from './micLevel';
 
 /** Meeting and private sessions use the same compact controls and mute indication. */
 export default function DockCallControls({ state }: { state: DockState }) {
   const meeting = state.meeting;
   const privateCalls = state.privateCalls;
   const rows = meeting?.active ? [{ id: '', name: meeting.title, mic: meeting.mic,
-    sharing: meeting.sharing, connected: true, busy: meeting.busy, meeting: true }] :
-    (privateCalls?.sessions || []).map(row => ({ ...row, busy: privateCalls?.busy, meeting: false }));
+    sharing: meeting.sharing, connected: true, busy: meeting.busy, meeting: true,
+    level: meeting.micLevel }] :
+    (privateCalls?.sessions || []).map(row => ({ ...row, busy: privateCalls?.busy, meeting: false,
+      level: privateCalls?.micLevel }));
   return <>{rows.map(row => <div className="dock-meeting-controls" key={row.id || 'meeting'}
     role="group" aria-label={row.meeting ? '会议控制' : `与${row.name}的私人通话`}>
     {rows.length > 1 && <span>{row.name}</span>}
@@ -17,7 +21,10 @@ export default function DockCallControls({ state }: { state: DockState }) {
     <button disabled={row.busy || !row.connected} aria-pressed={!row.mic} className="dock-meeting-mic"
       aria-label={row.mic ? '麦克风已开启，点击静音' : '麦克风已静音，点击开启'}
       title={row.mic ? '麦克风已开启，点击静音' : '麦克风已静音，点击开启'}
+      data-mic-level={meterLevel(row.level, row.mic)}
       onClick={() => void window.officeDock?.action?.(row.meeting ? 'meeting-mute' : 'private-mute', row.id)}>
-      {row.mic ? <MicIcon /> : <MutedMicIcon />}</button>
+      {row.mic ? <MicIcon /> : <MutedMicIcon />}
+      {row.mic && <DockMicWave level={row.level} />}
+    </button>
   </div>)}</>;
 }

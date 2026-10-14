@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { useOffice } from './useOffice';
 import ScreenStage from './ScreenStage';
+import SharingPreview from './SharingPreview';
 import CallAlerts from './CallAlerts';
 import { colorFor } from './annotations';
 import { MicIcon, MicOffIcon, PhoneIcon, HangupIcon, ScreenIcon } from './icons';
@@ -116,7 +117,15 @@ export default function PrivateCallPanel({ office }: { office: ReturnType<typeof
             <button className="call-hangup" onClick={() => office.end(session.id)}><HangupIcon />挂断通话</button>
             {!state?.sharing && <button disabled={!state?.connected || !!busy} onClick={() => void startShare()}>
               <ScreenIcon />{busy === session.id ? '正在选择屏幕…' : '分享屏幕'}</button>}
-          </div></>}
+          </div>
+          {/* 我正在共享时给自己一块预览，带「清屏」。浮层是鼠标穿透的（别人能画到我的
+              屏幕上，我点不到那层），所以分享者想擦掉笔迹只能从自己页面点
+              （用户 2026-10-14：「分享者清屏按钮需要」）。 */}
+          {state?.sharing && office.videos['local-screen'] && office.boardScope &&
+            <SharingPreview stream={office.videos['local-screen']} meeting={false}
+              scope={office.boardScope} onClear={office.annotation.clear}
+              onStop={office.stopShare} />}
+          </>}
         </div>;
       })}
     </div>}

@@ -58,6 +58,32 @@
 .screen-stage-bar .call-hangup { background: #b3504233; border-color: #d3877a55; color: #ffd9cf; }
 .screen-stage-bar .call-hangup:hover { background: #b3504255; }
 
+/* 标注笔颜色（用户 2026-10-14：「观众看别人时标记可以修改颜色」）。
+   一排小色块，选中的那个套一圈白环 + 深色内环，在深浅两种画面上都看得清。 */
+.screen-stage-inks { display: inline-flex; align-items: center; gap: 4px; padding: 0 3px; }
+.screen-stage-bar .screen-stage-ink-swatch,
+.screen-stage-own-clear .screen-stage-ink-swatch {
+  width: 18px; height: 18px; min-width: 18px; padding: 0; border-radius: 50%;
+  border: 1px solid #ffffff40; box-shadow: inset 0 0 0 1px #00000030;
+}
+.screen-stage-bar .screen-stage-ink-swatch[aria-pressed="true"],
+.screen-stage-own-clear .screen-stage-ink-swatch[aria-pressed="true"] {
+  border-color: #fffef9; box-shadow: 0 0 0 2px #fffef9, 0 0 0 3px #27352099;
+}
+
+/* 分享者自己那块预览上的「清屏」：贴在画面右上角，和下方的视图控件分开。 */
+.screen-stage-own-clear { position: absolute; right: 10px; top: 10px; z-index: 2; }
+.screen-stage-own-clear button {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 10px; border-radius: 10px; font-size: 12px;
+  color: #eef3ec; background: #1d2a24e6; border: 1px solid #ffffff24;
+}
+.screen-stage-own-clear button:hover { background: #2b3c33f2; }
+
+/* 分享者自己的预览：画面上没有绘制层，鼠标要还给下面的应用（不抢点击）。 */
+.screen-stage.own-board .screen-stage-ink,
+.screen-stage.own-board .screen-stage-draw { display: none; }
+
 .screen-stage-tip, .screen-stage-hint {
   position: absolute; left: 12px; top: 12px; margin: 0;
   padding: 6px 10px; border-radius: 10px; font-size: 11px;

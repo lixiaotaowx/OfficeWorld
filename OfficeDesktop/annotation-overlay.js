@@ -3,9 +3,12 @@
 // straight onto this window, which is sized to exactly that display.
 const canvas = document.getElementById('board');
 const context = canvas.getContext('2d');
-/** key -> { name, color, points: [[x, y], ...], done } */
+/** key -> { color, points: [[x, y], ...], done }。笔画上没有署名 —— 用户 2026-10-14
+ * 明确要求去掉（每一笔都顶着一个名字，画面全是标签）。 */
 const strokes = new Map();
 let boardVersion = 0;
+/** The inks a viewer can pick; must stay in step with `src/inkColors.ts`. */
+const INKS = ['#e0524a', '#e8a33d', '#f0d274', '#5fb96a', '#4a9fd8', '#b46fd0', '#f4f2eb'];
 
 /**
  * Mirrors `colorFor` in OfficeWeb/src/annotations.ts: the same colleague must
@@ -16,6 +19,16 @@ function colorFor(clientId) {
   for (let index = 0; index < clientId.length; index += 1)
     hash = (hash * 31 + clientId.charCodeAt(index)) % 360;
   return `hsl(${hash} 74% 46%)`;
+}
+
+/**
+ * Mirrors `inkColor` in OfficeWeb/src/inkColors.ts: the colour the drawer chose wins;
+ * anything that is not one of the offered inks falls back to the per-person colour,
+ * so an old client (or a hand-made message) still draws exactly as it used to.
+ */
+function inkColor(chosen, clientId) {
+  const value = String(chosen || '').trim().toLowerCase();
+  return INKS.includes(value) ? value : colorFor(clientId);
 }
 
 function resize() {
@@ -63,26 +76,9 @@ function paint(points, color, from = 0) {
   context.stroke();
 }
 
-function label(stroke) {
-  const [first] = stroke.points;
-  if (!first) return;
-  const [x, y] = pixels(first);
-  context.font = '600 12px "Segoe UI","Microsoft YaHei",sans-serif';
-  const width = context.measureText(stroke.name).width + 14;
-  context.fillStyle = stroke.color;
-  context.beginPath();
-  context.roundRect(x + 8, y - 26, width, 20, 10);
-  context.fill();
-  context.fillStyle = '#fffef9';
-  context.fillText(stroke.name, x + 15, y - 12);
-}
-
 function redraw() {
   context.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-  for (const stroke of strokes.values()) {
-    paint(stroke.points, stroke.color);
-    label(stroke);
-  }
+  for (const stroke of strokes.values()) paint(stroke.points, stroke.color);
 }
 
 /** Append one relayed message; only the new segment is painted in the common case. */
@@ -95,8 +91,11 @@ function receive(message) {
     return;
   }
   if (message.type === 'undo') {
-    const keys = [...strokes.keys()].filter((key) => key.startsWith(`${message.id}:`));
-    const last = keys[keys.length - 1];
+    // 优先按笔画 id 精确删（观众改了颜色以后，一条条对应才不会撤错别人/撤错自己的
+    // 上一条）；老客户端不发 `stroke`，退回"这个人最后画的一条"。
+    const own = [...strokes.keys()].filter((key) => key.startsWith(`${message.id}:`));
+    const wanted = message.stroke ? `${message.id}:${message.stroke}` : '';
+    const last = strokes.has(wanted) ? wanted : own[own.length - 1];
     if (last) strokes.delete(last);
     redraw();
     return;
@@ -108,8 +107,8 @@ function receive(message) {
   if (!stroke) {
     if (!points.length || message.done) return;
     stroke = {
-      name: String(message.name || '同事').slice(0, 24),
-      color: colorFor(message.clientId || message.id),
+      // 画的人自己挑的颜色优先：观众可以改笔色（用户 2026-10-14），整条笔画用同一个颜色。
+      color: inkColor(message.color, message.clientId || message.id),
       points: [],
       done: false,
     };
@@ -126,7 +125,6 @@ function receive(message) {
   }
   stroke.done = message.done === true;
   if (stroke.points.length > from) paint(stroke.points, stroke.color, from);
-  if (from === 0) label(stroke);
 }
 
 window.addEventListener('resize', resize);

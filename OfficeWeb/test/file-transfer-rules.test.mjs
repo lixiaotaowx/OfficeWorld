@@ -174,8 +174,10 @@ test('头像条拖拽失败必须说出来（用户 2026-09-21 报「头像拖�
   // **高亮不看 `canDrop`**：连亮都不亮就说明拖拽根本没进到这个窗口——这条线索最值钱。
   assert.match(dock, /if \(!carriesFiles\(event\)\) return;\s*\n\s*event\.preventDefault\(\);[\s\S]{0,200}if \(row\.self\) return;/,
     '只要带着文件就先 preventDefault 并高亮，不能先判 canDrop');
-  // 条子宽度变了要重报一次，否则那句话说出去会被窗口裁掉。
-  assert.match(dock, /\}, \[hovered, state, greet, dropNotice, cardPx, meetingPerson, statusMenu\]\)/);
+  // 布局上报那条 effect 现在**不依赖 dropNotice**（依赖被清空成 `[]`）：那句话变长
+  // 不再靠重跑 effect 把窗口重新量一遍，所以这里断言它保持无依赖 —— 别把 `dropNotice`
+  // 加回去，那会让每敲一次提示都重报一次原生窗口尺寸。
+  assert.match(dock, /\n  \}, \[\]\);/);
 });
 
 test('错误信息要能看懂：剥掉 Electron 的 invoke 外壳（真机实测它直接漏到卡片上了）', () => {

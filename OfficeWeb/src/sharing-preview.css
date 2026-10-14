@@ -8,6 +8,11 @@
 .sharing-preview small { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 .sharing-preview button { font-size: 12px; padding: 5px 8px; white-space: nowrap; }
 .sharing-preview .stop-sharing { background: #a54537; color: white; border-color: transparent; }
+.sharing-preview .clear-board { background: #dfe9e0; color: #315e3e; border-color: #71957c66; }
+/* 分享者自己的画面用同一块标注画布（要那个「清屏」按钮），但预览里不该长成一块大
+   画布：高度压到和原来的 <video> 一样，圆角交给外面的预览框。 */
+.sharing-preview .screen-stage { border-radius: 0; background: #19221f; }
+.sharing-preview .screen-stage video { max-height: 220px; border-radius: 0; }
 .meeting-local-preview { margin: 16px 0; border: 1px solid #71957c; border-radius: 12px; overflow: hidden; }
 .meeting-local-preview figcaption { background: #e9f2e9; color: #315e3e; padding: 10px 14px; font-size: 13px; }
 .meeting-local-preview video { display: block; width: 100%; max-height: 42vh; object-fit: contain; background: #19221f; }

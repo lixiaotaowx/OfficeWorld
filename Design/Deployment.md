@@ -1,3 +1,25 @@
+## 2026-10-14 标注四改与静音波纹（未发布）
+
+- 用户四条：分享者清屏按钮、状态栏静音按钮的声音波纹、观众可改笔色、去掉每一笔的署名。
+  实现与踩坑见 [Annotation-Audio-20261014.md](Annotation-Audio-20261014.md)。
+- 新增 `src/inkColors.ts`、`src/InkPicker.tsx`、`src/micLevel.ts`、`src/useMicLevel.ts`、
+  `src/mediaVoice.ts`、`src/DockMicWave.tsx`；`media.ts` 拆出语音状态判定（500 行上限），
+  `useOffice` 交出 `boardScope` 与 `activeMic`。
+- 验证：网页单测 **435/435**、桌面 **176/176**、真浏览器 `screen-stage.cjs`（改笔色 + 分享者
+  清屏）与 `dock-meeting-controls.cjs`（波纹三档）通过；`npm run build` 通过，`public/` 与
+  构建产物 90 个文件一致。
+- **顺带修掉三条早就红了的过期断言**（`dock-session-end`、`dock-rules` ×2、`file-transfer-rules`）：
+  先用 `git stash` 对基线确认"不是本轮改坏的"，再按当前实现更新期望值。**网页全量从
+  "418/420" 变成 435/435。**
+- `OfficeWeb/AGENTS.md` 已经 516 行、违反 500 行规则：把**任务栏头像条**与**文件直传**两段
+  整体搬进新增的 `OfficeWeb/AGENTS-dock.md`（条目一条没删，逐条核对仍在），现在
+  `AGENTS.md` 494 行 / `AGENTS-dock.md` 223 行。
+- 兼容性：服务端**一行未改**（`color` / `stroke` 都是可选字段，只原样转发）；老页面/老客户端
+  照旧按人固定色画、撤销退回"最后一条"。浮层那份颜色表随安装包走，**要让别人在自己屏幕上
+  看到你选的颜色，分享者需装下一版客户端**。
+- **本轮不发布**：没有上传任何资源、没有重启服务、没有打包新的安装包。正式站仍是
+  main-H0W6dS6h.js / dock-B12xwDLd.js，客户端仍是 **0.1.50**（`latest.json` 的哈希未变）。
+
 ## 2026-10-14 源码入库（0.1.14 之后一直没提交的那批）
 
 - 起因：正式站与 0.1.50 安装包都已上线，但仓库落后。本地 main 领先 origin/main 3 个提交，另有 62 个改动文件 + 107 个未跟踪文件；`presence-status.mjs`、`cinema-content.mjs`、`BuildCinema.tsx`、`DockMeetingPanel.tsx`、`dock-pointer.cjs` 等**正在线上跑的模块在 HEAD 里根本不存在**——换机器 clone 拉不到能还原线上那一版的代码。

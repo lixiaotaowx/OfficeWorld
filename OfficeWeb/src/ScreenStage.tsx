@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { contentBox, normalizePoint } from './annotations';
 import { CloseIcon, ScreenIcon } from './icons';
+import InkPicker from './InkPicker';
+import { DEFAULT_INK, inkColor } from './inkColors';
 import './screen-stage.css';
 import ScreenViewControls from './ScreenViewControls';
 import { createPortal } from 'react-dom';
@@ -12,7 +14,7 @@ export interface ScreenStageProps {
   /** `call-…` / `meeting-…`: which shared screen this board belongs to. */
   scope: string;
   label: string;
-  onDraw: (scope: string, points: [number, number][], done: boolean) => void;
+  onDraw: (scope: string, points: [number, number][], done: boolean, color?: string) => void;
   onClear: (scope: string) => void;
   onUndo: (scope: string) => void;
   /** Call controls rendered next to the stage buttons (mute, hang up, takeover). */
@@ -26,6 +28,11 @@ export interface ScreenStageProps {
    * draw on it would promise something that can never appear.
    */
   annotatable?: boolean;
+  /**
+   * 分享者自己的那块预览：加上一个「清屏」。浮层是鼠标穿透的（`setIgnoreMouseEvents`），
+   * 分享者没法在屏幕上点，只能从自己的页面擦（用户 2026-10-14：「分享者清屏按钮需要」）。
+   */
+  clearsOwnBoard?: boolean;
 }
 
 /** Points are batched so drawing stays smooth without flooding the socket. */
@@ -50,7 +57,8 @@ export default function ScreenStage(props: ScreenStageProps) {
   const { scope, stream } = props;
   const host = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
-  const ink = useRef<HTMLCanvasElement>(null);
+  /** 本机即时回显那张画布（和"下一笔用什么颜色"的 `ink` 不是一回事）。 */
+  const inkCanvas = useRef<HTMLCanvasElement>(null);
   const pending = useRef<[number, number][]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const drawing = useRef(false);
@@ -62,6 +70,13 @@ export default function ScreenStage(props: ScreenStageProps) {
   const [annotating, setAnnotating] = useState(false);
   const [maximized, setMaximized] = useState(Boolean(props.initialMode));
   const [fullscreen, setFullscreen] = useState(false);
+  /**
+   * 下一笔用什么颜色（用户 2026-10-14：「观众看别人时标记可以修改颜色」）。默认还是
+   * 这个人的固定色，选一次就一直是它，直到再选 —— 换色只影响之后画的笔画。
+   */
+  const [ink, setInk] = useState(() => inkColor(props.selfColor, DEFAULT_INK));
+  // 身份换了（换账号/换通话）就把颜色跟着换回那个人的默认色，别把上一个人的选择带过去。
+  useEffect(() => { setInk(inkColor(props.selfColor, DEFAULT_INK)); }, [props.selfColor]);
   const enlarged = maximized || fullscreen;
   const zoom = useScreenZoom(host, enlarged && !annotating, stream);
 
@@ -135,7 +150,7 @@ export default function ScreenStage(props: ScreenStageProps) {
 
   /** Paint the local echo: the same letterboxed picture box the relayed points use. */
   const paintEcho = useCallback(() => {
-    const canvas = ink.current, element = video.current, stage = host.current;
+    const canvas = inkCanvas.current, element = video.current, stage = host.current;
     if (!canvas || !element || !stage) return;
     const ratio = window.devicePixelRatio || 1;
     const width = stage.clientWidth, height = stage.clientHeight;
@@ -180,8 +195,9 @@ export default function ScreenStage(props: ScreenStageProps) {
     const points = pending.current;
     pending.current = [];
     if (!points.length && !done) return;
-    props.onDraw(scope, points, done);
-  }, [props, scope]);
+    // 颜色只在起笔那一条消息上带过去，浮层按"整条笔画一个颜色"画。
+    props.onDraw(scope, points, done, done ? undefined : ink);
+  }, [props, scope, ink]);
 
   /** Element-relative pixels -> 0..1 of the shared picture, or null when outside it. */
   const point = (event: React.PointerEvent<HTMLDivElement>): [number, number] | null => {
@@ -204,7 +220,7 @@ export default function ScreenStage(props: ScreenStageProps) {
     pending.current = [first];
     clearTimeout(echo.current.timer);
     echo.current.points = [first];
-    echo.current.color = props.selfColor || '#f0d274';
+    echo.current.color = ink;
   };
   const move = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!annotating || !drawing.current) return;
@@ -260,13 +276,33 @@ export default function ScreenStage(props: ScreenStageProps) {
   // render a stroke anyway, so defaulting to the tools keeps every existing caller.
   const canAnnotate = props.annotatable !== false;
 
+  const dropEcho = () => { echo.current.points = []; paintEcho(); };
+
+  /**
+   * 分享者自己也能擦掉板上的笔迹（用户 2026-10-14：「分享者清屏按钮需要」）。
+   *
+   * 这里和观众那条路的区别只在**谁来说清**：观众的「清空」要经 socket 中继到分享者的
+   * 浮层；分享者自己点就直接擦本机浮层（`onClear` 里 `annotationChannel.clear` 本来就
+   * 先擦本机再广播），顺带把本机即时回显一起清掉，不然会留下一条"幽灵笔迹"。
+   */
+  const clearBoard = () => { dropEcho(); props.onClear(scope); };
+
   const stage = <div ref={host}
-    className={`screen-stage${maximized ? ' maximized' : ''}${fullscreen ? ' fullscreen' : ''}${annotating ? ' annotating' : ''}`}>
+    className={`screen-stage${maximized ? ' maximized' : ''}${fullscreen ? ' fullscreen' : ''}${annotating ? ' annotating' : ''}${props.clearsOwnBoard ? ' own-board' : ''}`}>
     <video ref={video} autoPlay muted playsInline aria-label={props.label}
       style={{ transform: `scale(${zoom})` }} />
-    <canvas ref={ink} className="screen-stage-ink" aria-hidden="true" />
+    <canvas ref={inkCanvas} className="screen-stage-ink" aria-hidden="true" />
     <div className="screen-stage-draw" onPointerDown={start} onPointerMove={move}
       onPointerUp={finish} onPointerCancel={finish} />
+    {/*
+      分享者自己的那块预览不属于"别人的屏幕"，所以它不要这一整套工具（标注/撤销是
+      观众的动作）；它只要一个「清屏」——浮层不听鼠标（`setIgnoreMouseEvents(true)`），
+      分享者想擦掉别人画在他屏幕上的笔迹，只有从自己页面点这一条路。
+    */}
+    {props.clearsOwnBoard && <div className="screen-stage-own-clear">
+      <button type="button" title="清空共享画面上的所有标注（所有人都会看到）"
+        onClick={clearBoard}>清屏</button>
+    </div>}
     {/* Inline the stage keeps two compact controls only: a row of buttons in a
         narrow panel overlapped the picture and buried the screen itself. */}
     {!enlarged && <ScreenViewControls onMaximize={enlarge} onFullscreen={toggleFullscreen} />}
@@ -277,16 +313,10 @@ export default function ScreenStage(props: ScreenStageProps) {
       {canAnnotate && <button type="button" aria-pressed={annotating} title="在对方的共享屏幕上标注"
         onClick={() => { setAnnotating(!annotating); drawing.current = false; }}>标注</button>}
       {canAnnotate && annotating && <>
-        <button type="button" title="撤销我画的上一条" onClick={() => {
-          echo.current.points = [];
-          paintEcho();
-          props.onUndo(scope);
-        }}>撤销</button>
-        <button type="button" title="清空所有人的标注" onClick={() => {
-          echo.current.points = [];
-          paintEcho();
-          props.onClear(scope);
-        }}>清空</button>
+        {/* 颜色排在撤销/清空前面：先挑颜色再画，是这里的顺序（用户 2026-10-14）。 */}
+        <InkPicker value={ink} onPick={setInk} />
+        <button type="button" title="撤销我画的上一条" onClick={() => { dropEcho(); props.onUndo(scope); }}>撤销</button>
+        <button type="button" title="清空所有人的标注" onClick={clearBoard}>清空</button>
       </>}
       <button type="button" onClick={() => (maximized ? setMaximized(false) : enlarge())}
         title={maximized ? '退出窗口内占满' : '在软件窗口内占满'}>

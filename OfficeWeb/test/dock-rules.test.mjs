@@ -242,11 +242,11 @@ test('舞台两种场合：只是停一下小一倍不演动作，打电话过�
     readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
     readFileSync(new URL('../src/DockGreetingStage.tsx', import.meta.url), 'utf8');
   assert.match(dock, /GREET_CANVAS\[mode\]/, '画布尺寸按场合取');
-  assert.match(dock, /\{ appearance: resolveAppearance\(appearance\), size: mode \}/,
+  assert.match(dock, /appearance: resolveAppearance\(appearance\), size: mode/,
     '三种场合走同一个舞台函数，只差 size；外观按那个人的配色与配件传下去');
   assert.match(dock, /stageMode: mode, stagePx, width,/, '窗口要据此决定留多大地方');
-  assert.match(dock, /key=\{greet\.id \+ greetMode\(greet\.mode\)\}/,
-    '换人或场合变了要重新挂载');
+  assert.match(dock, /key=\{greet\.id \+ greetMode\(greet\.mode\) \+ \(greet\.requestId \|\| ''\)\}/,
+    '换人、场合变了、或者换了一通来电，都要重新挂载');
   assert.match(dock, /\[look, mode\]/, '名单中的外观变化也必须更新舞台');
   const stage = readFileSync(new URL('../src/dockStage.ts', import.meta.url), 'utf8');
   assert.match(stage, /options\.clip \?\? greetClip\(mode\)/, '不点名就按场合取动作');

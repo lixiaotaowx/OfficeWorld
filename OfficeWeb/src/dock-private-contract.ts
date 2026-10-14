@@ -3,6 +3,11 @@ import type { DockGreet, DockState } from './dockRules';
 export interface DockPrivateState {
   invitations: { id: string; personId: string; name: string; kind: 'voice' | 'screen'; offer: boolean }[];
   sessions: { id: string; name: string; connected: boolean; mic: boolean; sharing: boolean }[];
+  /**
+   * 我这只麦克风现在的音量（0..1，静音时是 0）。私人通话和会议共用一排按钮，所以两边
+   * 都要带这个数：静音按钮外面那圈波纹按它画（用户 2026-10-14）。
+   */
+  micLevel?: number;
   busy: boolean;
   error: string;
 }

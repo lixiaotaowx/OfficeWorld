@@ -79,6 +79,63 @@ const SHOT = "../Build";
     assert.ok(drawing.includes("撤销") && drawing.includes("清空"), "标注模式要有撤销/清空");
     await page.screenshot({ path: `${SHOT}/stage-annotating.png` });
 
+    // 观众可以改笔色（用户 2026-10-14：「观众看别人时标记可以修改颜色」）：色板在标注
+    // 模式下出现，选中的那一色跟着当前笔画一起发出去，**本机回显也用这一色**。
+    const swatches = await page.evaluate(() => [...document.querySelectorAll(".screen-stage-ink-swatch")]
+      .map((button) => ({ label: button.getAttribute("aria-label"), pressed: button.getAttribute("aria-pressed") })));
+    console.log("ink swatches:", JSON.stringify(swatches));
+    assert.ok(swatches.length >= 4, `色板至少要给几个颜色（现在 ${swatches.length} 个）`);
+    const picked = swatches.find((swatch) => swatch.label.includes("天蓝"));
+    assert.ok(picked, "色板要能按名字认出色块");
+    assert.equal(picked.pressed, "false", "一开始不是选中态（默认色是这个人的固定色）");
+    await page.locator('.screen-stage-ink-swatch[aria-label="用天蓝画"]').click();
+    await page.waitForTimeout(120);
+    const afterPick = await page.evaluate(() => {
+      const button = document.querySelector('.screen-stage-ink-swatch[aria-label="用天蓝画"]');
+      return { pressed: button.getAttribute("aria-pressed"),
+        rgba: getComputedStyle(button).backgroundColor };
+    });
+    console.log("picked ink:", JSON.stringify(afterPick));
+    assert.equal(afterPick.pressed, "true", "选中的色块要标出来");
+    assert.equal(afterPick.rgba, "rgb(74, 159, 216)", "色块画的就是那个颜色");
+    // 画一笔：颜色只在**起笔那一条**消息上带出去，收尾那条（done）不带。
+    const spot = await page.evaluate(() => {
+      const video = document.querySelector(".screen-stage video");
+      const rect = video.getBoundingClientRect();
+      const width = video.videoWidth || rect.width, height = video.videoHeight || rect.height;
+      const scale = Math.min(rect.width / width, rect.height / height);
+      const box = { x: rect.left + (rect.width - width * scale) / 2,
+        y: rect.top + (rect.height - height * scale) / 2, width: width * scale, height: height * scale };
+      return { x: box.x + box.width * 0.3, y: box.y + box.height * 0.3 };
+    });
+    await page.evaluate(() => { window.__drawn.length = 0; });
+    await page.mouse.move(spot.x, spot.y);
+    await page.mouse.down();
+    await page.mouse.move(spot.x + 8, spot.y + 6);
+    await page.waitForTimeout(160);       // 让这一批点先发出去（FLUSH_MS=70）
+    const midColors = await page.evaluate(() => window.__drawn.map((entry) => entry.color));
+    await page.mouse.up();
+    await page.waitForTimeout(150);
+    const allColors = await page.evaluate(() => window.__drawn.map((entry) => entry.color));
+    const echoColor = await page.evaluate(() => {
+      const canvas = document.querySelector(".screen-stage-ink");
+      const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+      let best = null, count = 0;
+      for (let index = 0; index < data.length; index += 4) {
+        if (!data[index + 3]) continue;
+        if (!best) best = [data[index], data[index + 1], data[index + 2]];
+        count += 1;
+      }
+      return { best, count };
+    });
+    console.log("stroke ink:", JSON.stringify({ midColors, allColors, echoColor }));
+    assert.equal(midColors[0], "#4a9fd8",
+      "起笔那一条消息要带上刚选的颜色（浮层按整条笔画一个颜色画）");
+    assert.ok(allColors.length >= 2, "收尾那条也要发出去");
+    assert.equal(allColors.at(-1), undefined, "收尾消息不用再重复颜色");
+    assert.ok(echoColor.count > 0 && echoColor.best[2] > echoColor.best[0],
+      `本机回显也要用这一色（偏蓝），实测 ${JSON.stringify(echoColor.best)}`);
+
     // The relayed point must be the fraction of the PICTURE, letterboxing included,
     // at whatever the window size is - the regression was a stroke that drifted with
     // the layout because the pointer was measured against the drawing surface.
@@ -156,6 +213,31 @@ const SHOT = "../Build";
     assert.equal(webTools.labels.includes("标注"), false, "网页登录者分享时不给标注入口");
     assert.equal(webTools.labels.includes("撤销"), false, "也不给撤销");
     assert.equal(webTools.labels.includes("清空"), false, "也不给清空");
+    assert.deepEqual(errors, []);
+
+    // 分享者自己那块预览：只有「清屏」，没有整套标注工具（用户 2026-10-14：
+    // 「分享者清屏按钮需要」）。浮层是鼠标穿透的，所以他只能从自己页面擦。
+    const own = await browser.newPage({ viewport: { width: 900, height: 700 } });
+    own.on("pageerror", (error) => errors.push(error.message));
+    await own.goto(`http://127.0.0.1:${port}/test/screen-stage-harness.html?own=1`);
+    await own.waitForFunction(() => window.__stageReady === true, null, { timeout: 30000 });
+    await own.waitForTimeout(300);
+    const ownTools = await own.evaluate(() => ({
+      clear: document.querySelectorAll(".screen-stage-own-clear button").length,
+      clearText: document.querySelector(".screen-stage-own-clear button")?.textContent.trim(),
+      surfaces: document.querySelectorAll(".screen-stage-draw").length,
+      pointer: getComputedStyle(document.querySelector(".screen-stage-draw")).display,
+    }));
+    console.log("own board tools:", JSON.stringify(ownTools));
+    assert.equal(ownTools.clear, 1, "分享者预览上要有一个清屏按钮");
+    assert.equal(ownTools.clearText, "清屏");
+    assert.equal(ownTools.pointer, "none", "分享者那块预览不吃鼠标（点击要还给下面的应用）");
+    await own.locator(".screen-stage-own-clear button").click();
+    await own.waitForTimeout(120);
+    const cleared = await own.evaluate(() => window.__cleared || 0);
+    console.log("own board clear:", JSON.stringify({ cleared }));
+    assert.equal(cleared, 1, "点清屏要真的清一次（走 onClear）");
+    await own.screenshot({ path: `${SHOT}/stage-own-board.png` });
     assert.deepEqual(errors, []);
 
     // Desktop path: there the DOM API is a no-op, so 全屏 must call the native
@@ -236,7 +318,7 @@ const SHOT = "../Build";
     await plain.close();
 
     assert.deepEqual(errors, []);
-    console.log("PASS 小窗两个按钮 / 最大化占满窗口 / 全屏占满屏幕 / 客户端走原生全屏 / 标注模式撤销清空 / 各种窗口比例映射正确 / 本机即时回显 / 挂断退出全屏 / 普通挂断不动窗口");
+    console.log("PASS 小窗两个按钮 / 最大化占满窗口 / 全屏占满屏幕 / 客户端走原生全屏 / 标注模式撤销清空 / 改笔色 / 分享者清屏 / 各种窗口比例映射正确 / 本机即时回显 / 挂断退出全屏 / 普通挂断不动窗口");
   } finally {
     await browser.close();
     await vite.close();

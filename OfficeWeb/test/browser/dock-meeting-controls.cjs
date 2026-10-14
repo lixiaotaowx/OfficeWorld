@@ -52,11 +52,34 @@ const assert=require('node:assert/strict');
     const mic=page.locator('.dock-meeting-mic');
     assert.equal(await mic.textContent(),'','microphone has no visible text');
     assert.equal(await mic.locator('path[stroke="#df4b4b"]').count(),1,'muted microphone has red slash');
+    // 静音时**一点都不画**波纹（那正是"没在收音"最直白的表示）。
+    assert.equal(await mic.locator('.dock-mic-wave').count(),0,'静音时不该画波纹');
     await mic.click();assert.equal(await page.evaluate(()=>window.__actions.at(-1)[0]),'meeting-mute');
     await page.evaluate(()=>window.__pushState({...window.__dockState,meeting:{...window.__dockState.meeting,
       active:true,id:'layout-test',mic:true,members:[],screens:[]}}));
     await page.getByRole('button',{name:'麦克风已开启，点击静音',exact:true}).waitFor();
     assert.equal(await mic.locator('path[stroke="#df4b4b"]').count(),0);
+    // 静音按钮外面那圈音量波纹（用户 2026-10-14：「状态栏静音按钮需要一个声音波纹来看麦的
+    // 音量」）：开麦以后圈的大小跟着音量长。
+    const waveAt=async level=>{
+      await page.evaluate(level=>window.__pushState({...window.__dockState,meeting:{...window.__dockState.meeting,
+        active:true,id:'layout-test',mic:true,micLevel:level,members:[],screens:[]}}),level);
+      await page.waitForTimeout(150);
+      return mic.locator('.dock-mic-wave').evaluate(node=>({
+        width:Number(node.getAttribute('width')),
+        level:Number(node.closest('button').getAttribute('data-mic-level')),
+      }));
+    };
+    const quiet=await waveAt(0);
+    const loud=await waveAt(0.34);
+    const louder=await waveAt(1);
+    console.log('mic wave:',JSON.stringify({quiet,loud,louder}));
+    assert.equal(quiet.level,0,'没有音量时 data-mic-level 是 0');
+    assert.equal(loud.level,0.34);
+    assert.ok(loud.width>quiet.width,`有声音时波纹要大一圈 (${quiet.width} -> ${loud.width})`);
+    assert.ok(louder.width>loud.width,`越响越大 (${loud.width} -> ${louder.width})`);
+    assert.ok(louder.width<=44,`波纹不能无限长 (${louder.width})`);
+    await page.screenshot({path:resolve('../Build/dock-mic-wave.png')});
     await page.getByRole('button',{name:'屏幕分享',exact:true}).click();
     assert.equal(await page.evaluate(()=>window.__actions.at(-1)[0]),'meeting-share');
     async function receivesMouse(button) {
@@ -97,6 +120,6 @@ const assert=require('node:assert/strict');
     assert.equal(await page.evaluate(()=>window.__actions.at(-1)[0]),'meeting-leave');
     await page.screenshot({path:resolve('../Build/dock-meeting-controls.png')});
     assert.deepEqual(errors,[]);
-    console.log('PASS: multi-row members without scrollbar, muted red slash, icon-only microphone, share label and commands');
+    console.log('PASS: multi-row members without scrollbar, muted red slash, icon-only microphone, volume wave, share label and commands');
   } finally {await browser?.close();await vite?.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

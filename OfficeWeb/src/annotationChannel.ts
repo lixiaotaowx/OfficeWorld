@@ -9,6 +9,7 @@
 // clients have one, and the call panel only offers the tools for those).
 import type { Socket } from 'socket.io-client';
 import type { AnnotateMessage } from './annotations';
+import { DEFAULT_INK } from './inkColors';
 
 export interface AnnotationChannelOptions {
   /** The live socket, so a finished share can clear its board for everybody. */
@@ -26,7 +27,8 @@ function layer() {
 
 export function createAnnotationChannel({ socket, notify, sharingScreen }: AnnotationChannelOptions) {
   let ready = false;
-  let stroke: { scope: string; id: string } | null = null;
+  /** 当前这一笔：id 给浮层定位，`ink` 是这一笔画下去时选的颜色（中途换色不影响它）。 */
+  let stroke: { scope: string; id: string; ink?: string } | null = null;
   let sequence = 0;
   /** 上一次共享所在的会议房间：房间名会被复用，换房间就得把旧墨收掉。 */
   let meetingRoom: string | null = null;
@@ -76,7 +78,7 @@ export function createAnnotationChannel({ socket, notify, sharingScreen }: Annot
       void layer()?.draw({ type: 'undo', id }).catch(() => undefined);
     },
     /** Board actions for one shared screen. The server relays to the other peers only. */
-    draw(scope: string, points: [number, number][], done = false) {
+    draw(scope: string, points: [number, number][], done = false, color?: string) {
       const active = socket.current;
       if (!active?.connected) return;
       // A release that carries no new points still has to go out. Dropping it left the
@@ -84,8 +86,12 @@ export function createAnnotationChannel({ socket, notify, sharingScreen }: Annot
       // the two with a straight line (user, 2026-09-15). Only "no points and not a
       // release" is empty.
       if (!points.length && !done) return;
-      if (!stroke || stroke.scope !== scope) stroke = { scope, id: `st${(sequence += 1)}` };
-      active.emit('annotate', { scope, stroke: stroke.id, points, done });
+      if (!stroke || stroke.scope !== scope) {
+        // 颜色是"每条笔画开始时定下"的：观众可以中途换色，换色只影响下一笔
+        // （用户 2026-10-14）。所以颜色只在起笔那一条消息上取，续画的点不再改它。
+        stroke = { scope, id: `st${(sequence += 1)}`, ink: color || DEFAULT_INK };
+      }
+      active.emit('annotate', { scope, stroke: stroke.id, points, done, color: stroke.ink });
       if (done) stroke = null;
     },
     clear(scope: string) {
@@ -93,7 +99,9 @@ export function createAnnotationChannel({ socket, notify, sharingScreen }: Annot
       void layer()?.clear().catch(() => undefined);
     },
     undo(scope: string) {
-      socket.current?.emit('annotate-undo', { scope });
+      // 带上笔画 id：浮层按它精确删掉这一条。不带的（老版本）浮层仍退回"这个人最后一条"。
+      const id = stroke?.scope === scope ? stroke.id : undefined;
+      socket.current?.emit('annotate-undo', { scope, stroke: id });
     },
     /**
      * socket 上跟这块画布有关的三条消息。它们**只落到分享者自己的桌面浮层**上：

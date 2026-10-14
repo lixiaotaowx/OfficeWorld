@@ -118,13 +118,26 @@ export function useOffice(account: Account) {
   const meetings = useMeetings(socket, media, connected);
   // Which screens we are publishing, so the marks can be cleared for exactly those
   // when the share ends however it ends.
+  //
+  // 同一个数组也是**分享者自己那块"清屏"按钮**要用的范围（用户 2026-10-14）。它必须
+  // 在渲染里算得出来（按钮要挂在页面上），所以不再只写进 ref —— `boardScope` 是它的
+  // 第一项（一个人同时只可能在共享一块屏幕）。
+  const shareScopes = sessions
+    .filter((session) => session.screenOwners?.includes(socket.current?.id || ''))
+    .map((session) => session.room);
+  if (meetings.sharing && meetings.active?.room) shareScopes.push(meetings.active.room);
+  const boardScope = shareScopes[0];
+  /**
+   * 我这里**现在真的在收音**吗：麦克风轨活着，而且当前焦点房间（会议或某通私聊）的麦
+   * 是开的。只给头像条那圈波纹用 —— 静音时它必须归零（用户 2026-10-14）。
+   */
+  const micTrackLive = !!media.current?.activeMic()
+    && (meetings.mic || Object.values(callStates).some(
+      state => state.voice === '已开启' || state.voice === '声音已暂停'));
   useEffect(() => {
-    const mine = sessions
-      .filter((session) => session.screenOwners?.includes(socket.current?.id || ''))
-      .map((session) => session.room);
-    if (meetings.sharing && meetings.active?.room) mine.push(meetings.active.room);
-    myShareScopes.current = mine;
-  }, [sessions, meetings.sharing, meetings.active?.room]);
+    myShareScopes.current = shareScopes;
+    // 数组每次渲染都是新的，用它当依赖会让 effect 每帧都跑；这里按内容比较。
+  }, [shareScopes.join('|')]);
   // 会议共享那条路不会经过 shareInCall()，标注浮层要在这里主动挂上：不然参会者画在
   // 共享画面上的笔迹没有地方落，看起来就是"会议里不能标注"（用户 2026-09-22）。
   useEffect(() => {
@@ -374,6 +387,14 @@ export function useOffice(account: Account) {
     muted,
     voiceStatus,
     callStates,
+    /**
+     * 我这里**现在真的在收音**吗：麦克风轨活着，而且当前焦点房间（会议或某通私聊）
+     * 的麦克风是开的。只给头像条那圈音量波纹用 —— 静音时它必须归零
+     * （用户 2026-10-14：「状态栏静音按钮需要一个声音波纹来看麦的音量」）。
+     */
+    micLive: micTrackLive,
+    /** 量音量用（`OfficeMedia` 里它是箭头函数，可以单独传出去）。 */
+    activeMic: () => media.current?.activeMic() ?? null,
     notice,
     /** 文件直传：`files.rows` / `files.sendFiles` / 完事的打开与打开文件夹（用户 2026-09-22）。 */
     files: fileTransfers,
@@ -388,6 +409,11 @@ export function useOffice(account: Account) {
     stopShare: () => { media.current?.stopScreen(); annotations.detach(); },
     clientId: account.id,
     setRemoteAudioMuted: (room: string, muted: boolean) => media.current?.setRemoteAudioMuted(room, muted),
+    /**
+     * 我正在共享的那张画布（没有共享时是 undefined）。分享者自己那块预览上的「清屏」
+     * 按它清 —— 浮层是鼠标穿透的，分享者只能从自己页面擦（用户 2026-10-14）。
+     */
+    boardScope,
     /** Whiteboard actions for one shared screen; the layer itself lives in the channel. */
     annotation: {
       draw: annotations.draw,

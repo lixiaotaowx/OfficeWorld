@@ -16,7 +16,7 @@ const STATE = {
   ],
   sharing: false, missed: 1, hidden: false, edge: 'bottom', stripHeight: 40,
 };
-STATE.meeting = { active: false, title: '', mic: false, sharing: false, busy: false, error: '',
+STATE.meeting = { active: false, title: '', mic: false, micLevel: 0, sharing: false, busy: false, error: '',
   candidates: [{id:'account-b',personId:'p1',name:'同事乙'}, {id:'account-c',personId:'p2',name:'客户丙'}], screens: [] };
 window.__videoBytes = 0;
 window.officeDock = {

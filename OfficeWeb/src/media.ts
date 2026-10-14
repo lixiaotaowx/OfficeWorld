@@ -12,6 +12,7 @@ import { startScreenThumbnails, type ScreenThumbnails } from './screenThumbnails
 import { captureSelectedScreen, switchLiveScreen } from './screenSwitch';
 import { meetingVideoKey } from './meetingVideo';
 import { publishPrivateScreen, unpublishScreen, noScreenAudio } from './screenAudio';
+import { liveMic, voiceLabel, voiceRoom } from './mediaVoice';
 
 interface TokenReply {
   url?: string;
@@ -334,7 +335,7 @@ export class OfficeMedia {
     this.screenPublic = publicPreview;
     this.onVideo('local-screen', stream);
     stream.getVideoTracks()[0].onended = () => { if (this.screen === stream) this.stopScreen(); };
-    // Low-bandwidth seat-grid thumbnails; unrelated to the LiveKit video stream.
+    // 低带宽的工位缩略图；与 LiveKit 的视频轨无关。
     const thumbnails = await startScreenThumbnails({
       stream,
       current: () => this.screen === stream,
@@ -399,9 +400,8 @@ export class OfficeMedia {
     this.screenGeneration++;
     for (const [name] of this.connections.values()) {
       if (!this.voiceRooms.has(name)) continue;
-      void this.connections.run(name, async room => {
-        await unpublishScreen(room);
-      }).catch(error => { if (!this.disposed) this.onNotice(String(error)); });
+      void this.connections.run(name, room => unpublishScreen(room))
+        .catch(error => { if (!this.disposed) this.onNotice(String(error)); });
     }
     const hadScreen = Boolean(this.screen);
     this.thumbnails?.stop();
@@ -421,29 +421,25 @@ export class OfficeMedia {
   }
 
   async prepareMic() {
-    // Permission preflight only. Each LiveKit room owns its own microphone track.
+    // 只是权限预检：每间 LiveKit 房各自拥有自己那条麦克风轨。
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     stream.getTracks().forEach(track => track.stop());
   }
 
   async toggleMute(muted: boolean, sessionId?: string) {
-    const name = sessionId ? this.sessionRoom.get(sessionId) :
-      (this.audioFocus.current && this.voiceRooms.has(this.audioFocus.current) ? this.audioFocus.current : [...this.voiceRooms][0]);
+    const name = voiceRoom(this.voiceRooms, this.audioFocus.current, this.sessionRoom, sessionId);
     if (!name) throw Error('尚未建立私聊');
     if (muted) await this.audioFocus.mute(name);
     else await this.audioFocus.activate(name, true);
   }
 
   privateVoiceStatus(sessionId?: string) {
-    const name = sessionId ? this.sessionRoom.get(sessionId) :
-      (this.audioFocus.current && this.voiceRooms.has(this.audioFocus.current) ? this.audioFocus.current : [...this.voiceRooms][0]);
+    const name = voiceRoom(this.voiceRooms, this.audioFocus.current, this.sessionRoom, sessionId);
     if (!name) return '未通话';
     const room = this.connections.get(name);
     if (room?.state !== 'connected') return '连接中';
-    if (this.audioFocus.current !== name) return '声音已暂停';
-    const track = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track?.mediaStreamTrack;
-    if (room.localParticipant.isMicrophoneEnabled && track?.readyState === 'live') return '已开启';
-    return this.audioFocus.intended(name) ? '等待授权或开启失败' : '已静音';
+    return voiceLabel(room, this.audioFocus.current === name, liveMic(room),
+      this.audioFocus.intended(name));
   }
 
   callStatus(sessionId: string) {
@@ -452,6 +448,16 @@ export class OfficeMedia {
     return { voice: this.privateVoiceStatus(sessionId), connected: room?.state === 'connected',
       sharing: !!room?.localParticipant.isScreenShareEnabled };
   }
+
+  /**
+   * 我这一只麦克风现在发布到哪条轨上（没有就是 null）：头像条静音按钮外面那圈涟漪按它量
+   * （用户 2026-10-14）。只认**正在收发声音的那间房**，别的房间里的麦是静音状态。写成箭头
+   * 函数是有意的：页面会把它单独传出去（`useMicLevel` 长期持有），普通方法会丢 `this`。
+   */
+  activeMic = (): MediaStreamTrack | null => {
+    const room = this.audioFocus.current ? this.connections.get(this.audioFocus.current) : undefined;
+    return room?.state === 'connected' ? liveMic(room) : null;
+  };
 
   /** Release one approved session; the room closes once nobody needs it. */
   signalingDisconnected() {

@@ -3,11 +3,13 @@
 ## New web project file-size rule
 
 For the new project in `OfficeWeb`, every file must be no more than 500 lines.
-Read `OfficeWeb/AGENTS.md` before working there. Split growing files by clear
-responsibility before they exceed the limit; do not compress code into long
-lines to evade it. Do not silently exempt generated text or reference copies.
-The preserved UE project and external original projects are not to be rewritten
-as part of applying this rule to the new web project.
+Read `OfficeWeb/AGENTS.md` before working there; the taskbar dock and file-transfer
+rules live in `OfficeWeb/AGENTS-dock.md` (split out 2026-10-14 when `AGENTS.md` hit
+516 lines). Split growing files by clear responsibility before they exceed the
+limit; do not compress code into long lines to evade it. Do not silently exempt
+generated text or reference copies. The preserved UE project and external original
+projects are not to be rewritten as part of applying this rule to the new web
+project.
 
 ## OfficeWeb deployment target
 

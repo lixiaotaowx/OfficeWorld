@@ -7,6 +7,8 @@ export interface DockMeetingState {
   invitations?: { id: string; personId: string; name: string }[];
   title: string;
   mic: boolean;
+  /** 我这只麦克风现在的音量（0..1，静音时是 0）：静音按钮外面那圈波纹按它画。 */
+  micLevel?: number;
   sharing: boolean;
   busy: boolean;
   error: string;
