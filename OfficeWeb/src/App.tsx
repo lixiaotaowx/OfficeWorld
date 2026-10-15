@@ -63,12 +63,12 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
     setUnreadByPerson(previous => mergeUnreadCounts(previous, byPerson));
   }, []);
   const [meetingOpen, setMeetingOpen] = useState(false);
-  const [meetingView, setMeetingView] = useState<{ id: string; fullscreen: boolean } | null>(null);
+  const [meetingView, setMeetingView] = useState<{ id: string } | null>(null);
   // 任务栏静音按钮外面那圈波纹：音量只能在主窗口量（小窗不碰媒体），推一个 0..1 的数过去
   // （用户 2026-10-14：「状态栏静音按钮需要一个声音波纹来看麦的音量」）。
   const micLevel = useMicLevel(office.activeMic, office.micLive, office.micLive);
   const dockMeetings = useDockMeetings(office.meetings, office.videos, office.people,
-    office.myId, account.id, () => setMeetingOpen(true), (id, fullscreen) => setMeetingView({ id, fullscreen }), micLevel);
+    office.myId, account.id, () => setMeetingOpen(true), (id) => setMeetingView({ id }), micLevel);
   const dockPrivate = useDockPrivateCalls(office, micLevel);
   useDockBridge({
     privateCalls: dockPrivate.state, onPrivateCommand: dockPrivate.command,
@@ -330,8 +330,8 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
               // if this window is not focused, or viewers would see a frozen office.
               keepRendering={office.sharing}
               appearance={appearance}
-              onMotion={office.reportMotion}
-              onSit={office.sitSpot}
+              onMotion={office.reportMotion} onSit={office.sitSpot}
+              meetingSignal={() => office.signal}
               // The office may seat us itself: a visiting client is placed on a sofa.
               sitSpot={office.people.find((person) => person.id === office.myId)?.sittingSpot ?? null}
               onOpenScreenMenu={setScreenMenu}
@@ -453,10 +453,10 @@ export default function App({ account, onLogout }: { account: Account; onLogout:
       <FileTransferPanel files={office.files} />
       {screenMenu && <MonitorContextMenu point={screenMenu} close={() => setScreenMenu(null)} />}
       {meetingView && dockMeetings.streams[meetingView.id] && <MeetingScreenViewer
-        stream={dockMeetings.streams[meetingView.id]} fullscreen={meetingView.fullscreen}
+        stream={dockMeetings.streams[meetingView.id]} signal={office.signal}
         label={`${office.people.find(p => p.id === meetingView.id)?.name || '同事'}的共享屏幕`}
         onClose={() => setMeetingView(null)} />}
-      <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} annotation={office.annotation} />
+      <MeetingCenter client={office.meetings} people={office.people} accountId={account.id} open={meetingOpen} onOpen={() => setMeetingOpen(true)} onClose={() => setMeetingOpen(false)} videos={office.videos} annotation={office.annotation} signal={office.signal} />
       {help && (
         <SettingsDialog
           appearance={appearance}

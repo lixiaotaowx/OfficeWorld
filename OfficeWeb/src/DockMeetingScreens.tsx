@@ -28,8 +28,10 @@ export default function DockMeetingScreens({ meeting }: { meeting?: DockMeetingS
       <header><strong>{screen.name}</strong><span>共享中</span></header>
       <div className="dock-share-picture">
         <DockMeetingVideo id={screen.id} streamId={screen.streamId} />
+        {/* 只剩全屏一个按钮（用户 2026-10-15：「把最大化去掉，现在只用全屏就可以了」）。
+            两者现在开的是同一个全屏浮层，所以 `meeting-view` 与 `meeting-fullscreen`
+            只需要发全屏那条。 */}
         <ScreenViewControls label={`${screen.name} 的共享屏幕`}
-          onMaximize={() => { void window.officeDock?.action?.('meeting-view', screen.id); }}
           onFullscreen={() => { void window.officeDock?.action?.('meeting-fullscreen', screen.id); }} />
       </div>
       {tips[screen.id] !== undefined && <i className="dock-card-tip" aria-hidden="true" style={{ left: tips[screen.id] }} />}

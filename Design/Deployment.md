@@ -1,3 +1,27 @@
+## 2026-10-15 「看屏幕」浮层加信号条 + 去掉最大化（前端已上线）
+
+用户：「需要新加一个信号条，在观看队友全屏的时候，在视频播放的"返回头像条"按钮的右侧。
+另外把最大化去掉，现在只用全屏就可以了」。
+
+- **信号条**：`MeetingScreenViewer` 的 `actions` 里排在「返回头像条」之后（也就是它右边），
+  数据来自 `office.signal`（主窗口的 `useMeetingSignal`；小窗不连 socket 所以拿不到）。
+  会议面板那套浅底卡片样式在深色控制条里压成一行（透明底 + 分隔线）。
+- **"最大化"那一档整体删除**：`ScreenStage` 的 `initialMode` 换成 `initialFullscreen`，
+  `maximized` 状态 / 按钮 / `ScreenViewControls.onMaximize` / `screen-stage.css` 里所有
+  `.screen-stage.maximized` 规则全部删掉；「看屏幕」与「全屏」现在开同一个全屏浮层。
+  **注意这个取舍也影响会议面板与私聊**：共享画面放大只剩全屏（用户明确要求）。
+- **修掉一个真 bug**：从小窗点「全屏」时，stage 会被 `createPortal` 挪到 `body` 下，节点一被
+  挪走浏览器就把刚进的全屏撤掉（`requestFullscreen` resolve、`fullscreenElement` 随后变 null，
+  且不报错）—— 现象就是"点了全屏没反应"。改成先提交状态、等重挂完成再请求。
+- 部署：`node Build/deploy-web.cjs --upload --verify` 上传 8 个文件（两个入口 + assets），
+  上传后复验"本地与远端逐文件一致"，7 个入口资源逐个 SHA256 与本地一致。
+  **前端本次还带上了同一工作区里另一个会话的改动**（会议掉线/信号那批的 `main` 包），
+  因为构建是本工作区的整体状态 —— 已在提交里注明，没有把它们混进我的提交。
+- **本轮不动客户端**：改动全在前端（`ScreenStage` 等），刷新页面即可；客户端仍是 0.1.52。
+- 验证：网页 **463/463**（新增 `meeting-viewer-signal.test.mjs` 3 项）、tsc 通过、构建与
+  90 项资源一致性通过、`node test/browser/meeting-viewer-signal.cjs`（截图
+  `Build/viewer-signal-bars.png`）与 `node test/browser/screen-stage.cjs` 通过。
+
 ## 2026-10-15 发布：前端 + 客户端 0.1.51（已上线并核验）
 
 用户要求把这两件做出来并上线：①标记改颜色；②「麦克风图标里面会根据音量的大小来填充颜色的

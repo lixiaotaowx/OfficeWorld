@@ -7,9 +7,17 @@ import './screen-stage.css';
 import ScreenViewControls from './ScreenViewControls';
 import { createPortal } from 'react-dom';
 import { useScreenZoom } from './useScreenZoom';
+import { FIRST_FRAME_MS, keepsLastFrame, screenHealth, screenHealthHint, type ScreenHealth } from './screenHealth';
 
 export interface ScreenStageProps {
-  initialMode?: 'maximized' | 'fullscreen';
+  /**
+   * 一挂载就**全屏看**（用户 2026-10-15：「把最大化去掉，现在只用全屏就可以了」）。
+   *
+   * 以前这里是 `initialMode: 'maximized' | 'fullscreen'`；最大化那一档连同按钮一起删掉了，
+   * 所以只剩"要不要一进来就全屏"这一个布尔。任务栏小窗的"看屏幕"按钮走的就是它
+   * （`MeetingScreenViewer`，在那个全屏浮层里点「返回头像条」关掉）。
+   */
+  initialFullscreen?: boolean;
   stream: MediaStream;
   /** `call-…` / `meeting-…`: which shared screen this board belongs to. */
   scope: string;
@@ -68,8 +76,12 @@ export default function ScreenStage(props: ScreenStageProps) {
   /** True while this stage is the reason the window is in whole-screen mode. */
   const askedFullscreen = useRef(false);
   const [annotating, setAnnotating] = useState(false);
-  const [maximized, setMaximized] = useState(Boolean(props.initialMode));
-  const [fullscreen, setFullscreen] = useState(false);
+  /**
+   * 全屏（唯一的"放大"档）。一进来要不要全屏由 `initialFullscreen` 决定；
+   * 退出全屏（Esc / 「退出全屏」）之后组件要回到"窗口内"排布 —— 所以它得是组件自己的状态，
+   * 不能再由 prop 现算，否则一退出就被 prop 拽回全屏。
+   */
+  const [fullscreen, setFullscreen] = useState(Boolean(props.initialFullscreen));
   /**
    * 下一笔用什么颜色（用户 2026-10-14：「观众看别人时标记可以修改颜色」）。默认还是
    * 这个人的固定色，选一次就一直是它，直到再选 —— 换色只影响之后画的笔画。
@@ -77,16 +89,50 @@ export default function ScreenStage(props: ScreenStageProps) {
   const [ink, setInk] = useState(() => inkColor(props.selfColor, DEFAULT_INK));
   // 身份换了（换账号/换通话）就把颜色跟着换回那个人的默认色，别把上一个人的选择带过去。
   useEffect(() => { setInk(inkColor(props.selfColor, DEFAULT_INK)); }, [props.selfColor]);
-  const enlarged = maximized || fullscreen;
+  const enlarged = fullscreen;
   const zoom = useScreenZoom(host, enlarged && !annotating, stream);
+  /**
+   * 画面健康（用户 2026-10-14：「画面黑几秒又回来」）。以前暂停、还没出帧、真断开
+   * 三种情况在界面上都是"一片黑"，分不出来；现在各给一句话，并且**暂停时保留最后一帧**。
+   */
+  const [health, setHealth] = useState<ScreenHealth>('live');
+  const subscribedAt = useRef(Date.now());
+  /** 卸载时决定要不要清 `srcObject`：暂停不算结束，清了就真黑了。 */
+  const keepsLastFrameRef = useRef(true);
 
   useEffect(() => {
     const element = video.current;
     if (!element) return;
     element.srcObject = stream;
     void element.play().catch(() => undefined);
-    return () => { element.srcObject = null; };
+    // 只有真的断开（track 结束）才清空：暂停/等待一律留着最后一帧，别让画面变黑。
+    return () => { if (!keepsLastFrameRef.current) element.srcObject = null; };
   }, [stream, enlarged]);
+
+  // 每 700ms 重新判一次：`videoWidth > 0` 就是"出过帧"，`muted`/`ended` 来自 track 本身。
+  useEffect(() => {
+    subscribedAt.current = Date.now();
+    const track = stream.getVideoTracks()[0];
+    const read = () => {
+      const element = video.current;
+      return screenHealth({
+        ended: track?.readyState === 'ended',
+        // 服务器暂停这一路时浏览器会把 track 标成 muted —— 这就是"黑一下"的主因。
+        muted: track?.muted,
+        paused: false,
+        hasFrame: (element?.videoWidth ?? 0) > 0,
+        waitedMs: Date.now() - subscribedAt.current,
+      });
+    };
+    const update = () => {
+      const next = read();
+      keepsLastFrameRef.current = keepsLastFrame(next);
+      setHealth(next);
+    };
+    update();
+    const timer = setInterval(update, 700);
+    return () => clearInterval(timer);
+  }, [stream]);
 
   useEffect(() => {
     const change = () => setFullscreen(document.fullscreenElement === host.current);
@@ -101,13 +147,24 @@ export default function ScreenStage(props: ScreenStageProps) {
   }, []);
 
   useEffect(() => {
-    if (props.initialMode === 'maximized') void window.officeDesktop?.focusWindow?.().catch(() => undefined);
-    if (props.initialMode !== 'fullscreen' || !window.officeDesktop?.setFullscreen) return;
-    askedFullscreen.current = true;
-    void window.officeDesktop.setFullscreen(true).catch(() => {
-      askedFullscreen.current = false;
+    // 一挂载就全屏（任务栏小窗的「看屏幕」走这条）。
+    // **两条路都要走**：桌面端是原生整屏（DOM Fullscreen API 在无边框透明窗口里是空操作），
+    // 浏览器里是 DOM 全屏。只判桌面桥的话，浏览器里只会加上 `fullscreen` 类而不真的进全屏
+    // （2026-10-15 实测：类在了、`document.fullscreenElement` 还是 null）。
+    if (!props.initialFullscreen) return;
+    const bridge = window.officeDesktop;
+    if (bridge?.setFullscreen) {
+      askedFullscreen.current = true;
+      void bridge.setFullscreen(true).catch(() => { askedFullscreen.current = false; });
+      return;
+    }
+    // 浏览器：等这一帧挂完再请求 DOM 全屏。被拒（没有用户手势）也**不回退状态** ——
+    // stage 已经是铺满屏幕的那一档，人看到的就是全屏；硬回退反而会让画面缩回小窗。
+    requestAnimationFrame(() => {
+      const node = host.current;
+      if (node?.isConnected) void node.requestFullscreen().catch(() => undefined);
     });
-  }, [props.initialMode]);
+  }, [props.initialFullscreen]);
 
   const leaveFullscreen = useCallback(() => {
     const bridge = window.officeDesktop;
@@ -249,8 +306,9 @@ export default function ScreenStage(props: ScreenStageProps) {
   const toggleFullscreen = () => {
     const element = host.current;
     if (!element) return;
-    // Whole screen: native window full screen in the desktop app, DOM full screen in
-    // a browser. "Maximise" is the separate app-level mode that only fills the window.
+    // Whole screen: native window full screen in the desktop app, DOM full screen in a
+    // browser. 这是唯一的"放大"档了 —— 应用窗口内占满那一档（`maximized`）已按用户
+    // 2026-10-15 的要求删除。
     const bridge = window.officeDesktop;
     if (bridge?.setFullscreen) {
       const wanted = !fullscreen;
@@ -261,15 +319,19 @@ export default function ScreenStage(props: ScreenStageProps) {
     }
     if (document.fullscreenElement === element) void document.exitFullscreen().catch(() => undefined);
     else {
-      setMaximized(true);
-      requestAnimationFrame(() => { void host.current?.requestFullscreen().catch(() => undefined); });
+      // Stage 得先变成"全屏那一档"（`enlarged` → 交给 `createPortal` 挂到 body 下）再请求
+      // 全屏：**一旦节点被 portal 挪走，浏览器会立刻把刚进的全屏撤掉** —— 实测报错都不报，
+      // 表现就是"点了全屏没反应"（`document.fullscreenElement` 先有、随后变 null）。
+      // 所以先提交状态，等重挂完成（多帧 + 一帧余量）再请求。
+      setFullscreen(true);
+      const ask = (left: number) => {
+        const node = host.current;
+        if (!node || !node.isConnected) return;
+        if (left > 0) { requestAnimationFrame(() => ask(left - 1)); return; }
+        void node.requestFullscreen().catch(() => setFullscreen(false));
+      };
+      requestAnimationFrame(() => ask(2));
     }
-  };
-
-  const enlarge = () => {
-    void window.officeDesktop?.focusWindow?.().catch(() => undefined);
-    if (fullscreen) leaveFullscreen();
-    setMaximized(true);
   };
 
   // Absent means "not told otherwise": the desktop bridge is the only thing that can
@@ -288,7 +350,7 @@ export default function ScreenStage(props: ScreenStageProps) {
   const clearBoard = () => { dropEcho(); props.onClear(scope); };
 
   const stage = <div ref={host}
-    className={`screen-stage${maximized ? ' maximized' : ''}${fullscreen ? ' fullscreen' : ''}${annotating ? ' annotating' : ''}${props.clearsOwnBoard ? ' own-board' : ''}`}>
+    className={`screen-stage${fullscreen ? ' fullscreen' : ''}${annotating ? ' annotating' : ''}${props.clearsOwnBoard ? ' own-board' : ''}`}>
     <video ref={video} autoPlay muted playsInline aria-label={props.label}
       style={{ transform: `scale(${zoom})` }} />
     <canvas ref={inkCanvas} className="screen-stage-ink" aria-hidden="true" />
@@ -303,9 +365,9 @@ export default function ScreenStage(props: ScreenStageProps) {
       <button type="button" title="清空共享画面上的所有标注（所有人都会看到）"
         onClick={clearBoard}>清屏</button>
     </div>}
-    {/* Inline the stage keeps two compact controls only: a row of buttons in a
+    {/* Inline the stage keeps one compact control only: a row of buttons in a
         narrow panel overlapped the picture and buried the screen itself. */}
-    {!enlarged && <ScreenViewControls onMaximize={enlarge} onFullscreen={toggleFullscreen} />}
+    {!enlarged && <ScreenViewControls onFullscreen={toggleFullscreen} />}
     {enlarged && <div className="screen-stage-bar">
       <span className="screen-stage-name"><ScreenIcon />{props.label}</span>
       {/* Drawing needs a sharer that can actually put marks on its own screen, so the
@@ -318,19 +380,16 @@ export default function ScreenStage(props: ScreenStageProps) {
         <button type="button" title="撤销我画的上一条" onClick={() => { dropEcho(); props.onUndo(scope); }}>撤销</button>
         <button type="button" title="清空所有人的标注" onClick={clearBoard}>清空</button>
       </>}
-      <button type="button" onClick={() => (maximized ? setMaximized(false) : enlarge())}
-        title={maximized ? '退出窗口内占满' : '在软件窗口内占满'}>
-        {maximized ? '还原窗口' : '最大化'}</button>
       <button type="button" onClick={toggleFullscreen} aria-pressed={fullscreen}
         title="占满整个屏幕">{fullscreen ? '退出全屏' : '全屏'}</button>
       {props.actions}
       <span className="screen-stage-zoom">{Math.round(zoom * 100)}%</span>
-      <button type="button" className="screen-stage-close" onClick={() => {
-        leaveFullscreen();
-        setMaximized(false);
-      }} aria-label="关闭放大视图"><CloseIcon /></button>
+      <button type="button" className="screen-stage-close" onClick={leaveFullscreen}
+        aria-label="关闭放大视图"><CloseIcon /></button>
     </div>}
     {enlarged && props.hint && <p className="screen-stage-hint">{props.hint}</p>}
+    {/* 画面暂停/等待/断开时说一句人话（并保留最后一帧）：以前这三种都是"一片黑"。 */}
+    {screenHealthHint(health) && <p className="screen-stage-health" role="status">{screenHealthHint(health)}</p>}
     {annotating && enlarged && <p className="screen-stage-tip">标注中：拖动即可画线，笔迹画在对方的共享屏幕上</p>}
     {enlarged && !canAnnotate && (
       <p className="screen-stage-tip">对方在网页里共享屏幕，标注画不到他的屏幕上</p>

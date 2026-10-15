@@ -13,6 +13,14 @@
    slow to draw with (user, 2026-09-15: "延迟严重"). */
 .screen-stage-ink { position: absolute; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; }
 .screen-stage.annotating .screen-stage-ink { display: block; }
+/* 画面暂停/等待/断开时的一句提示（用户 2026-10-14：「画面黑几秒又回来」）。
+   不吃鼠标：标注层在上面，这只是一句说明。 */
+.screen-stage-health {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+  margin: 0; padding: 6px 12px; border-radius: 999px;
+  background: #1d2a24d9; color: #f2f6ee; font-size: 12px; white-space: nowrap;
+  pointer-events: none; z-index: 3;
+}
 
 .screen-stage-bar {
   position: absolute; left: 12px; right: 12px; bottom: 12px;
@@ -25,7 +33,6 @@
 .screen-stage:hover .screen-stage-bar:not(.minimal),
 .screen-stage:focus-within .screen-stage-bar:not(.minimal),
 .screen-stage.annotating .screen-stage-bar:not(.minimal),
-.screen-stage.maximized .screen-stage-bar:not(.minimal),
 .screen-stage.fullscreen .screen-stage-bar:not(.minimal),
 .screen-stage:fullscreen .screen-stage-bar:not(.minimal) { opacity: 1; }
 .screen-stage-name {
@@ -91,18 +98,12 @@
 }
 .screen-stage-hint { background: #1d2a24e6; color: #d9e2d6; }
 
-/* App-level maximize: fills the page box (desktop chrome keeps its own bar). */
-.screen-stage.maximized {
-  position: fixed; inset: var(--desktop-chrome-height, 0) 0 0 0; z-index: 60;
-  border-radius: 0 0 var(--window-radius, 0) var(--window-radius, 0);
-  background: #0d1512; display: flex; align-items: center; justify-content: center;
-}
-.screen-stage.maximized > video { width: 100%; height: 100%; max-height: none; }
-/* Whole-screen mode in the desktop shell is a NATIVE window mode: the DOM Fullscreen
+/* 放大只有全屏这一档了（用户 2026-10-15：「把最大化去掉，现在只用全屏就可以了」）；
+   以前那条 `.screen-stage.maximized`（只在软件窗口内占满）已经删除。
+   Whole-screen mode in the desktop shell is a NATIVE window mode: the DOM Fullscreen
    API is a no-op there, so the `:fullscreen` pseudo-class never matches and only the
    window grew while the picture stayed in its inline box (user, 2026-09-15: "怎么窗口
-   全屏了 但是视频没有"). Drive the layout from the reported state class instead.
-   Declared after `.maximized` so whole-screen wins if both are somehow on. */
+   全屏了 但是视频没有"). Drive the layout from the reported state class instead. */
 .screen-stage.fullscreen {
   position: fixed; inset: 0; z-index: 60;
   border-radius: 0; background: #0d1512;
@@ -111,21 +112,37 @@
 .screen-stage.fullscreen > video { width: 100%; height: 100%; max-height: none; }
 .screen-stage:fullscreen { border-radius: 0; }
 .screen-stage:fullscreen video { max-height: none; height: 100%; }
-.screen-stage.maximized, .screen-stage.fullscreen { padding: 4px; box-sizing: border-box; z-index: 2500; }
+.screen-stage.fullscreen { padding: 4px; box-sizing: border-box; z-index: 2500; }
 .screen-stage-zoom { width: 3.5em; text-align: center; color: #eef3ec; font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* 全屏看队友共享画面时，信号条跟在「返回头像条」右边（用户 2026-10-15）。
+   会议面板里那套是**浅底卡片**（`meetings.css` 的 `.signal-bars-panel`），挂在深色的
+   控制条里会变成一块突兀的白牌子 —— 所以这里压成同一行的一小段：透明底、没有外边距，
+   文字跟着控制条的颜色。 */
+.screen-stage-bar .signal-bars-panel {
+  margin: 0; padding: 0 6px; background: none; display: inline-flex; align-items: center;
+  border-left: 1px solid #ffffff24;
+}
+.screen-stage-bar .signal-head { gap: 6px; flex-wrap: nowrap; }
+.screen-stage-bar .signal-head strong { color: #eef3ec; font-size: 12px; }
+.screen-stage-bar .signal-head small { color: #c3cec4; font-size: 11px; }
+.screen-stage-bar .signal-head em { color: #f0b199; }
+.screen-stage-bar .signal-bars i { background: #ffffff2e; }
+.screen-stage-bar .signal-bars i.on { background: #8fd6a4; }
+.screen-stage-bar .signal-bars[data-level="poor"] i.on { background: #e8c06a; }
+.screen-stage-bar .signal-bars[data-level="lost"] i.on { background: #df7b6a; }
+.screen-stage-signal-wait { color: #c3cec4; font-size: 11px; padding-left: 6px; }
 
 /* Enlarged: one centred pill at the bottom instead of a full-width strip with the
    controls crammed into the right corner next to a stranded label. */
-.screen-stage.maximized .screen-stage-bar,
 .screen-stage.fullscreen .screen-stage-bar,
 .screen-stage:fullscreen .screen-stage-bar {
   left: 50%; right: auto; bottom: 22px;
   transform: translateX(-50%);
-  width: max-content; max-width: min(940px, calc(100% - 32px));
+  width: max-content; max-width: min(1200px, calc(100% - 32px));
   justify-content: center; gap: 8px;
   padding: 9px 14px; border-radius: 999px;
 }
-.screen-stage.maximized .screen-stage-bar .screen-stage-name,
 .screen-stage.fullscreen .screen-stage-bar .screen-stage-name,
 .screen-stage:fullscreen .screen-stage-bar .screen-stage-name {
   margin-right: 2px; padding-right: 10px; border-right: 1px solid #ffffff24;

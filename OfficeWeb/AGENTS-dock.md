@@ -231,7 +231,6 @@
   （0 / 0.25 / 0.55 / 1 四档并排）。
 
 ## 看视频时给画面让位：最大化/整屏就藏，最小化/还原就回来（2026-10-14 用户要求）
-
 需求（用户）：「当状态栏小窗口出现视频共享画面时，点击最大化，这个小窗口会消失；当最小化时，
 这个小窗口就会出现。这就是这种常见的逻辑」。就是播放器全屏时控制条让位那条通用规则。
 
@@ -259,3 +258,36 @@
 - 拆文件：`dock-window.test.cjs` 因为这一批涨到 528 行、超了 500 行上限，把"什么时候藏/显示"
   那一簇搬进 `test/dock-hide-reasons.test.cjs`，假窗口与 harness 抽到 `test/dock-harness.cjs`
   给两个文件共用（`test/*.test.cjs` 之外的文件不会被当成用例跑）。
+
+## 「看屏幕」那块浮层：只剩全屏 + 信号条（2026-10-15 用户要求）
+
+用户原话：「需要新加一个信号条，在观看队友全屏的时候，在视频播放的"返回头像条"按钮的右侧。
+另外把最大化去掉，现在只用全屏就可以了」。
+
+- **"最大化"那一档整体删除**（不是只在某一处隐藏）：`ScreenStage` 的 `initialMode:
+  'maximized' | 'fullscreen'` 换成 `initialFullscreen?: boolean`，`maximized` 状态、控制条上
+  那个「最大化 / 还原窗口」按钮、`ScreenViewControls` 的 `onMaximize`、以及
+  `screen-stage.css` 里所有 `.screen-stage.maximized` 规则全部删掉。`enlarged` 现在就是
+  `fullscreen`。
+  - 任务栏气泡上的「看屏幕」与「全屏」**开的是同一个全屏浮层**：`useDockMeetings` 的
+    `onView(id)` 不再带 `fullscreen` 参数，两种命令都走它；`App.tsx` 的 `meetingView` 只存 id。
+  - **受影响的不只是任务栏**：会议面板与私聊里的共享画面也少了一个"窗口内占满"的档，
+    放大只能靠全屏（`F11`/「全屏」按钮）。这是用户明确要的取舍，别再给某一处偷偷加回来。
+- **信号条挂在「返回头像条」右侧**（`MeetingScreenViewer` 的 `actions` 里按顺序渲染，
+  所以顺序就是左右顺序）。数据是 `office.signal`（`useMeetingSignal` → `signalWatch`），
+  **只有主窗口有**（小窗不连 socket），所以是从主窗口传进这块画面的。没数据时显示
+  「信号检测中…」，不假装有数字。
+  - 会议面板里那套 `.signal-bars-panel` 是**浅底卡片**，直接塞进深色控制条会变成一块白牌子；
+    `screen-stage.css` 里压成同一行（透明底、无外边距、左侧一条分隔线、文字跟随控制条颜色）。
+- **一个必须记住的坑（全屏请求会被节点挪动作废）**：从小窗那一档点「全屏」时，`enlarged`
+  一变，stage 会被 `createPortal` 挪到 `document.body` 下 —— 节点被摘掉再插回去。
+  **在挪动之前请求全屏，浏览器会先接受、随后立刻撤销**（实测 `requestFullscreen()` resolve、
+  `document.fullscreenElement` 先是 stage 再变 null，而且**一个错都不报**），现象就是
+  "点了全屏没反应"。所以 `toggleFullscreen` 的浏览器分支是**先 `setFullscreen(true)` 提交状态，
+  再等重挂完成（两帧 + 一帧余量）用 `host.current` 重新拿节点请求**。
+  `initialFullscreen` 那条 effect 同理（等一帧）。桌面端不受影响：它走原生整屏。
+- 回归：`node --test test/meeting-viewer-signal.test.mjs`（信号条在返回按钮右边、看屏幕与全屏
+  同一个浮层、`ScreenStage`/样式/控件里都没有"最大化"了）+ `node test/browser/meeting-viewer-signal.cjs`
+  （真几何：`panel.left >= back.right`、同一行、三格与摘要都画出来、透明底；
+  截图 `Build/viewer-signal-bars.png`）+ `node test/browser/screen-stage.cjs`
+  （小窗只剩「全屏」一个按钮；断言里明确写了不该再有「最大化 / 还原窗口」）。

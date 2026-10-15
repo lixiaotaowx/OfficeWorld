@@ -7,14 +7,16 @@ import { useDockMeetingVideo } from './useDockMeetingVideo';
 
 export function useDockMeetings(client: ReturnType<typeof useMeetings>, videos: Record<string, MediaStream>,
   people: Person[], myId: string | undefined, accountId: string, onOpen: () => void,
-  onView: (id: string, fullscreen: boolean) => void, micLevel = 0) {
+  onView: (id: string) => void, micLevel = 0) {
   const executing = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const streams: Record<string, MediaStream> = {};
   if (client.active) for (const [key, stream] of Object.entries(videos)) {
     if (!key.startsWith(client.active.room + ':') || !stream.getVideoTracks().some(track => track.readyState === 'live')) continue;
-    const id = key.slice(client.active.room.length + 1) === 'local' ? myId : key.slice(client.active.room.length + 1);
+    // 键的后缀是共享者的账号 id（会议 LiveKit identity），小窗按 socket id（person.id）认人。
+    const suffix = key.slice(client.active.room.length + 1);
+    const id = suffix === 'local' ? myId : people.find(person => person.clientId === suffix)?.id;
     if (id) streams[id] = stream;
   }
   useDockMeetingVideo(streams);
@@ -38,7 +40,9 @@ export function useDockMeetings(client: ReturnType<typeof useMeetings>, videos: 
   const command = (value: DockCommand) => {
     if (!value.kind.startsWith('meeting')) return false;
     if (value.kind === 'meeting' || value.kind === 'meeting-view' || value.kind === 'meeting-fullscreen') {
-      if (value.kind !== 'meeting' && streams[value.personId]) onView(value.personId, value.kind === 'meeting-fullscreen');
+      // 「看屏幕」和「全屏」现在都是**同一个全屏浮层**（用户 2026-10-15：「把最大化去掉，
+      // 现在只用全屏就可以了」）—— 以前 `meeting-view` 开的是"窗口内占满"那一档。
+      if (value.kind !== 'meeting' && streams[value.personId]) onView(value.personId);
       else onOpen();
       return true;
     }
@@ -60,7 +64,7 @@ export function useDockMeetings(client: ReturnType<typeof useMeetings>, videos: 
       } else if (state.invitations?.some(invitation => invitation.id === value.personId)) {
         if (value.kind === 'meeting-accept') {
           if (client.active) throw Error('请先离开当前会议再接听');
-          await client.act({ action: 'accept', id: value.personId, microphone: false });
+          await client.act({ action: 'accept', id: value.personId, microphone: true });
         } else if (value.kind === 'meeting-decline') await client.act({ action: 'decline', id: value.personId });
       }
     };

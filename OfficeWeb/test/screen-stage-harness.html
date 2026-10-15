@@ -43,5 +43,12 @@ root.render(React.createElement(ScreenStage,{
 }));
 // Hanging up removes the stage from the app; the test does the same here.
 window.__unmountStage=()=>root.unmount();
+// 排查用：不经过 React，直接给 stage 加上全屏的类，好区分"是样式的问题"还是
+// "portal 把节点挪走导致请求作废"。
+window.__forceFullscreenClass=on=>{
+  const stage=document.querySelector('.screen-stage');
+  if(stage) stage.classList.toggle('fullscreen', !!on);
+  return stage?stage.className:null;
+};
 window.__stageReady=true;
 </script></body></html>

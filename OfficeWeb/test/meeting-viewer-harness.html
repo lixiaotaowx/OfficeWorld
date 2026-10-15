@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><body><div id="root"></div>
+<script type="module">
+// 「看队友全屏」那块画面的用例页：任务栏小窗的看屏幕浮层（`MeetingScreenViewer`）。
+//
+// 用户 2026-10-15 提的两件事都在这里验：
+//   ① 一进来就是**全屏**（"最大化"那一档已删）；
+//   ② 「返回头像条」**右侧**要有信号条。
+// 信号数据是假的（真数据来自 `useMeetingSignal` → `office.signal`，只有主窗口有）。
+import React from 'react'; import {createRoot} from 'react-dom/client';
+import MeetingScreenViewer from '/src/MeetingScreenViewer.tsx';
+import '/src/styles.css'; import '/src/workspace-ui.css'; import '/src/screen-stage.css';
+import '/src/meetings.css';
+// 假共享画面：合成画布，不涉及真实桌面的采集。
+const canvas=document.createElement('canvas'); canvas.width=1600; canvas.height=900;
+const ctx=canvas.getContext('2d');
+ctx.fillStyle='#20406a'; ctx.fillRect(0,0,1600,900);
+ctx.fillStyle='#fff'; ctx.font='64px sans-serif'; ctx.fillText('SHARED SCREEN',120,180);
+const stream=canvas.captureStream(5);
+// 信号：三格 + 一句话，和真实 `SignalState` 同形状（`stats` 是必需的）。
+const signal={state:{worst:'good',note:'',rows:[
+  {key:'me',name:'我',self:true,level:'good',online:true,screen:'live'},
+  {key:'b',name:'乙',self:false,level:'fair',online:true,screen:'live'}],
+  stats:{rttMs:42,receiveKbps:2100,sendKbps:900,lossPercent:0,jitterMs:3,
+    width:1600,height:900,updatedAt:Date.now()}},
+  summary:'延迟 42ms · 下行 2.1 Mbps',events:[]};
+window.__closed=0;
+const root=createRoot(document.getElementById('root'));
+root.render(React.createElement(MeetingScreenViewer,{
+  stream, label:'乙的共享屏幕', signal, onClose:()=>{ window.__closed+=1; },
+}));
+window.__viewerReady=true;
+</script></body></html>

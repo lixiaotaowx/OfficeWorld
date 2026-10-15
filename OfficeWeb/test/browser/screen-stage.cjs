@@ -35,24 +35,13 @@ const SHOT = "../Build";
       };
     });
     console.log("inline:", JSON.stringify(inline));
-    assert.deepEqual(inline.labels, ["最大化", "全屏"], "小窗只能有最大化与全屏两个按钮");
+    // 放大只剩全屏一档（用户 2026-10-15：「把最大化去掉，现在只用全屏就可以了」）。
+    assert.deepEqual(inline.labels, ["全屏"], "小窗只能有全屏这一个按钮（最大化已删）");
     assert.ok(inline.height < 48, `小窗控制条不该占据一块区域 (height=${inline.height})`);
     await page.screenshot({ path: `${SHOT}/stage-inline.png` });
 
-    // 最大化 = fill the app window; the whole toolbar appears with it.
-    await page.locator(".screen-stage-expand", { hasText: "最大化" }).click();
-    await page.waitForTimeout(600);
-    const maximized = await page.evaluate(() => ({
-      maximized: document.querySelector(".screen-stage").classList.contains("maximized"),
-      labels: [...document.querySelectorAll(".screen-stage-bar button")].map((button) => button.textContent.trim()),
-    }));
-    console.log("maximized:", JSON.stringify(maximized));
-    assert.equal(maximized.maximized, true, "最大化必须在软件窗口内占满");
-    assert.deepEqual(maximized.labels, ["标注", "还原窗口", "全屏", "静音我", "静音对方", "抢占共享", "挂断", ""],
-      "最大化后才出现完整按钮条");
-    await page.screenshot({ path: `${SHOT}/stage-maximized.png` });
-
-    // 全屏 = cover the whole screen (DOM full screen in a browser).
+    // 以前这里是「最大化」那一档（只在软件窗口内占满）—— 已按用户要求整体删除，
+    // 所以直接进全屏：完整按钮条随之出现。
     await page.locator(".screen-stage-bar button", { hasText: "全屏" }).click();
     await page.waitForTimeout(1200);
     const full = await page.evaluate(() => {
@@ -67,8 +56,11 @@ const SHOT = "../Build";
     console.log("fullscreen:", JSON.stringify(full));
     assert.equal(full.fullscreenElement, true, "全屏按钮要真的进入全屏");
     assert.equal(full.barOpacity, "1", "全屏时按钮条必须可见");
+    assert.equal(full.labels.includes("最大化"), false, "最大化按钮已经删掉（用户 2026-10-15）");
+    assert.equal(full.labels.includes("还原窗口"), false, "「还原窗口」也一起没了");
     await page.screenshot({ path: `${SHOT}/stage-fullscreen.png` });
-    await page.keyboard.press("Escape");
+    // **不要在这里按 Esc**：放大只剩全屏一档，退出全屏就回到只有「全屏」一个按钮的小窗，
+    // 后面所有用例都得在完整按钮条上做。收尾时再退（见本文件末尾）。
 
     // Drawing mode reveals undo/clear without hiding anything else.
     await page.locator(".screen-stage-bar button", { hasText: "标注" }).click();
@@ -203,8 +195,8 @@ const SHOT = "../Build";
     web.on("pageerror", (error) => errors.push(error.message));
     await web.goto(`http://127.0.0.1:${port}/test/screen-stage-harness.html?readonly=1`);
     await web.waitForFunction(() => window.__stageReady === true, null, { timeout: 30000 });
-    await web.locator(".screen-stage-expand", { hasText: "最大化" }).click();
-    await web.waitForTimeout(500);
+    await web.locator(".screen-stage-expand", { hasText: "全屏" }).click();
+    await web.waitForTimeout(900);
     const webTools = await web.evaluate(() => ({
       labels: [...document.querySelectorAll(".screen-stage-bar button")].map((b) => b.textContent.trim()),
       drawSurface: document.querySelectorAll(".screen-stage-draw").length,
@@ -318,7 +310,7 @@ const SHOT = "../Build";
     await plain.close();
 
     assert.deepEqual(errors, []);
-    console.log("PASS 小窗两个按钮 / 最大化占满窗口 / 全屏占满屏幕 / 客户端走原生全屏 / 标注模式撤销清空 / 改笔色 / 分享者清屏 / 各种窗口比例映射正确 / 本机即时回显 / 挂断退出全屏 / 普通挂断不动窗口");
+    console.log("PASS 小窗只剩全屏一个按钮 / 全屏真的进全屏 / 客户端走原生全屏 / 标注模式撤销清空 / 改笔色 / 分享者清屏 / 各种窗口比例映射正确 / 本机即时回显 / 挂断退出全屏 / 普通挂断不动窗口");
   } finally {
     await browser.close();
     await vite.close();
