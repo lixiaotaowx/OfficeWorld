@@ -49,17 +49,27 @@ test('起得快落得慢，但停嘴之后必须真的回到 0', async () => {
   assert.ok(level < 0.01, `持续安静要落干净: ${level}`);
 });
 
-test('波纹的接线：静音按钮上，主窗口取样、小窗只画', () => {
+test('音量指示的接线：静音按钮里那层填充，主窗口取样、小窗只画', () => {
   const panel = sourceOf('DockCallControls.tsx');
-  assert.match(panel, /className="dock-meeting-mic"/, '波纹挂在静音按钮上');
+  assert.match(panel, /className="dock-meeting-mic"/, '填充挂在静音按钮上');
   assert.match(panel, /data-mic-level=\{meterLevel\(row\.level, row\.mic\)\}/,
     '按钮上要留一个可断言/可排查的音量（静音时是 0）');
-  assert.match(panel, /<DockMicWave level=\{row\.level\}/, '波纹由 DockMicWave 画');
-  const wave = sourceOf('DockMicWave.tsx');
-  assert.match(wave, /meterLevel\(level, true\)/, '波纹高度走那条纯规则');
-  assert.match(wave, /width=\{size\} height=\{size\}/, '圈的大小按音量长');
-  assert.match(wave, /<circle cx="22" cy="22" r="20" \/>/, '描边圆，不是阴影');
-  // 会议和私聊两条状态都要带音量，否则另一种通话里没有波纹。
+  assert.match(panel, /<DockMicFill level=\{row\.level\}/, '填充由 DockMicFill 画');
+  assert.match(panel, /\{row\.mic && <DockMicFill/, '静音时不渲染那层填充');
+  // **填在图标里、从下往上涨**（用户 2026-10-14：「麦克风图标里面会根据音量的大小来填充颜色
+  // 的高度，就像腾讯会议那样的功能」）。所以断言的是"里面那层 + scaleY"，不是外圈的圆。
+  const fill = sourceOf('DockMicFill.tsx');
+  assert.match(fill, /meterLevel\(level, true\)/, '填充高度走那条纯规则');
+  assert.match(fill, /transform: `scaleY\(\$\{height\}\)`/, '用 scaleY 涨（不改 height，免得每帧重排）');
+  assert.ok(!/circle/.test(fill), '不能再退回图标外面那圈涟漪');
+  const css = sourceOf('dock-meeting.css');
+  assert.match(css, /\.dock-mic-fill \{[\s\S]{0,220}transform-origin: 50% 100%/,
+    '液面要从底部涨起来');
+  assert.match(css, /\.dock-meeting-mic svg \{ position: relative; z-index: 1; \}/,
+    '图标要压在填充上面，不然话筒形状被糊掉');
+  assert.match(css, /\.dock-meeting-controls \.dock-meeting-mic \{ position: relative; overflow: hidden; \}/,
+    '填充不能溢出按钮的圆角');
+  // 会议和私聊两条状态都要带音量，否则另一种通话里没有音量指示。
   assert.match(sourceOf('dock-meeting-contract.ts'), /micLevel\?: number/);
   assert.match(sourceOf('dock-private-contract.ts'), /micLevel\?: number/);
   assert.match(sourceOf('useDockMeetings.ts'), /micLevel,/);

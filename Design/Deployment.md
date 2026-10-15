@@ -1,3 +1,29 @@
+## 2026-10-15 发布：前端 + 客户端 0.1.51（已上线并核验）
+
+用户要求把这两件做出来并上线：①标记改颜色；②「麦克风图标里面会根据音量的大小来填充颜色的
+高度，就像腾讯会议那样的功能」。
+
+- **前端已发布**（`Build/deploy-web.cjs --upload --verify`）：上传 `dock.html` 与
+  `assets/dock-CM40Bf5O.js` / `assets/dock-CBM-PR9z.css` 共 3 个文件，上传后复验"本地与远端
+  逐文件一致"，11 项公网 200 抽样通过。主入口 `main-DrYJZw55.js` 上传前就与本地一致，未重传。
+- **麦克风改成填充式**：新增 `src/DockMicFill.tsx`（**删掉了旧的 `DockMicWave.tsx`** 那圈外描边），
+  液面满高 + `scaleY(level)` 从底部涨、图标压在填充上面。线上 dock 包已含 `dock-mic-fill`，
+  **旧类名 `dock-mic-wave` 在线上包里已搜不到**。
+- **客户端 0.1.51 已发布**：`iruler-dream-Setup-0.1.51-x64.exe`，101731019 字节，
+  SHA256 `3d1aec51b7e780b82bf828e36e6bbf34fae1422f8bb283885fb9cc69444cbdff`；
+  `publish:update --verify full` 整包核验通过，`latest.json` 已是 0.1.51。
+  打包前后都核过 ASAR：版本 0.1.51、`annotation-overlay.js` 与 `fullscreen.cjs`/`main.cjs`
+  **与工作区源码逐字节一致**，署名名牌已删、认识观众颜色、`hidesDock` 在。
+- 这一版带上客户端侧的四项（此前只在源码里、装 0.1.50 的人看不到）：
+  **①每一笔不再署名；②分享者屏幕上按观众挑的颜色画；③分享者的共享预览有「清屏」；
+  ④看视频时头像条让位（最大化/整屏自动隐藏，最小化/还原回来）。**
+- 备份：`officeweb/backups/dock-mic-fill-0.1.51/latest.json`（发布前的 0.1.50 清单）。
+- 验证：网页全量 **458/458**、桌面 **180/180**；`node test/browser/dock-meeting-controls.cjs`
+  量到液面 0 / 7.6px / 17px（铺满按钮可用高度）且贴底、铺满宽度、被裁切、在图标后面；
+  6 倍放大观感图 `Build/dock-mic-fill-zoom.png`。
+- **待人工验收**：真实通话里开麦说话看液面跟不跟手、静音是否立刻归零；
+  以及"点最大化 → 头像条消失 / 最小化 → 回来"的真机行为（自动化只覆盖判定与接线）。
+
 ## 2026-10-14 看视频时头像条让位（未发布）
 
 - 用户：「当状态栏小窗口出现视频共享画面时，点击最大化，这个小窗口会消失；当最小化时，这个小

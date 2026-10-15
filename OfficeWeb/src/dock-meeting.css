@@ -50,16 +50,21 @@
 .dock-meeting-controls button { display: flex; align-items: center; gap: 3px; font-size: 11px; height: 27px; white-space: nowrap; }
 .dock-meeting-controls svg { width: 14px; height: 14px; }
 .dock-meeting-controls .dock-meeting-mic { width: 29px; justify-content: center; padding: 5px; }
-/* 静音按钮外面那圈"声音波纹"跟着麦克风音量长大（用户 2026-10-14：「状态栏静音按钮需要
-   一个声音波纹来看麦的音量」）。它画在按钮中心之外，所以：绝对定位、不参与命中（点击仍
-   落在按钮上）、pointer-events 关掉。静音时整圈不渲染 —— 那正是"没在收音"最直白的表示。 */
-.dock-meeting-controls .dock-meeting-mic { position: relative; overflow: visible; }
-.dock-mic-wave { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-/* 宽高由组件按音量算好写在标签上，这里只把 `.dock-meeting-controls svg` 的 14px 顶掉，
-   并保证它只画不挡。 */
-.dock-meeting-controls .dock-mic-wave { width: auto; height: auto; z-index: 0; }
-.dock-mic-wave circle { fill: none; stroke: #428454; stroke-width: 2; vector-effect: non-scaling-stroke; }
-.dock-meeting-controls .dock-meeting-mic[aria-pressed="true"] .dock-mic-wave { display: none; }
+/* 静音按钮里那层"跟着音量从下往上涨的填充"（用户 2026-10-14：「麦克风图标里面会根据音量的
+   大小来填充颜色的高度，就像腾讯会议那样的功能」）。
+   几条必须守住的：
+     * 填充在**图标后面**（z-index 0，图标 1）：话筒形状不能被糊掉；
+     * 用 scaleY 而不是 height（60ms 一帧，改 height 会每帧重排）；
+     * bottom 用负值抵消按钮的 padding，液面才是从**按钮底边**涨起来的；
+     * 圆角跟着按钮（9px），静音时组件直接不渲染这一层。 */
+.dock-meeting-controls .dock-meeting-mic { position: relative; overflow: hidden; }
+.dock-mic-fill {
+  position: absolute; left: 0; right: 0; bottom: -6px; height: calc(100% + 12px);
+  transform-origin: 50% 100%; pointer-events: none; z-index: 0;
+  background: linear-gradient(#8fd6a4, #4f9d68);
+  border-radius: 9px; transition: transform .08s linear;
+}
+.dock-meeting-controls .dock-meeting-mic svg { position: relative; z-index: 1; }
 .dock-meeting-controls [aria-pressed=true] { background: #c8e6d1; }
 .dock-meeting-screens { overflow-y: auto; min-height: 140px; max-height: 440px; display: grid; gap: 8px; }
 .dock-share-bubble header span { color: #87b99a; font-size: 10px; }

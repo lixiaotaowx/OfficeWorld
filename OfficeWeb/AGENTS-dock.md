@@ -193,34 +193,42 @@
   `webUtils.getPathForFile` 对合成/网页拖来的 File 返回空串，所以自动化测试只能覆盖
   "路径转交 + 接收写盘"两段。暂不支持发送文件夹（服务端/客户端都拒绝，提示打包后再发）。
 
-## 静音按钮上的声音波纹（2026-10-14 用户要求）
+## 静音按钮里的音量填充（2026-10-14 用户要求，2026-10-15 改成填充式）
 
-需求（用户）：「状态栏静音按钮需要一个声音波纹来看麦的音量」。几个要点别搞错：
+需求（用户）：「状态栏静音按钮需要一个声音波纹来看麦的音量」，随后明确要
+**「麦克风图标里面会根据音量的大小来填充颜色的高度，就像腾讯会议那样的功能」**。
+第一版做成了**图标外面一圈描边**（`DockMicWave`，圈随音量变大），2026-10-15 按上面那句改成
+**图标里面从底部涨起来的一层填充**（`src/DockMicFill.tsx`），旧组件已删除。
 
 - **音量只能在主窗口量**，小窗连 socket 都没有（见上面那条铁律）。链路：
   `media.activeMic()`（**箭头函数**，页面会把它单独传出去，普通方法会丢 `this`；只认
   **正在收发声音的那间房** `audioFocus.current`——别的房间里的麦是静音状态）→
   `useMicLevel(activeMic, micOn, live)` 每 60ms 取一次 → 一个 0..1 的数塞进
-  `DockMeetingState.micLevel` / `DockPrivateState.micLevel` → 小窗 `DockMicWave` 画一圈描边。
+  `DockMeetingState.micLevel` / `DockPrivateState.micLevel` → 小窗 `DockMicFill` 画那层填充。
 - **用原生 `AnalyserNode`，不用 LiveKit 的 `createAudioAnalyser`**：那个要一个
   `LocalAudioTrack` 包装对象，而我们手里只有底层 `MediaStreamTrack`。代价是得自己管
   `AudioContext`——**每次都必须 `close()`**，浏览器同时能开的上下文很少，一通电话漏一个，
-  几通之后 `createMediaStreamSource` 就再也建不出来（波纹永远不动）。另外**轨道换了要重建**
+  几通之后 `createMediaStreamSource` 就再也建不出来（液面永远不动）。另外**轨道换了要重建**
   （切房间、重新授权麦克风、换设备）：旧 Analyser 量的是一条死轨，读数会永远停在最后一帧。
-- **静音 / 没在通话时读数是 0，波纹一点都不画** —— 那正是"没在收音"最直白的表示。
+- **静音 / 没在通话时读数是 0，填充一点都不画** —— 那正是"没在收音"最直白的表示。
   数值规则全在 `src/micLevel.ts`（纯函数）：`waveHeight` 先掐掉底噪（`MIC_FLOOR = 0.008`，
   实测安静房间的 RMS 是 0.002～0.006）再放大 4 倍开方；`smoothLevel` 起得快落得慢
   （`release = 0.16`，约 0.4 秒落下去）；`meterLevel` 四舍五入到 0.01，**没变的数不再推**。
 - **推给小窗要限速**：`useDockBridge` 的 `METER_PUSH_MS = 80`（约 12fps）。判断方式是比较
-  "**去掉音量以后**的快照"（`meterStripped`）——两份一样就说明这次只有波纹在变，攒到下一拍
+  "**去掉音量以后**的快照"（`meterStripped`）——两份一样就说明这次只有液面在变，攒到下一拍
   再发；**别的状态变化（来电、共享、名单）不受这个限制，照旧立刻推**。这里差点写错：拿
   `withoutMeter` 去比 `lastSent`（那份**带**音量的）永远不相等，等于限速完全失效、每 60ms 一次 IPC。
-- 画法是一圈**描边**（`<circle>`，`width/height = 20 + level*22`），不是 box-shadow：小窗是
-  透明无边框窗口，软边会和条子圆角糊在一起，看不出"多大"。按钮上带 `data-mic-level` 便于
-  断言与排查。
-- 回归：`node --test test/mic-level.test.mjs`（换算、静音归零、0.01 收敛、落回 0、接线断言）
-  + `node test/browser/dock-meeting-controls.cjs`（静音时**没有**波纹；开麦后 `micLevel`
-  0 / 0.34 / 1 三档的圈依次变大且封顶 ≤44）。
+- **填充的画法（别改回外圈）**：`<i class="dock-mic-fill">` 绝对定位在按钮里，**满高 + `scaleY(level)`**
+  （transform 走合成层；每帧改 `height` 会重排），`transform-origin: 50% 100%` 让液面**从底部**
+  涨；`bottom: -6px` 抵消按钮的 5px padding + 1px 边框，液面才是从**按钮底边**起；
+  `overflow: hidden` 裁掉溢出（圆角）；**图标的 `z-index` 必须比填充高**，否则话筒形状被糊掉
+  （全音量时填充是 `#4f9d68`，深色图标仍然清楚）。按钮上带 `data-mic-level` 与 `data-mic-fill`
+  便于断言与排查。
+- 回归：`node --test test/mic-level.test.mjs`（换算、静音归零、0.01 收敛、落回 0、接线断言
+  ——**包括"不能再退回 circle"**）+ `node test/browser/dock-meeting-controls.cjs`（静音时
+  0 高；`micLevel` 0 / 0.34 / 1 三档液面依次变高，满音量铺满按钮可用高度 17px；填充铺满宽度、
+  被裁切、在图标后面）。肉眼观感用 6 倍放大图确认：`Build/dock-mic-fill-zoom.png`
+  （0 / 0.25 / 0.55 / 1 四档并排）。
 
 ## 看视频时给画面让位：最大化/整屏就藏，最小化/还原就回来（2026-10-14 用户要求）
 

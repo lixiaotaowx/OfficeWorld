@@ -1,5 +1,5 @@
 import type { DockState } from './dockRules';
-import DockMicWave from './DockMicWave';
+import DockMicFill from './DockMicFill';
 import { MicIcon, MutedMicIcon, ScreenIcon } from './icons';
 import { meterLevel } from './micLevel';
 
@@ -22,9 +22,10 @@ export default function DockCallControls({ state }: { state: DockState }) {
       aria-label={row.mic ? '麦克风已开启，点击静音' : '麦克风已静音，点击开启'}
       title={row.mic ? '麦克风已开启，点击静音' : '麦克风已静音，点击开启'}
       data-mic-level={meterLevel(row.level, row.mic)}
+      data-mic-fill={meterLevel(row.level, row.mic)}
       onClick={() => void window.officeDock?.action?.(row.meeting ? 'meeting-mute' : 'private-mute', row.id)}>
+      {row.mic && <DockMicFill level={row.level} />}
       {row.mic ? <MicIcon /> : <MutedMicIcon />}
-      {row.mic && <DockMicWave level={row.level} />}
     </button>
   </div>)}</>;
 }
