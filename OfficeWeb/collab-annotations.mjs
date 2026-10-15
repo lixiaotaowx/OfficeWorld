@@ -15,6 +15,15 @@ const MAX_POINTS_PER_STROKE = 4000;
 /** Bound on one socket's backlog, so a stuck peer cannot grow it without limit. */
 const MAX_QUEUED_POINTS = 512;
 
+/**
+ * 允许转发的笔色。**必须与 `src/inkColors.ts` 的 `INK_COLORS` 和
+ * `OfficeDesktop/annotation-overlay.js` 的 `INKS` 三份一致** ——
+ * `test/ink-colors.test.mjs` 逐字核对这三份，漂了当场红。
+ *
+ * 这一层只做白名单（认不得的颜色不转发），"认不得就退回按人固定色"由浮层负责。
+ */
+const INK_COLORS = ['#e0524a', '#e8a33d', '#f0d274', '#5fb96a', '#4a9fd8', '#b46fd0', '#f4f2eb'];
+
 /** Who may see this scope: the other peer of one call, or the other members of one meeting. */
 function peersOf(people, sessions, socketId, scope) {
   if (typeof scope !== "string") return [];
@@ -83,6 +92,9 @@ export function createCollabAnnotations({ io, people, sessions }) {
         stroke: entry.stroke,
         points,
         done,
+        // 笔色（可选）：**必须在这里列出来**，否则页面发的颜色在这层就没了 —— 转发是按字段
+        // 重建的，没写的字段会被静默丢掉（用户 2026-10-15 报「标记没有颜色」的真因）。
+        ...(entry.color ? { color: entry.color } : {}),
       };
       for (const peer of peers) io.to(peer).emit("annotate", message);
     }
@@ -130,6 +142,10 @@ export function createCollabAnnotations({ io, people, sessions }) {
         : [];
       const done = data?.done === true;
       if (!points.length && !done) return;
+      // 观众挑的笔色：**只在起笔那一条消息上带**（页面就是这么发的），所以要跟着这一笔
+      // 存在 batch 里、由 flush 原样转发。不认得的颜色一律不发 —— 转发层只做白名单，
+      // 判断"这条颜色合不合法"是浮层的事（它会退回按人固定色）。
+      const color = INK_COLORS.includes(data?.color) ? data.color : undefined;
       let entry = queued.get(socket.id);
       if (entry && (entry.scope !== scope || entry.stroke !== stroke)) {
         // A different stroke began: the previous one goes out now, completely, in order.
@@ -137,7 +153,7 @@ export function createCollabAnnotations({ io, people, sessions }) {
         entry = undefined;
       }
       if (!entry) {
-        entry = { scope, stroke, points: [], done: false, timer: undefined };
+        entry = { scope, stroke, points: [], done: false, timer: undefined, color };
         queued.set(socket.id, entry);
       }
       for (const point of points) entry.points.push(point);

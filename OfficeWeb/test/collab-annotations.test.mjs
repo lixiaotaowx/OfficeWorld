@@ -172,3 +172,37 @@ test("换笔：上一笔的尾巴与 done 必须完整先走，不能被下一�
     assert.ok(lastFirst < firstSecond, "两笔的顺序不能交叉");
   });
 });
+
+test("观众挑的笔色必须活着中继到对面（用户 2026-10-15「标记没有颜色」的真因）", async () => {
+  // 转发这一层是**按字段重建**消息的：`color` 没列进那个对象就被静默丢掉，
+  // 页面发的颜色根本到不了分享者的浮层 —— 现象就是"能画，但永远是按人固定的那一色"。
+  await withServer(async ({ connect }) => {
+    const a = await connect("甲"), b = await connect("乙");
+    const waiting = next(b, "request");
+    a.emit("request", { target: b.id, kind: "voice" });
+    const request = await waiting;
+    const accepted = next(a, "session");
+    b.emit("respond", { id: request.id, accept: true });
+    const session = await accepted;
+
+    const seenB = collect(b, "annotate");
+    // 起笔那条带颜色，续画与收尾不带（页面就是这么发的）。
+    a.emit("annotate", { scope: session.room, stroke: "s1", color: "#4a9fd8", points: [[0.1, 0.1]] });
+    await wait(120);
+    assert.equal(seenB.length, 1);
+    assert.equal(seenB[0].color, "#4a9fd8", "颜色必须跟着这一笔转发出去");
+
+    a.emit("annotate", { scope: session.room, stroke: "s1", points: [[0.2, 0.2]] });
+    a.emit("annotate", { scope: session.room, stroke: "s1", points: [[0.3, 0.3]], done: true });
+    await wait(200);
+    assert.ok(seenB.length >= 2, "续画的点要照常转发");
+    assert.equal(seenB.at(-1).done, true);
+
+    // 不在色板里的颜色不转发（这一层只做白名单；"认不得退回固定色"是浮层的事）。
+    const before = seenB.length;
+    a.emit("annotate", { scope: session.room, stroke: "s2", color: "javascript:alert(1)", points: [[0.4, 0.4]] });
+    await wait(120);
+    assert.ok(seenB.length > before, "笔画本身照旧要转发");
+    assert.equal("color" in seenB.at(-1), false, "不认得的颜色不许塞进去");
+  });
+});

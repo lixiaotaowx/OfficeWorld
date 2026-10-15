@@ -173,12 +173,24 @@
     上带颜色，`annotationChannel.draw(scope, points, done, color)` 把它钉在起笔那一刻
     （`stroke.ink`），续画和收尾都不再改它 —— 中途换色只影响下一笔。浮层 `inkColor()` 只认
     色板里的值，**不认的一律退回 `colorFor(clientId)`**，所以老客户端（不带 `color`）画出来
-    和以前一模一样。服务端**只原样转发 `color`、不认颜色**，加颜色不用改协议。
-  - **两份颜色表必须一致**：浮层是普通脚本、不能 import TS，所以 `OfficeDesktop/annotation-overlay.js`
-    里复刻了一份 `INKS`。`test/ink-colors.test.mjs` **逐字**核对两份，漂了当场红。
-  - 回归：`test/browser/screen-stage.cjs`（点「用天蓝画」→ 起笔那一条消息带 `#4a9fd8`、
-    本机回显像素偏蓝、收尾那条不带颜色）+ `test/meeting-annotations.test.mjs`（换色只影响下一笔、
-    同一笔共用一个 id）+ `annotation-paint.test.cjs`（色板外的值退回固定色）。
+    和以前一模一样。
+  - **⚠️ 服务端也要放行 `color`，这是踩过的真坑**（用户 2026-10-15 报「标记没有颜色」的**真因**）：
+    `collab-annotations.mjs` 的 `flush()` 也是**按字段重建**消息的（`{ id, clientId, name, scope,
+    stroke, points, done }`），`color` 不在那个对象里就被**静默丢掉** —— 页面发得再对，颜色也到不了
+    分享者的浮层，现象就是"能画、能放大，但永远是按人固定的那一色"。
+    现在：`INK_COLORS` 白名单常量放在 `collab-annotations.mjs` 里，起笔那条消息上的 `color`
+    存进这一笔的 batch（`entry.color`），`flush()` 用 `...(entry.color ? { color: entry.color } : {})`
+    转发出去；**不认得的颜色不转发**（这一层只做白名单，"认不得退回固定色"是浮层的事）。
+    **同一类坑在 `dock-meeting-bridge.cjs` / `dock-private-bridge.cjs`（`micLevel`）上也犯过一次**
+    —— 凡是"按字段重建 payload"的地方，加字段时必须同步加进那份对象，否则功能静默失效。
+  - **三份颜色表必须一致**：客户端 `src/inkColors.ts`、浮层 `OfficeDesktop/annotation-overlay.js`
+    的 `INKS`（普通脚本，不能 import TS）、服务端 `collab-annotations.mjs` 的 `INK_COLORS`。
+    `test/ink-colors.test.mjs` **逐字**核对这三份，漂了当场红。
+  - 回归：`test/collab-annotations.test.mjs`「观众挑的笔色必须活着中继到对面」（**真服务端往返**：
+    起笔带颜色 → 对面收到 `color`；色板外的值不转发）+ `test/browser/screen-stage.cjs`
+    （点「用天蓝画」→ 起笔那一条消息带 `#4a9fd8`、本机回显像素偏蓝、收尾那条不带颜色）
+    + `test/meeting-annotations.test.mjs`（换色只影响下一笔、同一笔共用一个 id）
+    + `annotation-paint.test.cjs`（色板外的值退回固定色）。
 - **撤销按笔画 id 精确删**。改了颜色以后"删这个人最后一条"会撤错，所以 `annotationChannel.undo()`
   把当前笔画 id 一起发出去（`annotate-undo { scope, stroke }`），服务端原样转发，浮层
   `receive({type:'undo'})` **优先按 id 删**、老消息（不带 `stroke`）才退回"这个人最后一条"。
