@@ -2,6 +2,10 @@
 function cleanMeeting(value) {
   if (!value || typeof value !== 'object') return undefined;
   const text = (value, max = 64) => String(value || '').slice(0, max);
+  // 音量（0..1）：静音按钮里那层填充按它涨。**这个字段必须留在这里** —— 这层清洗是按字段
+  // 重建的，漏一个就是"页面在推、小窗永远收 0"（`self`/`missed`/`away`/`transfers` 都这么
+  // 漏过，2026-10-15 又漏了一次 `micLevel`：填充一直不显示）。非数字/越界一律当 0。
+  const level = value.micLevel === undefined ? undefined : Math.min(1, Math.max(0, Number(value.micLevel) || 0));
   return {
     active: value.active === true, title: text(value.title, 60),
     id: text(value.id), host: value.host === true,
@@ -12,6 +16,7 @@ function cleanMeeting(value) {
       .map(row => ({ id: text(row?.id), name: text(row?.name, 24), personId: text(row?.personId) }))
       .filter(row => row.id && row.personId),
     mic: value.mic === true, sharing: value.sharing === true,
+    ...(level === undefined ? {} : { micLevel: level }),
     busy: value.busy === true, error: text(value.error, 180),
     candidates: (Array.isArray(value.candidates) ? value.candidates : []).slice(0, 32)
       .map(row => ({ id: text(row?.id), name: text(row?.name, 24), personId: text(row?.personId) }))
