@@ -38,6 +38,11 @@ declare global {
       onAlertOpen?(callback: (section: string) => void): () => void;
       displays(): Promise<DesktopDisplay[]>;
       selectDisplay(id: string): Promise<boolean>;
+      /** 原生共享绿框：来源由主进程授权采集时确定，不取当前预览选项。 */
+      screenShareIndicator?: {
+        source(): Promise<string>;
+        show(displayIds: string[]): Promise<boolean>;
+      };
       previewFrame(): Promise<string | null>;
       /** false releases the capture stream while nobody can receive the preview. */
       setPreviewActive?(active: boolean): Promise<boolean>;

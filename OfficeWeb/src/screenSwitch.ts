@@ -9,13 +9,14 @@
 // 切换屏分享的屏幕也是实时变化过去").
 import { Track, type Room } from 'livekit-client';
 import { screenAudioConstraints, syncScreenAudio } from './screenAudio';
+import { captureScreen, cloneScreenTrack, showSharedScreen, hideSharedScreen, replaceSharedScreen } from './screenShareIndicator';
 
 /** Capture whatever display the office has selected right now. */
 export async function captureSelectedScreen(): Promise<MediaStream> {
-  const stream = await navigator.mediaDevices.getDisplayMedia({
+  const stream = await captureScreen(() => navigator.mediaDevices.getDisplayMedia({
     video: { frameRate: { ideal: 15, max: 20 } },
     audio: screenAudioConstraints,
-  });
+  }), stream => stream.getTracks());
   // 告诉编码器这是文字/界面画面：同样码率下字更清楚（不设就按普通视频编码）。
   stream.getVideoTracks().forEach(track => { track.contentHint = 'text'; });
   return stream;
@@ -31,6 +32,8 @@ export async function swapScreenTrack(room: Room, next: MediaStreamTrack): Promi
   if (!track) return false;
   const previous = track.mediaStreamTrack;
   await track.replaceTrack(next);
+  showSharedScreen(next);
+  if (previous && previous !== next) hideSharedScreen(previous);
   if (previous && previous !== next) previous.stop();
   return true;
 }
@@ -71,12 +74,13 @@ export async function switchLiveScreen(
   // installed, or stopping it would be mistaken for "the user stopped sharing".
   previous.getVideoTracks()[0].onended = null;
   host.adopt(stream);
+  replaceSharedScreen(previous.getVideoTracks()[0], next);
   let switched = false;
   for (const room of host.publishers()) {
     const replace = async () => {
       if (host.live() !== stream) return;
       // A fresh clone per room: each sender needs its own track to own.
-      const clone = next.clone();
+      const clone = cloneScreenTrack(next);
       if (await swapScreenTrack(room, clone).catch(() => false)) {
         switched = true;
         if (host.live() === stream)

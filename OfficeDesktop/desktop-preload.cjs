@@ -51,6 +51,11 @@ contextBridge.exposeInMainWorld('officeDesktop', Object.freeze({
     return () => ipcRenderer.removeListener('office:update-progress', listener);
   },
   selectDisplay: id => ipcRenderer.invoke('office:display-select', id),
+  screenShareIndicator: Object.freeze({
+    source: () => ipcRenderer.invoke('office:captured-display'),
+    show: ids => ipcRenderer.invoke('office:sharing-displays',
+      Array.isArray(ids) && ids.length <= 32 && ids.every(id => typeof id === 'string') ? ids : null),
+  }),
   previewFrame: () => ipcRenderer.invoke('office:preview-frame'),
   /** false releases the capture stream while nobody can receive the preview. */
   setPreviewActive: active => ipcRenderer.invoke('office:preview-active', active === true),

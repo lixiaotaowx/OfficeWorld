@@ -1,6 +1,6 @@
 {
   "name": "office-world-desktop",
-  "version": "0.1.52",
+  "version": "0.1.53",
   "description": "iruler dream · 一起在场",
   "author": "iruler dream",
   "private": true,
@@ -38,6 +38,8 @@
       "preview-glow.html",
       "preview-glow.css",
       "preview-glow.js",
+      "share-border.html",
+      "share-border.css",
       "preview-capture.html"
     ],
     "win": {

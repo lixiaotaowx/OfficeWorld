@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import ts from "typescript";
+import { loadMedia } from './media-test-loader.mjs';
 
 function load(file, modules) {
   const source = readFileSync(new URL("../src/" + file, import.meta.url), "utf8");
@@ -40,6 +41,7 @@ function screenShare({ capture = true } = {}) {
     "livekit-client": { Track: { Source: { ScreenShare: "screen" } } },
     screenAudio: { unpublishScreen: async () => {}, screenAudioConstraints: {}, noScreenAudio: "no audio" },
     screenPermission: { waitForScreenPermission: async () => {} },
+    screenShareIndicator: loadMedia('screenShareIndicator'),
     // 换屏用的原地换轨；这里只关心开始/结束时谁被清理。
     screenSwitch: { swapScreenTrack: async () => true },
   });

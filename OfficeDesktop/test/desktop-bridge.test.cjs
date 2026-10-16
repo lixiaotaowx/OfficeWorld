@@ -97,6 +97,19 @@ function fixture(overrides = {}) {
     event, state, files, calls, handlers, wc, displays, displayFile, win, sent, toasts, timers, stops };
 }
 
+test('共享来源与绿框状态经过可信主窗口 IPC，停共享的空列表不被白名单丢掉', () => {
+  const calls = [];
+  const f = fixture({ shareBorder: { source: () => '22', show: ids => { calls.push(ids); return true; } } });
+  assert.equal(f.call('captured-display'), '22');
+  assert.equal(f.call('sharing-displays', ['22']), true);
+  assert.equal(f.call('sharing-displays', []), true);
+  assert.deepEqual(calls, [['22'], []]);
+  for (const name of ['captured-display', 'sharing-displays']) {
+    assert.throws(() => f.handlers['office:' + name]({ ...f.event, sender: {} }, ['22']), /Untrusted/);
+    assert.throws(() => f.handlers['office:' + name]({ ...f.event, senderFrame: {} }, ['22']), /Untrusted/);
+  }
+});
+
 test('最大化视频的唤起命令显示并抬高主窗口', () => {
   const f = fixture();
   f.win.visible = false; f.win.focused = false;

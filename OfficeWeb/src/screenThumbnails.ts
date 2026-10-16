@@ -5,6 +5,8 @@
 // since 2026-09-14), never the readable stream, which only travels over LiveKit
 // after an approved request. It is drawn from a hidden <video> fed by our own
 // capture, so the same code works for a desktop capture and a browser one.
+import { showSharedScreen, hideSharedScreen } from './screenShareIndicator';
+
 export const THUMBNAIL_MAX_EDGE = 300;
 export const THUMBNAIL_INTERVAL_MS = 6_000;
 /** JPEG quality of the ambient frame; the text on it is not meant to be read. */
@@ -38,6 +40,7 @@ export async function startScreenThumbnails(options: {
   canvas.width = THUMBNAIL_MAX_EDGE;
   canvas.height = Math.round((THUMBNAIL_MAX_EDGE * 9) / 16);
   const context = canvas.getContext("2d");
+  if (options.publicPreview) showSharedScreen(options.stream.getVideoTracks()[0]);
   const timer = setInterval(() => {
     // Nothing decoded yet: keep the previous frame rather than publishing black.
     if (video.readyState < 2 || !video.videoWidth || !video.videoHeight || !context) return;
@@ -49,6 +52,13 @@ export async function startScreenThumbnails(options: {
   }, options.intervalMs ?? THUMBNAIL_INTERVAL_MS);
   return {
     video,
-    stop() { clearInterval(timer); video.srcObject = null; },
+    stop() {
+      clearInterval(timer);
+      if (options.publicPreview) {
+        const stream = video.srcObject as MediaStream | null;
+        stream?.getVideoTracks().forEach(hideSharedScreen);
+      }
+      video.srcObject = null;
+    },
   };
 }

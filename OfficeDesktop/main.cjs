@@ -13,6 +13,7 @@ const { hidesDock } = require('./fullscreen.cjs');
 const { applyWindowIcon } = require('./window-icon.cjs');
 const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 const { createPreviewGlow } = require('./preview-glow.cjs');
+const { createShareBorder } = require('./share-border.cjs');
 const { createDisplayStore } = require('./display-store.cjs');
 const { createPreviewCapture } = require('./preview-capture.cjs');
 const { createAutoStart, AUTOSTART_ARG } = require('./autostart.cjs');
@@ -71,6 +72,7 @@ function createWindow() {
   const annotationLayer = createAnnotationLayer();
   // 「有人来看我了」：所有屏幕四周闪一圈绿光（用户 2026-09-18）。
   const previewGlow = createPreviewGlow();
+  const shareBorder = createShareBorder();
   screen.on?.('display-added', () => previewGlow.sync());
   screen.on?.('display-removed', () => previewGlow.sync());
   screen.on?.('display-metrics-changed', () => previewGlow.sync());
@@ -83,6 +85,7 @@ function createWindow() {
     displays,
     // A display share can be covered; a window share cannot (empty id).
     onDisplayChosen: (displayId) => {
+      shareBorder.captured(displayId);
       if (displayId) annotationLayer.target(displayId);
       else annotationLayer.target('');
     },
@@ -103,8 +106,13 @@ function createWindow() {
   const fileTransfer = createFileTransfer({ app, getWindow: () => mainWindow });
   // 页面一重载，它手里的发送句柄就没有主人了：直接收掉，别把 fd 留到关机。
   contents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
-    if (isMainFrame && !isInPlace) fileTransfer.reset();
+    if (isMainFrame && !isInPlace) { fileTransfer.reset(); shareBorder.reset(); }
   });
+  contents.on('render-process-gone', () => shareBorder.reset());
+  mainWindow.on('closed', () => shareBorder.destroy());
+  app.on('before-quit', () => shareBorder.destroy());
+  app.on('session-end', () => shareBorder.destroy());
+  mainWindow.on('session-end', () => shareBorder.destroy());
   applyWindowIcon(mainWindow, iconPath);
   installChrome(mainWindow);
   if (!smoke) {
@@ -118,7 +126,8 @@ function createWindow() {
       dialog.showErrorBox('托盘不可用', `关闭窗口将退出应用。\n${error.message}`);
     }
   }
-  if (!smoke) installDesktopBridge(() => mainWindow, { annotationLayer, previewGlow, displays, previewCapture, fileTransfer });
+  if (!smoke) installDesktopBridge(() => mainWindow,
+    { annotationLayer, previewGlow, shareBorder, displays, previewCapture, fileTransfer });
   // 任务栏头像条：贴任务栏的小挂件，只显示 + 遥控，状态由主窗口推过来。
   if (!smoke) {
     const dockFile = path.join(profilePath, 'dock.json');

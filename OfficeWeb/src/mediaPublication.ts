@@ -1,4 +1,5 @@
 import { Room, Track } from 'livekit-client';
+import { captureScreen, showSharedScreen, hideSharedScreen } from './screenShareIndicator';
 
 /** Check the generation again after browser permission UI has resolved. */
 export async function setPublication(room: Room, source: Track.Source.Microphone | Track.Source.ScreenShare,
@@ -7,7 +8,10 @@ export async function setPublication(room: Room, source: Track.Source.Microphone
   const existing = participant.getTrackPublication(source);
   if (!enabled) {
     if (source === Track.Source.ScreenShare) {
-      if (existing?.track) await participant.unpublishTrack(existing.track, true);
+      if (existing?.track) {
+        await participant.unpublishTrack(existing.track, true);
+        hideSharedScreen(existing.track.mediaStreamTrack);
+      }
     } else await existing?.mute();
     return;
   }
@@ -19,7 +23,8 @@ export async function setPublication(room: Room, source: Track.Source.Microphone
   }
   if (existing?.track) await participant.unpublishTrack(existing.track, true);
   const tracks = source === Track.Source.ScreenShare
-    ? await participant.createScreenTracks({ audio: false, resolution: { width: 1920, height: 1080, frameRate: 15 } })
+    ? await captureScreen(() => participant.createScreenTracks({ audio: false,
+      resolution: { width: 1920, height: 1080, frameRate: 15 } }), tracks => tracks.map(track => track.mediaStreamTrack))
     : await participant.createTracks({ audio: { echoCancellation: true, noiseSuppression: true } });
   const published = [];
   try {
@@ -27,6 +32,7 @@ export async function setPublication(room: Room, source: Track.Source.Microphone
     for (const track of tracks) {
       await participant.publishTrack(track, { source });
       published.push(track);
+      if (source === Track.Source.ScreenShare) showSharedScreen(track.mediaStreamTrack);
       if (!valid()) throw Error('媒体操作已取消，请在连接恢复后重试');
     }
   } catch (error) {

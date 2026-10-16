@@ -2,15 +2,11 @@
 // 这一段是从 media.ts 里拆出来的，测试守住它拆出来之后行为没变。
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import ts from 'typescript';
+import { loadTs } from './helpers.mjs';
 
-const compiled = ts.transpileModule(
-  readFileSync(new URL('../src/screenThumbnails.ts', import.meta.url), 'utf8'),
-  { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } },
-).outputText;
-const { startScreenThumbnails, THUMBNAIL_MAX_EDGE, THUMBNAIL_INTERVAL_MS } = await import(
-  'data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
+const { startScreenThumbnails, THUMBNAIL_MAX_EDGE, THUMBNAIL_INTERVAL_MS } =
+  await import(await loadTs('screenThumbnails.ts'));
+const capture = () => ({ getVideoTracks: () => [] });
 
 function sandbox() {
   const videos = [], canvases = [], timers = [], cleared = [];
@@ -40,7 +36,7 @@ test('默认 6 秒一张、最长边 300、JPEG 0.55', async () => {
   assert.equal(THUMBNAIL_MAX_EDGE, 300);
   const published = [];
   const thumbnails = await startScreenThumbnails({
-    stream: { id: 'capture' }, current: () => true, publicPreview: true,
+    stream: capture(), current: () => true, publicPreview: true,
     publish: image => published.push(image),
   });
   assert.equal(box.timers.length, 1);
@@ -62,7 +58,7 @@ test('默认 6 秒一张、最长边 300、JPEG 0.55', async () => {
 test('竖屏保持比例，不被拉成 16:9', async () => {
   const box = sandbox();
   const published = [];
-  await startScreenThumbnails({ stream: {}, current: () => true, publicPreview: true,
+  await startScreenThumbnails({ stream: capture(), current: () => true, publicPreview: true,
     publish: image => published.push(image), intervalMs: 100 });
   box.videos[0].videoWidth = 1080; box.videos[0].videoHeight = 1920;
   box.fire();
@@ -72,7 +68,7 @@ test('竖屏保持比例，不被拉成 16:9', async () => {
 test('关闭了对外预览：照常抓帧，但不发出去', async () => {
   const box = sandbox();
   const published = [];
-  await startScreenThumbnails({ stream: {}, current: () => true, publicPreview: false,
+  await startScreenThumbnails({ stream: capture(), current: () => true, publicPreview: false,
     publish: image => published.push(image) });
   box.fire();
   assert.deepEqual(published, []);
@@ -80,7 +76,7 @@ test('关闭了对外预览：照常抓帧，但不发出去', async () => {
 
 test('采集已经不是当前那条：不建循环、也不留播放中的视频', async () => {
   const box = sandbox();
-  const thumbnails = await startScreenThumbnails({ stream: {}, current: () => false,
+  const thumbnails = await startScreenThumbnails({ stream: capture(), current: () => false,
     publicPreview: true, publish: () => { throw Error('不该发布'); } });
   assert.equal(thumbnails.video, null);
   assert.equal(box.timers.length, 0);

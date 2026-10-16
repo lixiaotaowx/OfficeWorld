@@ -1,5 +1,6 @@
 import { Track, type Room } from 'livekit-client';
 import { waitForScreenPermission } from './screenPermission';
+import { cloneScreenTrack, showSharedScreen, hideSharedScreen } from './screenShareIndicator';
 
 // Exclude this app's received calls from system loopback where Chromium supports it.
 export const screenAudioConstraints: MediaTrackConstraints & { restrictOwnAudio: boolean } = {
@@ -32,7 +33,10 @@ export async function syncScreenAudio(room: Room, source?: MediaStreamTrack) {
 export async function unpublishScreen(room: Room) {
   await Promise.all([Track.Source.ScreenShare, Track.Source.ScreenShareAudio].map(async source => {
     const track = room.localParticipant.getTrackPublication(source)?.track;
-    if (track) await room.localParticipant.unpublishTrack(track, true);
+    if (track) {
+      await room.localParticipant.unpublishTrack(track, true);
+      hideSharedScreen(track.mediaStreamTrack);
+    }
   }));
 }
 
@@ -43,9 +47,10 @@ export async function publishPrivateScreen(room: Room, stream: MediaStream,
   if (room.localParticipant.getTrackPublication(Track.Source.ScreenShare)) return;
   await waitForScreenPermission(room, () => valid() && track.readyState === 'live',
     stream.getAudioTracks().length > 0);
-  const clone = track.clone();
+  const clone = cloneScreenTrack(track);
   try { await room.localParticipant.publishTrack(clone, { name: 'screen', source: Track.Source.ScreenShare }); }
   catch (error) { clone.stop(); throw error; }
+  showSharedScreen(clone);
   if (valid() && track.readyState === 'live') {
     await syncScreenAudio(room, stream.getAudioTracks()[0])
       .catch(() => notice('画面已共享，但共享声音发布失败，请停止后重新共享'));

@@ -9,6 +9,7 @@ const { setWindowFullscreen } = require('./fullscreen.cjs');
 function installDesktopBridge(getWindow, dependencies = {}) {
   const annotationLayer = dependencies.annotationLayer;
   const previewGlow = dependencies.previewGlow;
+  const shareBorder = dependencies.shareBorder;
   const displays = dependencies.displays;
   const previewCapture = dependencies.previewCapture;
   const fileTransfer = dependencies.fileTransfer;
@@ -30,6 +31,8 @@ function installDesktopBridge(getWindow, dependencies = {}) {
       list: rows.map(({ source: _source, ...rest }) => rest) };
   }
   const handle = (name, fn) => ipcMain.handle(name, (event, ...args) => { allow(event); return fn(...args); });
+  handle('office:captured-display', () => shareBorder?.source() || '');
+  handle('office:sharing-displays', ids => shareBorder?.show(ids) ?? false);
   handle('office:displays', async () => (await sources()).list);
   handle('office:display-select', async id => {
     const rows = await displays.list(desktopCapturer, screen);

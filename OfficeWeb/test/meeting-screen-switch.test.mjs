@@ -32,7 +32,7 @@ function fixture({ state = 'connected', createScreenTracks, existing = true } = 
   const rooms = { get: () => room, run: async (_name, run) => run(room, () => true) };
   const share = new MeetingScreenShare(socket, rooms, () => 'meeting-1', () => {});
   const published = track('published');
-  share.captures.set('meeting-1', { lease: 'lease-1', tracks: [published], cancelled: false });
+  share.captures.set('meeting-1', { lease: 'lease-1', tracks: [wrapper(published)], cancelled: false });
   return { share, room, calls, published };
 }
 
