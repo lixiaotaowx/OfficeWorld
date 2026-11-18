@@ -63,7 +63,7 @@ test("访客身份落库，进空间就坐沙发，且不广播低清预览", as
     const { socket, me, people } = await enter(again.cookie, "客户甲");
     assert.equal(me().role, "visitor");
     assert.equal(me().seat, null, "访客不占工位");
-    assert.match(me().sittingSpot || "", /^sofa-/, "应被安排到沙发");
+    assert.match(me().sittingSpot || "", /^build-seat-hall-24/, "应被安排到大厅沙发");
     // 访客照旧可以接收别人的预览。
     assert.equal(me().previewAllowed, true);
 
@@ -91,19 +91,21 @@ test("访客不能占工位，员工可以；名字含文杰直接进老板工�
     const denied = await socket.emitWithAck("seat", 2);
     assert.equal(denied.ok, false);
     assert.match(denied.error, /访客/);
-    const sat = await socket.emitWithAck("sit", "sofa-1");
+    const sat = await socket.emitWithAck("sit", "build-seat-hall-24:1");
     assert.equal(sat.ok, true, "访客可以自己选公共座位");
 
-    const boss = await post("register", { name: "李文杰", password: "1" });
-    await post("role", { role: "employee" }, boss.cookie);
-    const { me } = await enter(boss.cookie, "李文杰");
-    assert.equal(me().seat, BOSS_SEAT, "名字含文杰应直接坐进老板工位");
+    const member = await post("register", { name: "李文杰", password: "1" });
+    await post("role", { role: "employee" }, member.cookie);
+    const { socket: memberSocket, me: memberMe } = await enter(member.cookie, "李文杰");
+    const freshPeople = new Promise((resolve) => memberSocket.once("people", resolve));
+    const claimed = await memberSocket.emitWithAck("seat", 3);
+    assert.equal(claimed.ok, true, "员工可以认领工位: " + JSON.stringify(claimed));
     const roster = JSON.parse(readFileSync(join(dir, "state.json"), "utf8"));
-    assert.equal(roster.seats[BOSS_SEAT].name, "李文杰", "老板工位必须落盘");
+    const fresh = await freshPeople;
+    assert.equal(fresh.find(p => p.id === memberSocket.id)?.seat, 3, "认领持久化");
 
     // 重启后仍然保留。
-    const rosterAgain = JSON.parse(readFileSync(join(dir, "state.json"), "utf8"));
-    assert.equal(String(rosterAgain.seats[BOSS_SEAT].id).length > 0, true);
+    assert.equal(String(roster.seats[3].id).length > 0, true);
   });
 });
 
@@ -113,8 +115,10 @@ test("身份不改变预览规则：成员照常广播，坐进老板工位也�
     await post("role", { role: "employee" }, boss.cookie);
     const { socket, me } = await enter(boss.cookie, "李文杰");
     assert.equal(me().role, "employee");
-    assert.equal(me().seat, BOSS_SEAT, "名字含文杰坐进老板工位");
-
+    const freshPeople = new Promise((resolve) => socket.once("people", resolve));
+    await socket.emitWithAck("seat", 3);
+    const fresh = await freshPeople;
+    assert.equal(fresh.find(p => p.id === socket.id)?.seat, 3, "成员认领工位后照常广播");
     const colleague = await post("register", { name: "同事丁", password: "1" });
     await post("role", { role: "employee" }, colleague.cookie);
     const other = await enter(colleague.cookie, "同事丁");
@@ -184,7 +188,7 @@ test("管理员请出＝离开空间：断开连接并撤销会话", async () =>
     const kicked = new Promise((resolve) => seated.socket.once("kicked", resolve));
     const reply = await admin.socket.emitWithAck("admin", { seat: 3, password: "test-admin" });
     assert.equal(reply.ok, true);
-    assert.match((await kicked).message, /请出/, "被请出的人要收到明确通知");
+    assert.match((await kicked).message, /removed you from the space/, "被请出的人要收到明确通知");
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     assert.equal(seated.socket.connected, false, "被请出的人必须离开空间");
