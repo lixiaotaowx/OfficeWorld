@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { io as connect } from "socket.io-client";
-import { BOSS_SEAT, createOfficeServer } from "../server.mjs";
+import { SEAT_COUNT, createOfficeServer } from "../server.mjs";
 
 /** One plausible low-resolution frame, in the shape the desktop client sends. */
 const FRAME = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA==";

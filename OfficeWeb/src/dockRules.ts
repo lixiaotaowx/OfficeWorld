@@ -213,7 +213,7 @@ export function frameColors(theme?: DockTheme | null): {
  *   * 用动作库里的哪一条（尺子角色 GLB 自带 9 条，`招手_Wave` 就是招手）；
  *   * 最后一个人来看我之后，舞台还留多久（头像条那边同时收窗口）。
  */
-export const GREET_CLIP = '招手_Wave';
+export const GREET_CLIP = 'Wave';
 export const GREET_MS = 3600;
 
 /** 悬停卡片那个"指向头像"的尖：宽 16、往下探 10（见 `dock.css` 的 `.dock-card-tip`）。 */

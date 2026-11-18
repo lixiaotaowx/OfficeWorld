@@ -77,7 +77,7 @@ test("server 的工位数与 src/seats.ts 一致", () => {
 test("老板工位可以认领且拒绝并发抢占与越界座位", async () => {
   await withServer(async ({ connect }) => {
     const a = await connect("甲"), b = await connect("乙");
-    const results = await Promise.all([claim(a, 8), claim(b, 8)]);
+    const results = await Promise.all([claim(a, 0), claim(b, 0)]);
     assert.equal(results.filter(r => r.ok).length, 1);
     assert.equal((await claim(a, 9999)).ok, false);
   });

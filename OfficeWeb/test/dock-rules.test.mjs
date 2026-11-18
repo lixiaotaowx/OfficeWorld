@@ -176,7 +176,7 @@ test('有人来看我了：动作要从角色自带的动作库里挑一条，�
   const names = (json.animations || []).map(a => a.name);
   assert.ok(names.length >= 9, '动作库应该有 9 条：' + names.length);
   assert.ok(names.includes(clip), `角色动作库里没有 ${clip}，手上这些：${names.join(', ')}`);
-  assert.equal(clip, '招手_Wave', '打招呼就该是招手');
+  assert.equal(clip, 'Wave', '打招呼就该是招手');
   // 舞台按需加载 three.js：平时那一页不能把 three.js 直接 import 进来。
   const dock = readFileSync(new URL('../src/dock.tsx', import.meta.url), 'utf8') +
     readFileSync(new URL('../src/DockPreviewCard.tsx', import.meta.url), 'utf8') +
@@ -368,7 +368,7 @@ test('尺子角色 GLD 里，look.ts 登记的每个配件都真的在，招式�
   // 眼睛已经并进身体，所以身上只该有身体 + 眼镜 + 配件这些节点。
   const names = (json.animations || []).map(a => a.name);
   assert.ok(names.includes(GREET_CLIP), `动作库里没有 ${GREET_CLIP}：${names.join(', ')}`);
-  for (const clip of ['站立待机_Idle', '走路循环_Walk']) {
+  for (const clip of ['Idle', 'Walk']) {
     assert.ok(names.includes(clip), `动作库里没有 ${clip}：${names.join(', ')}`);
   }
   // 不只看名字：招手那条的每一路通道都要指到真实存在的节点上（骨骼改名/缺骨都会在这里露出来）。
