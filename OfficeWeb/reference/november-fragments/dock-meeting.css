@@ -1,0 +1,6 @@
+.dock-meeting-panel { max-height: 370px; overflow-y: auto; flex-shrink: 0; }\
+.dock-meeting-panel.active { max-height: none; overflow: visible; }\
+.dock-meeting-members { display: flex; flex-wrap: wrap; gap: 5px 12px; max-height: 72px; overflow-y: auto; margin: 0 0 9px; }\
+.dock-meeting-members { display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 0 0 9px; }\
+.dock-meeting-controls svg { width: 14px; height: 14px; }\
+.dock-meeting-controls .dock-meeting-mic { width: 29px; justify-content: center; padding: 5px; }\

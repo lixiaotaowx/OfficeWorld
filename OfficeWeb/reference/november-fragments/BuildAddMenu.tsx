@@ -1,0 +1,15 @@
+  },[point]);\
+  },[point,category,search,thumbnails]);\
+    if(target.matches('input')){\
+      if(event.key==='ArrowDown'){event.preventDefault();focusItem();}\
+      return;\
+    }\
+    if(event.key==='Tab'){\
+      buttons[(index+direction+buttons.length)%buttons.length]?.focus();return;\
+    }\
+    if(target.matches('input')){\
+      if(event.key==='ArrowDown'){event.preventDefault();focusItem();}\
+      return;\
+    }\
+            onClick={()=>{setCategory(name);setSearch('');focusItem();}}>\
+            onClick={()=>{setCategory(name);setSearch('');requestAnimationFrame(focusItem);}}>\

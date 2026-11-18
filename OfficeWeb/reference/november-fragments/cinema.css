@@ -1,0 +1,2 @@
+.cinema-backdrop{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:24px;background:#18251c80;backdrop-filter:blur(8px);box-sizing:border-box}\
+.cinema-backdrop{position:fixed;inset:0;z-index:320;display:grid;place-items:center;padding:24px;background:#18251c80;backdrop-filter:blur(8px);box-sizing:border-box}\

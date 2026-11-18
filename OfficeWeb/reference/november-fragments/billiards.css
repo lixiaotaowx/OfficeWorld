@@ -1,0 +1,7 @@
+.hall-billiards-panel { position:absolute; inset:0; z-index:var(--hall-billiards-layer); pointer-events:none; color:#f5efe4; }\
+.hall-billiards-loading { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:12px; max-width:calc(100% - 48px); padding:14px 16px; border:1px solid #e8ead226; border-radius:12px; background:#24332deF; box-shadow:0 8px 28px #0004; font-size:13px; pointer-events:auto; }\
+.hall-billiards-loading button { border:1px solid #e8ead226; border-radius:7px; padding:7px 10px; background:#34473d; color:#eee9dc; font:inherit; cursor:pointer; white-space:nowrap; }\
+.hall-billiards-loading button:focus-visible { outline:2px solid #f7dfa2; outline-offset:3px; }\
+.hall-billiards-spinner { width:16px; height:16px; flex:none; border:2px solid #e5cf9440; border-top-color:#e5cf94; border-radius:50%; animation:billiards-spin .8s linear infinite; }\
+@keyframes billiards-spin { to { transform:rotate(360deg); } }\
+@media(prefers-reduced-motion:reduce) { .hall-billiards-spinner { animation:none; } }\

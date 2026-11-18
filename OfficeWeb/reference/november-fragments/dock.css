@@ -1,0 +1,3 @@
+.dock-call-actions { display: flex; align-items: center; gap: 6px; }\
+.dock-call { pointer-events: none; }\
+.dock-call-actions button { pointer-events: auto; }\

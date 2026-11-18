@@ -1,0 +1,6 @@
+.hall-host canvas.hall-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }\
+.hall-host { --hall-frame-layer: 1; }\
+.hall-frame-cover { position: absolute; inset: 0; z-index: var(--hall-frame-layer); pointer-events: none; background: #cbbfae; }\
+.hall-frame-cover[hidden], .hall-frame-cover [hidden] { display: none; }\
+.hall-frame-cover canvas { width: 100%; height: 100%; display: block; }\
+.hall-frame-status { display: grid; place-items: center; width: 100%; height: 100%; color: #292e2b; font-size: 16px; background: radial-gradient(ellipse at center, #eee5d5, #cbbfae); }\

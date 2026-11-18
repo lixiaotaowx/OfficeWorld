@@ -1,0 +1,744 @@
+[
+  {
+    "rel": "dock.tsx",
+    "frags": 59,
+    "bytes": 6831,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 67977
+  },
+  {
+    "rel": "hall/HallScene.ts",
+    "frags": 168,
+    "bytes": 4976,
+    "from": "rollout-2026-11-02T11-29-50-01a19a4e-6233-7840-84cd-64b503ddc14d.jsonl.zst",
+    "totalCarved": 165722
+  },
+  {
+    "rel": "hall/live.ts",
+    "frags": 20,
+    "bytes": 4384,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 56096
+  },
+  {
+    "rel": "HallView.tsx",
+    "frags": 35,
+    "bytes": 3897,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 43066
+  },
+  {
+    "rel": "hall/monitors.ts",
+    "frags": 22,
+    "bytes": 3666,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 23607
+  },
+  {
+    "rel": "characterModel.ts",
+    "frags": 21,
+    "bytes": 3462,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 27985
+  },
+  {
+    "rel": "hall/water.ts",
+    "frags": 4,
+    "bytes": 3368,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 13472
+  },
+  {
+    "rel": "meetingScreenShare.ts",
+    "frags": 5,
+    "bytes": 3343,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 6831
+  },
+  {
+    "rel": "DockScreen.tsx",
+    "frags": 29,
+    "bytes": 3323,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 45192
+  },
+  {
+    "rel": "HallSettings.tsx",
+    "frags": 10,
+    "bytes": 3101,
+    "from": "rollout-2026-11-03T11-38-59-01a19f7d-1df3-7461-98ab-c018213415ce.jsonl.zst",
+    "totalCarved": 18228
+  },
+  {
+    "rel": "dockFace.ts",
+    "frags": 5,
+    "bytes": 3001,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 15005
+  },
+  {
+    "rel": "buildMovePreview.ts",
+    "frags": 1,
+    "bytes": 2850,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2850
+  },
+  {
+    "rel": "hall/compactModel.ts",
+    "frags": 15,
+    "bytes": 2692,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 18510
+  },
+  {
+    "rel": "hall/models.ts",
+    "frags": 48,
+    "bytes": 2691,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 53231
+  },
+  {
+    "rel": "hall/billiardsCamera.ts",
+    "frags": 13,
+    "bytes": 2509,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 8778
+  },
+  {
+    "rel": "hall/billiardsTable.ts",
+    "frags": 50,
+    "bytes": 2391,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 33269
+  },
+  {
+    "rel": "hall/build.ts",
+    "frags": 31,
+    "bytes": 2344,
+    "from": "rollout-2026-11-02T12-45-05-01a19a93-4761-7662-870f-708143787c21.jsonl.zst",
+    "totalCarved": 28621
+  },
+  {
+    "rel": "BilliardsPanel.tsx",
+    "frags": 64,
+    "bytes": 2307,
+    "from": "rollout-2026-11-03T16-01-54-01a1a06d-d4cb-7f71-b3c1-f9dcea0c2818.jsonl.zst",
+    "totalCarved": 44587
+  },
+  {
+    "rel": "dock-screen.css",
+    "frags": 29,
+    "bytes": 2141,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 21222
+  },
+  {
+    "rel": "characterLook.ts",
+    "frags": 14,
+    "bytes": 2128,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 15155
+  },
+  {
+    "rel": "hall/kit.ts",
+    "frags": 16,
+    "bytes": 2116,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 14180
+  },
+  {
+    "rel": "useBuildEditor.tsx",
+    "frags": 10,
+    "bytes": 2067,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 6088
+  },
+  {
+    "rel": "BuildModalTransform.ts",
+    "frags": 4,
+    "bytes": 2062,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2773
+  },
+  {
+    "rel": "hall/officeCat.ts",
+    "frags": 8,
+    "bytes": 1993,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 11207
+  },
+  {
+    "rel": "BuildCinemaScreens.ts",
+    "frags": 3,
+    "bytes": 1838,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2085
+  },
+  {
+    "rel": "hall-settings.css",
+    "frags": 8,
+    "bytes": 1819,
+    "from": "rollout-2026-11-03T11-38-59-01a19f7d-1df3-7461-98ab-c018213415ce.jsonl.zst",
+    "totalCarved": 9648
+  },
+  {
+    "rel": "cinemaSource.ts",
+    "frags": 2,
+    "bytes": 1527,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1740
+  },
+  {
+    "rel": "mediaAudioFocus.ts",
+    "frags": 5,
+    "bytes": 1489,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 5015
+  },
+  {
+    "rel": "ScreenStage.tsx",
+    "frags": 39,
+    "bytes": 1284,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 15856
+  },
+  {
+    "rel": "App.tsx",
+    "frags": 24,
+    "bytes": 1269,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 17077
+  },
+  {
+    "rel": "media.ts",
+    "frags": 10,
+    "bytes": 1229,
+    "from": "rollout-2026-10-14T11-36-42-01a1387b-d633-7400-86a6-c8c126709c63.jsonl.zst",
+    "totalCarved": 8954
+  },
+  {
+    "rel": "MeetingScreenViewer.tsx",
+    "frags": 10,
+    "bytes": 1224,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 7144
+  },
+  {
+    "rel": "BuildChest.tsx",
+    "frags": 2,
+    "bytes": 1174,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2348
+  },
+  {
+    "rel": "mediaRooms.ts",
+    "frags": 5,
+    "bytes": 1163,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 5815
+  },
+  {
+    "rel": "hall/renderIdle.ts",
+    "frags": 13,
+    "bytes": 1115,
+    "from": "rollout-2026-11-02T12-45-05-01a19a93-4761-7662-870f-708143787c21.jsonl.zst",
+    "totalCarved": 10939
+  },
+  {
+    "rel": "screenSwitch.ts",
+    "frags": 3,
+    "bytes": 1107,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2316
+  },
+  {
+    "rel": "billiards.css",
+    "frags": 37,
+    "bytes": 1073,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 19635
+  },
+  {
+    "rel": "screenAudio.ts",
+    "frags": 3,
+    "bytes": 1043,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1776
+  },
+  {
+    "rel": "hall/world.ts",
+    "frags": 10,
+    "bytes": 1042,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 5532
+  },
+  {
+    "rel": "officeNotifications.ts",
+    "frags": 3,
+    "bytes": 1039,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 1713
+  },
+  {
+    "rel": "hall/parts.ts",
+    "frags": 17,
+    "bytes": 1032,
+    "from": "rollout-2026-11-02T12-51-38-01a19a99-463a-7442-b996-253c17a14e43.jsonl.zst",
+    "totalCarved": 6883
+  },
+  {
+    "rel": "DockFly.tsx",
+    "frags": 8,
+    "bytes": 1007,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 5460
+  },
+  {
+    "rel": "hall/surfaces.ts",
+    "frags": 2,
+    "bytes": 975,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 1950
+  },
+  {
+    "rel": "dockHitRegions.ts",
+    "frags": 3,
+    "bytes": 972,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1766
+  },
+  {
+    "rel": "buildArchitecture.ts",
+    "frags": 3,
+    "bytes": 927,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1213
+  },
+  {
+    "rel": "useDockScreens.ts",
+    "frags": 20,
+    "bytes": 917,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 15693
+  },
+  {
+    "rel": "hall/renderCadence.ts",
+    "frags": 16,
+    "bytes": 916,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 9834
+  },
+  {
+    "rel": "hall/lighting.ts",
+    "frags": 5,
+    "bytes": 884,
+    "from": "rollout-2026-11-02T11-29-50-01a19a4e-6233-7840-84cd-64b503ddc14d.jsonl.zst",
+    "totalCarved": 1754
+  },
+  {
+    "rel": "BuildToolbar.tsx",
+    "frags": 2,
+    "bytes": 873,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 992
+  },
+  {
+    "rel": "hall/basketballModel.ts",
+    "frags": 15,
+    "bytes": 861,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 5515
+  },
+  {
+    "rel": "buildInteraction.ts",
+    "frags": 4,
+    "bytes": 857,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2473
+  },
+  {
+    "rel": "useScreenZoom.ts",
+    "frags": 5,
+    "bytes": 840,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 4200
+  },
+  {
+    "rel": "mediaPublication.ts",
+    "frags": 1,
+    "bytes": 831,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 831
+  },
+  {
+    "rel": "hall/billiardsAtlas.ts",
+    "frags": 5,
+    "bytes": 814,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 4070
+  },
+  {
+    "rel": "dock-status.css",
+    "frags": 1,
+    "bytes": 806,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 806
+  },
+  {
+    "rel": "usePresenceStatus.tsx",
+    "frags": 2,
+    "bytes": 792,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1022
+  },
+  {
+    "rel": "billiardsClient.ts",
+    "frags": 5,
+    "bytes": 778,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 3890
+  },
+  {
+    "rel": "ScreenPicker.tsx",
+    "frags": 2,
+    "bytes": 760,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 1520
+  },
+  {
+    "rel": "billiardsSounds.ts",
+    "frags": 11,
+    "bytes": 702,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 6804
+  },
+  {
+    "rel": "BuildCinema.tsx",
+    "frags": 5,
+    "bytes": 683,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 2138
+  },
+  {
+    "rel": "hall/people.ts",
+    "frags": 11,
+    "bytes": 680,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 5781
+  },
+  {
+    "rel": "buildPropFurniture.ts",
+    "frags": 2,
+    "bytes": 674,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1263
+  },
+  {
+    "rel": "useDockMeetingVideo.ts",
+    "frags": 7,
+    "bytes": 652,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 3802
+  },
+  {
+    "rel": "buildModalRules.ts",
+    "frags": 2,
+    "bytes": 641,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1240
+  },
+  {
+    "rel": "hall/rendering.ts",
+    "frags": 5,
+    "bytes": 626,
+    "from": "rollout-2026-11-02T11-29-50-01a19a4e-6233-7840-84cd-64b503ddc14d.jsonl.zst",
+    "totalCarved": 2138
+  },
+  {
+    "rel": "useBuildWorld.ts",
+    "frags": 1,
+    "bytes": 622,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 622
+  },
+  {
+    "rel": "hall/hall.css",
+    "frags": 4,
+    "bytes": 606,
+    "from": "rollout-2026-11-02T12-45-05-01a19a93-4761-7662-870f-708143787c21.jsonl.zst",
+    "totalCarved": 2424
+  },
+  {
+    "rel": "screenThumbnails.ts",
+    "frags": 1,
+    "bytes": 602,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 602
+  },
+  {
+    "rel": "BuildAddMenu.tsx",
+    "frags": 1,
+    "bytes": 600,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 600
+  },
+  {
+    "rel": "screen-stage.css",
+    "frags": 15,
+    "bytes": 559,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 5748
+  },
+  {
+    "rel": "buildHistory.ts",
+    "frags": 2,
+    "bytes": 555,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 823
+  },
+  {
+    "rel": "build-add-menu.css",
+    "frags": 2,
+    "bytes": 534,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1057
+  },
+  {
+    "rel": "dock-meeting.css",
+    "frags": 3,
+    "bytes": 522,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 911
+  },
+  {
+    "rel": "dock-card.css",
+    "frags": 1,
+    "bytes": 507,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 507
+  },
+  {
+    "rel": "hall/actor.ts",
+    "frags": 9,
+    "bytes": 506,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 2664
+  },
+  {
+    "rel": "dockLayout.ts",
+    "frags": 9,
+    "bytes": 499,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 4491
+  },
+  {
+    "rel": "hall/buildClient.ts",
+    "frags": 8,
+    "bytes": 493,
+    "from": "rollout-2026-11-03T15-59-48-01a1a06b-e7d4-7ea2-a8d3-f104eebe031e.jsonl.zst",
+    "totalCarved": 2444
+  },
+  {
+    "rel": "icons.tsx",
+    "frags": 7,
+    "bytes": 445,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 1879
+  },
+  {
+    "rel": "hall/shellRemoval.ts",
+    "frags": 10,
+    "bytes": 441,
+    "from": "rollout-2026-11-02T11-29-50-01a19a4e-6233-7840-84cd-64b503ddc14d.jsonl.zst",
+    "totalCarved": 3794
+  },
+  {
+    "rel": "InkPicker.tsx",
+    "frags": 5,
+    "bytes": 403,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 2015
+  },
+  {
+    "rel": "buildNavigation.ts",
+    "frags": 1,
+    "bytes": 372,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 372
+  },
+  {
+    "rel": "screenShareIndicator.ts",
+    "frags": 2,
+    "bytes": 366,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 732
+  },
+  {
+    "rel": "useOffice.ts",
+    "frags": 11,
+    "bytes": 365,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 3975
+  },
+  {
+    "rel": "screenPermission.ts",
+    "frags": 1,
+    "bytes": 357,
+    "from": "rollout-2026-10-14T11-36-42-01a1387b-d633-7400-86a6-c8c126709c63.jsonl.zst",
+    "totalCarved": 357
+  },
+  {
+    "rel": "PrivateCallPanel.tsx",
+    "frags": 11,
+    "bytes": 341,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 2977
+  },
+  {
+    "rel": "useDockBridge.ts",
+    "frags": 4,
+    "bytes": 337,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 1348
+  },
+  {
+    "rel": "cinema.css",
+    "frags": 2,
+    "bytes": 335,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 500
+  },
+  {
+    "rel": "useDockScreenVideo.ts",
+    "frags": 6,
+    "bytes": 296,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 1362
+  },
+  {
+    "rel": "buildChestUnread.ts",
+    "frags": 2,
+    "bytes": 288,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 541
+  },
+  {
+    "rel": "avatarFall.ts",
+    "frags": 1,
+    "bytes": 285,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 285
+  },
+  {
+    "rel": "hall/transformUnits.ts",
+    "frags": 18,
+    "bytes": 279,
+    "from": "rollout-2026-11-02T12-45-05-01a19a93-4761-7662-870f-708143787c21.jsonl.zst",
+    "totalCarved": 3761
+  },
+  {
+    "rel": "BuildMoveHandle.ts",
+    "frags": 2,
+    "bytes": 253,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 375
+  },
+  {
+    "rel": "buildMoveHandle.ts",
+    "frags": 3,
+    "bytes": 253,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 451
+  },
+  {
+    "rel": "dock-meeting-contract.ts",
+    "frags": 4,
+    "bytes": 249,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 996
+  },
+  {
+    "rel": "hall/tray.ts",
+    "frags": 5,
+    "bytes": 234,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 1170
+  },
+  {
+    "rel": "DockMeetingPanel.tsx",
+    "frags": 1,
+    "bytes": 203,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 203
+  },
+  {
+    "rel": "BuildSelectionColor.tsx",
+    "frags": 2,
+    "bytes": 183,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 366
+  },
+  {
+    "rel": "hall/localAvatar.ts",
+    "frags": 3,
+    "bytes": 176,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 528
+  },
+  {
+    "rel": "dock.css",
+    "frags": 3,
+    "bytes": 161,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 463
+  },
+  {
+    "rel": "DockStatusMenu.tsx",
+    "frags": 1,
+    "bytes": 154,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 154
+  },
+  {
+    "rel": "hall/navigationTask.ts",
+    "frags": 6,
+    "bytes": 152,
+    "from": "rollout-2026-11-03T21-53-50-01a1a1b0-0714-7303-8a06-86e1e32f4935.jsonl.zst",
+    "totalCarved": 912
+  },
+  {
+    "rel": "buildPartCenter.ts",
+    "frags": 1,
+    "bytes": 122,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 122
+  },
+  {
+    "rel": "dock-screen-contract.ts",
+    "frags": 4,
+    "bytes": 111,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 444
+  },
+  {
+    "rel": "buildTypes.ts",
+    "frags": 1,
+    "bytes": 97,
+    "from": "rollout-2026-10-06T01-46-01-01a10d2c-2dcd-72f3-b11f-25b04d2c68c4.jsonl.zst",
+    "totalCarved": 97
+  },
+  {
+    "rel": "useDockMeetings.ts",
+    "frags": 4,
+    "bytes": 95,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 380
+  },
+  {
+    "rel": "dockRules.ts",
+    "frags": 6,
+    "bytes": 90,
+    "from": "rollout-2026-11-03T11-59-21-01a19f8f-c2b5-7ac3-a807-b75db82f8c7c.jsonl.zst",
+    "totalCarved": 540
+  }
+]

@@ -1,0 +1,14 @@
+/* Settings have their own opaque surfaces so the scene never competes with text. */\
+.hall-sheet .settings-look-live { --settings-preview-layer: 1; position: sticky; top: 0; z-index: var(--settings-preview-layer); display: grid; grid-template-columns: 144px minmax(0, 1fr); align-items: center; gap: 16px; padding: 12px; border: 1px solid var(--settings-line); border-radius: 14px; background: #29332d; box-shadow: 0 8px 16px #0002; }\
+.hall-sheet .settings-look-live .live-look { position: relative; width: 144px; height: 180px; min-height: 0; aspect-ratio: auto; border-radius: 10px; background: radial-gradient(ellipse at center, #586657, #354236); overflow: hidden; }\
+.hall-sheet .settings-look-live .live-look-canvas { position: absolute; inset: 0; }\
+.hall-sheet .settings-look-live canvas { display: block; width: 100%; height: 100%; }\
+.hall-sheet .settings-look-live .look-loading { position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; padding: 12px; font-size: 12px; text-align: center; background: #354236; color: var(--settings-text); }\
+.hall-sheet .settings-look-live .look-loading button { min-height: 36px; padding: 8px; border: 1px solid var(--settings-line); border-radius: 8px; color: var(--settings-text); background: var(--settings-bg); cursor: pointer; }\
+.hall-sheet .settings-look-caption strong { color: var(--settings-text); font-size: 14px; }\
+.hall-sheet .settings-look-caption p { margin: 8px 0 16px; color: var(--settings-muted); font-size: 12px; line-height: 1.7; }\
+@media (max-width: 400px) {\
+  .hall-sheet .settings-look-live { grid-template-columns: 112px minmax(0, 1fr); gap: 12px; }\
+  .hall-sheet .settings-look-live .live-look { width: 112px; height: 148px; }\
+}\
+@media (max-height: 560px) { .hall-sheet .settings-look-live { position: relative; } }\

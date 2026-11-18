@@ -1,0 +1,5 @@
+.dock-status-menu { padding: 10px; max-width: 230px; border-radius: 12px; color: #29392c; background: #f3f5ed; box-shadow: 0 5px 20px #0003; pointer-events: auto; }\
+.dock-status-menu { position: relative; padding: 36px 10px 10px; max-width: 230px; border-radius: 12px; color: #29392c; background: #f3f5ed; box-shadow: 0 5px 20px #0003; pointer-events: auto; }\
+.dock-status-menu button { padding: 6px 12px; border: 0; border-radius: 7px; background: #dbe5cd; color: inherit; cursor: pointer; margin: 2px; }\
+.dock-status-menu .dock-status-close { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; margin: 0; padding: 0; display: grid; place-items: center; font-size: 20px; line-height: 1; background: transparent; }\
+.dock-status-menu .dock-status-close:hover { background: #dbe5cd; }\

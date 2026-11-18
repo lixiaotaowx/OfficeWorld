@@ -1,0 +1,7 @@
+.screen-stage.maximized video { width: 100%; height: 100%; max-height: none; }\
+.screen-stage.maximized > video { width: 100%; height: 100%; max-height: none; }\
+.screen-stage.fullscreen video { width: 100%; height: 100%; max-height: none; }\
+.screen-stage.fullscreen > video { width: 100%; height: 100%; max-height: none; }\
+.screen-stage:fullscreen video { max-height: none; height: 100%; }\
+.screen-stage.maximized, .screen-stage.fullscreen { padding: 4px; box-sizing: border-box; z-index: 2500; }\
+.screen-stage-zoom { color: #eef3ec; font-size: 12px; }\
