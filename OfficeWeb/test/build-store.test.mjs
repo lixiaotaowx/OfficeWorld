@@ -6,13 +6,20 @@ import { join } from 'node:path';
 import { createBuildStore, catalog, seedParts } from '../build-store.mjs';
 
 const user = { id: 'alice', name: 'Alice' };
-const part = { kind:'block', color:'#f3dfc5', x:5, y:0, z:0, rotation:0 };
+const part = { kind:'block', color:'#e9d4aa', x:5, y:0, z:0, rotation:0 };
 const store = () => createBuildStore(join(mkdtempSync(join(tmpdir(),'box-store-')),'world.json'));
 test('all box parts have unique kinds, bounded dimensions and starter chest exists', () => {
-  assert(catalog.length>=62);
+  assert(catalog.length>=26);
   assert.equal(new Set(catalog.map(p=>p.id)).size,catalog.length);
   assert(seedParts().some(p=>p.kind==='chest'));
-  for (const item of catalog) assert(item.size.every(n=>n>0 && n<=4));
+  for (const item of catalog) {
+    if (item.arch || item.id === 'rug' || item.id === 'pad') continue; // 程序化几何/平面垫：包络按参数走
+    assert(Array.isArray(item.boxes) && item.boxes.length, item.id + ' 缺碰撞包络');
+    for (const box of item.boxes) {
+      const [w,h,d] = box;
+      assert(w>0 && h>0 && d>0, item.id + ' 的包络尺寸必须是正数');
+    }
+  }
 });
 test('add/move/remove persist and stale collaborative edits do not overwrite', () => {
   const path = join(mkdtempSync(join(tmpdir(),'box-restart-')),'world.json');
@@ -20,7 +27,7 @@ test('add/move/remove persist and stale collaborative edits do not overwrite', (
   const added = a.mutate({ action:'add', part },user).changed;
   assert.equal(createBuildStore(path).snapshot().parts.at(-1).id,added.id);
   a.mutate({ action:'move', id:added.id, version:1, part:{...part,x:6,rotation:1} },user);
-  assert.throws(()=>a.mutate({ action:'remove', id:added.id, version:1 },user),/同事/);
+  assert.throws(()=>a.mutate({ action:'remove', id:added.id, version:1 },user),/被别人动过/);
   a.mutate({ action:'remove', id:added.id, version:2 },user);
   assert(!createBuildStore(path).snapshot().parts.some(p=>p.id===added.id));
 });
@@ -29,35 +36,34 @@ test('bounds, finite coordinates, grid, palette validated on server', () => {
   // y 的毫米校验只对**家具/摆件**还生效（结构件的 y 会被落格，所以 0.0003 会变成 0 而不是报错）。
   for (const override of [{x:Number.MAX_VALUE},{y:Infinity},{x:NaN},{kind:'mug',y:0.0003},{kind:'bad'},{rotation:0.2},{color:'red'}])
     assert.throws(()=>s.mutate({action:'add',part:{...part,...override}},user));
-  assert.equal(s.snapshot().revision,2,'新世界两次一次性迁移：原场景迁入 + 回格');
+  assert.equal(s.snapshot().revision,1,'no mutation happened, migration alone keeps revision at 1');
 });
-test('off-grid positions are snapped, never rejected (structural parts on all three axes)', () => {
+test('positions are kept as sent (bounds-checked, no grid rejection)', () => {
   const s=store();
   const added=s.mutate({action:'add',part:{...part,x:5.11,z:-2.19,y:.105}},user).changed;
-  assert.deepEqual([added.x,added.y,added.z],[5,0,-2.25],'方块是结构件：三轴都落格（0.105 → 0）');
-  const prop=s.mutate({action:'add',part:{...part,kind:'mug',x:1.11,z:-2.19,y:.105}},user).changed;
-  assert.deepEqual([prop.x,prop.z],[1,-2.25],'摆件水平两轴落格');
-  assert.equal(prop.y,.105,'摆件的 y 原样保留（放在桌面上的东西不能被拽下去）');
+  assert.deepEqual([added.x,added.y,added.z],[5.11,.105,-2.19],'11 月不再强制落格：位置原样保留');
+  const prop=s.mutate({action:'add',part:{...part,kind:'plant',x:1.11,z:-2.19,y:.105}},user).changed;
+  assert.deepEqual([prop.x,prop.z,prop.y],[1.11,-2.19,.105],'摆件同样原样保留');
 });
-test('floors extend beyond the old island and are not subject to the 600 prop cap', () => {
+test('far coordinates are accepted and there is no 600 prop cap', () => {
   const path=join(mkdtempSync(join(tmpdir(),'box-floor-')),'world.json');
   const parts=Array.from({length:600},(_,i)=>({...part,id:`p${i}`,version:1}));
-  writeFileSync(path,JSON.stringify({revision:0,parts,chests:{}}));
+  writeFileSync(path,JSON.stringify({format:2,revision:1,parts,chests:{}}));
   const s=createBuildStore(path);
   for (const x of [20,1000,-10000]) {
-    const added=s.mutate({action:'add',part:{...part,kind:'floor',x}},user).changed;
+    const added=s.mutate({action:'add',part:{...part,x}},user).changed;
     assert.equal(added.x,x);
   }
   assert.equal(s.mutate({action:'add',part},user).changed.kind,'block');
   assert.equal(createBuildStore(path).snapshot().parts.filter(p=>!p.fixture).length,604);
 });
 
-test('flush wall offsets and real tabletop heights persist across reload', () => {
+test('fractional wall offsets and tabletop heights persist across reload', () => {
   const path=join(mkdtempSync(join(tmpdir(),'box-contact-')),'world.json');
   const s=createBuildStore(path);
-  const mounted={...part,kind:'photo-frame',x:10,y:1.25,z:.173};
+  const mounted={...part,kind:'wall',x:10,y:1.25,z:.173};
   const a=s.mutate({action:'add',part:mounted},user).changed;
-  const b=s.mutate({action:'add',part:{...part,kind:'mug',x:11,y:.495}},user).changed;
+  const b=s.mutate({action:'add',part:{...part,kind:'lamp',x:11,y:.495}},user).changed;
   const restored=createBuildStore(path).snapshot().parts;
   assert.deepEqual(restored.find(p=>p.id===a.id),a);
   assert.deepEqual(restored.find(p=>p.id===b.id),b);
@@ -73,7 +79,7 @@ test('treasure survives restart; unsafe links rejected; only owner removes; none
   put({type:'link',title:'文档',value:'https://example.com/'});
   put({type:'note',title:'便签',value:'明天一起搭房子'});
   assert.equal(createBuildStore(path).chest(chest.id).length,2);
-  assert.throws(()=>s.mutate({action:'remove',id:chest.id,version:1},user),/还有内容/);
+  assert.throws(()=>s.mutate({action:'remove',id:chest.id,version:1},user),/Remove the chest contents first/);
   const entry=s.chest(chest.id)[0];
   assert.throws(()=>s.mutate({action:'take',id:chest.id,entryId:entry.id},{id:'bob'}));
   s.mutate({action:'take',id:chest.id,entryId:entry.id},user);
