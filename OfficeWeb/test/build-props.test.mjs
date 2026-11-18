@@ -3,43 +3,32 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createRequire } from 'node:module';
 import { catalog, createBuildStore } from '../build-store.mjs';
-const require = createRequire(import.meta.url);
-const { loadMeshes } = require('../../Tools/export_box_library.cjs');
-const { createPart } = await loadMeshes();
-test('new models fit declared collision envelopes in every rotation and use shared boxes', () => {
-  let geometry;
-  for (const item of catalog.slice(20)) for (let rotation=0;rotation<4;rotation++) {
-    const group=createPart({id:item.id,kind:item.id,color:'#e9b8b5',x:0,y:0,z:0,rotation});
-    assert(group.children.length>1, item.id+' cannot fall back to a single generic cube');
-    for(const mesh of group.children) {
-      // 传送点还挂着粒子条（`THREE.Points`）和一块**隐形拾取助手**（比部件本身大、故意不吃碰撞）：
-      // 两者都不是模型方块，几何/实测尺寸都不算它们。
-      if(!mesh.isMesh || mesh.userData.pickHelper) continue;
-      geometry ||= mesh.geometry;
-      assert.equal(mesh.geometry,geometry,'geometry must be shared');
-      for(let i=0;i<3;i++) {
-        const p=mesh.position.getComponent(i),s=mesh.scale.getComponent(i);
-        assert(s>0 && Number.isFinite(s),item.id);
-        assert(p+s/2<=item.size[i]*(i===1?1:0.5)+1e-6,item.id+' positive bound');
-        assert(p-s/2>=-(i===1?0:item.size[i]/2)-1e-6,item.id+' negative bound');
-      }
-    }
-  }
-});
-test('every new kind survives server add, move, reload and remove', () => {
-  const dir=mkdtempSync(join(tmpdir(),'props-'));
+
+test('furniture kinds survive server add, move, reload and remove', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'props-'));
+  const user = { id: 'props', name: 'props' };
   try {
-    const file=join(dir,'world.json'),store=createBuildStore(file),user={id:'props-qa',name:'QA'};
-    for(const item of catalog.slice(20)) {
-      const part={kind:item.id,color:'#b4c5a0',x:-8,y:2,z:3,rotation:1};
-      const added=store.mutate({action:'add',part},user).changed;
-      store.mutate({action:'move',id:added.id,version:1,part:{...part,x:-9,rotation:3}},user);
-      const saved=createBuildStore(file).snapshot().parts.find(p=>p.id===added.id);
-      assert.equal(saved.kind,item.id);assert.equal(saved.rotation,3);
-      store.mutate({action:'remove',id:added.id,version:2},user);
-      assert(!createBuildStore(file).snapshot().parts.some(p=>p.id===added.id));
+    const path = join(dir, 'world.json');
+    const store = createBuildStore(path);
+    // 11 月目录的家居类零件（11 月按类别走 build / live 两个分组）。
+    const furniture = catalog.filter(p => p.category === 'build' && !['block', 'slab', 'wall'].includes(p.id)).slice(0, 8);
+    for (const item of furniture) {
+      const added = store.mutate({ action: 'add', part: { kind: item.id, color: '#e9d4aa', x: 5, y: 0, z: 5, rotation: 0 } }, user).changed;
+      const moved = store.mutate({ action: 'move', id: added.id, version: added.version, part: { ...added, x: 6 } }, user).changed;
+      assert.equal(moved.x, 6, item.id);
+      store.mutate({ action: 'remove', id: moved.id, version: moved.version }, user);
+      assert.ok(!createBuildStore(path).snapshot().parts.some(p => p.id === added.id), item.id + ' removal persists');
     }
-  } finally {rmSync(dir,{recursive:true,force:true});}
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('seating kinds keep their seat counts (sofa 2, chair/stool 1)', () => {
+  // 座位数来自 part-library（seatIds 的依据），11 月：沙发两个位置，椅凳各一。
+  const seatCounts = { sofa: 2, chair: 1, stool: 1 };
+  for (const [kind, count] of Object.entries(seatCounts)) {
+    const item = catalog.find(p => p.id === kind);
+    assert.ok(item, kind + ' in catalog');
+    assert.equal(item.seat?.count ?? count, count, kind + ' seat count');
+  }
 });

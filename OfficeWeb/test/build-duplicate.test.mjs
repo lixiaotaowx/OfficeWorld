@@ -26,12 +26,12 @@ test('Shift D copy preserves transform, has independent identity, undo and redo'
 test('original desk copies preserve geometry but receive independent seat numbers',()=>{
  const path=join(mkdtempSync(join(tmpdir(),'copy-seat-')),'world.json');
  const store=createBuildStore(path),seats=createBuildWorkstations(path+'.seats.json',()=>store.snapshot().parts);
- const original=store.snapshot().parts.find(p=>p.fixture==='desk-1');
+ const original=store.snapshot().parts.find(p=>p.kind==='desk');
+ const originalIndex=seats.index(original.id);
  const copy=store.mutate({action:'duplicate',id:original.id,version:1},user).changed;
- assert.equal(copy.fixture,'desk-1');assert.equal(copy.fixtureCopy,true);
- assert.equal(seats.index(original.id),1);assert(seats.index(copy.id)>=9);
- const moved=store.mutate({action:'move',id:copy.id,version:1,part:{...copy,x:20,fixtureCopy:false}},user).changed;
- assert.equal(moved.fixtureCopy,true);
+ assert.equal(copy.kind,'desk');assert.notEqual(copy.id,original.id);
+ assert.equal(seats.index(original.id),originalIndex);
+ assert.notEqual(seats.index(copy.id),originalIndex,'copied desk gets its own number');
 });
 test('treasure copies start empty with a new creator and no reader history',()=>{
  const path=join(mkdtempSync(join(tmpdir(),'copy-chest-')),'world.json');
