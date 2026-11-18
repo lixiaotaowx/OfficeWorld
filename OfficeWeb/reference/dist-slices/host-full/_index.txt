@@ -1,0 +1,10 @@
+234	const	de
+271	function	pe
+23	const	V
+9265	function	he
+4792	const	ve
+1590	function	B
+278	function	ge
+1957	function	we
+3481	function	ke
+52	const	Se
