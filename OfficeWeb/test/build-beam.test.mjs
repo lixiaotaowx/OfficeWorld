@@ -32,7 +32,7 @@ const {catalog} = await import('../build-store.mjs');
  * 这里守的是三件事：**长得出来**（点数/上升/淡出）、**不添乱**（不吃拾取、不进碰撞、
  * 不撑大实测尺寸）、**性能**（所有传送点共用一份几何与材质）。
  */
-const pad = () => createPart({id:'pad',kind:'teleport-pad',rotation:0,x:0,y:0,z:0,color:'#b4c5a0'});
+const pad = () => createPart({id:'pad',kind:'pad',rotation:0,x:0,y:0,z:0,color:'#b4c5a0'});
 
 test('粒子条：18 个点、共用几何与材质、不吃拾取也不参与碰撞',()=>{
   const a=pad(), b=pad();

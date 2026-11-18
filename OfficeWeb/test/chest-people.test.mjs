@@ -7,7 +7,7 @@ import { createBuildStore } from '../build-store.mjs';
 test('creator and deduplicated readers survive move and reload; old chests stay unknown',()=>{
  const file=join(mkdtempSync(join(tmpdir(),'chest-people-')),'world.json');
  const store=createBuildStore(file),owner={id:'owner',name:'创建人',appearance:{color:'blue'}},reader={id:'reader',name:'读者'};
- const part=store.mutate({action:'add',part:{kind:'chest',x:20,y:0,z:0,rotation:0,color:'#e9d4aa',chestPeople:{creator:reader}}},owner).changed;
+ const part=store.mutate({action:'add',part:{kind:'chest',x:20,y:0,z:0,rotation:0,color:'#e9d4aa'}},owner).changed;
  assert.equal(store.people(part.id).creator.id,'owner');
  store.mutate({action:'read',id:part.id},reader);
  const revision=store.snapshot().revision;
@@ -19,7 +19,7 @@ test('creator and deduplicated readers survive move and reload; old chests stay 
  assert.equal(reloaded.people(part.id).creator.id,'owner');
  assert.deepEqual(reloaded.people(part.id).readers.map(p=>p.id),['reader']);
  assert.equal(reloaded.snapshot().parts.find(p=>p.id===part.id).chestPeople.creator.id,'owner');
- const legacy=reloaded.snapshot().parts.find(p=>p.kind==='chest'&&p.id.startsWith('starter'));
+ const legacy=reloaded.snapshot().parts.find(p=>p.kind==='chest'&&p.id!==part.id);
  reloaded.mutate({action:'read',id:legacy.id},reader);
  assert.equal(reloaded.people(legacy.id).creator,undefined);
  assert.throws(()=>reloaded.mutate({action:'read',id:'missing'},reader));

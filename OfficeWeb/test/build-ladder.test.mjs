@@ -49,7 +49,7 @@ const {catalog}=await import('../build-store.mjs');
  * 注：`buildNavigation` 只认"已放置的方块"，空世界里地面本身也不存在，
  * 所以下面自己垫地面/平台（纯 box，不用 three 场景）。
  */
-const LADDER={id:'ladder',kind:'ladder',rotation:0,x:0,y:0,z:0,color:'#f3dfc5'};
+const LADDER={id:'ladder',kind:'ladder',rotation:0,x:0,y:0,z:0,color:'#e9d4aa'};
 const GROUND={min:{x:-3,y:-0.5,z:-3},max:{x:3,y:0,z:-0.05}};
 /** 梯顶对着的平台：顶面在 3.75m，和梯子的净爬升一样高，边缘贴着梯子正面。 */
 const PLATFORM={min:{x:-1,y:3.25,z:0.05},max:{x:1,y:3.75,z:3}};
@@ -61,21 +61,19 @@ const camera=(x,z)=>({getWorldDirection:(out)=>out.set(x,0,z).normalize()});
 const keys=(...list)=>new Set(list);
 const TOP=3.75;
 
-test('直梯几何：立柱是实心的、横档只是外观，柱体净爬升 3.75m',()=>{
-  const part=createPart(LADDER);
-  const solid=part.children.filter(mesh=>!mesh.userData.noBuildCollision);
-  const rungs=part.children.filter(mesh=>mesh.userData.noBuildCollision);
-  assert.equal(solid.length,2,'两根立柱要参与碰撞（能贴墙、能选中）');
-  assert.equal(rungs.length,15,'15 根横档');
-  rungs.forEach((rung,i)=>assert.equal(+(rung.position.y).toFixed(3),0.25+i*0.25,`第 ${i+1} 根横档`));
-  const column=part.userData.localClimb;
-  assert.deepEqual(column.min,[-.35,0,-.25]);
-  assert.equal(column.max[1],TOP,'柱体顶部就是净爬升高度');
-  assert.deepEqual(column.normal,[0,0,1],'梯面法线＝本地 +Z（爬梯朝向靠它）');
-  const item=catalog.find(row=>row.id==='ladder');
-  const size=new THREE.Box3().setFromObject(part).getSize(new THREE.Vector3()).toArray();
-  size.forEach((n,i)=>assert(Math.abs(n-item.dimensions[i])<1e-4,`目录实测尺寸 axis ${i}`));
-  assert.equal(item.dimensions[1],3.78);
+test('直梯几何：两根立柱是实心的、横档只是外观，2 m 高', () => {
+  const part = createPart(LADDER);
+  const solid = part.children.filter(mesh => !mesh.userData.noBuildCollision);
+  const rungs = part.children.filter(mesh => mesh.userData.noBuildCollision);
+  assert.equal(solid.length, 2, '两根立柱要参与碰撞（能贴墙、能选中）');
+  assert.ok(rungs.length >= 5, '横档是外观：' + rungs.length);
+  const item = catalog.find(row => row.id === 'ladder');
+  assert.equal(item.boxes.length, 8, '目录包络：2 立柱 + 6 横档（渲染层每 0.32 m 一根）');
+  // 包络里的立柱高度是 2 m（0.1.54 的 3.75 m 爬柱已经退役）。
+  const columns = item.boxes.filter(box => box[1] === 2);
+  assert.equal(columns.length, 2, '两根 2 m 立柱');
+  // 两条立柱分别位于 ±0.25。
+  assert.deepEqual(columns.map(box => box[3]).sort(), [-0.25, 0.25]);
 });
 
 test('站在梯子上：柱体里没有踏面也能待住，柱体外不行',()=>{

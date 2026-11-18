@@ -11,7 +11,7 @@ const user={id:'copy-user',name:'复制测试'};
 test('Shift D copy preserves transform, has independent identity, undo and redo',()=>{
  const path=join(mkdtempSync(join(tmpdir(),'copy-')),'world.json');
  const store=createBuildStore(path),history=new BuildHistory();
- const original=store.mutate({action:'add',part:{kind:'block',x:17.125,y:-4,z:10,rotation:3,pitch:1,roll:2,color:'#e9b8b5',scale:[2,1,.5]}},user).changed;
+ const original=store.mutate({action:'add',part:{kind:'block',x:17.125,y:-4,z:10,rotation:3,pitch:1,roll:2,color:'#ea9a84',scale:[2,1,.5]}},user).changed;
  const command={action:'duplicate',id:original.id,version:original.version};
  const result=store.mutate(command,user),copy=result.changed;
  assert.notEqual(copy.id,original.id);
@@ -21,7 +21,7 @@ test('Shift D copy preserves transform, has independent identity, undo and redo'
  assert(!store.snapshot().parts.some(p=>p.id===copy.id));
  assert(store.snapshot().parts.some(p=>p.id===original.id));
  store.mutate(history.peek('redo'),user);
- assert.throws(()=>store.mutate({...command,version:0},user),/已更新/);
+ assert.throws(()=>store.mutate({...command,version:0},user),/被别人动过/);
 });
 test('original desk copies preserve geometry but receive independent seat numbers',()=>{
  const path=join(mkdtempSync(join(tmpdir(),'copy-seat-')),'world.json');

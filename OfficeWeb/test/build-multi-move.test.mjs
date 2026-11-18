@@ -10,7 +10,7 @@ test('group moves commit once, preserve offsets and undo/redo with earlier histo
   const path=join(mkdtempSync(join(tmpdir(),'group-move-')),'world.json');
   const store=createBuildStore(path),history=new BuildHistory(),user={id:'u',name:'u'};
   const send=(command,mode)=>{const result=store.mutate(command,user);history.accept(command,result,mode);return result;};
-  const a=send({action:'add',part:{kind:'pillar',x:20,y:0,z:0,rotation:0,color:'#f3dfc5'}}).changed;
+  const a=send({action:'add',part:{kind:'column',x:20,y:0,z:0,rotation:0,color:'#e9d4aa'}}).changed;
   const b=send({action:'add',part:{...a,x:22.5}}).changed;
   const revision=store.snapshot().revision;
   const group={action:'moveMany',items:[a,b].map(p=>({id:p.id,version:p.version,part:{...p,x:p.x+.13,y:-2}}))};

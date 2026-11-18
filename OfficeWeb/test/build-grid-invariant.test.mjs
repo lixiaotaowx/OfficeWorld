@@ -33,7 +33,7 @@ const { snapMove } = await import(await loadTs('buildMoveSnap.ts', urls));
 const { copyDropPoint } = await import(await loadTs('buildCopyDrop.ts', urls));
 
 const user = { id:'grid-qa', name:'网格自查' };
-const base = kind => ({ id:'p', version:1, kind, color:'#f3dfc5', x:4.11, y:1.37, z:-2.09, rotation:0 });
+const base = kind => ({ id:'p', version:1, kind, color:'#e9d4aa', x:4.11, y:1.37, z:-2.09, rotation:0 });
 const near = (value, target, tolerance=.13) => Math.abs(value-target) <= tolerance;
 const assertGrid = (part, label) => assert.equal(onGrid(part), true,
   `${label} 必须满足不变量（kind=${part?.kind} x=${part?.x} y=${part?.y} z=${part?.z}）`);
@@ -129,16 +129,16 @@ test('老存档一次性迁移：结构件三轴回格、摆件与背景件的�
   const dir = mkdtempSync(join(tmpdir(),'box-migrate-'));
   const path = join(dir,'world.json');
   const parts = [
-    { id:'a', kind:'block', color:'#f3dfc5', x:1.11, y:.105, z:-2.19, rotation:0, version:1 },
-    { id:'b', kind:'beam', color:'#f3dfc5', x:-20.875, y:0, z:12.75, rotation:0, version:1 },
-    { id:'c', kind:'floor', color:'#f3dfc5', x:3, y:0, z:4, rotation:0, version:1 },
+    { id:'a', kind:'block', color:'#e9d4aa', x:1.11, y:.105, z:-2.19, rotation:0, version:1 },
+    { id:'b', kind:'railing', color:'#e9d4aa', x:-20.875, y:0, z:12.75, rotation:0, version:1 },
+    { id:'c', kind:'slab', color:'#e9d4aa', x:3, y:0, z:4, rotation:0, version:1 },
     // 用户那两个拱门：−4.605 / −4.564，各自站在略有差异的面上 → 迁移后都落到 −4.5（能对齐了）。
-    { id:'d', kind:'arch', color:'#f3dfc5', x:-17.25, y:-4.605, z:-15.5, rotation:1, version:1 },
-    { id:'e', kind:'arch', color:'#f3dfc5', x:-16.75, y:-4.564, z:-15.5, rotation:1, version:1 },
+    { id:'d', kind:'arch', color:'#e9d4aa', x:-17.25, y:-4.605, z:-15.5, rotation:1, version:1 },
+    { id:'e', kind:'arch', color:'#e9d4aa', x:-16.75, y:-4.564, z:-15.5, rotation:1, version:1 },
     // 家具/摆件的高度保持精确接触（放桌面上的东西不能被拽到整格上）。
-    { id:'f', kind:'mug', color:'#f3dfc5', x:1.11, y:1.42, z:-2.19, rotation:0, version:1 },
+    { id:'f', kind:'plant', color:'#e9d4aa', x:1.11, y:1.42, z:-2.19, rotation:0, version:1 },
     // 原场景 fixture（island 基座那种）：x/z 回格，**y 一个字节都不动**，否则地面整体会被抬起来。
-    { id:'g', kind:'block', fixture:'island', color:'#f3dfc5', x:0, y:-0.6, z:0, rotation:0, version:1 },
+    { id:'g', kind:'block', fixture:'island', color:'#e9d4aa', x:0, y:-0.6, z:0, rotation:0, version:1 },
   ];
   writeFileSync(path, JSON.stringify({ revision:7, editableScene:1, parts, chests:{} }));
   const s = createBuildStore(path);

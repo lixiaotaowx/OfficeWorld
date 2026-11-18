@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {createBuildStore} from '../build-store.mjs';
 import {loadTs} from './helpers.mjs';
 const {BuildHistory}=await import(await loadTs('buildHistory.ts'));
-const part={kind:'pillar',color:'#f3dfc5',x:10,y:0,z:0,rotation:0};
+const part={kind:'column',color:'#e9d4aa',x:10,y:0,z:0,rotation:0};
 const user={id:'history',name:'History'};
 function harness() {
   const store=createBuildStore(join(mkdtempSync(join(tmpdir(),'build-history-')),'world.json'));
@@ -45,7 +45,7 @@ test('new edit clears redo; failed collaborative undo leaves history and colleag
   const current=h.store.snapshot().parts.find(x=>x.id===p.id);
   h.store.mutate({action:'move',id:p.id,version:current.version,part:{...current,x:13}},user);
   const before={...h.history.counts};
-  assert.throws(()=>h.travel('undo'),/同事/);
+  assert.throws(()=>h.travel('undo'),/被别人动过/);
   assert.deepEqual(h.history.counts,before);
   assert.equal(h.store.snapshot().parts.find(x=>x.id===p.id).x,13);
 });

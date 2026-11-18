@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import {catalog} from '../build-store.mjs';
 const require=createRequire(import.meta.url);
 const {createPart}=await require('../../tools/export_box_library.cjs').loadMeshes();
-const make=(kind,rotation=0)=>createPart({id:kind,kind,rotation,x:0,y:0,z:0,color:'#f3dfc5'});
+const make=(kind,rotation=0)=>createPart({id:kind,kind,rotation,x:0,y:0,z:0,color:'#e9d4aa'});
 test('all catalog physical specifications and origin-centred envelopes cover every rotation',()=>{
   for(const item of catalog) for(let rotation=0;rotation<4;rotation++) {
     const b=new THREE.Box3().setFromObject(make(item.id,rotation));
