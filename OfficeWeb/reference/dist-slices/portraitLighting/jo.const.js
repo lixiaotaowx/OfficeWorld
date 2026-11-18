@@ -1,0 +1,10 @@
+const jo = "\\[\\]\\.:\\/",
+    Mp = new RegExp("[" + jo + "]", "g"),
+    el = "[^" + jo + "]",
+    Sp = "[^" + jo.replace("\\.", "") + "]",
+    yp = /((?:WC+[\/:])*)/.source.replace("WC", el),
+    Tp = /(WCOD+)?/.source.replace("WCOD", Sp),
+    Ep = /(?:\.(WC+)(?:\[(.+)\])?)?/.source.replace("WC", el),
+    bp = /\.(WC+)(?:\[(.+)\])?/.source.replace("WC", el),
+    Ap = new RegExp("^" + yp + Tp + Ep + bp + "$"),
+    wp = ["material", "materials", "bones", "map"];

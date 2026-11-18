@@ -1,0 +1,5 @@
+9265	function	he
+4792	const	ve
+1590	function	B
+1957	function	we
+3481	function	ke

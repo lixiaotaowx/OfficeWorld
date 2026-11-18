@@ -1,0 +1,3 @@
+1529	function	se
+2588	class	oe
+9210	function	he
