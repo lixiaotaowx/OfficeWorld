@@ -119,20 +119,23 @@ export function useOffice(account: Account) {
   const meetings = useMeetings(socket, media, connected);
 
   // 会议信号强弱（连接质量 + 全员 participants），HallView / MeetingCenter 都要读。
-  const meetingSignalRef = useRef(createMeetingSignal(
+  const signalRef = useRef(createMeetingSignal(
     () => media.current?.meetingConnection() ?? null,
     () => undefined,
   ));
-  const [meetingSignal, setMeetingSignal] = useState(meetingSignalRef.current.snapshot());
+  const [signal, setSignal] = useState(signalRef.current.snapshot());
+  const [signalTick, setSignalTick] = useState(0);
   useEffect(() => {
-    meetingSignalRef.current.setRoom(meetings.active?.room ?? null);
-    setMeetingSignal({ ...meetingSignalRef.current.snapshot() });
+    signalRef.current.setRoom(meetings.active?.room ?? null);
+    setSignal({ ...signalRef.current.snapshot() });
+    setSignalTick(t => t + 1);
   }, [meetings.active?.room]);
   useEffect(() => {
-    const timer = setInterval(() => setMeetingSignal(previous => {
-      const next = meetingSignalRef.current.snapshot();
-      return next.tick === previous.tick ? previous : { ...next };
-    }), 1000);
+    const timer = setInterval(() => {
+      const next = signalRef.current.snapshot();
+      setSignal(previous => next.tick === previous.tick ? previous : { ...next });
+      setSignalTick(t => t + 1);
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -441,7 +444,7 @@ export function useOffice(account: Account) {
       undo: annotations.undo,
     },
     meetings,
-    signal: meetingSignal,
+    signal: { ...signal, tick: signalTick },
     respond,
     claimSeat: seatApi.claimSeat,
     setNotice,

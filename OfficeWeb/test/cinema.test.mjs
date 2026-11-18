@@ -10,7 +10,7 @@ import {cleanCinemaContent} from '../cinema-content.mjs';
 import {createCinemaMedia} from '../cinema-media.mjs';
 import {loadTs} from './helpers.mjs';
 const user={id:'cinema-test',name:'测试成员'};
-const part={kind:'cinema-screen',color:'#f3dfc5',x:50,y:0,z:50,rotation:0};
+const part={kind:'screen',color:'#e9d4aa',x:50,y:0,z:50,rotation:0};
 const content={type:'video',src:'https://www.bilibili.com/video/BV1xx411c7mD',fit:'contain'};
 const pause=()=>new Promise(resolve=>setTimeout(resolve,135));
 
@@ -22,7 +22,7 @@ test('cinema content is durable, version checked, lightweight in snapshots and s
     assert.deepEqual(createBuildStore(path).screen(screen.id),{content,version:2});
     assert.equal(store.snapshot().parts.find(p=>p.id===screen.id).cinemaVersion,1);
     assert.ok(!JSON.stringify(store.snapshot()).includes(content.src));
-    assert.throws(()=>store.mutate({action:'cinema',id:screen.id,version:1,content:null},user),/同事/);
+    assert.throws(()=>store.mutate({action:'cinema',id:screen.id,version:1,content:null},user),/被别人动过/);
     store.mutate({action:'move',id:screen.id,version:2,part:{...part,x:51}},user);
     assert.deepEqual(store.screen(screen.id).content,content);
     const copy=store.mutate({action:'duplicate',id:screen.id,version:3},user).changed;
@@ -33,7 +33,7 @@ test('cinema content is durable, version checked, lightweight in snapshots and s
     store.mutate({action:'cinema',id:screen.id,version:3,content:null},user);
     assert.equal(store.screen(screen.id).content,null);
     store.mutate({action:'remove',id:screen.id,version:4},user);
-    assert.throws(()=>store.screen(screen.id),/拆除/);
+    assert.throws(()=>store.screen(screen.id),/已经被拿走了/);
   }finally{rmSync(dir,{recursive:true,force:true});}
 });
 test('cinema rejects unsafe URLs, image spoofing, invalid fit, wrong part and excessive upload',()=>{
@@ -45,7 +45,7 @@ test('cinema rejects unsafe URLs, image spoofing, invalid fit, wrong part and ex
     const media=createCinemaMedia(dir),data={type:'video/mp4',total:16,offset:0,bytes:Buffer.from('0000ftyp00000000').toString('base64')};
     assert.throws(()=>media.upload('a',user,{...data,total:101*1024*1024}),/100 MB/);
     const first=media.upload('a',user,{...data,total:32});
-    assert.throws(()=>media.upload('a',{id:'intruder'},{...data,uploadId:first.uploadId,offset:16,total:32}),/进度/);
+    assert.throws(()=>media.upload('a',{id:'intruder'},{...data,uploadId:first.uploadId,offset:16,total:32}),/out of sync/);
     const done=media.upload('a',user,{...data,uploadId:first.uploadId,offset:16,total:32});
     assert.ok(media.exists(done.src));assert.equal(done.offset,32);
     assert.equal(existsSync(join(dir,first.uploadId+'.part')),false);

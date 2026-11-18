@@ -7,7 +7,7 @@ import { createBuildStore } from '../build-store.mjs';
 test('creator and deduplicated readers survive move and reload; old chests stay unknown',()=>{
  const file=join(mkdtempSync(join(tmpdir(),'chest-people-')),'world.json');
  const store=createBuildStore(file),owner={id:'owner',name:'创建人',appearance:{color:'blue'}},reader={id:'reader',name:'读者'};
- const part=store.mutate({action:'add',part:{kind:'chest',x:20,y:0,z:0,rotation:0,color:'#f3dfc5',chestPeople:{creator:reader}}},owner).changed;
+ const part=store.mutate({action:'add',part:{kind:'chest',x:20,y:0,z:0,rotation:0,color:'#e9d4aa',chestPeople:{creator:reader}}},owner).changed;
  assert.equal(store.people(part.id).creator.id,'owner');
  store.mutate({action:'read',id:part.id},reader);
  const revision=store.snapshot().revision;

@@ -79,10 +79,10 @@ test("工位无法持久化时拒绝认领，管理员释放失败时不丢工�
     writeFileSync(stateDir, "blocked");
     const refused = await person.emitWithAck("seat", 3);
     assert.equal(refused.ok, false);
-    assert.match(refused.error, /保存/);
+    assert.match(refused.error, /存上/);
     const denied = await person.emitWithAck("admin", { seat: 2, password: ADMIN_PASSWORD });
     assert.equal(denied.ok, false);
-    assert.match(denied.error, /保存/);
+    assert.match(denied.error, /存上/);
     // The desk is still owned on disk, so a restart cannot resurrect or lose it.
     const onDisk = JSON.parse(readFileSync(join(movedDir, "state.json"), "utf8"));
     assert.equal(onDisk.seats[2].id, "owner-persist");
@@ -115,11 +115,11 @@ test("管理员密码连续猜错会被限流", async () => {
     for (let attempt = 0; attempt < 5; attempt++) {
       const wrong = await person.emitWithAck("admin", { seat: 1, password: `wrong-${attempt}` });
       assert.equal(wrong.ok, false);
-      assert.match(wrong.error, /不正确/);
+      assert.match(wrong.error, /密码不对/);
     }
     const blocked = await person.emitWithAck("admin", { seat: 1, password: ADMIN_PASSWORD });
     assert.equal(blocked.ok, false);
-    assert.match(blocked.error, /频繁/);
+    assert.match(blocked.error, /试得太多/);
   } finally {
     sockets.forEach((socket) => socket.disconnect());
     http.close();
