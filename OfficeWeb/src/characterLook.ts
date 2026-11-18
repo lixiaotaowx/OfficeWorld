@@ -267,3 +267,41 @@ function tintTexture(source: THREE.Texture, hex: string): THREE.Texture {
 export function wornMesh(appearance: Appearance, slot: AccessorySlot): string {
   return ACCESSORIES[slot].find((a) => a.id === appearance.accessories[slot])?.mesh ?? "";
 }
+
+
+// --- November tint-variant cache -------------------------------------------
+// Recolouring clones the body texture per colour; clones are cached per
+// (source texture, colour) and ref-counted per material, so the shared
+// template can be disposed exactly once the last lease lets go.
+
+const TINT_BY_SOURCE = new WeakMap<THREE.Texture, Map<string, THREE.Texture>>();
+const TINT_REFS = new WeakMap<THREE.Texture, number>();
+const TINT_STATE = new WeakMap<THREE.Material, { source: THREE.Texture; key: string; texture: THREE.Texture }>();
+
+/** Drop one material's tint clone (ref-counted; the source stays untouched). */
+function dropTint(material: THREE.MeshStandardMaterial) {
+  const state = TINT_STATE.get(material);
+  if (!state) return;
+  TINT_STATE.delete(material);
+  const refs = (TINT_REFS.get(state.texture) || 1) - 1;
+  if (refs > 0) { TINT_REFS.set(state.texture, refs); return; }
+  TINT_REFS.delete(state.texture);
+  const cache = TINT_BY_SOURCE.get(state.source);
+  if (cache?.get(state.key) === state.texture) cache.delete(state.key);
+  if (cache && !cache.size) TINT_BY_SOURCE.delete(state.source);
+  if (state.texture !== state.source) state.texture.dispose();
+}
+
+/** Release every tint clone minted from one source texture (template teardown). */
+export function releaseTintVariants(source: THREE.Texture) {
+  const cache = TINT_BY_SOURCE.get(source);
+  if (cache) for (const variant of cache.values()) if (variant !== source) variant.dispose();
+  TINT_BY_SOURCE.delete(source);
+}
+
+/** What releaseCharacter needs: drop this character's tint reference. */
+export function releaseLookTextures(parts: LookParts) {
+  for (const material of parts.materials.values()) {
+    if (material instanceof THREE.MeshStandardMaterial) dropTint(material);
+  }
+}

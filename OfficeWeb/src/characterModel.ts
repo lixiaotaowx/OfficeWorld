@@ -1,29 +1,27 @@
-// Shared character loading, used by both the locally controlled avatar
-// (OfficeAvatar) and every remote player (RemoteAvatars), so a remote player
-// looks exactly like they do on their own screen. Seated posing lives in
-// sitPoses.ts.
-//
-// The body is the 「尺子角色」(paper/wooden ruler person) exported from
-// `跑步循环_修网格.blend` by Build/ruler/export_ruler.py. That export carries the
-// Mixamo rig (`mixamorig:*`), nine clips and **every accessory** as an extra
-// skinned mesh, so a look change never needs another download.
 import * as THREE from "three";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { disposeResources } from './disposeResources';
-import { applyAppearance, collectLookParts, type LookParts } from "./characterLook";
+import { applyAppearance, collectLookParts, releaseLookTextures, releaseTintVariants, type LookParts } from "./characterLook";
 import { DEFAULT_APPEARANCE, type Appearance } from "./look";
+import { SharedResourcePool } from './sharedResourcePool';
+
+// Shared character loading, used by both the locally controlled avatar
+// (OfficeAvatar) and every remote player (RemoteAvatars). Geometry, original
+// textures and animation clips are immutable and shared; each consumer gets
+// its own skeleton and materials, so posing and appearance stay independent.
 
 export interface LoadedCharacter {
   model: THREE.Group;
   mixer: THREE.AnimationMixer;
   idle: THREE.AnimationAction;
   walk: THREE.AnimationAction;
-  /** 跑步循环（`跑步循环_Run`）：长距离移动用它，不用一块板子慢悠悠走。 */
+  /** 跑步循环（`跑步循环_Run`）：长距离移动用它，不用一块模板慢悠悠走。 */
   run?: THREE.AnimationAction;
-  /** 动作库里的任意一个 clip（尺子角色自带 9 条：站立/走路/跑步/招手/跳跃/空翻/坐姿打字/游泳/打拳）。 */
+  /** 动作库里的任意一个 clip。 */
   action: (...names: string[]) => THREE.AnimationAction | undefined;
-  /** 这个角色身上有哪些动作（小窗的打招呼动画据此断言"动作库里有这一条"）。 */
+  /** 这个角色身上有哪些动作。 */
   clips: string[];
   bones: Map<string, THREE.Bone>;
   /** Bind-pose quaternion/position per bone, for resetting before a sit pose. */
@@ -33,7 +31,7 @@ export interface LoadedCharacter {
   /** `model.position.y` that places the feet on the ground. */
   groundY: number;
   groundFootHeights: Map<string, number>;
-  /** 可调色材质与配件网格（切配色/换配件用）。 */
+  /** 可调色材质与配件网格（切换色/换配件用）。 */
   look: LookParts;
   /** 当前外观（初始为参数给的那一套）。 */
   appearance: Appearance;
@@ -54,25 +52,45 @@ function dracoLoader(): DRACOLoader {
   return sharedDraco;
 }
 
-/**
- * 骨骼名的归一写法：**同时去掉点和冒号**。
- * GLTFLoader 会把 Blender 的 `UpperLeg.L` 存成 `UpperLegL`、把 `mixamorig:Hips` 存成
- * `mixamorigHips`；而 Blender 里两套命名都带点/冒号。归一之后 `mixamorig:Hips` 与
- * `mixamorigHips` 就能对上（别名表里写的是 Blender 那一套）。
- */
+// Geometry, original textures and animation clips are immutable. Each consumer
+// gets its own skeleton and materials, so posing and appearance remain independent.
+const templates = new SharedResourcePool(async () => {
+  const gltf = await new GLTFLoader().setDRACOLoader(dracoLoader()).loadAsync(CHARACTER_GLB);
+  const materials = new Set<THREE.Material>();
+  gltf.scene.traverse(o => {
+    const mesh = o as THREE.Mesh;
+    if (mesh.isMesh) for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(m);
+  });
+  return { gltf, materials };
+}, ({ gltf, materials }) => {
+  const textures = new Set<THREE.Texture>();
+  for (const material of materials) for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+  for (const texture of textures) releaseTintVariants(texture);
+  disposeResources(gltf.scene);
+});
+
+const characterLeases = new WeakMap<LoadedCharacter, () => void>();
+
+function disposeClone(model: THREE.Object3D, shared: Set<THREE.Material>) {
+  const materials = new Set<THREE.Material>(), skeletons = new Set<THREE.Skeleton>();
+  model.traverse(o => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) if (!shared.has(material)) materials.add(material);
+    const skinned = mesh as THREE.SkinnedMesh;
+    if (skinned.isSkinnedMesh) skeletons.add(skinned.skeleton);
+  });
+  for (const material of materials) material.dispose();
+  for (const skeleton of skeletons) skeleton.dispose();
+}
+
+/** Bone-name normalisation shared by the alias table below. */
 export function boneKey(name: string): string {
   return name.replaceAll(".", "").replaceAll(":", "");
 }
 
-/**
- * 找一根骨头，**同时容忍两套命名**：旧 Quaternius（`UpperLeg.L` / `Abdomen`）与
- * 现在尺子角色的 Mixamo（`mixamorig:LeftUpLeg` / `mixamorig:Spine1`）。
- * 就座姿势与手部定位原先写死了 Quaternius 的名字，换角色后会全部静默找不到骨骼
- * （表现为"坐下时手脚一动不动"），所以查名字统一走这里。
- */
 const BONE_ALIASES: Record<string, string[]> = {
   Hips: ["mixamorig:Hips"],
-  Abdomen: ["mixamorig:Spine"],
   Chest: ["mixamorig:Spine1", "mixamorig:Spine2"],
   Neck: ["mixamorig:Neck"],
   Head: ["mixamorig:Head"],
@@ -91,8 +109,6 @@ export function findBone(
 ): THREE.Bone | undefined {
   const direct = bones.get(name) ?? bones.get(boneKey(name));
   if (direct) return direct;
-  // `mixamorig:Hips` -> `mixamorigHips`：别名表里的名字可能还带冒号（Blender 里就是那样），
-  // 到了 three 里冒号被去掉，所以再按"归一化后同名"扫一遍。
   const wanted = boneKey(name);
   for (const [key, bone] of bones) {
     if (boneKey(key) === wanted) return bone;
@@ -108,7 +124,6 @@ export function findBone(
   return undefined;
 }
 
-/** 按优先级在动作库里找第一个存在的 clip；兼容两套命名（尺子/旧 Quaternius）。 */
 export function findClip(
   animations: THREE.AnimationClip[],
   ...names: string[]
@@ -119,7 +134,6 @@ export function findClip(
     const loose = animations.find((clip) => clip.name.endsWith(name));
     if (loose) return loose;
   }
-  // 中文命名兜底：`站立待机_Idle` 之类，按关键字找。
   for (const name of names) {
     const needle = name.toLowerCase().replace(/[^a-z]/g, "");
     if (!needle) continue;
@@ -130,74 +144,89 @@ export function findClip(
   return undefined;
 }
 
-/** Load the ruler avatar, scaled to a plausible adult and ready to animate. */
+/** Load the ruler avatar: one shared template, one private skeleton. */
 export async function loadCharacter(
   appearance: Appearance = DEFAULT_APPEARANCE,
 ): Promise<LoadedCharacter> {
-  const gltf = await new GLTFLoader()
-    .setDRACOLoader(dracoLoader())
-    .loadAsync(CHARACTER_GLB);
-  const model = gltf.scene;
-  model.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(model);
-  const scale = TARGET_HEIGHT / (box.max.y - box.min.y);
-  model.scale.multiplyScalar(scale);
-  model.position.y = -box.min.y * scale;
-  const groundY = model.position.y;
-  const bones = new Map<string, THREE.Bone>();
-  model.traverse((object) => {
-    if (object instanceof THREE.Bone) {
-      bones.set(object.name, object);
-      bones.set(boneKey(object.name), object);
-    }
-    if (object instanceof THREE.Mesh) {
-      object.castShadow = true;
-      object.receiveShadow = true;
-      // 蒙皮网格的包围球按绑定姿态算，坐着/挥手时会被误裁掉。
-      object.frustumCulled = false;
-    }
-  });
-  const look = collectLookParts(model);
-  applyAppearance(look, appearance);
-  // Snapshot the bind pose before any clip plays, so seated posing can reset
-  // the skeleton to a known state regardless of what the mixer last wrote.
-  model.updateMatrixWorld(true);
-  const rest = new Map<string, { quaternion: THREE.Quaternion; position: THREE.Vector3 }>();
-  for (const [name, bone] of bones) {
-    rest.set(name, {
-      quaternion: bone.quaternion.clone(),
-      position: bone.position.clone(),
+  const lease = await templates.acquire();
+  const { gltf, materials } = lease.value;
+  let model: THREE.Group | undefined;
+  try {
+    model = cloneSkeleton(gltf.scene) as THREE.Group;
+    model.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(model);
+    const scale = TARGET_HEIGHT / (box.max.y - box.min.y);
+    model.scale.multiplyScalar(scale);
+    model.position.y = -box.min.y * scale;
+    const groundY = model.position.y;
+    const bones = new Map<string, THREE.Bone>();
+    model.traverse((object) => {
+      if (object instanceof THREE.Bone) {
+        bones.set(object.name, object);
+        bones.set(boneKey(object.name), object);
+      }
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true;
+        object.receiveShadow = true;
+        // 蒙皮网格的包围球按绑定姿态算，坐着/挥手时会被误裁掉。
+        object.frustumCulled = false;
+      }
     });
+    const look = collectLookParts(model);
+    applyAppearance(look, appearance);
+    model.updateMatrixWorld(true);
+    const rest = new Map<string, { quaternion: THREE.Quaternion; position: THREE.Vector3 }>();
+    for (const [name, bone] of bones) {
+      rest.set(name, { quaternion: bone.quaternion.clone(), position: bone.position.clone() });
+    }
+    const hips = bones.get("mixamorig:Hips") ?? bones.get("Hips");
+    const groundFootHeights = new Map<string, number>();
+    for (const side of ["L", "R"]) {
+      const foot = bones.get(`mixamorig:Foot${side}`) ?? bones.get(`Foot${side}`);
+      if (foot) groundFootHeights.set(side, foot.getWorldPosition(new THREE.Vector3()).y);
+    }
+    const restHipHeight = hips ? hips.getWorldPosition(new THREE.Vector3()).y : 0;
+    const mixer = new THREE.AnimationMixer(model);
+    const find = (...names: string[]) => {
+      const clip = findClip(gltf.animations, ...names);
+      return clip ? mixer.clipAction(clip) : undefined;
+    };
+    const idle = find("站立待机_Idle", "Idle_Neutral", "Idle")!;
+    const walk = find("走路循环_Walk", "Walk")!;
+    const character: LoadedCharacter = {
+      model, mixer, idle, walk, action: find,
+      run: find("跑步循环_Run", "Run"),
+      clips: gltf.animations.map((clip) => clip.name),
+      bones, rest, restHipHeight, groundY, groundFootHeights, look, appearance,
+    };
+    characterLeases.set(character, () => {
+      disposeClone(character.model, materials);
+      lease.release();
+    });
+    return character;
+  } catch (error) {
+    if (model) disposeClone(model, materials);
+    lease.release();
+    throw error;
   }
-  const hips = bones.get("mixamorig:Hips") ?? bones.get("Hips");
-  const groundFootHeights = new Map<string, number>();
-  for (const side of ["L", "R"]) {
-    const foot = bones.get(`mixamorig:Foot${side}`) ?? bones.get(`Foot${side}`);
-    if (foot) groundFootHeights.set(side, foot.getWorldPosition(new THREE.Vector3()).y);
-  }
-  const restHipHeight = hips ? hips.getWorldPosition(new THREE.Vector3()).y : 0;
-  const mixer = new THREE.AnimationMixer(model);
-  const find = (...names: string[]) => {
-    const clip = findClip(gltf.animations, ...names);
-    return clip ? mixer.clipAction(clip) : undefined;
-  };
-  const idle = find("站立待机_Idle", "Idle_Neutral", "Idle")!;
-  const walk = find("走路循环_Walk", "Walk")!;
-  const run = find("跑步循环_Run");
-  return { model, mixer, idle, walk, run, action: find,
-    clips: gltf.animations.map((clip) => clip.name),
-    bones, rest, restHipHeight, groundY, groundFootHeights, look, appearance };
 }
 
-/** 换配色/换配件：只改材质与显隐，不重新加载模型。 */
+/** Switch looks on a live character: drop the old tint reference first so
+ *  the shared texture cache stays correct, then re-apply. */
 export function setCharacterAppearance(character: LoadedCharacter, appearance: Appearance) {
   applyAppearance(character.look, appearance);
   character.appearance = appearance;
 }
 
-/** Release the GPU resources owned by a loaded character. */
+/** Give the whole character back: stop clips, drop private resources, then
+ *  release the shared template (which disposes when nobody else holds it). */
 export function releaseCharacter(character: LoadedCharacter) {
+  const release = characterLeases.get(character);
+  if (!release) return;
+  characterLeases.delete(character);
   character.mixer.stopAllAction();
   character.mixer.uncacheRoot(character.model);
+  releaseLookTextures(character.look);
   disposeResources(character.model);
+  release();
 }
