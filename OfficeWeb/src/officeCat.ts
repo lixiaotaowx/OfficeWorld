@@ -5,7 +5,7 @@ export class OfficeCat {
   readonly root = new THREE.Group();
   private readonly body = new THREE.Group();
   private readonly legs: THREE.Mesh[] = [];
-  private target: { x: number; y: number; z: number; rot: number; pose: string; moving: boolean } | null = null;
+  private target: { x: number; y: number; z: number; rot: number; seq: number; pose?: string; moving?: boolean } | null = null;
   private readonly geometry = new THREE.BoxGeometry(1, 1, 1);
   private readonly staticGeometry: THREE.BufferGeometry[] = [];
   private readonly targetPosition = new THREE.Vector3();
