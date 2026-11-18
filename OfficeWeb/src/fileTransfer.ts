@@ -24,6 +24,7 @@ export interface FileTransferChannelOptions {
 
 /** 主进程那一侧的桥；浏览器里没有（网页版只能收成浏览器下载）。 */
 const bridge = () => window.officeDesktop?.files;
+const READ_CHUNK_BYTES = 256 * 1024;
 
 export function createFileTransferChannel(options: FileTransferChannelOptions) {
   let socket: Socket | undefined;
@@ -377,6 +378,37 @@ export function createFileTransferChannel(options: FileTransferChannelOptions) {
   }
 
   return {
+    lookup: (id: string) => row(id),
+    /** Preview a picture that arrived as a direct transfer: read the saved
+     *  file through the desktop bridge, or fetch the Blob URL it kept. */
+    async localImage(id: string) {
+      const saved = row(id), local = bridge();
+      if (saved?.url) return (await fetch(saved.url)).blob();
+      if (!saved?.path || !local) throw Error('这台电脑没有该图片，请让对方重新发送');
+      const opened = await local.sendOpen(saved.path);
+      try {
+        if (opened.size > 20 * 1024 * 1024) throw Error('图片较大，请打开本地文件查看');
+        const chunks: Uint8Array[] = [];
+        for (let at = 0; at < opened.size; at += READ_CHUNK_BYTES) {
+          const length = Math.min(READ_CHUNK_BYTES, opened.size - at);
+          const bytes = await toBytes(await local.sendRead(opened.id, at, length));
+          if (bytes.byteLength !== length) throw Error('本地图片读取不完整，请确认文件未被移动或修改');
+          chunks.push(bytes);
+        }
+        return new Blob(chunks);
+      } finally { await local.sendClose(opened.id); }
+    },
+    /** 打开 / 显示已保存的文件（聊天桥也用它）。 */
+    async fileAction(id: string, action: 'open' | 'reveal') {
+      const saved = row(id), local = bridge();
+      if (saved?.status !== 'done') throw Error('文件尚未保存到这台电脑');
+      if (saved.url && action === 'open') { window.open(saved.url, '_blank', 'noopener'); return; }
+      if (!local || !saved.path) throw Error('打开文件夹需要桌面客户端');
+      const opened = await local.sendOpen(saved.path);
+      await local.sendClose(opened.id);
+      const ok = await (action === 'reveal' ? local.reveal(saved.path) : local.open(saved.path));
+      if (!ok) throw Error('无法打开，请确认文件仍在原位置');
+    },
     attach,
     sendFiles: sender.sendFiles,
     downloadAttachment,

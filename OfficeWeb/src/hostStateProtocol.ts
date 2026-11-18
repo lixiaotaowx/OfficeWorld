@@ -1,23 +1,13 @@
+import type { Appearance } from './look';
 import type {
-  Appearance,
-  AvatarExpression,
-  BilliardsAction,
-  BilliardsState,
-  BilliardsClient,
-  CallStatus,
-  ChatAttachment,
-  MeetingAction,
-  MeetingInfo,
   Message,
   Motion,
   Person,
   Request,
   SeatOwner,
-  Session,
+  Session
 } from './types';
 import { createBilliardsClient, type BilliardsClient as BilliardsClientApi } from './billiardsClient';
-import { fileTransfersView, type FileTransfers } from './commsFiles';
-import { dockTransfers, downloadTimeoutMs, type DockTransferRow, type FileTransferRow } from './fileTransferRules';
 
 /** Everything the hidden host publishes to the views, in one snapshot.
  *  Sections mirror the host-side state; previews and messages stream as
@@ -37,7 +27,7 @@ export interface HostViewSnapshot {
     motions: Record<string, Motion>;
     cat: unknown;
     catSpeech: { text: string; at: number; to: string } | null;
-    billiards: Record<string, BilliardsState>;
+    billiards: Record<string, { tableId: string } & Record<string, unknown>>;
   };
   calls: {
     sessions: Session[];
@@ -51,8 +41,8 @@ export interface HostViewSnapshot {
     hiddenContacts: string[];
   };
   meetings: {
-    active: MeetingInfo | null;
-    invitations: MeetingInfo[];
+    active: { room: string; id: string } | null;
+    invitations: { room: string; id: string }[];
     huddles: { id: string; members: string[] }[];
     status: string;
     mic: boolean;
@@ -84,7 +74,7 @@ export class HostStateStore {
   private seq: Record<string, number> = {
     state: 0, preview: 0, motion: 0, chat: 0, full: 0, 'full-chunk': 0,
   };
-  private base: Omit<HostViewSnapshot, 'presence' | 'chat'> | null = null;
+  private base: (Omit<HostViewSnapshot, 'presence' | 'chat'> & { presence: Omit<HostViewSnapshot['presence'], 'previews' | 'motions'>; chat: Omit<HostViewSnapshot['chat'], 'messages'> }) | null = null;
   private previews: Record<string, string> = {};
   private motions: Record<string, Motion> = {};
   private messages: Message[] = [];
@@ -167,7 +157,7 @@ export class HostStateStore {
   private applyFull(snapshot: HostViewSnapshot) {
     const { previews, motions, ...presence } = snapshot.presence;
     const { messages, ...chat } = snapshot.chat;
-    this.base = { ...snapshot, presence, chat } as typeof this.base;
+    this.base = { ...snapshot, presence, chat } as HostStateStore["base"];
     this.previews = { ...previews };
     this.motions = { ...motions };
     this.messages = Array.isArray(messages) ? [...messages] : [];

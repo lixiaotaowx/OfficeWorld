@@ -1,5 +1,6 @@
 import type { Socket } from 'socket.io-client';
-import type { BilliardsAction, BilliardsState } from '../billiards/table.mjs';
+type BilliardsState = { tableId: string } & Record<string, unknown>;
+type BilliardsAction = Record<string, unknown>;
 
 /** View-side client for the pool tables: reads the last state the host
  *  published, subscribes listeners, and forwards actions over the socket. */
@@ -23,7 +24,7 @@ export function createBilliardsClient(socket: { current: Socket | undefined },
       return () => { listeners.delete(listener); };
     },
     receive: state => {
-      if ('removed' in state) tables.delete(state.tableId);
+      if ('removed' in state) tables.delete((state as { removed: string }).removed);
       else tables.set(state.tableId, state);
       listeners.forEach(listener => listener());
     },

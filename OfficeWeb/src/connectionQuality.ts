@@ -9,6 +9,9 @@ export interface MeetingParticipant {
   quality: ConnectionQuality;
 }
 
+export type SignalState = MeetingSignalState;
+export type SignalEvent = MeetingSignalEvent;
+
 export interface MeetingSignalState {
   connection: 'inactive' | 'connecting' | 'connected' | 'disconnected' | string;
   quality: ConnectionQuality;

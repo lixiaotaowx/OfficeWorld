@@ -12,19 +12,23 @@ export function useFileTransfers(notify: (message: string) => void) {
   return {
     /** 当前这几条记录（正在传的 + 刚完事的）。 */
     rows,
-    /** socket 建好之后由 useOffice 调一次。 */
+    /** 附件 id → 传输行；聊天桥用它判断文件是否已经在这台电脑上。 */
+    lookup: channel.lookup,
+    /** 拖到头像上的文件：sendFiles(对方 id, 路径数组, 对方名字)`。 */
     attach: channel.attach,
-    /** 拖到头像上的文件：`sendFiles(对方 id, 路径数组, 对方名字)`。 */
     sendFiles: channel.sendFiles,
-    /** 聊天附件下载：走同一条通道，进度/任务栏/卡片/打开按钮全都复用（用户 2026-09-21）。 */
+    /** 聊天附件下载：走同一通道，进度、任务栏、卡片/打开按钮全部复用。 */
     downloadAttachment: channel.downloadAttachment,
-    /** 完事的两个按钮：打开文件 / 在文件夹里显示。 */
+    /** 直传图片的本地读取（头像拖拽图片预览用）。 */
+    localImage: channel.localImage,
+    /** 已保存文件的两个动作：打开文件 / 在文件夹里显示。 */
+    fileAction: channel.fileAction,
     open: channel.open,
     reveal: channel.reveal,
     cancel: channel.cancel,
     dismiss: channel.dismiss,
     dismissAll: channel.dismissAll,
-    /** 推给任务栏头像条的那一小段摘要。 */
+    /** 推给任务栏头像条的那个小段摘要。 */
     dockRows: channel.dockRows,
   };
 }
