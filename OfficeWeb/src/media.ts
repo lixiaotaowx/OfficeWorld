@@ -313,6 +313,11 @@ export class OfficeMedia {
     else this.meetingScreens.stop(name);
   }
 
+  /** The livekit Room handle for the current meeting (signal strength reads it). */
+  meetingConnection() {
+    return this.meetingRoom ? this.connections.get(this.meetingRoom) : undefined;
+  }
+
   meetingStatus() {
     const room = this.meetingRoom ? this.connections.get(this.meetingRoom) : undefined;
     return {

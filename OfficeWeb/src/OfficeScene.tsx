@@ -59,6 +59,8 @@ interface Props {
   sitSpot?: string | null;
   /** 打开"切换屏幕"菜单：画面里右键自己的显示器，或成员列表里右键自己。 */
   onOpenScreenMenu?: (point: { x: number; y: number }) => void;
+  /** 会议信号（连接质量 + 全员），场景里的会议提示条读它。 */
+  meetingSignal?: () => unknown;
 }
 
 export default function OfficeScene(props: Props) {

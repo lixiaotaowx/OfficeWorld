@@ -15,10 +15,12 @@ export interface MeetingAnnotation {
   clear: (scope: string) => void;
   undo: (scope: string) => void;
 }
-export default function MeetingCenter({ client, people, accountId, open, onClose, onOpen, videos, annotation }: {
+export default function MeetingCenter({ client, people, accountId, open, onClose, onOpen, videos, annotation, signal }: {
   client: Client; people: Person[]; accountId: string; open: boolean;
   onClose: () => void; onOpen: () => void; videos: Record<string, MediaStream>;
   annotation: MeetingAnnotation;
+  /** 会议信号快照（signal-bars 面板数据源）。 */
+  signal?: { state: { connection: string; quality: string; participants: { id: string; name: string; quality: string }[] }; summary: string; events: { at: number; message: string }[] };
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [microphone, setMicrophone] = useState(false);

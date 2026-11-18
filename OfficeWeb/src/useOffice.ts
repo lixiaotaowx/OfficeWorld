@@ -9,6 +9,7 @@ import { createAnnotationChannel } from './annotationChannel';
 import { createSeatRequests } from './seatRequests';
 import { watchInputPresence, deskSensorLabel } from './presenceInput';
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createMeetingSignal } from './connectionQuality';
 import { io, Socket } from "socket.io-client";
 import { OfficeMedia } from "./media";
 import { resolveAppearance, storeAppearance, type Appearance } from "./look";
@@ -116,6 +117,25 @@ export function useOffice(account: Account) {
   // 文件直传：拖到任务栏头像上就发，直接落进对方的接收文件夹（用户 2026-09-22）。
   const fileTransfers = useFileTransfers(setNotice);
   const meetings = useMeetings(socket, media, connected);
+
+  // 会议信号强弱（连接质量 + 全员 participants），HallView / MeetingCenter 都要读。
+  const meetingSignalRef = useRef(createMeetingSignal(
+    () => media.current?.meetingConnection() ?? null,
+    () => undefined,
+  ));
+  const [meetingSignal, setMeetingSignal] = useState(meetingSignalRef.current.snapshot());
+  useEffect(() => {
+    meetingSignalRef.current.setRoom(meetings.active?.room ?? null);
+    setMeetingSignal({ ...meetingSignalRef.current.snapshot() });
+  }, [meetings.active?.room]);
+  useEffect(() => {
+    const timer = setInterval(() => setMeetingSignal(previous => {
+      const next = meetingSignalRef.current.snapshot();
+      return next.tick === previous.tick ? previous : { ...next };
+    }), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Which screens we are publishing, so the marks can be cleared for exactly those
   // when the share ends however it ends.
   //
@@ -421,6 +441,7 @@ export function useOffice(account: Account) {
       undo: annotations.undo,
     },
     meetings,
+    signal: meetingSignal,
     respond,
     claimSeat: seatApi.claimSeat,
     setNotice,
