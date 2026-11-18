@@ -90,22 +90,22 @@ test('拖一下就发：offer 转成 file-in、分片按偏移转发、end 带�
 test('对方不在线 / 发给自己 / 文件太大 / 名字无效都发不出去', async () => {
   const h = harness();
   assert.match((await h.call('a', 'file-offer', { transferId: 't', targetId: 'nobody', name: 'a', size: 1 })).error,
-    /不在线/);
+    /Recipient is offline/);
   assert.match((await h.call('a', 'file-offer', { transferId: 't', targetId: 'a', name: 'a', size: 1 })).error,
-    /自己/);
+    /cannot send files to yourself/);
   assert.match((await h.call('a', 'file-offer', { transferId: 't', targetId: 'b', name: 'a', size: 0 })).error,
-    /1 字节/);
+    /File must be 1 byte to 2 GB/);
   assert.match((await h.call('a', 'file-offer', { transferId: 't', targetId: 'b', name: 'a', size: 5 * 1024 ** 3 })).error,
-    /2 GB/);
+    /File must be 1 byte to 2 GB/);
   // 刚好超过 2 GB 就不收（上限是硬门，不是"大概"）。
   assert.match((await h.call('a', 'file-offer', { transferId: 't', targetId: 'b', name: 'a',
     size: MAX_FILE_BYTES + 1 })).error, /2 GB/);
   assert.match((await h.call('a', 'file-offer', { transferId: 't', targetId: 'b', name: '   ', size: 1 })).error,
-    /文件名/);
+    /Invalid file name/);
   // 没进入空间的人（不在 people 里）连 offer 都不行。
   h.attach('ghost');
   assert.match((await h.call('ghost', 'file-offer', { transferId: 't', targetId: 'b', name: 'a', size: 1 })).error,
-    /进入空间/);
+    /Join the space first/);
 });
 
 test('对方那端收不下就如实回绝（不是征求同意，是确认接得住）', async () => {
@@ -121,11 +121,11 @@ test('乱序、超大分片、超出窗口都被挡掉', async () => {
   acceptAll(h);
   await h.call('a', 'file-offer', { transferId: 't', targetId: 'b', name: 'a', size: 40 });
   assert.match((await h.call('a', 'file-chunk', { transferId: 't', offset: 10, bytes: bytes(10) })).error,
-    /顺序/);
+    /out of order/);
   assert.match((await h.call('a', 'file-chunk', { transferId: 't', offset: 0, bytes: bytes(600 * 1024) })).error,
-    /分片/);
+    /Invalid file chunk/);
   assert.match((await h.call('a', 'file-chunk', { transferId: 't', offset: 0, bytes: bytes(41) })).error,
-    /超出大小/);
+    /exceeds declared size/);
   // 窗口：一条都不等回执、连着塞第 5 片，第 5 片要被拒（前 4 片还在路上）。
   // 收端 20ms 后才回，所以前 4 片的确认一定还在路上。
   h.answer('b', 'file-in-part', () => new Promise(resolve => {
@@ -137,7 +137,7 @@ test('乱序、超大分片、超出窗口都被挡掉', async () => {
   }
   const replies = await Promise.all(sends);
   assert.equal(replies.filter(reply => reply.ok).length, WINDOW);
-  assert.match(replies.at(-1).error, /过快/);
+  assert.match(replies.at(-1).error, /Sending too quickly/);
 });
 
 test('接收方中途出错：发送方立刻知道，对方也收到"这一趟没了"', async () => {
@@ -157,7 +157,7 @@ test('文件没传完就 file-end：拒绝，不冒充成功', async () => {
   acceptAll(h);
   await h.call('a', 'file-offer', { transferId: 't', targetId: 'b', name: 'a', size: 30 });
   await h.call('a', 'file-chunk', { transferId: 't', offset: 0, bytes: bytes(10) });
-  assert.match((await h.call('a', 'file-end', { transferId: 't' })).error, /没有传完/);
+  assert.match((await h.call('a', 'file-end', { transferId: 't' })).error, /File is incomplete/);
 });
 
 test('取消：哪一端取消，另一端都会收到通知', async () => {
@@ -181,7 +181,7 @@ test('断线：这一趟结束，另一端收到"对方已离线"，表里不留
   h.disconnect('a');
   assert.equal(h.relay.size(), 0);
   assert.deepEqual(h.pushed.at(-1), { to: 'b', event: 'file-in-cancel',
-    payload: { transferId: 't', reason: '对方已离线' } });
+    payload: { transferId: 't', reason: 'The other member is offline' } });
 });
 
 test('同时发太多会被挡住（有上限才不会被拿来当跳板）', async () => {
@@ -191,7 +191,7 @@ test('同时发太多会被挡住（有上限才不会被拿来当跳板）', as
   assert.equal((await h.call('a', 'file-offer', { transferId: 't2', targetId: 'b', name: 'a', size: 10 })).ok, true);
   assert.equal((await h.call('a', 'file-offer', { transferId: 't3', targetId: 'b', name: 'a', size: 10 })).ok, true);
   assert.match((await h.call('a', 'file-offer', { transferId: 't4', targetId: 'b', name: 'a', size: 10 })).error,
-    /太多/);
+    /Too many outgoing files/);
 });
 
 test('广播操作符的回执是数组：服务端要取第一个，否则每一趟都被判成"对方无法接收文件"', async () => {

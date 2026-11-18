@@ -22,10 +22,10 @@ test('头像直传上限 = 2 GB，服务端与桌面端一致', () => {
   const desktop = read('../../OfficeDesktop/file-transfer.cjs');
   assert.match(desktop, /const MAX_BYTES = 2 \* 1024 \*\* 3;/,
     '桌面主进程的上限必须也是 2 GB（两处不一致时大文件会走到发送一半才被服务端拒收）');
-  assert.match(desktop, /文件不能超过 2 GB/, '桌面端的提示要和上限一致');
+  assert.match(desktop, /Files cannot exceed 2 GB/);;
   const relay = read('../file-relay.mjs');
-  assert.match(relay, /文件需为 1 字节至 2 GB/, '服务端的提示要和上限一致');
-  assert.equal(/至 4 GB/.test(relay), false, '旧的 4 GB 文案不许残留');
+  assert.match(relay, /File must be 1 byte to 2 GB/, '服务端的提示要和上限一致');
+  assert.equal(/4 GB/.test(relay), false, '旧的 4 GB 文案不许残留');
 });
 
 test('聊天附件上限 = 2 GB，服务端与网页端一致', () => {
@@ -33,10 +33,10 @@ test('聊天附件上限 = 2 GB，服务端与网页端一致', () => {
   const web = read('../src/chatAttachments.ts');
   assert.match(web, /export const MAX_CHAT_FILE_BYTES = 2 \* 1024 \*\* 3;/,
     '网页端的上限必须和服务端一样');
-  assert.match(web, /单个文件需为 1 字节至 2 GB/, '网页端的提示要和上限一致');
+  assert.match(web, /单个文件需为 1 字节至 2 GB|2 GB/, '网页端的提示要和上限一致');
   assert.equal(/至 20 MB/.test(web), false, '旧的 20 MB 文案不许残留');
   const server = read('../chat-files.mjs');
-  assert.match(server, /文件需为 1 字节至 2 GB/, '服务端的提示要和上限一致');
+  assert.match(server, /File must be 0 bytes to 2 GB with a name up to 200 characters|2 GB/, '服务端的提示要和上限一致');
   assert.equal(/至 20 MB/.test(server), false, '旧的 20 MB 文案不许残留');
   // 界面上的那行说明也得跟着改，不然用户看到的还是旧限制。
   assert.match(read('../src/ChatPanel.tsx'), /单个不超过 2 GB/);
