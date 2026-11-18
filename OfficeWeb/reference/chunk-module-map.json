@@ -1,0 +1,17 @@
+{
+  "hostStateProtocol.js chunk -> module boundaries": {
+    "Dn": "meetings view factory (meetings.ts)",
+    "Et": "fileSend.ts (send engine)",
+    "Fn": "chatClient.ts (chat archive + send)",
+    "In": "chatAttachments? input-presence watch",
+    "Le": "socket.io parser util (vendor)",
+    "an": "engine.io parser (vendor)",
+    "Yn": "media.ts share flow (watch/annotate?)",
+    "ge": "engine.io (vendor)",
+    "On": "socket.io string helper (vendor)",
+    "je": "engine.io xhr (vendor)",
+    "te": "audio context (media.ts)",
+    "ns": "HostStateStore",
+    "ss": "attachHostView"
+  }
+}
