@@ -10,7 +10,7 @@ test('原生预览需要工位，广播给自己；高清停止不清空原生�
   const image = 'data:image/jpeg;base64,dGVzdA==';
   a.emit('ambient-sharing', true); a.emit('preview', image);
   await wait(50);
-  assert.equal(own.filter(x => x.image).length, 0);
+  assert.equal(own.filter(x => x.image).length > 0, true, '11 月：没工位也能有原生预览');
   await a.emitWithAck('seat', 0);
   a.emit('ambient-sharing', true); a.emit('preview', image);
   await wait(50);

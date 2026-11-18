@@ -4,7 +4,7 @@ import { findBone, type LoadedCharacter } from './characterModel';
 const calibration = new WeakMap<LoadedCharacter, number>();
 /** Start once, then advance continuously. Local and remote avatars share this path. */
 export function updateSeatedAnimation(character: LoadedCharacter, height: number, dt: number) {
-  const action = character.action('坐姿打字_Type');
+  const action = character.action('SeatedTyping_Type');
   if (!action) return null;
   if (!action.isRunning()) {
     character.mixer.stopAllAction();

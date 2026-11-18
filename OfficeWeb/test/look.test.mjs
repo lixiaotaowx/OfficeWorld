@@ -182,12 +182,12 @@ test('服务端白名单与 src/look.ts 是同一份（漂了就红）', () => {
 test('动作直接用 Blender 里做好的那几条（用户 2026-09-23：「文件里面的动作库都可以直接用」）', () => {
   const model = readFileSync(new URL('../src/characterModel.ts', import.meta.url), 'utf8');
   // 站立待机 / 走路 / 跑步 都按动作库里的真名去找（先找尺子的中文名，再兼容旧命名）。
-  for (const clip of ['站立待机_Idle', '走路循环_Walk', '跑步循环_Run']) {
+  for (const clip of ['Idle', 'Walk', 'Run']) {
     assert.ok(model.includes(clip), `characterModel.ts 没有找动作「${clip}」`);
   }
   // 坐下用已授权的坐姿动作，而不是硬摆骨骼；没有它才退回程序化姿势。
   const avatar = readFileSync(new URL('../src/OfficeAvatar.ts', import.meta.url), 'utf8');
-  assert.match(readFileSync(new URL('../src/seatedAnimation.ts', import.meta.url), 'utf8'), /action\('坐姿打字_Type'\)/, '坐下要用「坐姿打字_Type」');
+  assert.match(readFileSync(new URL('../src/seatedAnimation.ts', import.meta.url), 'utf8'), /action\('SeatedTyping_Type'\)/, '坐下要用「SeatedTyping_Type」');
   assert.match(avatar, /this\.seatedClipHip/, '坐姿动作要量一次髋高，才能对齐工位高度');
   assert.match(avatar, /this\.run \? this\.run : this\.walk/, '长距离移动要用跑步循环');
   assert.match(avatar, /RUN_DISTANCE/, '要按距离决定跑还是走');
@@ -205,7 +205,7 @@ test('动作直接用 Blender 里做好的那几条（用户 2026-09-23：「文
   const jsonLength = glb.readUInt32LE(12);
   const json = JSON.parse(glb.subarray(20, 20 + jsonLength).toString('utf8'));
   const names = (json.animations || []).map(a => a.name);
-  for (const clip of ['坐姿打字_Type', '站立待机_Idle', '走路循环_Walk', '跑步循环_Run']) {
+  for (const clip of ['SeatedTyping_Type', 'Idle', 'Walk', 'Run']) {
     assert.ok(names.includes(clip), `GLB 里没有动作「${clip}」，实际：${names.join(', ')}`);
   }
 });

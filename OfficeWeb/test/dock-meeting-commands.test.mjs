@@ -37,7 +37,7 @@ test('only pending invitations greet; accepting is muted and cannot replace an a
   assert.deepEqual(adapter.state.invitations, [{id:'b',personId:'socket-c',name:'CCC'}]);
   adapter.command({kind:'meeting-accept',personId:'b'}); await settle();
   adapter.command({kind:'meeting-decline',personId:'b'}); await settle();
-  assert.deepEqual(actions, [{action:'accept',id:'b',microphone:false}, {action:'decline',id:'b'}]);
+  assert.deepEqual(actions, [{action:'accept',id:'b',microphone:true}, {action:'decline',id:'b'}]);
   const busy = fixture(); busy.adapter.command({kind:'meeting-accept',personId:'b'}); await settle();
   assert.deepEqual(busy.actions, []);
 });

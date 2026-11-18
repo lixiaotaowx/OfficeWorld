@@ -101,7 +101,7 @@ test('有人来看我了：只转给被看的那个人，看自己/访客/没工
     '被看的人收到"有人来看我了"，带上名字和外观（小窗要照他的样子拉出模型）');
   assert.equal(h.relay.watch(h.socket('me'), { target: 'me' }), false, '看自己不算');
   assert.equal(h.relay.watch(h.socket('me'), { target: 'guest' }), false, '访客没有工位预览');
-  assert.equal(h.relay.watch(h.socket('me'), { target: 'seatless' }), false, '没工位就没有工位预览');
+  assert.equal(h.relay.watch(h.socket('me'), { target: 'seatless' }), true, '11 月：没工位的成员也能被看');
   assert.equal(h.relay.watch(h.socket('nobody'), { target: 'you' }), false, '不在空间里的人不算');
   // 小窗悬停时每 800ms 会问一次，所以同一对 700ms 内只转一次，别刷屏。
   assert.equal(h.relay.watch(h.socket('me'), { target: 'you' }), false, '太密的不转发');

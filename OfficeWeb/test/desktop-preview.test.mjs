@@ -47,7 +47,7 @@ test("访客一律不广播，没有老板例外", () => {
   assert.doesNotMatch(gate, /mayBroadcastPreview|bossSeat|BOSS_SEAT/, "客户端不再有老板专用分支");
   assert.doesNotMatch(client, /BOSS_SEAT/, "客户端不再引用老板工位");
   assert.doesNotMatch(server, /preview-policy|broadcastsPreview/, "服务端不再有老板专用分支");
-  assert.match(server, /p\.previewSharing = value === true && p\.seat != null && p\.role !== "visitor"/);
+  assert.match(server, /p\.previewSharing = value === true && p\.role !== "visitor"/);
 });
 
 test("状态行说得出为什么没有画面", () => {
@@ -161,7 +161,7 @@ test("有人来看我了：小窗悬停 → preview-watch → 被看的人闪一
   assert.match(preload, /accept: payload\?\.accept === true/, "接听/拒绝的布尔值要带上来");
   const bridge = readFileSync(new URL("../../OfficeDesktop/desktop-bridge.cjs", import.meta.url), "utf8");
   assert.match(bridge, /handle\('office:preview-glow'/);
-  assert.match(bridge, /previewGlow\.flash\(\{ fade: payload\?\.fade \}\)/,
+  assert.match(bridge, /previewGlow\.flash\(\{ fade: payload\?\.fade, tone: payload\?\.tone === 'call' \? 'call' : 'watch' \}\)/,
     "亮起来的快慢由页面给（悬停慢慢亮、打电话立刻亮）");
   assert.match(bridge, /previewGlow\.hide\(\)/, "共享屏幕时要收掉");
   const glow = readFileSync(new URL("../../OfficeDesktop/preview-glow.cjs", import.meta.url), "utf8");

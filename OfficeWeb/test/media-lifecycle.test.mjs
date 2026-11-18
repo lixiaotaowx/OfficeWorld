@@ -69,7 +69,7 @@ test('late token after cancellation never connects the abandoned room', async ()
 });
 test('capture returning after room cancellation stops tracks without publication', async () => {
   const capture = deferred(); let stopped = false; let published = false; let valid = true;
-  const { setPublication } = load('mediaPublication.ts', { Track: { Source: { ScreenShare: 'screen' } } });
+  const { setPublication } = load('mediaPublication.ts', { Track: { Source: { ScreenShare: 'screen' } }, captureScreen: () => capture.promise, showSharedScreen: () => {}, hideSharedScreen: () => {} });
   const room = { localParticipant: { getTrackPublication() {}, createScreenTracks: () => capture.promise,
     publishTrack: async () => { published = true; } } };
   const result = setPublication(room, 'screen', true, () => valid);
