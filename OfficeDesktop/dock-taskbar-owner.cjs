@@ -1,6 +1,5 @@
-// A top-level owned window stays above its owner in Windows' z-order. Keep the
-// dock owned by Shell_TrayWnd, not embedded as a clipped WS_CHILD: its preview
-// cards must still extend outside the taskbar. No Explorer styles are changed.
+
+
 function loadNative() {
   const user32 = require('koffi').load('user32.dll');
   return {
@@ -30,8 +29,7 @@ function createTaskbarOwner({ platform = process.platform, load = loadNative } =
         const taskbar = native.find('Shell_TrayWnd', null);
         if (!taskbar || !native.valid(taskbar)) { error = 'taskbar-unavailable'; return false; }
         if (BigInt(native.owner(hwnd, 4)) !== BigInt(taskbar)) {
-          // GWLP_HWNDPARENT sets the OWNER of a top-level window. Zero return
-          // may be success (previous owner was null), so verify with GetWindow.
+
           native.setOwner(hwnd, -8, taskbar);
         }
         attached = BigInt(native.owner(hwnd, 4)) === BigInt(taskbar);

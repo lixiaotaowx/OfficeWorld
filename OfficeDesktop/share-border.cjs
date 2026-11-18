@@ -1,12 +1,12 @@
-// 常驻共享提示：只围住实际采集并已共享的显示器，不能影响鼠标与键盘。
-const electron = require('electron');
+
 const path = require('node:path');
 
 function createShareBorder(overrides = {}) {
-  const BrowserWindow = overrides.BrowserWindow || electron.BrowserWindow;
-  const screen = overrides.screen || electron.screen;
+  const BrowserWindow = overrides.BrowserWindow || require('electron').BrowserWindow;
+  const screen = overrides.screen || require('electron').screen;
   const layers = new Map();
   const captured = new Set();
+  let preview = '';
   let source = '', active = new Set(), disposed = false;
 
   function clearLayers() {
@@ -16,9 +16,9 @@ function createShareBorder(overrides = {}) {
   function sync() {
     if (disposed) return;
     const displays = screen.getAllDisplays();
-    const wanted = displays.filter(display => active.has(String(display.id)));
+    const wanted = displays.filter(display => (active.has(String(display.id)) || preview === String(display.id)));
     for (const [id, layer] of layers) {
-      if (!wanted.some(display => String(display.id) === id)) {
+      if (!wanted.some(display => String(display.id) === id) || layer.preview !== !active.has(id)) {
         layers.delete(id);
         if (!layer.isDestroyed()) layer.destroy();
       }
@@ -36,19 +36,20 @@ function createShareBorder(overrides = {}) {
         });
         const current = layer;
         layers.set(id, current);
+        current.preview = !active.has(id);
         current.setIgnoreMouseEvents(true);
         current.setAlwaysOnTop(true, 'screen-saver');
         current.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-        // Windows 把提示层排除在捕获画面之外；对方只收到原来的屏幕内容。
+
         current.setContentProtection(true);
         current.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
         current.webContents.on('will-navigate', event => event.preventDefault());
         current.once('ready-to-show', () => {
-          if (!disposed && active.has(id) && layers.get(id) === current && !current.isDestroyed())
+          if (!disposed && (active.has(id) || preview === id) && layers.get(id) === current && !current.isDestroyed())
             current.showInactive();
         });
         current.on('closed', () => { if (layers.get(id) === current) layers.delete(id); });
-        void current.loadFile(path.join(__dirname, 'share-border.html')).catch(() => {
+        void current.loadFile(path.join(__dirname, 'share-border.html'), { hash: current.preview ? 'preview' : '' }).catch(() => {
           if (!current.isDestroyed()) current.destroy();
         });
       } else {
@@ -59,14 +60,20 @@ function createShareBorder(overrides = {}) {
   }
   const displayEvents = ['display-added', 'display-removed', 'display-metrics-changed'];
   for (const event of displayEvents) screen.on?.(event, sync);
-  const reset = () => { source = ''; captured.clear(); active.clear(); clearLayers(); };
+  const reset = () => { source = ''; preview = ''; captured.clear(); active.clear(); clearLayers(); };
   return {
-    // 权限处理器选定的真实来源；改预览选项本身不会改这份记录。
+
     captured(displayId) {
       source = typeof displayId === 'string' ? displayId : '';
       if (source) captured.add(source);
     },
     source: () => source,
+    preview(displayId) {
+      if (disposed) return;
+      const display = screen.getAllDisplays().find(item => String(item.id) === displayId || String(Number(item.id) >>> 0) === displayId);
+      preview = display ? String(display.id) : '';
+      sync();
+    },
     show(ids) {
       if (disposed || !Array.isArray(ids) || ids.length > 32 ||
           ids.some(id => typeof id !== 'string' || !captured.has(id))) return false;

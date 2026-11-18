@@ -1,10 +1,29 @@
-// The dock is an independent top-level window. Explorer must never own it:
-// owner hide/minimize/demotion affects owned windows, even while our UI says shown.
+
+
 const { loadDesktopState, foregroundFullscreen } = require('./dock-desktop-state.cjs');
 let cachedNative;
 function windowHandle(window) {
   const bytes = window.getNativeWindowHandle();
   return bytes.length === 8 ? bytes.readBigUInt64LE() : BigInt(bytes.readUInt32LE());
+}
+
+function intersects(a, b) {
+  return Boolean(a && b && a.right > a.left && a.bottom > a.top && b.right > b.left && b.bottom > b.top &&
+    a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top);
+}
+
+function canCover(native, candidate, bounds) {
+  return Boolean(candidate && (Number(native.style(candidate, -20)) & 8) && native.visible(candidate) &&
+    !native.minimized(candidate) && !native.cloaked(candidate) && intersects(native.frame(candidate), bounds));
+}
+
+function coveredByTopmost(native, hwnd) {
+  const bounds = native.frame(hwnd);
+  for (let current = native.getWindow(hwnd, 3), count = 0; current && count < 2048; current = native.getWindow(current, 3), count++) {
+    if (!(Number(native.style(current, -20)) & 8)) break;
+    if (canCover(native, current, bounds)) return true;
+  }
+  return false;
 }
 
 function loadNative() {
@@ -23,7 +42,7 @@ function loadNative() {
     setOwner: u.func('intptr_t __stdcall SetWindowLongPtrW(uintptr_t,int,intptr_t)'),
     position: u.func('int32_t __stdcall SetWindowPos(uintptr_t,intptr_t,int,int,int,int,uint32_t)'),
     watch(notify) {
-      // Out-of-context events arrive on Electron's UI thread; no DLL injection.
+
       const callback = k.register((_hook, event, hwnd, object) => {
         if (event === 3 || object === 0) notify(event, hwnd);
       }, k.pointer(callbackType));
@@ -38,7 +57,7 @@ function loadNative() {
 }
 
 function createDockZOrder({ platform = process.platform, load = loadNative,
-  allowed = () => false, repair = () => {} } = {}) {
+  allowed = () => false, pinned = () => false, repair = () => {} } = {}) {
   let native, stopWatching, queued, watchdog, currentWindow, error = '', watching = false;
   let repairs = 0;
   let fullscreen = false;
@@ -47,16 +66,18 @@ function createDockZOrder({ platform = process.platform, load = loadNative,
     try {
       native ??= load();
       stopWatching = native.watch((event = 3, hwnd = 0) => {
-        if (!watching || !allowed() || queued) return;
-        if (event !== 3) {
-          const own = currentWindow && !currentWindow.isDestroyed() ? windowHandle(currentWindow) : 0;
-          const taskbar = native.find('Shell_TrayWnd', null);
-          const foreground = native.foreground();
-          if (BigInt(hwnd) !== BigInt(own) && BigInt(hwnd) !== BigInt(taskbar) &&
-              BigInt(hwnd) !== BigInt(foreground)) return;
-        }
-        // Leave the native callback before calling Electron; coalesce event bursts.
-        queued = setTimeout(() => { queued = undefined; if (allowed()) repair(); }, 0);
+        try {
+          if (!watching || !allowed() || queued) return;
+          if (event !== 3) {
+            const own = currentWindow && !currentWindow.isDestroyed() ? windowHandle(currentWindow) : 0;
+            const taskbar = native.find('Shell_TrayWnd', null);
+            const foreground = native.foreground();
+            if (BigInt(hwnd) !== BigInt(own) && BigInt(hwnd) !== BigInt(taskbar) &&
+                BigInt(hwnd) !== BigInt(foreground) &&
+                (!pinned() || !own || !canCover(native, hwnd, native.frame(own)))) return;
+          }
+          queued = setTimeout(() => { queued = undefined; if (allowed()) repair(); }, 0);
+        } catch (cause) { error = String(cause.message || cause); }
       });
       watching = true;
     } catch (cause) { error = String(cause.message || cause); }
@@ -65,6 +86,7 @@ function createDockZOrder({ platform = process.platform, load = loadNative,
     start,
     blocked(window) {
       currentWindow = window;
+      if (pinned()) { fullscreen = false; return false; }
       if (platform !== 'win32' || !window?.getNativeWindowHandle || window.isDestroyed()) return false;
       try {
         native ??= load();
@@ -78,27 +100,30 @@ function createDockZOrder({ platform = process.platform, load = loadNative,
       try {
         native ??= load();
         const hwnd = windowHandle(window);
-        // Every path checks this, including show/restore and watchdog repair.
-        // Never let a late event promote the dock over a fullscreen player.
+
         if (controller.blocked(window)) { if (window.isVisible?.()) window.hide(); return true; }
         const taskbar = native.find('Shell_TrayWnd', null);
-        if (!taskbar) return false;
-        // Also undo a legacy attachment if this controller is introduced in place.
+
         if (taskbar && BigInt(native.getWindow(hwnd, 4)) === BigInt(taskbar)) {
           native.setOwner(hwnd, -8, 0);
         }
-        const taskbarTopmost = (Number(native.style(taskbar, -20)) & 8) !== 0;
         const dockTopmost = (Number(native.style(hwnd, -20)) & 8) !== 0;
         const position = after => {
-          // NOMOVE | NOSIZE | NOACTIVATE | NOOWNERZORDER. Only move our window.
+
           if (!native.position(hwnd, after, 0, 0, 0, 0, 0x213)) throw Error('taskbar-order-failed');
           repairs++;
         };
+        if (pinned()) {
+          if (!dockTopmost || coveredByTopmost(native, hwnd)) position(-1);
+          error = '';
+          return true;
+        }
+        if (!taskbar) return false;
+        const taskbarTopmost = (Number(native.style(taskbar, -20)) & 8) !== 0;
         if (dockTopmost !== taskbarTopmost) position(taskbarTopmost ? -1 : -2);
         const previous = native.getWindow(taskbar, 3);
         if (BigInt(previous) !== BigInt(hwnd)) {
-          // Insert immediately above Explorer, below whatever was already above
-          // it. A non-topmost taskbar must not promote us via a topmost neighbor.
+
           const after = previous && (taskbarTopmost || !(Number(native.style(previous, -20)) & 8))
             ? previous : taskbarTopmost ? -1 : 0;
           position(after);
@@ -108,7 +133,7 @@ function createDockZOrder({ platform = process.platform, load = loadNative,
       } catch (cause) { error = String(cause.message || cause); return false; }
     },
     watching: () => watching,
-    diagnostics: () => ({ mode: 'taskbar-peer', watching, fullscreen, repairs, error }),
+    diagnostics: () => ({ mode: pinned() ? 'panel-topmost' : 'taskbar-peer', watching, fullscreen, repairs, error }),
     stop() {
       if (queued) clearTimeout(queued);
       queued = undefined;
@@ -121,8 +146,7 @@ function createDockZOrder({ platform = process.platform, load = loadNative,
   controller.start = () => {
     begin();
     if (platform !== 'win32' || watchdog) return;
-    // Some SetWindowPos style changes emit no WinEvent. Read-only when healthy;
-    // this watchdog never depends on the mouse visiting the taskbar.
+
     watchdog = setInterval(() => {
       if (!allowed() || !currentWindow || currentWindow.isDestroyed()) return;
       try {

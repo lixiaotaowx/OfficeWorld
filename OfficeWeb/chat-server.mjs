@@ -1,25 +1,25 @@
 import { randomUUID } from "node:crypto";
 import { recipientFor, publishChat } from './chat-access.mjs';
+import { resolveMentions } from './chat-mentions.mjs';
 export function attachChat(io, socket, people, store, contacts = () =>
   [...people.values()].map(p => ({ id: p.clientId, name: p.name })), hidden = () => []) {
   socket.on('chat-contacts', reply => {
     if (typeof reply !== 'function') return;
     if (!people.has(socket.id)) return reply({ ok: false });
-    // `hidden` lists accounts shown out of the space: they disappear from every
-    // conversation list until they log in again (user, 2026-09-15).
+
     reply({ ok: true, contacts: contacts(), hidden: hidden() });
   });
   let windowStart = 0, count = 0;
   socket.on("chat-history", (after, reply) => {
     if (typeof reply !== "function") return;
-    if (!people.has(socket.id)) return reply({ ok: false, error: "请先进入空间" });
+    if (!people.has(socket.id)) return reply({ ok: false, error: "先进入大厅" });
     if (typeof after !== "string" || after.length > 100)
-      return reply({ ok: false, error: "无效的消息游标" });
+      return reply({ ok: false, error: "Invalid message cursor" });
     try {
       const person = people.get(socket.id);
       reply(store.page(after, person.clientId, person.role === "visitor"));
     }
-    catch { reply({ ok: false, error: "聊天存档暂不可用，请稍后重试" }); }
+    catch { reply({ ok: false, error: "Chat storage is unavailable. Please try again" }); }
   });
   socket.on("chat", (payload, reply) => {
     const respond = result => {
@@ -31,20 +31,20 @@ export function attachChat(io, socket, people, store, contacts = () =>
     const requestId = typeof payload === "string" ? randomUUID() : payload?.requestId;
     if (!person || typeof text !== "string" || !text.trim() || text.length > 1000 ||
         typeof requestId !== "string" || !/^[a-zA-Z0-9-]{1,80}$/.test(requestId))
-      return respond({ ok: false, error: "消息无效或超过 1000 字" });
+      return respond({ ok: false, error: "Message is invalid or exceeds 1000 characters" });
     if (Date.now() - windowStart > 10000) { windowStart = Date.now(); count = 0; }
-    if (++count > 20) return respond({ ok: false, error: "发送过快，请稍后重试" });
+    if (++count > 20) return respond({ ok: false, error: "Sending too quickly. Please try again" });
     try {
       const recipient = recipientFor(payload?.recipientId, person, contacts());
-      // A visiting client has no public channel; private messages are how they talk
-      // to the office (user, 2026-09-15).
+
       if (!recipient && person.role === "visitor")
-        return respond({ ok: false, error: "访客不能发公共聊天，请私聊同事" });
-      const message = store.append(person, text.trim(), requestId, undefined, recipient);
+        return respond({ ok: false, error: "访客不能进入群聊，可以用私聊" });
+      const mentions = recipient ? [] : resolveMentions(text.trim(), contacts().filter(p => !hidden().includes(p.id)));
+      const message = store.append(person, text.trim(), requestId, undefined, recipient, mentions);
       publishChat(io, people, message);
       respond({ ok: true, message });
     } catch {
-      respond({ ok: false, error: "服务器未保存消息，请重试" });
+      respond({ ok: false, error: "Message was not saved. Please try again" });
     }
   });
 }

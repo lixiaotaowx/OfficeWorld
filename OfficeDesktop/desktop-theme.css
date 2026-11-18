@@ -1,64 +1,48 @@
-/* Rounded window (2026-09-14). Windows 10 has no native frameless rounding and
-   Electron's roundedCorners only applies from Windows 11 Build 22000, so the
-   window is transparent and the shell paints the shape: the title bar owns the
-   top corners, the page box below owns the bottom ones. Because a transparent
-   <html> would otherwise let <body>'s background become the canvas, both stay
-   transparent and the page box (.app / .account-page) carries the colour. */
-html.iruler-desktop { padding-top: 54px; background: transparent; overflow: hidden; --window-radius: 16px; }
-html.iruler-desktop body { height: calc(100dvh - 54px); overflow: auto; background: transparent; }
-html.iruler-desktop .app { height: calc(100dvh - 54px); min-height: 586px; padding: 0 20px; }
-html.iruler-desktop .app,
-html.iruler-desktop .account-page {
-  border-radius: 0 0 var(--window-radius) var(--window-radius);
-  /* No DWM shadow survives a transparent window, so a hairline keeps the edge
-     readable against a light desktop. Left/right/bottom only: no seam under the bar. */
+
+/* Reserve room for the draggable strip so scene controls remain accessible. */
+html.officeworld-desktop { background: transparent; overflow: hidden; --window-radius: 16px; }
+html.officeworld-desktop body { height: 100dvh; overflow: auto; background: transparent; padding-top: 52px; box-sizing: border-box; }
+html.officeworld-desktop .app { height: calc(100dvh - 52px); }
+html.officeworld-desktop.officeworld-fullscreen body { padding-top: 0; }
+html.officeworld-desktop.officeworld-fullscreen .app { height: 100dvh; }
+html.officeworld-desktop .app,
+html.officeworld-desktop .account-page {
+  border-radius: var(--window-radius); overflow: hidden;
+  
   box-shadow: inset 1px 0 0 #26322b14, inset -1px 0 0 #26322b14, inset 0 -1px 0 #26322b14;
 }
-html.iruler-desktop.iruler-maximized .app,
-html.iruler-desktop.iruler-maximized .account-page { border-radius: 0; box-shadow: none; }
-/* Whole-screen mode: the shell's title bar steps aside and gives its 54px back. */
-html.iruler-desktop.iruler-fullscreen { padding-top: 0; }
-html.iruler-desktop.iruler-fullscreen #iruler-desktop-chrome { display: none; }
-html.iruler-desktop.iruler-fullscreen body { height: 100dvh; }
-html.iruler-desktop.iruler-fullscreen .app { height: 100dvh; }
-html.iruler-desktop {
+html.officeworld-desktop.officeworld-maximized .app,
+html.officeworld-desktop.officeworld-maximized .account-page { border-radius: 0; box-shadow: none; }
+
+html.officeworld-desktop.officeworld-fullscreen #officeworld-desktop-chrome { display: none; }
+html.officeworld-desktop {
   --bg: #f4f2eb; --night: #26322b; --acid: #f0d274; --mint: #8d9663;
   --brand: #3d5141; --brand-soft: #edeedc; --line: #ddded3; --line-2: #e5e5dc;
 }
-html.iruler-desktop .rail { height: 64px; border-bottom-color: transparent; gap: 10px; }
-html.iruler-desktop .rail .brand { margin-right: auto; }
-html.iruler-desktop .brand-wordmark { font-size: 15px; letter-spacing: -.2px; text-transform: none; }
-/* The title bar already shows the app icon, so the page keeps the wordmark only.
-   Covers both the in-app rail and the login card, so the mark never appears twice. */
-html.iruler-desktop .rail .brand .brand-mark,
-html.iruler-desktop .account-brand .brand-mark { display: none; }
-html.iruler-desktop .stage { border-radius: 20px; box-shadow: 0 3px 14px #23352809; }
-html.iruler-desktop .panel { border-radius: 20px; }
-html.iruler-desktop .view-tabs { box-shadow: 0 4px 18px #2030250c; }
-html.iruler-desktop .view-tabs button.selected { background: #273b2d; color: #fff9e9; }
-html.iruler-desktop .bottom-bar { background: #24382fed; border: 1px solid #ffffff1f; box-shadow: 0 10px 30px #15282015; }
-html.iruler-desktop .account-page { min-height: calc(100dvh - 54px); background: #f4f2eb; padding: 22px; gap: 20px; }
-html.iruler-desktop .account-intro { min-height: calc(100dvh - 98px); border-radius: 24px; background: #ede7d4; color: #2d3e32; }
-html.iruler-desktop .account-card { background: #fffef9; border: 1px solid #e7e4d8; border-radius: 24px; box-shadow: 0 12px 40px #31472b08; padding: 38px; }
-html.iruler-desktop .account-card h2 { color: #2d3e32; font-family: 'Segoe UI','Microsoft YaHei',sans-serif; font-weight: 600; font-size: 30px; }
-html.iruler-desktop .account-card label { color: #50604e; }
-html.iruler-desktop .account-card p, html.iruler-desktop .account-card small { color: #727e69; }
-html.iruler-desktop .account-card .account-error { color: #b35042; }
-html.iruler-desktop .account-manifesto em { color: #697c56; }
-html.iruler-desktop .account-tabs { background: #f2f0e8; border: 1px solid #e7e4d9; padding: 4px; border-radius: 11px; }
-html.iruler-desktop .account-tabs button[aria-pressed="true"] { background: #fffef9; color: #293d2e; box-shadow: 0 2px 6px #252a2110; border-radius: 7px; }
-html.iruler-desktop .account-card input { background: #f8f7f1; border: 1px solid #e1e3d7; border-radius: 10px; color: #2d3e32; }
-html.iruler-desktop .account-card input:focus { background: #fffef9; outline-color: #d2b65b; }
-html.iruler-desktop .account-card input::placeholder { color: #8b947f; }
-html.iruler-desktop .account-submit { background: #2d4434; color: #fffef2; border-radius: 11px; box-shadow: 0 5px 14px #293f3220; }
-html.iruler-desktop .account-submit:hover { background: #3a5743; }
-html.iruler-desktop .account-brand { letter-spacing: .4px; font-size: 16px; }
-html.iruler-desktop .account-brand small { font-size: 9px; letter-spacing: 2px; }
-html.iruler-desktop .account-brand .brand-mark { width: 38px; height: 38px; }
+
+html.officeworld-desktop .account-brand .brand-mark { display: none; }
+html.officeworld-desktop .account-page { min-height: calc(100dvh - 52px); background: #f4f2eb; padding: 22px; gap: 20px; }
+html.officeworld-desktop .account-intro { min-height: calc(100dvh - 44px); border-radius: 24px; background: #ede7d4; color: #2d3e32; }
+html.officeworld-desktop .account-card { background: #fffef9; border: 1px solid #e7e4d8; border-radius: 24px; box-shadow: 0 12px 40px #31472b08; padding: 38px; }
+html.officeworld-desktop .account-card h2 { color: #2d3e32; font-family: 'Segoe UI','Microsoft YaHei',sans-serif; font-weight: 600; font-size: 30px; }
+html.officeworld-desktop .account-card label { color: #50604e; }
+html.officeworld-desktop .account-card p, html.officeworld-desktop .account-card small { color: #727e69; }
+html.officeworld-desktop .account-card .account-error { color: #b35042; }
+html.officeworld-desktop .account-manifesto em { color: #697c56; }
+html.officeworld-desktop .account-tabs { background: #f2f0e8; border: 1px solid #e7e4d9; padding: 4px; border-radius: 11px; }
+html.officeworld-desktop .account-tabs button[aria-pressed="true"] { background: #fffef9; color: #293d2e; box-shadow: 0 2px 6px #252a2110; border-radius: 7px; }
+html.officeworld-desktop .account-card input { background: #f8f7f1; border: 1px solid #e1e3d7; border-radius: 10px; color: #2d3e32; }
+html.officeworld-desktop .account-card input:focus { background: #fffef9; outline-color: #d2b65b; }
+html.officeworld-desktop .account-card input::placeholder { color: #8b947f; }
+html.officeworld-desktop .account-submit { background: #2d4434; color: #fffef2; border-radius: 11px; box-shadow: 0 5px 14px #293f3220; }
+html.officeworld-desktop .account-submit:hover { background: #3a5743; }
+html.officeworld-desktop .account-brand { letter-spacing: .4px; font-size: 16px; }
+html.officeworld-desktop .account-brand small { font-size: 9px; letter-spacing: 2px; }
+html.officeworld-desktop .account-brand .brand-mark { width: 38px; height: 38px; }
 @media(max-height: 800px) {
-  html.iruler-desktop .account-card { padding: 26px; gap: 12px; }
-  html.iruler-desktop .account-card h2 { margin-top: 8px; margin-bottom: 8px; }
-  html.iruler-desktop .account-intro { padding-top: 26px; padding-bottom: 24px; }
-  html.iruler-desktop .intro-copy { margin-top: 26px; }
-  html.iruler-desktop .account-manifesto { font-size: clamp(36px, 4vw, 62px); }
+  html.officeworld-desktop .account-card { padding: 26px; gap: 12px; }
+  html.officeworld-desktop .account-card h2 { margin-top: 8px; margin-bottom: 8px; }
+  html.officeworld-desktop .account-intro { padding-top: 26px; padding-bottom: 24px; }
+  html.officeworld-desktop .intro-copy { margin-top: 26px; }
+  html.officeworld-desktop .account-manifesto { font-size: clamp(36px, 4vw, 62px); }
 }

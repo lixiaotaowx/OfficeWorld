@@ -1,8 +1,5 @@
-// Administrator actions: freeing a permanently held desk.
-//
-// The password is checked per request, so an authenticated admin panel simply
-// repeats the same secret. Because that secret is shared, wrong guesses are
-// throttled per socket and the comparison is constant time.
+
+
 import { createHash, timingSafeEqual } from "node:crypto";
 
 const MAX_FAILS = 5;
@@ -21,44 +18,40 @@ export function createAdmin({ io, people, roster, save, publish, adminPassword, 
     entry.count++;
     fails.set(socketId, entry);
   };
-  // Hash both sides so the comparison neither leaks length nor short-circuits.
+
   const secretMatches = (given) => timingSafeEqual(
     createHash("sha256").update(String(given)).digest(),
     createHash("sha256").update(adminPassword).digest(),
   );
 
   function release(socket, data, reply) {
-    if (!adminPassword) return reply({ ok: false, error: "服务器尚未配置管理员密码" });
+    if (!adminPassword) return reply({ ok: false, error: "没有设置管理员密码" });
     if (blocked(socket.id))
-      return reply({ ok: false, error: "管理员密码尝试过于频繁，请十分钟后再试" });
+      return reply({ ok: false, error: "管理员密码试得太多了，十分钟后再试" });
     if (!secretMatches(data?.password)) {
       recordFail(socket.id);
-      return reply({ ok: false, error: "管理员密码不正确" });
+      return reply({ ok: false, error: "管理员密码不对" });
     }
     const seat = Number(data?.seat);
     if (!Number.isInteger(seat) || seat < 0 || (seat >= seatCount && !validSeat(seat)))
-      return reply({ ok: false, error: "无效的工位" });
+      return reply({ ok: false, error: "没有这个工位" });
     const owner = roster[seat];
-    if (!owner) return reply({ ok: false, error: "这个工位本来就是空的" });
-    // Persist before telling anybody, so a failed write cannot free a desk that
-    // comes straight back on the next restart. The user claim path in
-    // server.mjs performs the same rollback.
+    if (!owner) return reply({ ok: false, error: "这个工位本来就空着" });
+
     const previousRoster = { ...roster };
     const online = [...people.values()].filter((person) => person.clientId === owner.id);
     delete roster[seat];
     if (!save()) {
       for (const key of Object.keys(roster)) delete roster[key];
       Object.assign(roster, previousRoster);
-      return reply({ ok: false, error: "工位未保存成功，请稍后重试" });
+      return reply({ ok: false, error: "工位没存上，再试一次" });
     }
     fails.delete(socket.id);
-    // If the owner is online right now, take the desk away from them - and show them
-    // out of the space: they must not stay in the member list and chat as if nothing
-    // happened (user, 2026-09-15).
+
     for (const person of online) person.seat = null;
     publish();
     for (const person of online)
-      io.to(person.id).emit("kicked", { seat, message: "你被管理员请出了空间，请重新登录" });
+      io.to(person.id).emit("kicked", { seat, message: "An administrator removed you from the space. Please sign in again" });
     if (online.length) eject(owner.id);
     reply({ ok: true, seat, name: owner.name });
   }
@@ -70,7 +63,7 @@ export function createAdmin({ io, people, roster, save, publish, adminPassword, 
         release(socket, data, reply);
       });
     },
-    /** Called on disconnect so the throttle table follows live sockets. */
+
     forget(socketId) {
       fails.delete(socketId);
     },

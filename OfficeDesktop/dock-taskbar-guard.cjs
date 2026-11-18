@@ -1,6 +1,5 @@
-// Taskbar clicks can reorder topmost windows without focusing our non-focusable
-// dock. Repair that ordering promptly while the pointer is over the taskbar,
-// including the short activation animation after the pointer leaves it.
+
+
 const INTERVAL_MS = 80;
 const SETTLE_MS = 800;
 
@@ -18,7 +17,7 @@ function createTaskbarGuard({ screen, allowed, raise, now = Date.now,
   let timer;
   let until = 0;
   function tick() {
-    // Never reveal a dock hidden by sharing, full screen, sign-out or its switch.
+
     if (!allowed()) { until = 0; return; }
     try {
       const time = now();

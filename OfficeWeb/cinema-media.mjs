@@ -4,11 +4,10 @@ import {randomUUID} from 'node:crypto';
 import {parseRange} from './static.mjs';
 export const MAX_CINEMA_VIDEO=100*1024*1024;
 
-/** Bounded chunks reuse the authenticated build endpoint and proxy body limit. */
 export function createCinemaMedia(directory) {
   const pending=new Map();
   const valid=/^[a-f0-9-]{36}\.(mp4|webm)$/;
-  const file=name=>{if(!valid.test(name))throw Error('影片地址无效');return join(directory,name);};
+  const file=name=>{if(!valid.test(name))throw Error('Invalid video URL');return join(directory,name);};
   function discard(row){rmSync(join(directory,row.id+'.part'),{force:true});pending.delete(row.owner);}
   return {
     prune(sources){
@@ -29,20 +28,20 @@ export function createCinemaMedia(directory) {
       for(const row of pending.values())if(Date.now()-row.at>120000)discard(row);
       if(!['video/mp4','video/webm'].includes(input.type) || !Number.isSafeInteger(input.total)
         || input.total<1 || input.total>MAX_CINEMA_VIDEO || typeof input.bytes!=='string'
-        || input.bytes.length>175000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(input.bytes))throw Error('请选择 100 MB 以内的 MP4 或 WebM 视频');
+        || input.bytes.length>175000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(input.bytes))throw Error('Choose an MP4 or WebM video up to 100 MB');
       const bytes=Buffer.from(input.bytes,'base64');
-      if(!bytes.length || bytes.length>128*1024)throw Error('影片分片无效');
+      if(!bytes.length || bytes.length>128*1024)throw Error('Invalid video chunk');
       let row=pending.get(user.id);
       if(input.offset===0 && !input.uploadId) {
         if(row)discard(row);
         const magic=input.type==='video/mp4'?bytes.toString('ascii',4,8)==='ftyp':bytes.subarray(0,4).equals(Buffer.from([26,69,223,163]));
-        if(!magic)throw Error('文件内容不是有效的 MP4 或 WebM');
+        if(!magic)throw Error('File is not a valid MP4 or WebM video');
         row={id:randomUUID(),owner:user.id,screenId,total:input.total,type:input.type,offset:0,at:Date.now()};
         pending.set(user.id,row);
       }
       if(!row || (input.uploadId && input.uploadId!==row.id) || row.screenId!==screenId
         || row.total!==input.total || row.type!==input.type || input.offset!==row.offset
-        || row.offset+bytes.length>row.total)throw Error('影片上传进度不一致，请重新选择文件');
+        || row.offset+bytes.length>row.total)throw Error('Video upload is out of sync. Choose the file again');
       try{appendFileSync(join(directory,row.id+'.part'),bytes,{mode:0o600});}
       catch(error){discard(row);throw error;}
       row.offset+=bytes.length;row.at=Date.now();

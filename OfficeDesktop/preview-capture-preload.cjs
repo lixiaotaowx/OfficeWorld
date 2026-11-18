@@ -1,14 +1,5 @@
 const { contextBridge } = require('electron');
 
-// This hidden page owns one small capture stream. Keeping the stream here means the
-// main process never re-enumerates every display: it just asks for the newest frame.
-//
-// Notes that matter:
-//   * `chromeMediaSource: 'desktop'` is the Electron capture source; the resolution
-//     and frame rate are set here at capture time, so the pipeline stays small
-//     instead of producing a full-size screen image per request.
-//   * No picker, no floating self-preview and no video transport: this only ever
-//     yields a still JPEG on demand.
 const video = document.createElement('video');
 video.muted = true;
 video.playsInline = true;
@@ -50,7 +41,6 @@ async function start(options) {
   return true;
 }
 
-/** Newest frame as a low-resolution JPEG data URL, or null before the first frame. */
 function frame() {
   if (!stream || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return null;
   const scale = Math.min(1, settings.maxEdge / Math.max(video.videoWidth, video.videoHeight));
@@ -61,7 +51,7 @@ function frame() {
   if (!context) return null;
   context.drawImage(video, 0, 0, canvas.width, canvas.height);
   const url = canvas.toDataURL('image/jpeg', settings.quality / 100);
-  // Release the backing store immediately: these canvases are short-lived.
+
   canvas.width = 0;
   canvas.height = 0;
   return url;

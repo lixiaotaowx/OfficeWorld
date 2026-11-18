@@ -1,5 +1,5 @@
-// Read-only Win32 desktop observations. Use physical pixels for both DWM frames
-// and monitor rectangles; Electron's DIP bounds must not enter this comparison.
+
+
 const SHELL_CLASSES = new Set(['Shell_TrayWnd', 'Shell_SecondaryTrayWnd', 'Progman', 'WorkerW']);
 
 function coversMonitor(frame, monitor) {
@@ -14,8 +14,7 @@ function foregroundFullscreen(native, dock) {
   const foreground = native.foreground();
   if (!foreground || BigInt(foreground) === BigInt(dock) || !native.visible(foreground) ||
       native.minimized(foreground) || native.cloaked(foreground) || SHELL_CLASSES.has(native.className(foreground))) return false;
-  // The dock is anchored to the primary taskbar. A video on a different monitor
-  // must not hide it; use that taskbar even before the dock's first placement.
+
   const taskbar = native.find('Shell_TrayWnd', null);
   const monitor = native.monitorRect(taskbar || dock);
   return coversMonitor(native.frame(foreground), monitor);

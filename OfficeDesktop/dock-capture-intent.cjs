@@ -1,5 +1,5 @@
-// A trusted dock click cannot carry Chromium's transient activation across IPC.
-// Bind its intent to the receiving main webContents, one request, and five seconds.
+
+
 function createCaptureIntents(now = Date.now) {
   const pending = new WeakMap();
   return {

@@ -1,12 +1,5 @@
-// Persistent low-rate screen capture for the workstation preview.
-//
-// Measuring the old path showed the cost is not the JPEG (0.8ms) but
-// `desktopCapturer.getSources()`, which re-captures every display and took ~552ms
-// - every three seconds, in the main process. This keeps one small capture stream
-// alive instead and only reads the newest frame, which costs a few milliseconds.
-//
-// The visible behaviour is unchanged: the selected display, a low-resolution JPEG
-// at a slow interval, no picker, no self-preview window, no video transport.
+
+
 const electron = require('electron');
 const path = require('node:path');
 
@@ -20,87 +13,103 @@ function createPreviewCapture(overrides = {}) {
   const windowOptions = overrides.windowOptions || {};
   const maxEdge = overrides.maxEdge || MAX_EDGE;
   let window;
-  let ready;              // resolves once the hidden page can accept a source id
-  let sourceId = '';      // the display the stream is currently attached to
-  let starting = null;    // in-flight start, so concurrent frames share one
-  let supported = true;   // false once the stream API proves unusable
+  let ready;
+  let sourceId = '';
+  let starting = null;
+  let startingId = '';
+  let generation = 0;
+  let supported = true;
+
+  function destroyWindow() {
+    generation++;
+    const old = window;
+    window = undefined; ready = undefined; sourceId = ''; starting = null; startingId = '';
+    if (old && !old.isDestroyed()) old.destroy();
+  }
 
   function ensureWindow() {
     if (window && !window.isDestroyed()) return window;
     const captureSession = sessionApi.fromPartition('preview-capture');
     if (!captureSession.__officeCaptureAllowed) {
-      // Only this hidden page may ask for a capture stream; nothing else uses this
-      // partition, and the public site never reaches it.
+
       captureSession.setPermissionRequestHandler((wc, permission, callback) => {
-        callback(permission === 'media' && wc === window?.webContents);
+        callback(!overrides.denyMedia && permission === 'media' && wc === window?.webContents);
       });
       captureSession.__officeCaptureAllowed = true;
     }
-    window = new BrowserWindow({
+    const created = new BrowserWindow({
       show: false,
       width: 320, height: 200,
       webPreferences: {
         session: captureSession,
-        preload: path.join(__dirname, 'preview-capture-preload.cjs'),
+        preload: overrides.preload || path.join(__dirname, 'preview-capture-preload.cjs'),
         contextIsolation: true, nodeIntegration: false, sandbox: true,
         backgroundThrottling: false,
       },
       ...windowOptions,
     });
-    window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    window.webContents.on('will-navigate', (event) => event.preventDefault());
-    window.on('closed', () => { window = undefined; ready = undefined; sourceId = ''; });
-    ready = window.loadFile(path.join(__dirname, 'preview-capture.html'))
-      .then(() => window.webContents)
+    window = created;
+    created.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    created.webContents.on('will-navigate', (event) => event.preventDefault());
+    created.on('closed', () => { if (window === created) { window = undefined; ready = undefined; sourceId = ''; } });
+    ready = created.loadFile(path.join(__dirname, 'preview-capture.html'))
+      .then(() => created.webContents)
       .catch(() => undefined);
     return window;
   }
 
   async function call(channel, payload) {
     const contents = await ready;
-    if (!contents || contents.isDestroyed()) throw Error('预览采集窗口不可用');
+    if (!contents || contents.isDestroyed()) throw Error("Preview capture window unavailable");
     return contents.executeJavaScript(
       `window.previewCapture.${channel}(${JSON.stringify(payload ?? null)})`, true);
   }
 
   return {
-    /** Attach the stream to one display; a different id restarts it. */
+
     async start(id) {
-      if (!supported) throw Error('这台设备的常驻采集不可用');
-      if (!id) throw Error('没有可用的显示器');
+      if (!supported) throw Error("Continuous capture is unavailable on this device");
+      if (!id) throw Error("No display available");
       if (sourceId === id && !starting) return true;
-      ensureWindow();
-      starting = (async () => {
+      if (starting && startingId === id) return starting;
+      if (starting) destroyWindow();
+      const current = ensureWindow(), request = generation;
+      const attempt = (async () => {
         if (sourceId && sourceId !== id) await call('stop').catch(() => false);
+        if (generation !== request || window !== current) return false;
         const ok = await call('start', { sourceId: id, maxEdge, frameRate: FRAME_RATE, quality: JPEG_QUALITY });
-        if (!ok) { supported = false; throw Error('常驻采集启动失败'); }
+        if (generation !== request || window !== current) return false;
+        if (!ok) { supported = false; throw Error("Unable to start continuous capture"); }
         sourceId = id;
         return true;
-      })().finally(() => { starting = null; });
-      return starting;
+      })();
+      const tracked = attempt.catch(error => { if (generation !== request || window !== current) return false; throw error; })
+        .finally(() => { if (starting === tracked) { starting = null; startingId = ''; } });
+      starting = tracked; startingId = id;
+      return tracked;
     },
-    /** Newest frame as a JPEG data URL, or null when nothing is attached yet. */
+
     async frame() {
       if (!sourceId) return null;
+      const request = generation;
       try {
-        return await call('frame');
+        const image = await call('frame');
+        return generation === request ? image : null;
       } catch {
-        // The hidden page or its stream died: drop the id so the caller re-attaches.
+        if (generation !== request) return null;
+
         sourceId = '';
-        throw Error('预览采集中断');
+        throw Error("Preview capture interrupted");
       }
     },
     async stop() {
-      sourceId = '';
-      if (!window || window.isDestroyed()) return false;
-      await call('stop').catch(() => false);
-      return true;
+      const existed = Boolean(window && !window.isDestroyed());
+      // Destroying the hidden page ends its media stream and frees its renderer.
+      destroyWindow();
+      return existed;
     },
     close() {
-      sourceId = '';
-      if (window && !window.isDestroyed()) window.destroy();
-      window = undefined;
-      ready = undefined;
+      destroyWindow();
     },
     isSupported: () => supported,
     attachedTo: () => sourceId,

@@ -1,5 +1,5 @@
-// Read the cursor from Electron's screen API, not forwarded DOM mousemove: on
-// Windows transparent windows ignore+forward can stop delivering those events.
+
+
 function cleanHitRegions(value) {
   if (!Array.isArray(value)) return [];
   return value.slice(0, 80).filter(row => row &&

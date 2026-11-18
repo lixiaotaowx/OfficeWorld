@@ -1,52 +1,67 @@
 const { desktopCapturer, screen } = require('electron');
-const { trusted, microphoneOnly } = require('./policy.cjs');
+const { trusted, microphoneOnly, hostUrl } = require('./policy.cjs');
 const { consumeDockCapture } = require('./dock-capture-intent.cjs');
 
 function configurePermissions(session, getWindow, hooks = {}) {
-  const current = wc => wc && !wc.isDestroyed() && wc === getWindow()?.webContents && trusted(wc.getURL());
+  const getHost = hooks.getHost || (() => undefined);
+  const windowFor = kind => kind === 'host' ? getHost() : getWindow();
+  const kindOf = wc => {
+    if (!wc || wc.isDestroyed?.()) return null;
+    for (const [kind, get] of [['main', getWindow], ['host', getHost]]) {
+      const target = get();
+      if (target && !target.isDestroyed?.() && wc === target.webContents) return kind;
+    }
+    return null;
+  };
+  const kindForFrame = frame => {
+    for (const [kind, get] of [['main', getWindow], ['host', getHost]]) {
+      const target = get();
+      if (target && !target.isDestroyed?.() && frame === target.webContents?.mainFrame) return kind;
+    }
+    return null;
+  };
+  const hostOrigin = value => !value || value === 'file://' || value === 'null' || value === hostUrl();
+  const originAllowed = (kind, value) => kind === 'host' ? hostOrigin(value) : trusted(value);
+  const allowed = (kind, permission, details) => {
+    if (kind !== 'main') return false;
+    if (permission === 'notifications' || permission === 'display-capture' || permission === 'pointerLock') return true;
+    if (permission !== 'media') return false;
+    if (details.mediaType === 'audio') return true;
+    if (Array.isArray(details.mediaTypes) && details.mediaTypes.length === 0) return true;
+    return microphoneOnly(details.mediaTypes);
+  };
 
   session.setPermissionCheckHandler((wc, permission, origin, details) => {
+    const kind = kindOf(wc);
     const requestingOrigin = origin || details.securityOrigin || details.requestingUrl || details.embeddingOrigin;
-    if (!current(wc) || !trusted(requestingOrigin) || details.isMainFrame === false) return false;
-    // Screen choice is handled separately; neither branch grants camera access.
-    if (permission === 'notifications' || permission === 'display-capture') return true;
-    return permission === 'media' && details.mediaType === 'audio';
+    if (!kind || !originAllowed(kind, requestingOrigin) || details.isMainFrame === false) return false;
+    return allowed(kind, permission, details);
   });
 
   session.setPermissionRequestHandler((wc, permission, callback, details) => {
-    if (!current(wc) || !trusted(details.requestingUrl) || details.isMainFrame === false) {
+    const kind = kindOf(wc);
+    if (!kind || !originAllowed(kind, details.requestingUrl) || details.isMainFrame === false) {
       callback(false); return;
     }
-    if (permission === 'notifications' || permission === 'display-capture') { callback(true); return; }
-    // Electron 44 routes getDisplayMedia through a media request with no device
-    // types before invoking setDisplayMediaRequestHandler. This only lets it
-    // reach that handler; camera requests still include 'video'.
-    if (permission === 'media' && Array.isArray(details.mediaTypes) && details.mediaTypes.length === 0) {
-      callback(true); return;
-    }
-    // The user explicitly requested app-managed microphone permission.
-    // This is restricted to the first-party main frame and audio only.
-    callback(permission === 'media' && microphoneOnly(details.mediaTypes));
+    callback(allowed(kind, permission, details));
   });
 
   session.setDisplayMediaRequestHandler(async (request, callback) => {
     const frame = request.frame;
-    const wc = getWindow()?.webContents;
-    if (!current(wc) || !frame || frame !== wc.mainFrame || !trusted(request.securityOrigin) ||
-        !request.videoRequested) {
+    const kind = kindForFrame(frame);
+    if (kind !== 'main' || !originAllowed(kind, request.securityOrigin) || !request.videoRequested) {
       callback({}); return;
     }
+    const wc = windowFor(kind)?.webContents;
+    if (!wc || kindOf(wc) !== kind || frame !== wc.mainFrame) { callback({}); return; }
     const dockClick = consumeDockCapture(wc);
     if (!request.userGesture && !dockClick) { callback({}); return; }
     try {
-      // No picker window: sharing follows the display the workstation preview is
-      // already using, so a private call and a meeting capture the same screen.
+
       const source = await hooks.displays?.source(desktopCapturer, screen);
-      if (!source || !current(wc) || request.frame !== wc.mainFrame) { callback({}); return; }
+      if (!source || kindOf(wc) !== kind || request.frame !== wc.mainFrame) { callback({}); return; }
       hooks.onDisplayChosen?.(source.display_id || '');
-      // Electron 44.3 accepts Chromium's loopback device ID. Explicitly exclude
-      // this process tree: restrictOwnAudio alone is ignored in our Windows test.
-      // This keeps received calls out of the outgoing system audio (no echo loop).
+
       callback({ video: source, ...(request.audioRequested ? { audio: 'loopbackWithoutChrome' } : {}) });
     } catch { callback({}); }
   });

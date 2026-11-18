@@ -1,6 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// One-way feed: the main process relays whatever the board currently holds.
 contextBridge.exposeInMainWorld('annotationLayer', {
   subscribe(callback) {
     const listener = (_event, payload) => callback(payload);

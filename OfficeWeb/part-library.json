@@ -1,0 +1,65 @@
+{
+  "about": "Every buildable part, shared by the server (sizes, rules) and the client (drawing). A part is a list of boxes [w,h,d,x,y,z,colour] in metres, standing on y=0 and centred on x/z, plus a few round shapes. A colour of \"c\" is the part's own colour; a palette name or #hex is fixed.",
+  "palette": {
+    "top": "#e9d4aa", "white": "#f4f1ea", "wood": "#dcc08c", "blue": "#5c6b9c",
+    "wall": "#7f8eb6", "coral": "#ea9a84", "sage": "#9cc7c0", "ink": "#2c2e35", "water": "#48aebd"
+  },
+  "fixed": { "trim": "#c9a979", "shade": "#f3ead8", "plant": "#6f9468", "cork": "#d8b98a", "screen": "#1f2325", "paper": "#f4efe4", "terra": "#e08f78" },
+  "parts": [
+    { "id": "block", "label": "方块", "category": "build", "color": "top", "boxes": [[0.5, 0.5, 0.5, 0, 0.25, 0, "c"]] },
+    { "id": "slab", "label": "地台", "category": "build", "color": "top", "boxes": [[1, 0.12, 1, 0, 0.06, 0, "c"]] },
+    { "id": "water", "label": "水面", "category": "build", "color": "water", "surface": "water", "hint": "蓝绿水面 · 细波纹与水光 · 可缩放", "boxes": [[1, 0.25, 1, 0, 0.125, 0, "c"]] },
+    { "id": "wall", "label": "墙", "category": "build", "color": "white", "boxes": [[1, 1.6, 0.14, 0, 0.8, 0, "c"]] },
+    { "id": "arch", "label": "拱门", "category": "build", "color": "white", "hint": "圆弧拱门 · 镂空门洞", "arch": { "outerRadius": 1.25, "innerRadius": 1, "springHeight": 1.75, "depth": 0.25 } },
+    { "id": "stairs", "label": "楼梯", "category": "build", "color": "white", "boxes": [
+      [1, 0.3, 0.3, 0, 0.15, 0.75, "c"], [1, 0.6, 0.3, 0, 0.3, 0.45, "c"], [1, 0.9, 0.3, 0, 0.45, 0.15, "c"],
+      [1, 1.2, 0.3, 0, 0.6, -0.15, "c"], [1, 1.5, 0.3, 0, 0.75, -0.45, "c"], [1, 1.8, 0.3, 0, 0.9, -0.75, "c"]] },
+    { "id": "column", "label": "柱子", "category": "build", "color": "ink", "boxes": [[0.22, 1.8, 0.22, 0, 0.9, 0, "c"]] },
+    { "id": "railing", "label": "栏杆", "category": "build", "color": "ink", "boxes": [
+      [1, 0.035, 0.035, 0, 1, 0, "c"], [1, 0.035, 0.035, 0, 0.5, 0, "c"],
+      [0.035, 1, 0.035, -0.48, 0.5, 0, "c"], [0.035, 1, 0.035, 0, 0.5, 0, "c"], [0.035, 1, 0.035, 0.48, 0.5, 0, "c"]] },
+    { "id": "ladder", "label": "梯子", "category": "build", "color": "wood", "boxes": [
+      [0.06, 2, 0.06, -0.25, 1, 0, "c"], [0.06, 2, 0.06, 0.25, 1, 0, "c"],
+      [0.5, 0.04, 0.05, 0, 0.2, 0, "c"], [0.5, 0.04, 0.05, 0, 0.52, 0, "c"], [0.5, 0.04, 0.05, 0, 0.84, 0, "c"],
+      [0.5, 0.04, 0.05, 0, 1.16, 0, "c"], [0.5, 0.04, 0.05, 0, 1.48, 0, "c"], [0.5, 0.04, 0.05, 0, 1.8, 0, "c"]] },
+    { "id": "shelf", "label": "书架", "category": "build", "color": "wood", "holds": true, "boxes": [
+      [1, 1.6, 0.35, 0, 0.8, 0, "c"], [0.9, 0.04, 0.3, 0, 0.4, 0.03, "trim"], [0.9, 0.04, 0.3, 0, 0.8, 0.03, "trim"], [0.9, 0.04, 0.3, 0, 1.2, 0.03, "trim"]] },
+    { "id": "table", "label": "桌子", "category": "build", "color": "top", "holds": true, "boxes": [
+      [1.2, 0.07, 0.7, 0, 0.74, 0, "c"], [0.07, 0.7, 0.07, -0.5, 0.36, -0.28, "ink"], [0.07, 0.7, 0.07, 0.5, 0.36, -0.28, "ink"],
+      [0.07, 0.7, 0.07, -0.5, 0.36, 0.28, "ink"], [0.07, 0.7, 0.07, 0.5, 0.36, 0.28, "ink"]] },
+    { "id": "round-table", "label": "圆桌", "category": "build", "color": "white", "holds": true,
+      "boxes": [[0.06, 0.7, 0.06, 0, 0.36, 0, "ink"], [0.4, 0.03, 0.4, 0, 0.015, 0, "ink"]], "shapes": [["cyl", 0.45, 0.05, 0, 0.74, 0, "c"]] },
+    { "id": "chair", "label": "椅子", "category": "build", "color": "coral", "seat": { "at": [0, 0.5, 0.02], "face": 0 }, "boxes": [
+      [0.42, 0.05, 0.42, 0, 0.45, 0, "c"], [0.42, 0.42, 0.05, 0, 0.69, -0.19, "c"],
+      [0.035, 0.43, 0.035, -0.17, 0.215, -0.17, "ink"], [0.035, 0.43, 0.035, 0.17, 0.215, -0.17, "ink"],
+      [0.035, 0.43, 0.035, -0.17, 0.215, 0.17, "ink"], [0.035, 0.43, 0.035, 0.17, 0.215, 0.17, "ink"]] },
+    { "id": "stool", "label": "凳子", "category": "build", "color": "coral", "seat": { "at": [0, 0.44, 0], "face": 0 }, "boxes": [
+      [0.42, 0.07, 0.42, 0, 0.4, 0, "c"], [0.05, 0.36, 0.05, 0, 0.2, 0, "ink"]] },
+    { "id": "plant", "label": "植物", "category": "build", "color": "white",
+      "boxes": [[0.34, 0.4, 0.34, 0, 0.2, 0, "c"]], "shapes": [["ball", 0.3, 0, 0.72, 0, "plant"], ["ball", 0.21, 0.11, 0.95, 0.04, "plant"], ["ball", 0.2, -0.1, 0.88, -0.07, "plant"]] },
+    { "id": "lamp", "label": "落地灯", "category": "build", "color": "white", "light": { "at": [0, 1.45, 0], "power": 2.2 },
+      "boxes": [[0.04, 1.5, 0.04, 0, 0.75, 0, "ink"], [0.3, 0.03, 0.3, 0, 0.015, 0, "ink"]], "shapes": [["cone", 0.22, 0, 1.6, 0, "c"]] },
+    { "id": "rug", "label": "地毯", "category": "build", "color": "coral", "shapes": [["cyl", 1.2, 0.02, 0, 0.01, 0, "c"]] },
+    { "id": "billiards", "label": "台球桌", "category": "live", "color": "wood", "hint": "点击开局 · 左键长按蓄力，松开击球 · 多人轮流", "boxes": [[3.5, 1.12, 2.25, 0, 0.56, 0, "c"]] },
+    { "id": "desk", "label": "工位", "category": "live", "color": "top", "hint": "自己的位置 · 屏幕上是本人的工作画面",
+      "workstation": { "sit": [0, 0.44, -0.75], "face": 0, "monitor": { "at": [0, 1.13, -0.08], "size": [0.38, 0.24] }, "lamp": [0.42, 0.99, 0.3] },
+      "boxes": [[1.1, 0.07, 0.9, 0, 0.94, 0, "c"], [0.07, 0.9, 0.08, -0.5, 0.46, -0.36, "ink"], [0.07, 0.9, 0.08, 0.5, 0.46, -0.36, "ink"],
+        [0.07, 0.9, 0.08, -0.5, 0.46, 0.36, "ink"], [0.07, 0.9, 0.08, 0.5, 0.46, 0.36, "ink"], [0.42, 0.025, 0.3, 0, 0.99, -0.23, "ink"]] },
+    { "id": "screen", "label": "影院屏", "category": "live", "color": "ink", "cinema": { "at": [0, 1.3, 0.034], "size": [1.7, 0.95] }, "hint": "点一下一起看 · 双击正对",
+      "boxes": [[1.8, 1.05, 0.06, 0, 1.3, 0, "screen"], [0.1, 0.8, 0.1, 0, 0.4, 0, "c"], [0.6, 0.05, 0.4, 0, 0.03, 0, "c"], [1.94, 1.19, 0.05, 0, 1.3, -0.045, "c"]] },
+    { "id": "board", "label": "钉板", "category": "live", "color": "wood", "notes": { "at": [0, 1.15, 0.03], "size": [1.6, 1] }, "hint": "大家贴的东西 · 双击正对",
+      "boxes": [[1.6, 1, 0.05, 0, 1.15, 0, "c"], [0.06, 1.65, 0.06, -0.7, 0.82, -0.04, "ink"], [0.06, 1.65, 0.06, 0.7, 0.82, -0.04, "ink"]] },
+    { "id": "chest", "label": "百宝箱", "category": "live", "color": "wood", "holds": true, "hint": "收藏的片子和链接",
+      "boxes": [[0.8, 0.45, 0.5, 0, 0.23, 0, "c"], [0.84, 0.08, 0.54, 0, 0.49, 0, "c"]] },
+    { "id": "cabinet", "label": "资料柜", "category": "live", "color": "wood", "holds": true, "hint": "柜子里的资料 · 点开看",
+      "boxes": [[0.9, 1.4, 0.45, 0, 0.7, 0, "c"], [0.82, 0.38, 0.05, 0, 0.25, 0.235, "c"], [0.82, 0.38, 0.05, 0, 0.7, 0.235, "c"], [0.82, 0.38, 0.05, 0, 1.15, 0.235, "c"],
+        [0.2, 0.03, 0.03, 0, 0.25, 0.27, "ink"], [0.2, 0.03, 0.03, 0, 0.7, 0.27, "ink"], [0.2, 0.03, 0.03, 0, 1.15, 0.27, "ink"]] },
+    { "id": "doc-desk", "label": "资料桌", "category": "live", "color": "top", "holds": true, "hint": "桌上的资料 · 点开看",
+      "boxes": [[1.2, 0.07, 0.7, 0, 0.74, 0, "c"], [0.07, 0.7, 0.07, -0.5, 0.36, -0.28, "ink"], [0.07, 0.7, 0.07, 0.5, 0.36, -0.28, "ink"],
+        [0.07, 0.7, 0.07, -0.5, 0.36, 0.28, "ink"], [0.07, 0.7, 0.07, 0.5, 0.36, 0.28, "ink"],
+        [0.3, 0.07, 0.22, -0.25, 0.815, 0.05, "paper"], [0.32, 0.03, 0.24, 0.22, 0.79, -0.02, "terra"]] },
+    { "id": "sofa", "label": "沙发", "category": "live", "color": "coral", "seat": { "at": [0, 0.64, 0.05], "face": 0, "count": 2, "spread": 0.9 }, "hint": "点一下坐下",
+      "boxes": [[1.9, 0.36, 0.8, 0, 0.25, 0, "c"], [1.9, 0.5, 0.22, 0, 0.55, -0.3, "c"], [0.22, 0.52, 0.8, -0.95, 0.3, 0, "c"], [0.22, 0.52, 0.8, 0.95, 0.3, 0, "c"]] },
+    { "id": "pad", "label": "传送点", "category": "live", "color": "sage", "teleport": true, "hint": "点一下传到下一个传送点", "shapes": [["disc", 0.42, 0, 0.03, 0, "c"]] }
+  ]
+}

@@ -19,15 +19,15 @@ function installChrome(window) {
     zoomReset: () => window.webContents.setZoomLevel(0),
     fullscreen: () => setWindowFullscreen(window, !window.isFullScreen()),
     permissions: () => dialog.showMessageBox(window, {
-      title: 'iruler dream · 声音与共享', message: '让协作自然发生',
-      detail: '设备管理可选择 Windows 扬声器与麦克风。\n开麦后才采集声音；高清共享仍需选择窗口或屏幕。\n关闭窗口会留在托盘，通话和共享继续；选择“退出”才结束程序。',
+      title: "iruler dream · 声音和共享", message: "在一个空间里一起工作",
+      detail: "在设备设置里选 Windows 的扬声器和麦克风。\n打开麦克风后才会录音；共享屏幕要先选一块屏幕或一个窗口。\n关掉窗口后通话和共享还在托盘里继续，要退出请选“退出”。",
     }),
   };
   const allow = event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame ||
         !trusted(event.senderFrame.url)) throw Error('Untrusted desktop chrome request');
   };
-  ipcMain.handle('dream:resources', event => {
+  ipcMain.handle('officeworld:resources', event => {
     allow(event);
     return {
       html: fs.readFileSync(path.join(__dirname, 'chrome.html'), 'utf8'),
@@ -36,31 +36,24 @@ function installChrome(window) {
       icon: nativeImage.createFromPath(path.join(__dirname, 'assets/icon.ico')).toDataURL(),
     };
   });
-  ipcMain.handle('dream:action', (event, action) => {
+  ipcMain.handle('officeworld:action', (event, action) => {
     allow(event);
     if (!Object.hasOwn(actions, action)) throw Error('Unknown desktop action');
     return actions[action]();
   });
   window.on('page-title-updated', event => { event.preventDefault(); window.setTitle('iruler dream'); });
-  // A maximised or full-screen window must drop the rounded corners, and in
-  // whole-screen mode the title bar steps aside so the picture covers everything.
-  // The enter/leave events are unreliable for this transparent window, so F11 goes
-  // through the shared helper and these listeners only catch other sources.
+
   const setMaximized = value => {
     if (window.isDestroyed() || window.webContents.isDestroyed()) return;
     void window.webContents
-      .executeJavaScript(`document.documentElement.classList.toggle('iruler-maximized', ${value});`, true)
+      .executeJavaScript(`document.documentElement.classList.toggle('officeworld-maximized', ${value});`, true)
       .catch(() => {});
   };
   window.on('maximize', () => setMaximized(true));
   window.on('unmaximize', () => setMaximized(false));
   window.on('enter-full-screen', () => applyFullscreenState(window, true));
   window.on('leave-full-screen', () => applyFullscreenState(window, false));
-  // A reload must never leave the window stuck in whole-screen mode: the title bar -
-  // and with it the maximise button - is hidden then, and the page that could ask to
-  // leave is gone (user, 2026-09-15). 这里**无条件**调一次：`setWindowFullscreen` 自己
-  // 有守卫（没进过整屏的窗口不会被它缩小），而 `isFullScreen()` 在这个无边框窗口上不可靠
-  // （2026-09-22 实测），只看它会让"自己请求过的整屏"记录留在 REQUESTED 里清不掉。
+
   window.webContents.on('did-navigate', () => { setWindowFullscreen(window, false); });
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
@@ -72,8 +65,8 @@ function installChrome(window) {
     if (action) { event.preventDefault(); void actions[action](); }
   });
   window.once('closed', () => {
-    ipcMain.removeHandler('dream:resources');
-    ipcMain.removeHandler('dream:action');
+    ipcMain.removeHandler('officeworld:resources');
+    ipcMain.removeHandler('officeworld:action');
   });
 }
 module.exports = { installChrome };

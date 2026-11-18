@@ -1,0 +1,170 @@
+[
+  {
+    "id": "man_adventurer",
+    "gender": "man",
+    "name": "Adventurer",
+    "label": "冒险家",
+    "glb": "/assets/characters/man_adventurer.glb",
+    "thumb": "/assets/characters/thumbnails/man_adventurer.png"
+  },
+  {
+    "id": "man_beach",
+    "gender": "man",
+    "name": "Beach",
+    "label": "沙滩度假",
+    "glb": "/assets/characters/man_beach.glb",
+    "thumb": "/assets/characters/thumbnails/man_beach.png"
+  },
+  {
+    "id": "man_casual_2",
+    "gender": "man",
+    "name": "Casual_2",
+    "label": "休闲套装",
+    "glb": "/assets/characters/man_casual_2.glb",
+    "thumb": "/assets/characters/thumbnails/man_casual_2.png"
+  },
+  {
+    "id": "man_casual_hoodie",
+    "gender": "man",
+    "name": "Casual_Hoodie",
+    "label": "连帽卫衣",
+    "glb": "/assets/characters/man_casual_hoodie.glb",
+    "thumb": "/assets/characters/thumbnails/man_casual_hoodie.png"
+  },
+  {
+    "id": "man_farmer",
+    "gender": "man",
+    "name": "Farmer",
+    "label": "农夫",
+    "glb": "/assets/characters/man_farmer.glb",
+    "thumb": "/assets/characters/thumbnails/man_farmer.png"
+  },
+  {
+    "id": "man_king",
+    "gender": "man",
+    "name": "King",
+    "label": "国王",
+    "glb": "/assets/characters/man_king.glb",
+    "thumb": "/assets/characters/thumbnails/man_king.png"
+  },
+  {
+    "id": "man_punk",
+    "gender": "man",
+    "name": "Punk",
+    "label": "朋克",
+    "glb": "/assets/characters/man_punk.glb",
+    "thumb": "/assets/characters/thumbnails/man_punk.png"
+  },
+  {
+    "id": "man_spacesuit",
+    "gender": "man",
+    "name": "Spacesuit",
+    "label": "宇航服",
+    "glb": "/assets/characters/man_spacesuit.glb",
+    "thumb": "/assets/characters/thumbnails/man_spacesuit.png"
+  },
+  {
+    "id": "man_suit",
+    "gender": "man",
+    "name": "Suit",
+    "label": "西装",
+    "glb": "/assets/characters/man_suit.glb",
+    "thumb": "/assets/characters/thumbnails/man_suit.png"
+  },
+  {
+    "id": "man_swat",
+    "gender": "man",
+    "name": "Swat",
+    "label": "特警",
+    "glb": "/assets/characters/man_swat.glb",
+    "thumb": "/assets/characters/thumbnails/man_swat.png"
+  },
+  {
+    "id": "man_worker",
+    "gender": "man",
+    "name": "Worker",
+    "label": "工人",
+    "glb": "/assets/characters/man_worker.glb",
+    "thumb": "/assets/characters/thumbnails/man_worker.png"
+  },
+  {
+    "id": "woman_adventurer",
+    "gender": "woman",
+    "name": "Adventurer",
+    "label": "冒险家",
+    "glb": "/assets/characters/woman_adventurer.glb",
+    "thumb": "/assets/characters/thumbnails/woman_adventurer.png"
+  },
+  {
+    "id": "woman_casual",
+    "gender": "woman",
+    "name": "Casual",
+    "label": "休闲",
+    "glb": "/assets/characters/woman_casual.glb",
+    "thumb": "/assets/characters/thumbnails/woman_casual.png"
+  },
+  {
+    "id": "woman_formal",
+    "gender": "woman",
+    "name": "Formal",
+    "label": "正装",
+    "glb": "/assets/characters/woman_formal.glb",
+    "thumb": "/assets/characters/thumbnails/woman_formal.png"
+  },
+  {
+    "id": "woman_medieval",
+    "gender": "woman",
+    "name": "Medieval",
+    "label": "中世纪",
+    "glb": "/assets/characters/woman_medieval.glb",
+    "thumb": "/assets/characters/thumbnails/woman_medieval.png"
+  },
+  {
+    "id": "woman_punk",
+    "gender": "woman",
+    "name": "Punk",
+    "label": "朋克",
+    "glb": "/assets/characters/woman_punk.glb",
+    "thumb": "/assets/characters/thumbnails/woman_punk.png"
+  },
+  {
+    "id": "woman_scifi",
+    "gender": "woman",
+    "name": "SciFi",
+    "label": "科幻",
+    "glb": "/assets/characters/woman_scifi.glb",
+    "thumb": "/assets/characters/thumbnails/woman_scifi.png"
+  },
+  {
+    "id": "woman_soldier",
+    "gender": "woman",
+    "name": "Soldier",
+    "label": "士兵",
+    "glb": "/assets/characters/woman_soldier.glb",
+    "thumb": "/assets/characters/thumbnails/woman_soldier.png"
+  },
+  {
+    "id": "woman_suit",
+    "gender": "woman",
+    "name": "Suit",
+    "label": "西装",
+    "glb": "/assets/characters/woman_suit.glb",
+    "thumb": "/assets/characters/thumbnails/woman_suit.png"
+  },
+  {
+    "id": "woman_witch",
+    "gender": "woman",
+    "name": "Witch",
+    "label": "女巫",
+    "glb": "/assets/characters/woman_witch.glb",
+    "thumb": "/assets/characters/thumbnails/woman_witch.png"
+  },
+  {
+    "id": "woman_worker",
+    "gender": "woman",
+    "name": "Worker",
+    "label": "工人",
+    "glb": "/assets/characters/woman_worker.glb",
+    "thumb": "/assets/characters/thumbnails/woman_worker.png"
+  }
+]

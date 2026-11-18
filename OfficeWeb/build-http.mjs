@@ -1,15 +1,19 @@
-import { fixtureFor } from './scene-fixtures.mjs';
+import { seatCountOf } from './part-library.mjs';
 import { createBuildWorkstations } from './build-workstations.mjs';
 import { createBuildStore } from './build-store.mjs';
 import { resolveBuildLink } from './build-link.mjs';
 import { buildCover } from './build-cover.mjs';
 import { createCinemaMedia } from './cinema-media.mjs';
+import { createModelMedia } from './model-media.mjs';
 
-const originalSeatId=p=>p && !p.fixtureCopy ? fixtureFor(p)?.seat?.id || '' : '';
+// the seats a part offers: one for a chair or stool, one per place on a sofa, and imported models made to sit on
+const seatIds=(p,model)=>{const n=seatCountOf(p.kind)||(model?.role==='seat'?1:0);
+  return n<=1?(n?[`build-seat-${p.id}`]:[]):Array.from({length:n},(_,i)=>`build-seat-${p.id}:${i}`);};
 
 export function createBuildHttp(path, occupied = () => false) {
   let store;
   const cinemaMedia=createCinemaMedia(path+'.media');
+  const modelMedia=createModelMedia(path+'.models');
   const registry=createBuildWorkstations(path+'.seats.json',()=>{store ||= createBuildStore(path);return store.snapshot().parts;});
   const limits = new Map();
   const handle = async (req, res, accounts) => {
@@ -30,13 +34,11 @@ export function createBuildHttp(path, occupied = () => false) {
     if (!account) { send(401, { error: '请先登录' }); return true; }
     try {
       if (req.method === 'GET' && url.searchParams.has('resolveLink')) {
-        if (!throttle('link:' + account.id, 1500)) { send(429, { error: '请稍后重试' }); return true; }
+        if (!throttle('link:' + account.id, 1500)) { send(429, { error: 'Please try again later' }); return true; }
         send(200, { url: await resolveBuildLink(url.searchParams.get('resolveLink')) });
         return true;
       }
-      // 视频封面：服务端解析平台封面并代理图片字节，页面只认本站地址（见 build-cover.mjs）。
-      // 这里**故意不做每账号限速**：一屏里可能同时有好几条视频链接，逐个 429 会让缩略图
-      // 成片消失；上游压力改由 build-cover 的内存缓存 + 单链接合并 + 3 条并发闸门兜住。
+
       if (req.method === 'GET' && url.searchParams.has('cover')) {
         const cover = await buildCover(url.searchParams.get('cover'));
         if (!cover) { res.writeHead(204, { 'Cache-Control': 'private, max-age=300' }); res.end(); return true; }
@@ -46,6 +48,9 @@ export function createBuildHttp(path, occupied = () => false) {
         return true;
       }
       store ||= createBuildStore(path);
+      if(['GET','HEAD'].includes(req.method) && url.searchParams.has('modelFile')) {
+        modelMedia.serve(req,res,url.searchParams.get('modelFile'));return true;
+      }
       if(['GET','HEAD'].includes(req.method) && url.searchParams.has('cinemaFile')) {
         cinemaMedia.serve(req,res,url.searchParams.get('cinemaFile'));return true;
       }
@@ -56,32 +61,38 @@ export function createBuildHttp(path, occupied = () => false) {
         send(200, id ? { entries: store.chest(id), people: store.people(id) } :
           url.searchParams.get('revision') === String(snapshot.revision) ? { unchanged: true } : snapshot);
       } else if (req.method === 'POST') {
-        if (!accounts.originAllowed(req)) { send(403, { error: '来源不允许' }); return true; }
-        if (!throttle(account.id, 120)) { send(429, { error: '操作太快，请稍候' }); return true; }
+        if (!accounts.originAllowed(req)) { send(403, { error: 'Origin not allowed' }); return true; }
+        if (!throttle(account.id, 120)) { send(429, { error: '太快了，等一下' }); return true; }
         const chunks = [];
         let size = 0;
         for await (const chunk of req) {
           size += chunk.length;
-          if (size > 240000) { send(413, { error: '内容太大' }); return true; }
+          if (size > 240000) { send(413, { error: '内容太大了' }); return true; }
           chunks.push(chunk);
         }
         const command = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if(url.searchParams.has('modelUpload')){
+          if(command.offset===0)modelMedia.prune(store.modelFiles());
+          send(200,modelMedia.upload(account,command));return true;
+        }
+        if(command.action==='model-add' && !modelMedia.exists(command.model?.file))throw Error('模型还没传完');
         if(url.searchParams.has('cinemaUpload')){
           const id=url.searchParams.get('cinemaUpload');store.screen(id);
           if(command.offset===0)cinemaMedia.prune(store.screenSources());
           send(200,cinemaMedia.upload(id,account,command));return true;
         }
         if(command.action==='cinema' && command.content?.src?.startsWith('/api/build?cinemaFile=')
-          && !cinemaMedia.exists(command.content.src))throw Error('影片尚未上传完成');
-        const modifiedIds=command.action==='moveMany' && Array.isArray(command.items)
+          && !cinemaMedia.exists(command.content.src))throw Error('视频还没传完');
+        const modifiedIds=['moveMany','removeMany'].includes(command.action) && Array.isArray(command.items)
           ? command.items.map(item=>item.id) : ['move','remove'].includes(command.action) ? [command.id] : [];
-        if (modifiedIds.some(id=>occupied(`build-seat-${id}`) || occupied(originalSeatId(store.snapshot().parts.find(p=>p.id===id))) || (registry.index(id)!==undefined && occupied(`desk-${registry.index(id)}`)))) {
-          send(409, { error: '有人正在使用这个座位，请等他起身后再修改' }); return true;
+        const partOf=id=>store.snapshot().parts.find(p=>p.id===id);
+        if (modifiedIds.some(id=>{const p=partOf(id);return (p && seatIds(p,store.model(p.kind.startsWith('model:')?p.kind.slice(6):'')).some(occupied)) || (registry.index(id)!==undefined && occupied(`desk-${registry.index(id)}`));})) {
+          send(409, { error: '有人坐在这里，等空了再改' }); return true;
         }
         send(200, store.mutate(command, account));
-      } else send(405, { error: '不支持的请求' });
+      } else send(405, { error: 'Unsupported request' });
     } catch (error) {
-      send(400, { error: error.code ? '存档暂时无法保存，请稍后重试' : error.message });
+      send(400, { error: error.code ? '没存上，等一下再试' : error.message });
     }
     return true;
   };
@@ -90,8 +101,26 @@ export function createBuildHttp(path, occupied = () => false) {
     if (typeof id !== 'string') return false;
     try {
       store ||= createBuildStore(path);
-      return store.snapshot().parts.some(p => (originalSeatId(p) || `build-seat-${p.id}`) === id && !p.pitch && !p.roll && ['chair','sofa'].includes(p.kind));
+      return store.snapshot().parts.some(p => !p.pitch && !p.roll
+        && seatIds(p, store.model(p.kind.startsWith('model:') ? p.kind.slice(6) : '')).includes(id));
     } catch { return false; }
+  };
+  handle.sofaSeats = () => {
+    try { store ||= createBuildStore(path); return store.snapshot().parts.filter(p => p.kind === 'sofa' && !p.pitch && !p.roll).flatMap(p => seatIds(p)); }
+    catch { return []; }
+  };
+  /** True once, at start-up, when the save was replaced by the library hall: old desk numbers and claims are void. */
+  handle.reset = () => {
+    store ||= createBuildStore(path);
+    if (!store.wasReset()) return false;
+    registry.clear();
+    return true;
+  };
+  handle.catWorld = () => {
+    store ||= createBuildStore(path);
+    const world = store.snapshot();
+    return { revision: world.revision, models: world.models.map(({id,size})=>({id,size})),
+      parts: world.parts.map(({id,kind,x,y,z,rotation,pitch,roll,scale})=>({id,kind,x,y,z,rotation,pitch,roll,scale})) };
   };
   handle.hasWorkstation=registry.valid;
   handle.seatCount=registry.count;

@@ -1,25 +1,20 @@
-// In-app update: download the installer the office site published, watch the bytes
-// arrive, verify them, then hand the file to Windows and step aside.
-//
-// The page cannot do any of this itself: a browser cannot write a 96MB exe to disk, and
-// it certainly cannot run it. So the work lives here, behind the same trusted-origin gate
-// as every other bridge call (user, 2026-09-17: "网页检测到新版本就弹出更新软件的提示，
-// 然后就是下载进度条，然后安装器打开覆盖安装").
+
+
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { spawn } = require('node:child_process');
+const { pipeline } = require('node:stream/promises');
 const { trusted, OFFICE_URL } = require('./policy.cjs');
 
-/** How often progress may cross the IPC boundary; more is wasted work per chunk. */
 const PROGRESS_INTERVAL_MS = 250;
-/** An installer is ~100MB; refuse anything absurd before writing many bytes. */
+
 const MAX_UPDATE_BYTES = 512 * 1024 * 1024;
 
-/** Keep the published file name, but never let it escape the update folder. */
 function safeFileName(url) {
-  let name = 'iruler-dream-Setup.exe';
+  let name = 'officeworld-Setup.exe';
   try { name = path.basename(new URL(url).pathname) || name; } catch { /* keep the default */ }
-  return name.replace(/[^A-Za-z0-9._-]/g, '_') || 'iruler-dream-Setup.exe';
+  return name.replace(/[^A-Za-z0-9._-]/g, '_') || 'officeworld-Setup.exe';
 }
 
 function createUpdater(dependencies = {}) {
@@ -29,36 +24,36 @@ function createUpdater(dependencies = {}) {
   const app = dependencies.app || electron.app;
   const files = dependencies.fs || fs;
   const now = dependencies.now || (() => Date.now());
+  const launch = dependencies.spawn || spawn;
   const onProgress = dependencies.onProgress || (() => {});
-  /** Where downloaded installers live; tests inject a scratch dir, the app uses temp. */
+
   const directory = dependencies.directory || null;
-  // Resolved on use rather than at construction: this module is also loaded by tests that
-  // only exercise the trust checks and have no Electron `app` around.
-  const updateDir = () => directory || path.join(app.getPath('temp'), 'iruler-dream-update');
+
+  const updateDir = () => directory || path.join(app.getPath('temp'), 'officeworld-update');
   let running;
+  let installing;
+  const downloaded = new Map();
 
   const absolute = url => new URL(url, new URL(OFFICE_URL).origin).href;
 
-  /**
-   * Download `url` under the update folder. Resolves with the file path, size and digest,
-   * or throws with a message the page can show verbatim.
-   */
   function download(url, expectedSha256) {
+    if (installing) return Promise.reject(Error('Installation is already starting'));
     if (running) return running;
     running = (async () => {
-      if (typeof url !== 'string' || !url) throw Error('缺少下载地址');
+      if (typeof url !== 'string' || !url) throw Error("Missing download URL");
       const target = absolute(url);
-      if (!trusted(target)) throw Error('下载地址不是本软件的服务器，已拒绝');
+      if (!trusted(target)) throw Error("Download URL is not from the configured application origin");
       const dir = updateDir();
       files.mkdirSync(dir, { recursive: true });
       const file = path.join(dir, safeFileName(target));
+      downloaded.delete(path.resolve(file));
       const response = await net.fetch(target, { cache: 'no-store' });
-      if (!response.ok) throw Error('下载失败：服务器返回 ' + response.status);
+      if (!response.ok) throw Error("Download failed: server returned " + response.status);
       const header = Number(response.headers.get('content-length'));
       const total = Number.isFinite(header) && header > 0 ? header : 0;
-      if (total > MAX_UPDATE_BYTES) throw Error('安装包异常地大，已取消下载');
+      if (total > MAX_UPDATE_BYTES) throw Error("Installer is too large; download cancelled");
       const hash = crypto.createHash('sha256');
-      const out = files.createWriteStream(file);
+      const partial = file + '.part';
       let received = 0, lastSent = 0;
       const report = (force) => {
         const stamp = now();
@@ -67,80 +62,75 @@ function createUpdater(dependencies = {}) {
         onProgress({ phase: 'downloading', received, total,
           percent: total ? Math.min(100, Math.round((received / total) * 1000) / 10) : null });
       };
-      const write = async chunk => {
-        const buffer = Buffer.from(chunk);
-        hash.update(buffer);
-        received += buffer.length;
-        if (received > MAX_UPDATE_BYTES) throw Error('安装包异常地大，已取消下载');
-        if (!out.write(buffer)) await new Promise(resolve => out.once('drain', resolve));
-        report(false);
-      };
       report(true);
       try {
-        // `net.fetch` runs on the Chromium stack, so it uses the app session's
-        // certificate handling and streams instead of buffering 96MB in memory.
-        const body = response.body;
-        if (body && typeof body.getReader === 'function') {
-          const reader = body.getReader();
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            await write(value);
+        await pipeline(response.body, async function* (source) {
+          for await (const chunk of source) {
+            const buffer = Buffer.from(chunk);
+            hash.update(buffer); received += buffer.length;
+            if (received > MAX_UPDATE_BYTES) throw Error("Installer is too large; download cancelled");
+            report(false);
+            yield buffer;
           }
-        } else {
-          for await (const chunk of body) await write(chunk);
-        }
+        }, files.createWriteStream(partial));
       } catch (error) {
-        out.destroy();
-        files.rmSync(file, { force: true });
+        files.rmSync(partial, { force: true });
         throw error;
       }
-      await new Promise((resolve, reject) => {
-        out.once('error', reject);
-        out.end(resolve);
-      });
       const sha256 = hash.digest('hex');
-      if (total && received !== total) {
-        files.rmSync(file, { force: true });
-        throw Error('下载不完整：' + received + '/' + total + ' 字节');
+      if (!received || (total && received !== total)) {
+        files.rmSync(partial, { force: true });
+        throw Error("Incomplete download: " + received + '/' + total + " bytes");
       }
       if (expectedSha256 && String(expectedSha256).toLowerCase() !== sha256) {
-        files.rmSync(file, { force: true });
-        throw Error('安装包校验失败，已删除，请重新下载');
+        files.rmSync(partial, { force: true });
+        throw Error("Installer checksum failed; the file was removed. Download it again.");
       }
       report(true);
+      files.renameSync(partial, file);
+      downloaded.set(path.resolve(file), sha256);
       return { ok: true, file, size: received, sha256 };
     })().finally(() => { running = undefined; });
     return running;
   }
 
-  /**
-   * Show the downloaded installer in Explorer, so "where did the file go?" never comes
-   * up (user, 2026-09-17: "下载好了没有弹出文件夹，或者没有弹出安装").
-   */
-  async function reveal(file) {
-    if (typeof file !== 'string' || !path.resolve(file).startsWith(path.resolve(updateDir()))) {
-      throw Error('安装包路径不可信');
+  function checkPath(file) {
+    const relative = typeof file === 'string' ? path.relative(path.resolve(updateDir()), path.resolve(file)) : '';
+    if (!relative || relative === '..' || relative.startsWith('..' + path.sep) || path.isAbsolute(relative)) {
+      throw Error("Untrusted installer path");
     }
-    if (!files.existsSync(file)) throw Error('安装包不存在，请重新下载');
+  }
+
+  async function reveal(file) {
+    checkPath(file);
+    if (!files.existsSync(file)) throw Error("Installer not found; download it again");
     shell.showItemInFolder(file);
     return { ok: true, file };
   }
 
-  /**
-   * Open the downloaded installer and quit, so the installer can replace the files it
-   * is running from. The delay lets the page paint "正在启动安装程序" first.
-   */
-  async function install(file, { quitAfterMs = 1200 } = {}) {
-    if (typeof file !== 'string' || !path.resolve(file).startsWith(path.resolve(updateDir()))) {
-      throw Error('安装包路径不可信');
-    }
-    const info = files.statSync(file);
-    if (!info.isFile() || info.size === 0) throw Error('安装包不存在，请重新下载');
-    const failure = await shell.openPath(file);
-    if (failure) throw Error('无法启动安装程序：' + failure);
-    setTimeout(() => { try { app.quit(); } catch { /* already on the way out */ } }, quitAfterMs);
-    return { ok: true, file };
+  function install(file, { quitAfterMs = 0 } = {}) {
+    try { checkPath(file); } catch (error) { return Promise.reject(error); }
+    if (installing) return installing;
+    installing = (async () => {
+      checkPath(file);
+      const digest = downloaded.get(path.resolve(file));
+      if (!digest || path.extname(file).toLowerCase() !== '.exe') throw Error('Installer not verified; download it again');
+      const info = files.statSync(file);
+      if (!info.isFile() || info.size === 0) throw Error("Installer not found; download it again");
+      const hash = crypto.createHash('sha256');
+      for await (const chunk of files.createReadStream(file)) hash.update(chunk);
+      if (hash.digest('hex') !== digest) throw Error('Installer checksum failed; download it again');
+      // Same NSIS handoff as quitAndInstall(true, true): no wizard, then restart.
+      // Wait for successful spawn before quitting; a failed launch keeps the app usable.
+      await new Promise((resolve, reject) => {
+        const child = launch(file, ['--updated', '/S', '--force-run'], { detached: true, stdio: 'ignore', windowsHide: true });
+        child.once('error', reject);
+        child.once('spawn', () => { child.unref(); resolve(); });
+      });
+      setTimeout(() => { app.quit(); }, quitAfterMs);
+      return { ok: true, file };
+    })().catch(error => { installing = undefined; throw error; });
+    return installing;
   }
 
   return { download, install, reveal, directory: updateDir };

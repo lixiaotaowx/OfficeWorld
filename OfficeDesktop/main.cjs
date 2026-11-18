@@ -1,190 +1,330 @@
-const { app, BrowserWindow, Menu, shell, dialog, session, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, dialog, session, screen, nativeImage, desktopCapturer } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { OFFICE_URL, trusted } = require('./policy.cjs');
 const { configurePermissions } = require('./permissions.cjs');
 const { installDesktopBridge } = require('./desktop-bridge.cjs');
 const { reconnect } = require('./reconnect.cjs');
+const { loadFresh, refreshBusy, createReopenRefresh } = require('./page-refresh.cjs');
 const { installTray } = require('./tray.cjs');
 const { installChrome } = require('./chrome.cjs');
-// 「这个窗口算不算整屏」：不能只看 isFullScreen()（这个无边框透明窗口上它不可靠，
-// 2026-09-22 真机实测过），要连"我们自己请求过整屏"那份记录一起算。
+const { createCommsHost } = require('./comms-host.cjs');
+const { closeBlockers, createMediaFlag } = require('./close-guard.cjs');
+
 const { hidesDock } = require('./fullscreen.cjs');
 const { applyWindowIcon } = require('./window-icon.cjs');
+const { APP_ID } = require('./shortcut-icons.cjs');
 const { createAnnotationLayer } = require('./annotation-overlay.cjs');
 const { createPreviewGlow } = require('./preview-glow.cjs');
 const { createShareBorder } = require('./share-border.cjs');
 const { createDisplayStore } = require('./display-store.cjs');
 const { createPreviewCapture } = require('./preview-capture.cjs');
+const { createNativePreviewCapture } = require('./native-preview-capture.cjs');
 const { createAutoStart, AUTOSTART_ARG } = require('./autostart.cjs');
 const { createDockWindow } = require('./dock-window.cjs');
 const { createTrayArea } = require('./tray-area.cjs');
 const { createTaskbarTheme } = require('./taskbar-theme.cjs');
 const { installDockBridge } = require('./dock-bridge.cjs');
 const { createFileTransfer } = require('./file-transfer.cjs');
+const { observeMainVisibility } = require('./main-visibility.cjs');
+const { createLeanSwap } = require('./lean-swap.cjs');
+const { attachTaskbarVisibility } = require('./window-taskbar.cjs');
+const { adoptLegacyProfile } = require('./legacy-profile.cjs');
 
-// Requested short notification tone must also play while hidden in the tray.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 const iconPath = path.join(__dirname, 'assets', 'icon.ico');
-// Deliberately NO custom AppUserModelId here. Windows resolves a taskbar button's icon
-// THROUGH the app user model id, so claiming an id that no Start-Menu shortcut is
-// registered under makes the taskbar fall back to the generic application icon — even
-// though the window icon is correct (verified with WM_GETICON: ICON_BIG 32x32 gold).
-// That is why the installer (a plain exe, no AUMID) showed the right icon while the app
-// did not. Falling back to the executable's own identity keeps the icon AND toasts
-// working, because that identity always resolves.
-
-// Keep the established profile through the display-name change.
-const profilePath = app.getPath('userData');
 app.setName('iruler dream');
+const smoke = process.argv.includes('--office-smoke-test');
+const isolatedAcceptance = process.argv.includes('--office-isolated-acceptance') ||
+  process.env.OFFICE_PERFORMANCE_FIXTURE === 'synthetic-preview';
+const profileArg = process.argv.find(value => value.startsWith('--user-data-dir='));
+const requestedProfile = profileArg?.slice('--user-data-dir='.length).replace(/^['"]|['"]$/g, '');
+if (isolatedAcceptance && requestedProfile) app.setPath('userData', path.resolve(requestedProfile));
+let profilePath = app.getPath('userData');
+// The product rename moved Chromium's profile folder; carry the old remembered login over
+// before the profile is opened. Test and fixture runs use throwaway profiles.
+const throwawayProfile = smoke || isolatedAcceptance || process.env.OFFICE_PERFORMANCE_FIXTURE === 'synthetic-preview';
+if (!throwawayProfile) {
+  const adopted = adoptLegacyProfile({ appData: app.getPath('appData'), profilePath });
+  if (adopted.migrated) console.log('Adopted the previous profile login:', adopted.copied.join(', '));
+}
+if (process.platform === 'win32' && app.isPackaged) app.setAppUserModelId(APP_ID);
 app.setPath('userData', profilePath);
+
+const hostMode = process.env.OFFICE_COMMS_HOST !== '0';
+const fixtureRequested = process.env.OFFICE_PERFORMANCE_FIXTURE === 'synthetic-preview';
+const fixtureUrl = new URL(OFFICE_URL);
+if (fixtureRequested && (app.isPackaged || fixtureUrl.protocol !== 'http:' || fixtureUrl.hostname !== '127.0.0.1' || !process.env.OFFICE_PERFORMANCE_TOOLS)) {
+  throw Error('Synthetic performance fixture requires an unpackaged local client');
+}
+if (isolatedAcceptance && (app.isPackaged || fixtureUrl.protocol !== 'http:' ||
+    !['127.0.0.1', 'localhost', '[::1]'].includes(fixtureUrl.hostname))) {
+  throw Error('Isolated acceptance requires an unpackaged local OFFICE_URL');
+}
+const fixtureTools = fixtureRequested ? process.env.OFFICE_PERFORMANCE_TOOLS : '';
+if (fixtureRequested) desktopCapturer.getSources = async () => { throw Error('Real screen capture is disabled in the performance fixture'); };
+const launchHidden = process.argv.includes(AUTOSTART_ARG);
+const autoStart = createAutoStart({ app });
+
+let initialized = false;
 let mainWindow;
 let mainTray;
 let dockWindow;
-/** 会话结束（关机/注销）只处理一次。 */
+let dockBridge;
+let reopenRefresh;
+let leanSwap;
+// Whether the main page has loaded the 3D hall since it was created.
+let mainHeavy = false;
+let commsHost;
+let officeSession;
+let annotationLayer;
+let previewGlow;
+let shareBorder;
+let displays;
+let previewCapture;
+let fileTransfer;
 let quitOnSessionEnd = false;
-const smoke = process.argv.includes('--office-smoke-test');
-// Windows starts the login item with this flag: connect quietly and stay in the tray
-// rather than throwing a window in front of whatever the person is doing at sign-in.
-const launchHidden = process.argv.includes(AUTOSTART_ARG);
-const autoStart = createAutoStart({ app });
-// Smoke runs use an isolated profile and never grant capture permissions.
-if (smoke) app.setPath('userData', path.join(app.getPath('temp'), 'office-world-smoke'));
-if (!app.requestSingleInstanceLock()) app.quit();
-else {
-  app.on('second-instance', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show(); mainWindow.focus();
-  });
-  app.whenReady().then(() => {
-    // An installed copy comes up with the machine without being asked; a portable
-    // build reports unsupported and this is a no-op.
-    if (!smoke) autoStart.ensure();
-    createWindow();
+let savedBounds;
+let savedMaximized = false;
+let endSession;
+const mainMedia = createMediaFlag();
+mainMedia.none();
+
+function mainUrl(lean = false) {
+  const url = new URL(OFFICE_URL);
+  if (hostMode) url.searchParams.set('officeCommsHost', '1');
+  // A lean page feeds the taskbar avatars and loads the hall only once it is shown.
+  if (lean) url.searchParams.set('officeLean', '1');
+  return url.href;
+}
+
+function mainWindowAlive() {
+  return Boolean(mainWindow && !mainWindow.isDestroyed());
+}
+
+/** Every reason the main window has to stay alive right now; empty means idle. */
+function mainBlockers() {
+  return closeBlockers({
+    hostEnabled: hostMode,
+    health: commsHost?.health?.(),
+    snapshot: commsHost?.snapshot?.(),
+    forced: commsHost?.forcedBusy?.() === true,
+    mediaActive: mainMedia.active(),
+    handles: fileTransfer?.openHandles?.(),
   });
 }
 
-function createWindow() {
-  const officeSession = session.fromPartition(smoke ? 'office-smoke' : 'persist:office-world');
-  // The layer that draws other people's annotations over the shared display.
-  const annotationLayer = createAnnotationLayer();
-  // 「有人来看我了」：所有屏幕四周闪一圈绿光（用户 2026-09-18）。
-  const previewGlow = createPreviewGlow();
-  const shareBorder = createShareBorder();
+function isBusy() {
+  return mainBlockers().length > 0;
+}
+
+function saveWindowState(window) {
+  try {
+    if (window.isDestroyed()) return;
+    savedBounds = window.getBounds();
+    savedMaximized = window.isMaximized();
+  } catch { /* closing */ }
+}
+
+if (smoke) app.setPath('userData', path.join(app.getPath('temp'), 'office-world-smoke'));
+profilePath = app.getPath('userData');
+function traceIsolatedStartup(stage) {
+  if (!isolatedAcceptance) return;
+  try { fs.appendFileSync(path.join(profilePath, 'startup-events.log'), `${Date.now()} ${process.pid} ${stage}\n`); }
+  catch { /* diagnostic only */ }
+}
+traceIsolatedStartup(`loaded debug-port=${app.commandLine.getSwitchValue('remote-debugging-port')}`);
+function startApplication() {
+  traceIsolatedStartup('instance-ready');
+  app.on('second-instance', () => {
+    if (!initialized) return;
+    const window = mainWindow && !mainWindow.isDestroyed() ? mainWindow : createMainWindow({ show: true });
+    if (!window) return;
+    if (window.isMinimized()) window.restore();
+    window.show(); window.focus();
+    reopenRefresh?.request();
+  });
+  app.whenReady().then(() => {
+    traceIsolatedStartup('app-ready');
+    if (!smoke && app.isPackaged) autoStart.ensure();
+    initialize();
+    traceIsolatedStartup('initialized');
+    createMainWindow();
+    traceIsolatedStartup(`main-created debug-port=${app.commandLine.getSwitchValue('remote-debugging-port')}`);
+  });
+}
+if (app.requestSingleInstanceLock()) {
+  traceIsolatedStartup('lock-acquired');
+  startApplication();
+} else {
+  traceIsolatedStartup('lock-denied');
+  app.quit();
+}
+
+function initialize() {
+  if (initialized) return;
+  initialized = true;
+  officeSession = session.fromPartition(smoke || isolatedAcceptance ? 'office-smoke' : 'persist:office-world');
+  commsHost = createCommsHost({
+    session: officeSession,
+    enabled: hostMode,
+    getMainWindow: () => mainWindow,
+    getDock: () => dockWindow?.window(),
+  });
+  commsHost.ensure();
+  ipcMain.on('office:media-active', (event, value) => {
+    if (mainWindowAlive() && event.sender === mainWindow.webContents &&
+        event.senderFrame === mainWindow.webContents.mainFrame) mainMedia.report(value === true);
+  });
+  app.once('before-quit', () => { try { commsHost?.destroy(); } catch {  } });
+
+  annotationLayer = createAnnotationLayer();
+  previewGlow = createPreviewGlow();
+  shareBorder = createShareBorder(fixtureRequested ? { BrowserWindow: class extends BrowserWindow { showInactive() {} } } : {});
   screen.on?.('display-added', () => previewGlow.sync());
   screen.on?.('display-removed', () => previewGlow.sync());
   screen.on?.('display-metrics-changed', () => previewGlow.sync());
-  // Preview and screen sharing both follow this one display selection.
-  const displays = createDisplayStore(path.join(profilePath, 'preview-display.json'));
-  // One long-lived small capture stream for the workstation preview.
-  const previewCapture = createPreviewCapture();
-  if (smoke) officeSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
-  else configurePermissions(officeSession, () => mainWindow, {
+  displays = createDisplayStore(path.join(profilePath, 'preview-display.json'));
+  previewCapture = fixtureRequested
+    ? createPreviewCapture({ preload: path.join(fixtureTools, 'performance-preview-preload.cjs'), denyMedia: true })
+    : createNativePreviewCapture();
+  const fixtureCapturer = fixtureRequested ? require(path.join(fixtureTools, 'performance-preview.cjs')).createSyntheticCapturer(screen, nativeImage) : undefined;
+  if (smoke || isolatedAcceptance) {
+    officeSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    officeSession.setPermissionCheckHandler(() => false);
+    officeSession.setDisplayMediaRequestHandler((_request, callback) => callback({}));
+  } else configurePermissions(officeSession, () => mainWindow, {
     displays,
-    // A display share can be covered; a window share cannot (empty id).
+    getHost: () => commsHost?.window(),
     onDisplayChosen: (displayId) => {
       shareBorder.captured(displayId);
       if (displayId) annotationLayer.target(displayId);
       else annotationLayer.target('');
     },
   });
-  mainWindow = new BrowserWindow({
-    width: 1440, height: 940, minWidth: 800, minHeight: 640,
-    title: 'iruler dream', transparent: true, backgroundColor: '#00000000', show: !smoke && !launchHidden, icon: iconPath,
-    frame: false,
-    webPreferences: { session: officeSession, nodeIntegration: false, contextIsolation: true, sandbox: true,
-      // A tray-hidden window must keep its socket, timers and audio live: call,
-      // voice and meeting alerts arrive while the renderer is not visible.
-      backgroundThrottling: false,
-      preload: path.join(__dirname, 'desktop-preload.cjs') },
-  });
-  const contents = mainWindow.webContents;
-  // 文件直传：接收文件夹、发送读盘、接收写盘、系统进度条（用户 2026-09-22）。
-  // 主窗口、头像条两边都用同一个实例，句柄只有这一份。
-  const fileTransfer = createFileTransfer({ app, getWindow: () => mainWindow });
-  // 页面一重载，它手里的发送句柄就没有主人了：直接收掉，别把 fd 留到关机。
-  contents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
-    if (isMainFrame && !isInPlace) { fileTransfer.reset(); shareBorder.reset(); }
-  });
-  contents.on('render-process-gone', () => shareBorder.reset());
-  mainWindow.on('closed', () => shareBorder.destroy());
-  app.on('before-quit', () => shareBorder.destroy());
-  app.on('session-end', () => shareBorder.destroy());
-  mainWindow.on('session-end', () => shareBorder.destroy());
-  applyWindowIcon(mainWindow, iconPath);
-  installChrome(mainWindow);
+  fileTransfer = createFileTransfer({ app, getWindow: () => mainWindow });
+
   if (!smoke) {
-    try { mainTray = installTray(mainWindow, iconPath, { autoStart,
-      glow: { flash: () => previewGlow.flash() },
-      dock: { enabled: () => dockWindow?.enabled() !== false, set: value => dockWindow?.setEnabled(value) } }); }
-    catch (error) {
-      // Keep normal close-to-exit behavior if Windows cannot create the tray. A
-      // login-item launch would otherwise leave a running app with no way in.
-      if (launchHidden) mainWindow.show();
-      dialog.showErrorBox('托盘不可用', `关闭窗口将退出应用。\n${error.message}`);
+    try {
+      mainTray = installTray(() => mainWindow, iconPath, {
+        createWindow: () => createMainWindow({ show: true }),
+        onShow: () => reopenRefresh?.request(),
+        autoStart,
+        glow: { flash: () => previewGlow.flash() },
+        dock: { enabled: () => dockWindow?.enabled() !== false, set: value => dockWindow?.setEnabled(value) },
+      });
+    } catch (error) {
+      dialog.showErrorBox("System tray unavailable", `Closing the window will exit the app.\n${error.message}`);
     }
   }
-  if (!smoke) installDesktopBridge(() => mainWindow,
-    { annotationLayer, previewGlow, shareBorder, displays, previewCapture, fileTransfer });
-  // 任务栏头像条：贴任务栏的小挂件，只显示 + 遥控，状态由主窗口推过来。
+
+  installDesktopBridge(() => mainWindow,
+    { annotationLayer, previewGlow, shareBorder, displays, previewCapture, desktopCapturer: fixtureCapturer,
+      previewPowerMonitor: fixtureRequested ? { getSystemIdleTime: () => 0 } : undefined,
+      fileTransfer, getDock: () => dockWindow?.window(), getHost: () => commsHost?.window() });
+
   if (!smoke) {
     const dockFile = path.join(profilePath, 'dock.json');
     const trayFile = path.join(profilePath, 'dock-tray.json');
-    // 诊断：每次"为什么显示 / 为什么藏"变化时落一行。用户报「头像 ui 有时候会消失找不到」时，
-    // 看一眼这个文件就知道是共享屏幕、整屏、任务栏读数还是托盘开关把它收走的。
     const whyFile = path.join(profilePath, 'dock-why.json');
     const dockStore = {
       read: () => { try { return JSON.parse(fs.readFileSync(dockFile, 'utf8')); } catch { return {}; } },
-      write: value => { try { fs.writeFileSync(dockFile, JSON.stringify(value)); } catch { /* 位置记不住不影响用 */ } },
-      // 诊断：把每次量到的托盘原始数据落盘。哪台机器位置不对，看一眼这个文件就够定位了。
-      measure: value => { try { fs.writeFileSync(trayFile, JSON.stringify(value, null, 2)); } catch { /* 诊断文件写不了不影响用 */ } },
-      decide: value => { try { fs.writeFileSync(whyFile, JSON.stringify(value, null, 2)); } catch { /* 诊断文件写不了不影响用 */ } },
+      write: value => { try { fs.writeFileSync(dockFile, JSON.stringify(value)); } catch {  } },
+      measure: value => { try { fs.writeFileSync(trayFile, JSON.stringify(value, null, 2)); } catch {  } },
+      decide: value => { try { fs.writeFileSync(whyFile, JSON.stringify(value, null, 2)); } catch {  } },
     };
     dockWindow = createDockWindow({ url: new URL('dock.html', OFFICE_URL).href, store: dockStore,
-      // 真的去量任务栏托盘在哪，头像条贴在它左边（用户 2026-09-18：另一台电脑上盖住输入法了）。
-      tray: createTrayArea(),
-      // 头像条外面那圈框要跟着任务栏的颜色适配（用户 2026-09-20）。
-      theme: createTaskbarTheme(),
-      // 整屏**或最大化**时把条子藏起来：**每次现算**，不靠 enter/leave 事件
-      //（`fullscreen.cjs` 开头就写着这个无边框透明窗口"事件不可靠"，2026-09-22 真机实测连
-      // `isFullScreen()` 都返回 false，所以用 `isWindowFullscreen()` = 自己请求过 || 系统说整屏）。
-      // 事件漏一次也不会永久藏着（用户 2026-09-22「头像这个 ui 有时候会消失找不到」）。
-      // **最大化也要藏**是用户 2026-10-14 提的通用逻辑：在窗口里最大化看共享画面时，条子
-      // 正好压在画面右下角上；窗口最小化时屏幕上没有画面要遮，条子照旧出现。
-      systemHidden: () => hidesDock(mainWindow) });
-    installDockBridge({ dock: dockWindow, getWindow: () => mainWindow });
-    dockWindow.ensure();
-    // 窗口状态一变就立刻重贴一次（藏/显示由上面那个现算的 getter 决定，这里只负责及时，
-    // 不写状态——`place()` 是唯一决定藏不藏的地方）。
-    for (const event of ['enter-full-screen', 'leave-full-screen', 'maximize', 'unmaximize',
-      'minimize', 'restore']) {
-      mainWindow.on(event, () => dockWindow?.place());
-    }
-    app.on('before-quit', () => {
-      dockWindow?.destroy();
-      // 退出前把常驻采集停掉：它会替我们向 Windows 申请"屏幕常亮"，留着只会拖慢关机。
-      try { previewCapture.stop?.(); } catch { /* 可能没在采 */ }
-      try { previewGlow.destroy(); } catch { /* 已经没了 */ }
-      try { fileTransfer.reset(); } catch { /* 没在传 */ }
+      tray: createTrayArea(), theme: createTaskbarTheme(), systemHidden: () => hidesDock(mainWindow) });
+    dockBridge = installDockBridge({ dock: dockWindow, getWindow: () => mainWindow,
+      getHost: () => commsHost?.window() });
+    reopenRefresh = createReopenRefresh({
+      pages: () => [{ window: mainWindow, url: mainUrl() },
+        { window: dockWindow?.window(), url: new URL('dock.html', OFFICE_URL).href }],
+      busy: isBusy,
+      fetch: (url, options) => officeSession.fetch(url, options),
     });
-    // Windows 关机/注销/重启：**不要在退出流程里逗留**（用户 2026-09-20：「不要阻止关机」）。
-    // 会话真的结束时（`session-end`；`query-session-end` 只是询问，不能拦）立刻把窗口都收掉
-    // 退出。托盘那条"关窗口 = 收进托盘"的拦截由 tray.cjs 的 quitting 标记放行，这里只保证
-    // 不拖时间：留着隐藏窗口 + 常驻采集流的话，Windows 会等我们，注销/关机就慢了。
-    const endSession = () => {
-      if (quitOnSessionEnd) return;
-      quitOnSessionEnd = true;
-      try { dockWindow?.destroy(); } catch { /* 已经没了 */ }
-      try { previewGlow.destroy(); } catch { /* 已经没了 */ }
-      try { previewCapture.stop?.(); } catch { /* 可能没在采 */ }
-      try { annotationLayer.close?.(); } catch { /* 可能没开 */ }
-      app.exit(0);
-    };
-    app.on('session-end', endSession);
-    mainWindow.on('session-end', endSession);
+    leanSwap = createLeanSwap({
+      getWindow: () => mainWindow,
+      heavy: () => mainHeavy,
+      busy: isBusy,
+      dockState: () => dockBridge.state(),
+      dockWindow: () => dockWindow?.window(),
+      swap: () => {
+        const old = mainWindow;
+        saveWindowState(old);
+        old.destroy();
+        createMainWindow({ show: false });
+      },
+    });
+    dockWindow.ensure();
   }
+
+  endSession = () => {
+    if (quitOnSessionEnd) return;
+    quitOnSessionEnd = true;
+    try { dockWindow?.destroy(); } catch {  }
+    try { previewGlow.destroy(); } catch {  }
+    try { annotationLayer.close?.(); } catch {  }
+    try { shareBorder?.destroy(); } catch {  }
+    try { commsHost?.destroy(); } catch {  }
+    app.exit(0);
+  };
+  app.on('session-end', endSession);
+
+  app.on('before-quit', () => {
+    try { reopenRefresh?.dispose(); } catch {  }
+    try { leanSwap?.dispose(); } catch {  }
+    try { dockWindow?.destroy(); } catch {  }
+    try { previewCapture.stop?.(); } catch {  }
+    try { previewGlow.destroy(); } catch {  }
+    try { fileTransfer?.reset(); } catch {  }
+    try { shareBorder?.destroy(); } catch {  }
+  });
+  app.on('window-all-closed', () => app.quit());
+  Menu.setApplicationMenu(null);
+}
+
+function createMainWindow(settings = {}) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (settings.show !== false) { mainWindow.show(); mainWindow.focus(); }
+    return mainWindow;
+  }
+  const shown = settings.show === undefined ? (!smoke && !launchHidden) : settings.show !== false;
+  // A window that starts hidden has no hall to draw yet.
+  const lean = !shown && !smoke && Boolean(mainTray);
+  const address = mainUrl(lean);
+  mainHeavy = !lean;
+  const window = new BrowserWindow({
+    ...(savedBounds || { width: 1440, height: 940 }),
+    minWidth: 800, minHeight: 640,
+    title: 'iruler dream', transparent: true, backgroundColor: '#00000000',
+    show: shown, skipTaskbar: !shown,
+    icon: iconPath, frame: false,
+    webPreferences: { session: officeSession, nodeIntegration: false, contextIsolation: true, sandbox: true,
+      backgroundThrottling: false, preload: path.join(__dirname, 'desktop-preload.cjs') },
+  });
+  mainWindow = window;
+  mainMedia.unknown();
+  if (!smoke && dockWindow) {
+    dockWindow.ensure();
+  }
+  const contents = window.webContents;
+  observeMainVisibility(window);
+  contents.on('did-start-navigation', (_event, _url, isInPlace, isMainFrame) => {
+    if (isMainFrame && !isInPlace) { fileTransfer.reset(); shareBorder.reset(); mainMedia.unknown(); }
+  });
+  contents.on('render-process-gone', () => { shareBorder.reset(); mainMedia.unknown(); });
+  window.on('close', () => saveWindowState(window));
+  window.on('closed', () => {
+    shareBorder?.reset();
+    if (mainWindow === window) { mainWindow = undefined; mainMedia.none(); }
+    if (!mainTray) app.quit();
+  });
+  if (!smoke) window.on('session-end', () => endSession?.());
+  applyWindowIcon(window, iconPath);
+  installChrome(window);
+  window.on('focus', () => { if (!window.isDestroyed()) window.flashFrame(false); });
   contents.setWindowOpenHandler(({ url }) => {
     if (trusted(url)) void contents.loadURL(url);
     else if (/^https?:/.test(url)) void shell.openExternal(url);
@@ -193,10 +333,16 @@ function createWindow() {
   contents.on('will-navigate', (event, url) => { if (!trusted(url)) event.preventDefault(); });
   contents.on('will-redirect', (event, url) => { if (!trusted(url)) event.preventDefault(); });
   contents.on('will-attach-webview', event => event.preventDefault());
-  // The taskbar flash is only a prompt; it ends the moment the window is focused.
-  mainWindow.on('focus', () => { mainWindow?.flashFrame(false); });
-  mainWindow.on('closed', () => { mainWindow = undefined; });
-  Menu.setApplicationMenu(null);
+  if (!smoke) {
+    attachTaskbarVisibility(window, { hiddenAtStart: !shown });
+    for (const event of ['enter-full-screen', 'leave-full-screen', 'maximize', 'unmaximize',
+      'minimize', 'restore', 'show', 'hide']) window.on(event, () => dockWindow?.place());
+    mainTray?.attach(window);
+    if (savedMaximized && window.isVisible()) window.maximize();
+    else if (savedMaximized) window.once('show', () => { if (!window.isDestroyed()) window.maximize(); });
+    window.on('show', () => { if (mainWindow === window) { mainHeavy = true; leanSwap?.disarm(); } });
+    window.on('hide', () => { if (mainWindow === window) leanSwap?.arm(); });
+  }
   if (smoke) {
     const report = data => {
       fs.writeFileSync(path.join(app.getPath('temp'), 'office-world-smoke.json'), JSON.stringify(data, null, 2));
@@ -205,8 +351,7 @@ function createWindow() {
     contents.once('did-finish-load', () => report({ ok: trusted(contents.getURL()), url: contents.getURL(), title: contents.getTitle(), electron: process.versions.electron, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } }));
     contents.once('did-fail-load', (_event, code, description) => report({ ok: false, code, description }));
     setTimeout(() => report({ ok: false, error: 'Load timeout' }), 45000).unref();
-  } else reconnect(mainWindow);
-  void mainWindow.loadURL(OFFICE_URL).catch(() => {});
+  } else reconnect(window, address);
+  void loadFresh(window, address).catch(() => {});
+  return window;
 }
-
-app.on('window-all-closed', () => app.quit());

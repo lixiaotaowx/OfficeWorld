@@ -1,259 +1,291 @@
+// The shared world: every part anyone has placed, kept in one versioned save. Conflicting edits are refused
+// rather than overwriting a newer change. Parts come from the shared part library (part-library.json) or
+// are imported models; their contents (documents, notes, cinema videos) live beside them in the save.
 import { readFileSync, writeFileSync, renameSync, existsSync } from 'node:fs';
-import { fixtureFor, initialFixtures } from './scene-fixtures.mjs';
 import { randomUUID } from 'node:crypto';
 import { cleanCinemaContent } from './cinema-content.mjs';
+import { library, partDef, sizeOf, PALETTE, holdsDocs, isCinema } from './part-library.mjs';
 
-export const catalog = JSON.parse(readFileSync(new URL('./build-catalog.json', import.meta.url), 'utf8'));
-export const palette = ['#f3dfc5', '#e9b8b5', '#b9c9df', '#b4c5a0', '#cabddd', '#c69770', '#596679'];
+export const FORMAT = 2;
+export const STEP_DEG = 15;            // rotation steps: 24 to a full turn
+export const TURNS = 360 / STEP_DEG;
+export const GRID = 0.25;              // parts slide on a 25 cm floor grid; height is free so things stack
+export const palette = PALETTE;
+export const catalog = library.parts;
+export const MODEL_PREFIX = 'model:';
+export const MODEL_ROLES = ['plain', 'holds', 'seat'];
+export const modelOf = (kind, models) => typeof kind === 'string' && kind.startsWith(MODEL_PREFIX)
+  ? models?.[kind.slice(MODEL_PREFIX.length)] || null : null;
+export const holds = (part, models) => holdsDocs(part.kind) || modelOf(part.kind, models)?.role === 'holds';
+export const gridSnap = value => Math.round(value / GRID) * GRID + 0;
+const mm = value => Math.round(value * 1000) / 1000 + 0;
 
-/**
- * **水平两轴永远吸附 0.25 网格**——"部件不会离格"这条不变量的**最后一道闸门**。
- *
- * 用户 2026-10-09：「将来确保不会有步长不统一的部件 所以就不需要对齐网格的按钮 … 根源修复 而不是打补丁」。
- * 客户端（`src/buildGrid.ts` 的 `snapHorizontal`）已经在每条放置/拖动/复制路径上算对了，这里再强制一次：
- * 旧版客户端、以后新加的某条路径、手工调接口，都写不进离格的 x/z。**y 不动**（接触高度/桌面高度是毫米级，
- * 强行取整会让叠着的东西浮起或陷进去；y 的步长仍由客户端保证是整格）。
- */
-export const BUILD_GRID = .25;
-export const gridSnap = value => Math.round(value / BUILD_GRID) * BUILD_GRID + 0;
-/**
- * **结构件**（目录分类「建筑」「玩法」）：三轴都严格落格。用户 2026-10-09 报「我有两个拱门 差距一直都是
- * 一个小缝 对不齐」——两件各自站在略有差异的面上（−4.605 / −4.564），而高度的步长是"从各自原点加整格"，
- * 永远凑不到同一高度；落格之后一次拖动就能齐。**家具/摆件（桌 1.42m、杯、书…）的 y 不落格**，否则
- * 放在桌面上的东西会浮起或陷进去。
- */
-const STRUCTURAL = new Set(catalog.filter(item => item.category === '建筑' || item.category === '玩法').map(item => item.id));
-export const isStructural = kind => STRUCTURAL.has(kind);
-/** 只有 x/z 都是有限数的部件才落格：老存档里可能存在残缺条目（缺 x/z），迁移时不能把它们变成 NaN。 */
-export const snapHorizontal = part => Number.isFinite(part.x) && Number.isFinite(part.z)
-  ? { ...part, x: gridSnap(part.x), z: gridSnap(part.z) } : part;
-/** 唯一出口：结构件三轴落格，其余部件水平两轴落格、高度保持精确。 */
-export const snapPart = part => Number.isFinite(part.x) && Number.isFinite(part.y) && Number.isFinite(part.z)
-  ? (isStructural(part.kind) ? { ...part, x: gridSnap(part.x), y: gridSnap(part.y), z: gridSnap(part.z) }
-    : snapHorizontal(part)) : part;
-/** 存档里还离格的部件（启动时的迁移与自查都用它）。**和迁移同一套判定**：fixture 的 y 不动，
- *  否则 island/柱子配重那些背景件永远"离格"、每次开服都白写一次存档、版本号一直涨。 */
-export const offGridParts = parts => parts.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z)
-  && (Math.abs(p.x - gridSnap(p.x)) > 1e-9 || Math.abs(p.z - gridSnap(p.z)) > 1e-9
-    || (isStructural(p.kind) && !p.fixture && Math.abs(p.y - gridSnap(p.y)) > 1e-9)));
-
-export function dimensions(part) {
-  const item = catalog.find(item => item.id === part.kind);
-  if (!item) throw Error('没有这个部件');
-  let [x, y, z] = fixtureFor(part)?.dimensions || (part.pitch || part.roll ? item.dimensions : item.size);
-  [x,y,z]=[x,y,z].map((n,i)=>n*(part.scale?.[i] ?? 1));
-  if ((part.roll || 0)%2) [x,y]=[y,x];
-  if ((part.pitch || 0)%2) [y,z]=[z,y];
-  return part.rotation % 2 ? [z, y, x] : [x, y, z];
+/** The box a part occupies in the world (width, height, depth), after its scale and rotation. */
+export function dimensions(part, models) {
+  const model = modelOf(part.kind, models);
+  const base = model ? model.size : sizeOf(part.kind);
+  if (!base) throw Error('没有这种零件');
+  const s = part.scale || [1, 1, 1];
+  const h = [base[0] * s[0] / 2, base[1] * s[1] / 2, base[2] * s[2] / 2];
+  const rad = n => (n || 0) * STEP_DEG * Math.PI / 180;
+  // yaw about y, then pitch about x, then roll about z; the extents are the sum of |R| times half-sizes
+  const [cy, sy, cp, sp, cr, sr] = [Math.cos(rad(part.rotation)), Math.sin(rad(part.rotation)),
+    Math.cos(rad(part.pitch)), Math.sin(rad(part.pitch)), Math.cos(rad(part.roll)), Math.sin(rad(part.roll))];
+  const Ry = [[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]], Rx = [[1, 0, 0], [0, cp, -sp], [0, sp, cp]], Rz = [[cr, -sr, 0], [sr, cr, 0], [0, 0, 1]];
+  const mul = (a, b) => a.map((row, i) => b[0].map((_, j) => row.reduce((sum, _v, k) => sum + a[i][k] * b[k][j], 0)));
+  const R = mul(Ry, mul(Rx, Rz));
+  return R.map(row => mm(2 * row.reduce((sum, v, j) => sum + Math.abs(v) * h[j], 0)));
 }
-function cleanPart(raw) {
-  if (!raw || !palette.includes(raw.color)) throw Error('请选择部件颜色');
-  if (![raw.x, raw.y, raw.z, raw.rotation].every(Number.isFinite)) throw Error('无效的位置');
-  if (!Number.isInteger(raw.rotation) || raw.rotation < 0 || raw.rotation > 3) throw Error('旋转角度无效');
-  for (const axis of ['pitch','roll']) if (raw[axis] !== undefined && (!Number.isInteger(raw[axis]) || raw[axis]<0 || raw[axis]>3)) throw Error('翻转角度无效');
-  // 位置在这里落格：这是"部件不会离格"的最后一道闸门（见 snapPart 的说明）。
-  const part = snapPart({ ...(raw.pitch ? {pitch:raw.pitch} : {}), ...(raw.roll ? {roll:raw.roll} : {}), kind: raw.kind, color: raw.color, x: raw.x, y: raw.y, z: raw.z, rotation: raw.rotation });
-  if (raw.fixture !== undefined) {
-    const fixture=fixtureFor(raw);
-    if(!fixture || fixture.kind!==raw.kind)throw Error('场景部件无效');
-    part.fixture=raw.fixture;
-    if(raw.fixtureCopy===true)part.fixtureCopy=true;
-  }
+
+const turn = (value, label) => {
+  if (value === undefined || value === 0) return 0;
+  if (!Number.isInteger(value) || value < 0 || value >= TURNS) throw Error(`${label}要按 15° 一档`);
+  return value;
+};
+function cleanPart(raw, models) {
+  if (!raw || typeof raw !== 'object') throw Error('零件数据不对');
+  const model = modelOf(raw.kind, models);
+  if (typeof raw.kind === 'string' && raw.kind.startsWith(MODEL_PREFIX) && !model) throw Error('这个导入的模型已经被删掉了');
+  if (!model && !partDef(raw.kind)) throw Error('没有这种零件');
+  if (![raw.x, raw.y, raw.z].every(Number.isFinite) || [raw.x, raw.y, raw.z].some(n => Math.abs(n) > 10000)) throw Error('位置不对');
+  if (!model && !palette.includes(raw.color)) throw Error('选一个颜色');
+  const part = { kind: raw.kind, color: model ? (palette.includes(raw.color) ? raw.color : palette[0]) : raw.color,
+    x: mm(raw.x), y: mm(raw.y), z: mm(raw.z), rotation: turn(raw.rotation, '转向') };
+  const pitch = turn(raw.pitch, '倾斜'), roll = turn(raw.roll, '倾斜');
+  if (pitch) part.pitch = pitch;
+  if (roll) part.roll = roll;
   if (raw.scale !== undefined) {
-    const base = fixtureFor(raw)?.dimensions || catalog.find(item => item.id === raw.kind)?.dimensions;
-    if (!base || !Array.isArray(raw.scale) || raw.scale.length !== 3 || raw.scale.some((n,i) =>
-      !Number.isFinite(n) || n <= 0 || !Number.isSafeInteger(Math.round(n*base[i]*1000))
-      || (n !== 1 && (n*base[i] < .25-1e-8 || Math.abs(n*base[i]*4-Math.round(n*base[i]*4)) > 1e-6))))
-      throw Error('缩放尺寸必须按25厘米格子对齐');
-    part.scale = [...raw.scale];
+    if (!Array.isArray(raw.scale) || raw.scale.length !== 3 || raw.scale.some(n => !Number.isFinite(n))) throw Error('缩放不对');
+    if (model) {
+      const [s] = raw.scale;
+      if (raw.scale.some(n => n !== s) || s < 0.05 || s > 20) throw Error('导入的模型只能等比缩放，0.05 到 20 倍');
+      if (s !== 1) part.scale = [s, s, s];
+    } else {
+      // Preserve metre-based resizing ratios; quantizing multipliers breaks physical steps.
+      if (raw.scale.some(n => n < 0.1 - 1e-9 || n > 10 + 1e-9)) throw Error('缩放范围为 0.1 到 10 倍');
+      const scale = raw.scale.map(n => Math.max(0.1, Math.min(10, n)));
+      if (scale.some(n => n !== 1)) part.scale = scale;
+    }
   }
-  dimensions(part);
-  if (![part.x, part.y, part.z].every(n => Number.isSafeInteger(Math.round(n*1000))))
-    throw Error('位置无效');
-  // x/z 已经被 snapHorizontal 落格；这里只再确认毫米精度（y 是接触高度，允许毫米）。
-  if (![part.x, part.y, part.z].every(n => Math.abs(n * 1000 - Math.round(n * 1000)) < 0.001))
-    throw Error('请对齐网格');
+  if (model && dimensions(part, models).some(n => n > 30 || n < 0.01)) throw Error('导入的模型要在 1 厘米到 30 米之间');
   return part;
 }
+function cleanModel(raw, user) {
+  const name = String(raw?.name || '').trim();
+  if (!name || name.length > 60) throw Error('模型名字 1 到 60 个字');
+  if (!MODEL_ROLES.includes(raw.role)) throw Error('选一下这个模型用来做什么');
+  if (typeof raw.file !== 'string' || !/^[a-f0-9-]{36}\.glb$/.test(raw.file)) throw Error('先上传模型文件');
+  if (!Array.isArray(raw.size) || raw.size.length !== 3 || raw.size.some(n => !Number.isFinite(n) || n < 0.01 || n > 30))
+    throw Error('模型每一边要在 1 厘米到 30 米之间');
+  return { id: randomUUID(), name, role: raw.role, file: raw.file, size: raw.size.map(mm), author: user.name, owner: user.id, at: Date.now() };
+}
+
+const DEG = d => Math.round(((d % 360) + 360) % 360 / STEP_DEG) % TURNS;
+/** The library hall's furniture, all of it movable: our long table, study desks, café, lounge, mezzanine. */
 export function seedParts() {
   const parts = [];
-  const add = (kind, x, y, z, color = palette[0], rotation = 0) =>
-    parts.push({ id: `starter-${parts.length}`, kind, x, y, z, color, rotation, version: 1 });
-  add('window', -6, 0, -8, palette[1]);
-  add('window', -10, 0, -8);
-  add('wall', -12, 0, -6, palette[0], 1);
-  add('pillar', -12, 0, -2);
-  add('beam', -10, 3, -8);
-  add('beam', -6, 3, -8);
-  add('desk', -10, 0, -6, palette[5]);
-  add('shelf', -6, 0, -7, palette[5]);
-  add('chest', -4.5, 0, -6, palette[1]);
-  add('chest', 5, 0, 4, palette[4]);
-  add('tree', -13, 0, -9, palette[3]);
-  add('tree', 12.5, 0, -9, palette[3]);
-  add('tree', 12.5, 0, 8.5, palette[3]);
-  add('tree', -12.5, 0, 8.5, palette[3]);
-  add('lamp', -3.5, 0, -8);
-  add('lamp', 5, 0, 7);
-  add('sofa', 8, 0, 7, palette[1]);
-  add('table', 8, 0, 5, palette[5]);
-  add('screen', 8, 0, 3, palette[2]);
-  add('door', 5, 0, -9, palette[4]);
+  const P = (kind, x, y, z, deg = 0, color) => parts.push({ id: `hall-${parts.length}`, kind,
+    color: color || library.palette[partDef(kind).color] || palette[0], x: gridSnap(x), y, z: gridSnap(z), rotation: DEG(deg), version: 1 });
+  const M = 2.7;
+  // the long table: four workstations side by side, stools behind them, facing into the room
+  // (1.25 m apart: desks are 1.1 m wide, and tabletops must never overlap)
+  for (const x of [0.75, 2, 3.25, 4.5]) { P('desk', x, 0, 1.25); P('stool', x, 0, 0.5); }
+  // study desks under the mezzanine, facing the shelves
+  for (const x of [0.5, 1.75, 3.75, 5]) { P('desk', x, 0, -3.25, 180, library.palette.ink); P('stool', x, 0, -2.5); }
+  // the café in front
+  for (const [x, z] of [[-2.25, 3.75], [0.5, 4]]) {
+    P('round-table', x, 0, z);
+    for (const a of [0, 120, 240]) { const r = a * Math.PI / 180; P('chair', x + Math.sin(r) * 0.75, 0, z + Math.cos(r) * 0.75, a + 180); }
+  }
+  // the lounge: a sofa facing a screen on a stand
+  P('sofa', 4.5, 0, 3.75, 90); P('screen', 6.75, 0, 3.75, 270); P('lamp', 3.5, 0, 4.5);
+  // the pinboard by the door, plants, the cabinet
+  P('board', -6.5, 0, 4, 90); P('cabinet', 6.25, 0, -4.25);
+  P('plant', 6.5, 0, 1.75); P('plant', -4.25, 0, 4.5); P('plant', -1.5, 0, 4.5);
+  // up on the mezzanine: reading tables, the treasure chest, a document desk
+  for (const x of [0.25, 2.5]) { P('table', x, M, -3.5); P('chair', x - 0.4, M, -2.75, 180); P('chair', x + 0.4, M, -2.75, 180); }
+  P('chest', 6, M, -3.5, 345); P('doc-desk', 4.5, M, -3.75); P('plant', 6.5, M, -2);
   return parts;
 }
+
 export function createBuildStore(path) {
-  // Corrupt data must never silently become a fresh world and overwrite user builds.
-  let state = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : { revision: 0, parts: seedParts(), chests: {} };
-  if (!Array.isArray(state.parts) || !state.chests || !Number.isInteger(state.revision)) throw Error('建造存档无效');
-  const snapshot = () => ({ revision: state.revision, parts: state.parts.map(p => p.kind === 'chest'
-    ? { ...p, chestPeople: state.chestPeople?.[p.id] || { readers: [] } } : p.kind==='cinema-screen'
-      ? {...p,cinemaVersion:state.screens?.[p.id]?.revision || 0} : p) });
+  const fresh = () => ({ format: FORMAT, revision: 1, parts: seedParts(), chests: {}, chestPeople: {}, screens: {}, models: {} });
+  let state, reset = false;
+  if (existsSync(path)) {
+    state = JSON.parse(readFileSync(path, 'utf8'));
+    if (!state || !Array.isArray(state.parts) || !Number.isInteger(state.revision)) throw Error('Invalid build save');
+    if (state.format !== FORMAT) {
+      // the old island world: kept beside the new hall, never deleted
+      writeFileSync(path + '.before-hall.json', readFileSync(path));
+      state = { ...fresh(), revision: state.revision + 1 }; reset = true;
+      writeFileSync(path + '.next', JSON.stringify(state)); renameSync(path + '.next', path);
+    }
+  } else {
+    // a new world is written at once, so the next start sees the same hall and does not reset again
+    state = fresh(); reset = true;
+    writeFileSync(path + '.next', JSON.stringify(state)); renameSync(path + '.next', path);
+  }
+  state.chests ||= {}; state.chestPeople ||= {}; state.screens ||= {}; state.models ||= {};
+
+  const snapshot = () => ({ removedShell: state.removedShell || [], revision: state.revision, models: Object.values(state.models || {}),
+    parts: state.parts.map(p => holds(p, state.models) ? { ...p, chestPeople: state.chestPeople?.[p.id] || { readers: [] } }
+      : isCinema(p.kind) ? { ...p, cinemaVersion: state.screens?.[p.id]?.revision || 0 } : p) });
   const person = user => ({ id: user.id, name: user.name, appearance: user.appearance || null });
   const commit = next => {
     next.revision = state.revision + 1;
     const json = JSON.stringify(next);
-    if (Buffer.byteLength(json) > 16 * 1024 * 1024) throw Error('空间储存已满，请整理宝箱图片');
-    writeFileSync(path + '.next', json);
-    renameSync(path + '.next', path);
+    if (Buffer.byteLength(json) > 16 * 1024 * 1024) throw Error('存储满了，先清掉一些用不上的图片');
+    writeFileSync(path + '.next', json); renameSync(path + '.next', path);
     state = next;
   };
-  if (!state.editableScene) {
-    if(existsSync(path))writeFileSync(path+'.before-editable-scene.json',readFileSync(path));
-    const next=structuredClone(state);
-    next.parts.push(...initialFixtures());
-    next.editableScene=1;
-    commit(next);
-  }
-  /**
-   * 一次性把**老存档里已经离格的部件**整盘回格（用户 2026-10-09：「确保不会有步长不统一的部件」）。
-   *
-   * 结构件（建筑/玩法）三轴都回格——两个拱门那种"各自站在略有差异的面上、永远对不齐"就是这么修的；
-   * 家具/摆件的 y 原样保留（否则桌面上的杯子会浮起来或陷进去）；**原场景 fixture 的 y 也不动**
-   * （island 基座 −0.6、柱子配重 −4.15 那些是背景几何，动了会把地面整体抬高）。改之前原文件另存
-   * `<path>.before-grid.json`，日志里记清改了几件。
-   */
-  const migrateGrid = () => {
-    const moved = offGridParts(state.parts);
-    if (!moved.length) return 0;
-    writeFileSync(path + '.before-grid.json', readFileSync(path));
-    const next = structuredClone(state);
-    next.parts = next.parts.map(part => part.fixture ? snapHorizontal(part) : snapPart(part));
-    commit(next);
-    console.log(`[build-store] 回格迁移：${moved.length} 件离格部件对齐到 ${BUILD_GRID} 网格（原文件备份为 ${path}.before-grid.json）`);
-    return moved.length;
-  };
-  migrateGrid();
   return {
     snapshot,
-    screenSources(){return Object.values(state.screens || {}).map(row=>row.content?.src).filter(Boolean);},
+    wasReset: () => reset,
+    screenSources() { return Object.values(state.screens || {}).map(row => row.content?.src).filter(Boolean); },
+    modelFiles() { return Object.values(state.models || {}).map(m => m.file); },
+    model(id) { return state.models?.[id] || null; },
     screen(id) {
-      const part=state.parts.find(p=>p.id===id && p.kind==='cinema-screen');
-      if(!part)throw Error('影院屏幕已被拆除');
-      return {content:state.screens?.[id]?.content || null,version:part.version};
+      const part = state.parts.find(p => p.id === id && isCinema(p.kind));
+      if (!part) throw Error('这块屏幕已经被拿走了');
+      return { content: state.screens?.[id]?.content || null, version: part.version };
     },
     chest(id) {
-      if (!state.parts.some(p => p.id === id && p.kind === 'chest')) throw Error('宝箱已被拆除');
+      if (!state.parts.some(p => p.id === id && holds(p, state.models))) throw Error('Chest was removed');
       return state.chests[id] || [];
     },
     people(id) { return state.chestPeople?.[id] || { readers: [] }; },
     mutate(command, user) {
       const next = structuredClone(state);
+      if (command.action === 'shell-visibility') {
+        if (!/^shell-v1-(0|[1-9][0-9]{0,2})$/.test(command.id || '') || typeof command.removed !== 'boolean') throw Error('Invalid fixed building');
+        const removed = new Set(next.removedShell || []);
+        if (command.removed) removed.add(command.id); else removed.delete(command.id);
+        next.removedShell = [...removed]; commit(next); return snapshot();
+      }
       const index = next.parts.findIndex(p => p.id === command.id);
       const previous = next.parts[index];
-      const previousCinema=state.screens?.[command.id]?.content;
-      if(command.action==='moveMany') {
-        const items=command.items;
-        if(!Array.isArray(items)||!items.length||items.length>1000)throw Error('多选数量无效');
-        if(new Set(items.map(item=>item.id)).size!==items.length)throw Error('多选部件重复');
-        const previousMany=[],changedMany=[];
-        for(const item of items){
-          const at=next.parts.findIndex(p=>p.id===item.id),old=next.parts[at];
-          if(!old || old.version!==item.version)throw Error('所选部件已被修改或拆除，请重新选择');
-          const changed={...cleanPart({...item.part,kind:old.kind,fixture:old.fixture,fixtureCopy:old.fixtureCopy}),id:old.id,version:old.version+1};
-          previousMany.push(old);changedMany.push(changed);next.parts[at]=changed;
+      const previousCinema = state.screens?.[command.id]?.content;
+      if (['duplicateMany', 'addMany', 'removeMany'].includes(command.action)) {
+        const items = command.items;
+        if (!Array.isArray(items) || !items.length || items.length > 1000) throw Error('选中的零件数量不对');
+        if (command.action !== 'addMany' && new Set(items.map(i => i.id)).size !== items.length) throw Error('选中的零件重复了');
+        const created = [];
+        for (const item of items) {
+          const old = next.parts.find(p => p.id === item.id);
+          if (command.action !== 'addMany' && (!old || old.version !== item.version)) throw Error('选中的零件被别人动过了，重新选一下');
+          if (command.action === 'removeMany') {
+            if ((next.chests[old.id] || []).length) throw Error('先取出零件里的资料再删除');
+            next.parts = next.parts.filter(p => p.id !== old.id);
+            delete next.chests[old.id]; delete next.screens[old.id]; delete next.chestPeople[old.id];
+          } else {
+            const part = { ...cleanPart(command.action === 'duplicateMany' ? old : item.part, next.models), id: randomUUID(), version: 1 };
+            next.parts.push(part);
+            if (holds(part, next.models)) next.chestPeople[part.id] = { creator: person(user), readers: [] };
+            const content = command.action === 'duplicateMany' ? next.screens[old.id]?.content : item.cinemaContent;
+            if (isCinema(part.kind) && content) next.screens[part.id] = { content: cleanCinemaContent(content), revision: 1 };
+            created.push({ part, ...(next.screens[part.id] ? { cinemaContent: next.screens[part.id].content } : {}) });
+          }
+        }
+        commit(next); return { ...snapshot(), created };
+      }
+      if (command.action === 'model-add') {
+        if (Object.keys(next.models).length >= 200) throw Error('最多 200 个导入的模型，先删掉用不上的');
+        const model = cleanModel(command.model, user);
+        next.models[model.id] = model; commit(next);
+        return { ...snapshot(), model };
+      }
+      if (command.action === 'model-remove') {
+        const model = next.models[command.modelId];
+        if (!model) throw Error('这个导入的模型已经被删掉了');
+        if (model.owner !== user.id) throw Error('只有导入它的人能删');
+        if (next.parts.some(p => p.kind === MODEL_PREFIX + model.id)) throw Error('先把摆出去的这个模型都删掉');
+        delete next.models[model.id]; commit(next);
+        return snapshot();
+      }
+      if (command.action === 'moveMany') {
+        const items = command.items;
+        if (!Array.isArray(items) || !items.length || items.length > 1000) throw Error('选中的零件数量不对');
+        if (new Set(items.map(item => item.id)).size !== items.length) throw Error('选中的零件重复了');
+        const previousMany = [], changedMany = [];
+        for (const item of items) {
+          const at = next.parts.findIndex(p => p.id === item.id), old = next.parts[at];
+          if (!old || old.version !== item.version) throw Error('选中的零件被别人动过了，重新选一下');
+          const changed = { ...cleanPart({ ...item.part, kind: old.kind }, next.models), id: old.id, version: old.version + 1 };
+          previousMany.push(old); changedMany.push(changed); next.parts[at] = changed;
         }
         commit(next);
-        return {...snapshot(),previousMany,changedMany};
+        return { ...snapshot(), previousMany, changedMany };
       }
       if (command.action === 'add' || command.action === 'duplicate') {
-        if(command.action==='duplicate' && (!previous || previous.version!==command.version))throw Error('部件已更新，请重新选择后复制');
-        const raw=command.action==='duplicate' ? {...previous,fixtureCopy:previous.fixture ? true : undefined} : command.part;
-        const cleaned=cleanPart(raw);
-        if(cleaned.fixture && !cleaned.fixtureCopy && next.parts.some(p=>p.fixture===cleaned.fixture && !p.fixtureCopy))throw Error('这个原场景部件已经存在');
-        const part = { ...cleaned, id: randomUUID(), version: 1 };
+        if (command.action === 'duplicate' && (!previous || previous.version !== command.version)) throw Error('零件被别人动过了，重新选一下再复制');
+        const raw = command.action === 'duplicate' ? previous : command.part;
+        const part = { ...cleanPart(raw, next.models), id: randomUUID(), version: 1 };
         next.parts.push(part);
-        if (part.kind === 'chest') (next.chestPeople ||= {})[part.id] = { creator: person(user), readers: [] };
-        if(part.kind==='cinema-screen') {
-          const saved=command.action==='duplicate'?next.screens?.[previous.id]?.content:command.cinemaContent;
-          if(saved)(next.screens ||= {})[part.id]={content:cleanCinemaContent(saved),revision:1};
+        if (holds(part, next.models)) next.chestPeople[part.id] = { creator: person(user), readers: [] };
+        if (isCinema(part.kind)) {
+          const saved = command.action === 'duplicate' ? next.screens[previous.id]?.content : command.cinemaContent;
+          if (saved) next.screens[part.id] = { content: cleanCinemaContent(saved), revision: 1 };
         }
         commit(next);
         return { ...snapshot(), changed: part };
       }
-      if (!previous) throw Error('部件已被拆除，请刷新位置后重试');
-      if(command.action==='cinema') {
-        if(previous.kind!=='cinema-screen')throw Error('只能设置影院屏幕');
-        if(previous.version!==command.version)throw Error('同事刚修改了影院屏幕，请重新打开');
-        const content=cleanCinemaContent(command.content);
-        (next.screens ||= {})[previous.id]={content,revision:(next.screens?.[previous.id]?.revision || 0)+1};
-        next.parts[index]={...previous,version:previous.version+1};
-        commit(next);return snapshot();
+      if (!previous) throw Error('零件已经被拿走了，刷新一下');
+      if (command.action === 'cinema') {
+        if (!isCinema(previous.kind)) throw Error('只有影院屏能放片子');
+        if (previous.version !== command.version) throw Error('屏幕被别人动过了，重新打开');
+        next.screens[previous.id] = { content: cleanCinemaContent(command.content), revision: (next.screens[previous.id]?.revision || 0) + 1 };
+        next.parts[index] = { ...previous, version: previous.version + 1 };
+        commit(next); return snapshot();
       }
       if (command.action === 'read') {
-        if (previous.kind !== 'chest') throw Error('只能阅读宝箱');
-        const people = (next.chestPeople ||= {})[previous.id] ||= { readers: [] };
+        if (!holds(previous, next.models)) throw Error('Only chests can be read');
+        const people = next.chestPeople[previous.id] ||= { readers: [] };
         if (people.creator?.id === user.id || people.readers.some(p => p.id === user.id)) return snapshot();
         people.readers.push({ ...person(user), at: Date.now() });
-        commit(next);
-        return snapshot();
+        commit(next); return snapshot();
       }
       if (command.action === 'move' || command.action === 'remove') {
-        if (previous.version !== command.version) throw Error('同事刚修改了这个部件，请重新选择');
+        if (previous.version !== command.version) throw Error('零件被别人动过了，重新选一下');
         if (command.action === 'remove') {
-          if ((next.chests[previous.id] || []).length) throw Error('宝箱里还有内容，请先取出内容');
+          if ((next.chests[previous.id] || []).length) throw Error(previous.kind === 'chest' ? 'Remove the chest contents first' : 'Remove the contents first');
           next.parts.splice(index, 1);
-          delete next.chests[previous.id];
-          if(next.screens)delete next.screens[previous.id];
-          if (next.chestPeople) delete next.chestPeople[previous.id];
+          delete next.chests[previous.id]; delete next.screens[previous.id]; delete next.chestPeople[previous.id];
         } else {
-          const part = cleanPart({ ...command.part, kind: previous.kind, fixture: previous.fixture, fixtureCopy: previous.fixtureCopy });
-          next.parts[index] = { ...part, id: previous.id, version: previous.version + 1 };
+          next.parts[index] = { ...cleanPart({ ...command.part, kind: previous.kind }, next.models), id: previous.id, version: previous.version + 1 };
         }
       } else if (command.action === 'put') {
-        if (previous.kind !== 'chest') throw Error('只能放入宝箱');
+        if (!holds(previous, next.models)) throw Error('Items can only be placed in chests, cabinets, shelves and tables');
         const entries = next.chests[previous.id] ||= [];
-        if (entries.length >= 30) throw Error('一个宝箱最多放 30 项');
+        if (entries.length >= 300) throw Error('一个资料库最多放 300 项资料');
         const entry = command.entry;
-        if (!entry || !['link', 'image', 'note'].includes(entry.type)) throw Error('不支持的内容');
+        if (!entry || !['link', 'image', 'note'].includes(entry.type)) throw Error('不支持这种内容');
         const title = String(entry.title || '').trim().slice(0, 100);
         const value = String(entry.value || '').trim();
-        if (!title || !value) throw Error('请填写标题和内容');
+        if (!title || !value) throw Error('写个标题和内容');
         if (entry.type === 'link') {
           let url;
-          try { url = new URL(value); } catch { throw Error('请填写完整网址'); }
-          if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || value.length > 2048)
-            throw Error('只支持 http / https 网址');
+          try { url = new URL(value); } catch { throw Error('写完整的链接'); }
+          if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || value.length > 2048) throw Error('只支持 http 和 https 链接');
         }
-        if (entry.type === 'note' && value.length > 4000) throw Error('便签最多 4000 字');
+        if (entry.type === 'note' && value.length > 40000) throw Error('文章最多 40000 字');
         if (entry.type === 'image') {
-          if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value) || value.length > 220000)
-            throw Error('图片太大或格式不支持，请重新选择');
+          if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value) || value.length > 220000) throw Error('图片太大或格式不支持');
           const bytes = Buffer.from(value.split(',')[1], 'base64');
-          const valid = bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))
+          const valid = bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
             || (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255)
             || (bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP');
-          if (!valid) throw Error('图片数据无效');
+          if (!valid) throw Error('图片数据不对');
         }
         entries.push({ id: randomUUID(), type: entry.type, title, value, author: user.name, owner: user.id, at: Date.now() });
       } else if (command.action === 'take') {
         const entries = next.chests[previous.id] || [];
         const entry = entries.find(item => item.id === command.entryId);
-        if (!entry || entry.owner !== user.id) throw Error('只能移除自己放入的内容');
+        if (!entry || entry.owner !== user.id) throw Error('只能拿走自己放的东西');
         next.chests[previous.id] = entries.filter(item => item.id !== entry.id);
-      } else throw Error('不支持的操作');
+      } else throw Error('不支持这个操作');
       commit(next);
       return { ...snapshot(), previous, changed: next.parts.find(p => p.id === previous.id),
-        ...(command.action==='remove' && previous.kind==='cinema-screen'?{previousCinema}: {}) };
+        ...(command.action === 'remove' && isCinema(previous.kind) ? { previousCinema } : {}) };
     },
   };
 }

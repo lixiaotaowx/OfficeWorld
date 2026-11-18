@@ -1,59 +1,106 @@
-const { ipcMain, desktopCapturer, screen, safeStorage, app, Notification, powerMonitor } = require('electron');
+const { ipcMain, desktopCapturer: nativeDesktopCapturer, screen, safeStorage, app, Notification, powerMonitor, net, shell, dialog } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createUpdater } = require('./update.cjs');
+const { createUpdateFallback } = require('./update-fallback.cjs');
 const { createPreviewIdleGate } = require('./preview-idle.cjs');
-const { trusted } = require('./policy.cjs');
+const { trusted, trustedHost, OFFICE_URL } = require('./policy.cjs');
 const { setWindowFullscreen } = require('./fullscreen.cjs');
+const { grantDockCapture } = require('./dock-capture-intent.cjs');
+const { mainWindowVisible } = require('./main-visibility.cjs');
 
 function installDesktopBridge(getWindow, dependencies = {}) {
+  const desktopCapturer = dependencies.desktopCapturer || nativeDesktopCapturer;
   const annotationLayer = dependencies.annotationLayer;
   const previewGlow = dependencies.previewGlow;
   const shareBorder = dependencies.shareBorder;
   const displays = dependencies.displays;
   const previewCapture = dependencies.previewCapture;
   const fileTransfer = dependencies.fileTransfer;
+  const getHost = dependencies.getHost || (() => undefined);
   const credentials = path.join(app.getPath('userData'), 'login.enc');
-  /** Preview edge and JPEG quality; the stream is configured with these once. */
+
   const PREVIEW_MAX_EDGE = 300;
   const PREVIEW_QUALITY = 55;
   let pending;
-  const allow = event => {
-    const window = getWindow();
-    if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame ||
-        !trusted(event.senderFrame.url)) throw Error('Untrusted desktop request');
+  let displayGeneration = 0;
+  let captureDisplayId = "";
+  let previewDisplayId = "";
+  const senderIs = (event, target) => Boolean(target) && !target.isDestroyed?.() &&
+    event.sender === target.webContents && event.senderFrame === target.webContents.mainFrame;
+  // Process identity, not "the only window": main, host and dock are separate
+  // renderers with separate channel allowlists.
+  const identify = event => {
+    const frame = event.senderFrame;
+    if (!frame || typeof frame.url !== 'string') return null;
+    if (senderIs(event, getWindow()) && trusted(frame.url)) return 'main';
+    if (senderIs(event, getHost()) && trustedHost(frame.url)) return 'host';
+    if (senderIs(event, dependencies.getDock?.()) && trusted(frame.url)) return 'dock';
+    return null;
   };
   async function sources() {
     const rows = await displays.list(desktopCapturer, screen);
-    const chosen = rows.find((row) => row.selected) ||
-      rows.find((row) => row.id === String(screen.getPrimaryDisplay().id)) || rows[0];
+    const chosen = displays.choose(rows, screen);
     return { sources: rows.map((row) => row.source), chosen: chosen?.source,
       list: rows.map(({ source: _source, ...rest }) => rest) };
   }
-  const handle = (name, fn) => ipcMain.handle(name, (event, ...args) => { allow(event); return fn(...args); });
+  // Media/capture stays in the main window. The host may read the saved login
+  // and report system idle, but it cannot take previews, annotation or capture.
+  const HOST_CHANNELS = new Set([
+    'office:login-read', 'office:login-clear', 'office:system-idle',
+  ]);
+  const handle = (name, fn, allowed) => ipcMain.handle(name, (event, ...args) => {
+    const kind = identify(event);
+    const kinds = allowed || ((HOST_CHANNELS.has(name) || name.startsWith('office:file-'))
+      ? ['main', 'host'] : ['main']);
+    if (!kind || !kinds.includes(kind)) throw Error('Untrusted desktop request');
+    return fn(...args);
+  });
+  handle('office:main-visible', () => mainWindowVisible(getWindow()));
+  // Only these two display controls are shared with the trusted avatar window.
+  const displayHandle = (name, fn) => ipcMain.handle(name, (event, ...args) => {
+    const kind = identify(event);
+    if (kind !== 'main' && kind !== 'dock') throw Error('Untrusted desktop request');
+    return fn(kind === 'dock', ...args);
+  });
   handle('office:captured-display', () => shareBorder?.source() || '');
   handle('office:sharing-displays', ids => shareBorder?.show(ids) ?? false);
-  handle('office:displays', async () => (await sources()).list);
-  handle('office:display-select', async id => {
+  displayHandle('office:displays', async () => {
+    const rows = await displays.list(desktopCapturer, screen);
+    return rows.map(({ source, ...rest }) => {
+      let thumbnail = '';
+      try { if (!source.thumbnail.isEmpty()) thumbnail = source.thumbnail.toDataURL(); } catch { /* Keep unavailable displays selectable. */ }
+      return { ...rest, thumbnail };
+    });
+  });
+  displayHandle('office:display-select', async (fromDock, id) => {
     const rows = await displays.list(desktopCapturer, screen);
     const source = rows.find((row) => row.id === id);
-    if (!source) throw Error('屏幕已断开，请重新选择');
+    if (!source) throw Error("The display was disconnected. Select another display.");
     displays.select(source.id);
-    // The preview follows the selection, so drop the running stream; the next frame
-    // re-attaches it to the newly chosen display.
+    shareBorder?.preview?.('');
+    displayGeneration++;
+    pending = undefined;
+    captureDisplayId = "";
+
     await previewCapture?.stop().catch(() => {});
+    if (fromDock) {
+      const window = getWindow();
+      if (window && !window.isDestroyed()) {
+        grantDockCapture(window.webContents);
+        window.webContents.send('office:display-changed');
+      }
+    }
     return true;
   });
-  // 离开电脑（系统空闲超过阈值）就停掉常驻采集流，屏幕才能按电源计划熄灭。
-  // Windows 上采集桌面会让 Chromium 申请 DISPLAY 常亮（2026-09-17 实测 powercfg）。
+
   const idleGate = createPreviewIdleGate({
-    powerMonitor,
-    onChange: paused => { if (paused) void previewCapture?.stop().catch(() => {}); },
+    powerMonitor: dependencies.previewPowerMonitor || powerMonitor,
+    onChange: paused => { if (paused) { shareBorder?.preview?.(''); void previewCapture?.stop().catch(() => {}); } },
   });
   handle('office:preview-active', active => {
-    // The page reports whether anybody could receive its preview; when nobody can,
-    // the capture stream is released instead of quietly running forever.
-    if (active === false) { idleGate.check(); void previewCapture?.stop().catch(() => {}); }
+
+    if (active === false) { displayGeneration++; pending = undefined; shareBorder?.preview?.(''); idleGate.check(); void previewCapture?.stop().catch(() => {}); }
     return Boolean(previewCapture?.attachedTo());
   });
   handle('office:preview-state', () => ({
@@ -63,38 +110,62 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     attached: Boolean(previewCapture?.attachedTo()),
   }));
   handle('office:preview-frame', async () => {
-    // 人不在电脑前：不给帧。流已经在状态翻转时停掉了（见上面 onChange），
-    // 所以这里不要重复 stop，也不要在这条路径上重新附着采集。
+
     if (idleGate.check()) return null;
-    // Preferred path: one long-lived small capture stream, so a frame costs a few
-    // milliseconds instead of re-capturing every display (~552ms measured).
-    if (previewCapture?.isSupported()) {
-      try {
-        if (!previewCapture.attachedTo()) {
-          const { chosen } = await sources();
-          if (!chosen) throw Error('暂时无法读取屏幕');
-          await previewCapture.start(chosen.id);
+
+    const generation = displayGeneration;
+    try {
+      let selected = displays.id();
+      if (selected && !screen.getAllDisplays().some(d => (String(d.id) === selected || String(Number(d.id) >>> 0) === selected))) {
+        // Resolve rebooted/legacy display identifiers before declaring the saved monitor disconnected.
+        const rows = await displays.list(desktopCapturer, screen);
+        selected = displays.id();
+        if (!displays.choose(rows, screen)) {
+          shareBorder?.preview?.('');
+          await previewCapture?.stop().catch(() => {});
+          throw Error('设置的屏幕未连接，请连接该屏幕或在设置中重新选择');
         }
-        const image = await previewCapture.frame();
-        if (image) return image;
-      } catch { /* fall through to the legacy path so previews never stop working */ }
+      }
+      if (previewCapture?.isSupported()) {
+        try {
+          if (!previewCapture.attachedTo() || captureDisplayId !== selected) {
+            const { chosen } = await sources();
+            if (!chosen) throw Error("The display is temporarily unavailable.");
+            await previewCapture.start(chosen.id);
+            captureDisplayId = selected;
+            previewDisplayId = chosen.display_id;
+          }
+          const image = await previewCapture.frame();
+          if (generation !== displayGeneration) throw Error('屏幕选择已改变');
+          if (image) { shareBorder?.preview?.(previewDisplayId); return image; }
+        } catch { /* fall through to the legacy path so previews never stop working */ }
+      }
+      if (generation !== displayGeneration) throw Error('屏幕选择已改变');
+      if (pending) return pending;
+      pending = sources().then(({ chosen }) => {
+        if (generation !== displayGeneration) throw Error('屏幕选择已改变');
+        if (!chosen || chosen.thumbnail.isEmpty()) throw Error("The display is temporarily unavailable.");
+        const size = chosen.thumbnail.getSize();
+        const scale = Math.min(1, PREVIEW_MAX_EDGE / Math.max(size.width, size.height));
+        const thumb = chosen.thumbnail.resize({ width: Math.max(1, Math.round(size.width * scale)),
+          height: Math.max(1, Math.round(size.height * scale)) });
+        const image = 'data:image/jpeg;base64,' + thumb.toJPEG(PREVIEW_QUALITY).toString('base64');
+        shareBorder?.preview?.(chosen.display_id);
+        return image;
+      }).finally(() => { if (generation === displayGeneration) pending = undefined; });
+      return await pending;
+    } catch (error) {
+      if (generation === displayGeneration) shareBorder?.preview?.('');
+      throw error;
     }
-    if (pending) return pending;
-    pending = sources().then(({ chosen }) => {
-      if (!chosen || chosen.thumbnail.isEmpty()) throw Error('暂时无法读取屏幕');
-      const size = chosen.thumbnail.getSize();
-      const scale = Math.min(1, PREVIEW_MAX_EDGE / Math.max(size.width, size.height));
-      const thumb = chosen.thumbnail.resize({ width: Math.max(1, Math.round(size.width * scale)),
-        height: Math.max(1, Math.round(size.height * scale)) });
-      return 'data:image/jpeg;base64,' + thumb.toJPEG(PREVIEW_QUALITY).toString('base64');
-    }).finally(() => { pending = undefined; });
-    return pending;
   });
   handle('office:login-save', value => {
     if (!value || typeof value.name !== 'string' || typeof value.password !== 'string' ||
         value.name.length > 24 || !value.password.length || value.password.length > 16) throw Error('Invalid login');
     if (!safeStorage.isEncryptionAvailable()) return false;
     fs.writeFileSync(credentials, safeStorage.encryptString(JSON.stringify(value)));
+    const host = getHost();
+    if (host && !host.isDestroyed?.()) host.webContents.send('office:host-auth-refresh');
     return true;
   });
   handle('office:login-read', () => {
@@ -105,18 +176,14 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     if (window.isMinimized()) window.restore();
     window.show(); window.moveTop(); window.focus(); return true;
   });
-  // Incoming call / voice / meeting alerts. A renderer HTML5 Notification is not
-  // dependable once the window is hidden in the tray, so the alert is raised from
-  // the main process: a native toast, plus a real window raise and taskbar flash
-  // for the ring-type events. Ordinary chat only gets the toast and a flash.
+
   const attention = () => {
     const window = getWindow();
     if (!window || window.isDestroyed()) return;
     if (window.isMinimized()) window.restore();
     window.show(); window.moveTop(); window.focus();
     window.flashFrame(true);
-    // A short top-most pulse is what actually lifts the window above a maximized
-    // or fullscreen app on Windows; it is released again so stacking stays normal.
+
     window.setAlwaysOnTop(true);
     setTimeout(() => { if (!window.isDestroyed()) window.setAlwaysOnTop(false); }, 1200);
   };
@@ -142,23 +209,17 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     return true;
   });
   handle('office:login-clear', () => { fs.rmSync(credentials, { force: true }); return true; });
-  // 在座 / 离桌: how long ago the user touched the mouse or keyboard **anywhere in
-  // Windows**, not just in this window. Working in Word or on another screen still
-  // counts as sitting at the desk (user, 2026-09-15), which the page cannot see on
-  // its own. `state` is 'active' | 'idle' | 'locked' | 'unknown'.
+
   handle('office:system-idle', () => {
     try {
       return { seconds: powerMonitor.getSystemIdleTime(), state: powerMonitor.getSystemIdleState(1) };
     } catch {
-      return null; // No power monitor on this platform: the page falls back to its own input watch.
+      return null;
     }
   });
-  // Native full screen. The DOM Fullscreen API is a no-op inside this window
-  // (frameless + transparent), and its enter/leave events do not fire either, so the
-  // requested state is applied and reported here rather than awaited from the window.
+
   handle('office:fullscreen', value => setWindowFullscreen(getWindow(), value === true));
-  // Annotation layer over the shared display. "attach" only succeeds for a
-  // display share; a window share has no place on the desktop to draw on.
+
   handle('office:annotation-layer', enabled => {
     if (!annotationLayer) return { ok: false, reason: 'unsupported' };
     if (enabled === false) { annotationLayer.close(); return { ok: true }; }
@@ -169,29 +230,25 @@ function installDesktopBridge(getWindow, dependencies = {}) {
   handle('office:annotation-push', message => {
     if (!annotationLayer || !annotationLayer.isOpen()) return false;
     if (!message || typeof message !== 'object') return false;
-    // 'clear' 也是这块画布上的一条指令（浮层 receive() 里有 clear 分支）。以前只放行
-    // annotate/undo，中继过来的清空就被静默丢掉，别人点「清空」不起作用。
+
     if (!['annotate', 'undo', 'clear'].includes(message.type)) return false;
     return annotationLayer.push(message);
   });
-  // 「有人来看我了」：主窗口收到服务端转来的"谁在看你"，就让所有屏幕闪一圈绿光。
-  // 自己在共享屏幕时不闪（`sharing` 由页面报上来，头像条那条路也是这么报的）——那一圈
-  // 光会被一起共享出去，看的人只会觉得画面脏了。
+
   handle('office:preview-glow', payload => {
     if (!previewGlow) return false;
     if (payload?.sharing === true || payload?.on === false) { previewGlow.hide(); return false; }
-    // `fade` 是"亮起来用多久"：鼠标停一下是慢慢亮 2 秒，打电话过来是立刻亮（用户 2026-09-20）。
-    return previewGlow.flash({ fade: payload?.fade }) > 0;
+
+    return previewGlow.flash({ fade: payload?.fade, tone: payload?.tone === 'call' ? 'call' : 'watch' }) > 0;
   });
   handle('office:annotation-clear', () => {
     if (!annotationLayer || !annotationLayer.isOpen()) return false;
     return annotationLayer.push({ type: 'clear' });
   });
-  // In-app update (user, 2026-09-17). The page asks for its own version, downloads the
-  // installer the site published (progress goes back over IPC), then starts it and quits.
+
   const updater = createUpdater({
-    // The bridge already holds this window's Electron `app`; handing it over keeps the
-    // update folder, the version and the quit in one place.
+    electron: { app, net, shell },
+
     app,
     onProgress: payload => {
       const window = getWindow();
@@ -202,8 +259,16 @@ function installDesktopBridge(getWindow, dependencies = {}) {
   handle('office:update-download', (url, sha256) => updater.download(url, sha256));
   handle('office:update-reveal', file => updater.reveal(file));
   handle('office:update-install', file => updater.install(file));
-  // 文件直传（用户 2026-09-22）：页面只拿得到"它自己拖进来/自己收到的那个文件"的句柄，
-  // 真实路径与写盘都留在主进程里。接收一定落在设置里的接收文件夹内。
+  // The page reports each successful manifest check. When it stops doing so (a broken
+  // web release, a page that never loads) the app checks and prompts on its own.
+  const updateFallback = (dependencies.createUpdateFallback || createUpdateFallback)({
+    app, net, dialog, updater, officeUrl: OFFICE_URL, trusted, getWindow,
+    log: message => console.warn(message),
+    startDelayMs: dependencies.updateFallbackDelayMs,
+  });
+  handle('office:update-checked', () => { updateFallback.pageChecked(); return true; });
+  updateFallback.start();
+
   if (fileTransfer) {
     handle('office:file-settings', () => fileTransfer.settings());
     handle('office:file-choose-folder', () => fileTransfer.chooseFolder());
@@ -215,7 +280,7 @@ function installDesktopBridge(getWindow, dependencies = {}) {
     handle('office:file-receive-write', (id, bytes) => fileTransfer.writeReceive(id, bytes));
     handle('office:file-receive-end', id => fileTransfer.endReceive(id));
     handle('office:file-receive-cancel', id => fileTransfer.cancelReceive(id));
-    // 系统级进度条：任务栏按钮上的那一条（两端都调它）。
+
     handle('office:file-progress', value => fileTransfer.progress(value));
     handle('office:file-open', target => fileTransfer.openPath(target));
     handle('office:file-reveal', target => fileTransfer.revealPath(target));

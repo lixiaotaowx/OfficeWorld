@@ -4,16 +4,10 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { canReadChat, recipientFor, publishChat } from './chat-access.mjs';
 
-/** 单个聊天文件上限：2 GB（用户 2026-09-21 要求，原为 20 MB）。
- *  **这里和网页侧 `src/chatAttachments.ts` 的 `MAX_CHAT_FILE_BYTES` 必须一致**，服务端这份是硬门。
- *  注意这些文件是**存在 VPS 上**的（`chat-data/`，保留 7 天，见 `chat-store.mjs` 的 `RETENTION`），
- *  所以上限调大等于磁盘占用变大——`df -h /` 过一眼再决定发多大的东西。 */
 export const MAX_FILE_SIZE = 2 * 1024 ** 3;
 const CHUNK = 128 * 1024;
 const validId = id => typeof id === "string" && /^[a-zA-Z0-9-]{1,80}$/.test(id);
 
-// Chunks stay below the existing Socket.IO/proxy limit. Only acknowledged,
-// complete files become messages; abandoned uploads never enter chat history.
 export function createChatFiles(directory, store) {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const pending = new Map();
@@ -39,42 +33,54 @@ export function createChatFiles(directory, store) {
       if (typeof reply !== "function") return;
       try {
         const person = people.get(socket.id);
-        if (!person || !validId(data?.requestId)) throw Error("请先进入空间");
+        if (!person || !validId(data?.requestId)) throw Error("Join the space first");
         const recipient = recipientFor(data.recipientId, person, contacts());
-        // File messages follow the same rule as text: no public channel for visitors.
+
         if (!recipient && person.role === "visitor")
-          throw Error("访客不能发公共聊天，请私聊同事");
+          throw Error("访客不能进入群聊，可以用私聊");
         const existing = store.all().find(row => row.senderId === person.clientId &&
           row.requestId === data.requestId);
         if (existing) {
-          if ((existing.recipientId || null) !== (recipient?.id || null)) throw Error('请求的会话不一致');
+          if ((existing.recipientId || null) !== (recipient?.id || null)) throw Error('Conversation does not match request');
           return reply({ ok: true, message: existing });
         }
         if (!Buffer.isBuffer(data.bytes) || data.bytes.length > CHUNK ||
             !Number.isSafeInteger(data.offset) || data.offset < 0)
-          throw Error("无效的文件分片");
+          throw Error("Invalid file chunk");
         let upload = pending.get(person.clientId);
         if (upload && upload.requestId !== data.requestId) {
-          if (upload.updated > Date.now() - 120000) throw Error("请等待当前文件发送完成");
+          if (upload.updated > Date.now() - 120000) throw Error("Wait for the current upload to finish");
           discard(upload); upload = undefined;
         }
         if (!upload) {
           if (data.offset !== 0 || !Number.isSafeInteger(data.size) ||
-              data.size < 1 || data.size > MAX_FILE_SIZE ||
+              data.size < 0 || data.size > MAX_FILE_SIZE ||
               typeof data.name !== "string" || !data.name.trim() || data.name.length > 200)
-            throw Error("文件需为 1 字节至 2 GB，文件名不超过 200 字");
-          if (pending.size >= 20) throw Error("上传繁忙，请稍后重试");
+            throw Error("File must be 0 bytes to 2 GB with a name up to 200 characters");
+          if (pending.size >= 20) throw Error("Uploads are busy. Please try again");
           upload = { id: randomUUID(), owner: person.clientId, socketId: socket.id,
             requestId: data.requestId, name: data.name.replace(/[\\/\x00-\x1f\x7f]/g, "_"),
             size: data.size, offset: 0, updated: Date.now(), recipient };
           writeFileSync(path(upload.id + ".part"), Buffer.alloc(0), { mode: 0o600 });
           pending.set(person.clientId, upload);
         }
-        if ((upload.recipient?.id || null) !== (recipient?.id || null)) throw Error('文件接收人不能中途改变');
+        if ((upload.recipient?.id || null) !== (recipient?.id || null)) throw Error('File recipient cannot change during transfer');
+        // An empty document (a fresh .txt) has no chunks at all: finish it at once, so a
+        // 0-byte file is sent like any other instead of stalling on a chunk that never comes.
+        if (upload.size === 0) {
+          const empty = { id: upload.id, name: upload.name, size: 0 };
+          renameSync(path(upload.id + ".part"), path(upload.id));
+          pending.delete(person.clientId);
+          let message;
+          try { message = store.append(person, "", data.requestId, empty, upload.recipient); }
+          catch (error) { rmSync(path(upload.id), { force: true }); throw error; }
+          publishChat(io, people, message);
+          return reply({ ok: true, message });
+        }
         if (data.offset < upload.offset && data.offset + data.bytes.length <= upload.offset)
           return reply({ ok: true, offset: upload.offset });
         if (data.offset !== upload.offset || !data.bytes.length ||
-            upload.offset + data.bytes.length > upload.size) throw Error("文件分片顺序错误");
+            upload.offset + data.bytes.length > upload.size) throw Error("File chunks are out of order");
         appendFileSync(path(upload.id + ".part"), data.bytes,
           { flush: upload.offset + data.bytes.length === upload.size });
         upload.offset += data.bytes.length;
@@ -88,7 +94,7 @@ export function createChatFiles(directory, store) {
         catch (error) { rmSync(path(upload.id), { force: true }); throw error; }
         publishChat(io, people, message);
         reply({ ok: true, message });
-      } catch (error) { reply({ ok: false, error: error.message || "文件发送失败" }); }
+      } catch (error) { reply({ ok: false, error: error.message || "File transfer failed" }); }
     });
     socket.on("chat-file-cancel", () => {
       for (const upload of pending.values()) if (upload.socketId === socket.id) discard(upload);

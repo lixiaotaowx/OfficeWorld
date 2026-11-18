@@ -1,8 +1,7 @@
-/** Bounded display-only private-call state; never forward media or arbitrary payload fields. */
+
 function cleanPrivateCalls(raw) {
   const text = (value, max = 64) => typeof value === 'string' ? value.slice(0, max) : '';
-  // 音量（0..1）：静音按钮里那层填充按它涨。**这层清洗是按字段重建的，漏一个就是"页面在推、
-  // 小窗永远收 0"**（`micLevel` 在 2026-10-15 就这么漏过一次，填充一直不显示）。非数字当 0。
+
   const level = raw?.micLevel === undefined ? undefined
     : Math.min(1, Math.max(0, Number(raw.micLevel) || 0));
   return {

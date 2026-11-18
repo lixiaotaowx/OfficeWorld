@@ -11,21 +11,21 @@ export function createPresenceStatus(path) {
     const user = accounts?.authenticate(req);
     if (!user) { send(401, { error: '请先登录' }); return true; }
     if (req.method === 'GET') { send(200, { statuses: rows }); return true; }
-    if (req.method !== 'POST') { send(405, { error: '不支持的请求' }); return true; }
-    if (!accounts.originAllowed(req)) { send(403, { error: '来源不允许' }); return true; }
+    if (req.method !== 'POST') { send(405, { error: '不支持这个请求' }); return true; }
+    if (!accounts.originAllowed(req)) { send(403, { error: '请求来源不对' }); return true; }
     try {
       let size = 0;
       const chunks = [];
       for await (const chunk of req) {
         size += chunk.length;
-        if (size > 2048) { send(413, { error: '状态太长' }); return true; }
+        if (size > 2048) { send(413, { error: '状态太长了' }); return true; }
         chunks.push(chunk);
       }
       const raw = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      if (typeof raw.text !== 'string') { send(400, { error: '请填写状态文字' }); return true; }
+      if (typeof raw.text !== 'string') { send(400, { error: '写点状态' }); return true; }
       const text = raw.text.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
-      if ([...text].length > 40) { send(400, { error: '状态最多40个字' }); return true; }
-      // Identity always comes from the authenticated session, never the request body.
+      if ([...text].length > 40) { send(400, { error: '状态最多 40 个字' }); return true; }
+
       const next = { ...rows };
       if (text) next[user.id] = text;
       else delete next[user.id];
@@ -33,7 +33,7 @@ export function createPresenceStatus(path) {
       renameSync(path + '.next', path);
       rows = next;
       send(200, { statuses: rows });
-    } catch { send(400, { error: '状态未能保存，请重试' }); }
+    } catch { send(400, { error: '状态没存上，再试一次' }); }
     return true;
   };
 }
