@@ -1,0 +1,6 @@
+dist/
+.dev-certs/
+.env
+.env.*
+src/chunks.bak/
+_unreferenced/

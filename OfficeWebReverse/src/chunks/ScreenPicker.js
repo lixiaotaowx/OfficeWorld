@@ -1,0 +1,102 @@
+import {
+  r as i,
+  j as e
+} from "./dockGreeting.js";
+
+function v({
+  bridge: t = window.officeDesktop,
+  onSelected: o
+} = {}) {
+  const [r, u] = i.useState([]), [a, h] = i.useState(!0), [l, f] = i.useState(""), [p, c] = i.useState(""), [d, m] = i.useState(0);
+  i.useEffect(() => {
+    let s = !0;
+    if (h(!0), !(t != null && t.displays)) {
+      h(!1), c("请更新客户端以使用小窗切换屏幕");
+      return
+    }
+    return t.displays().then(n => {
+      s && (u(n), c(""))
+    }).catch(() => {
+      s && c("读取屏幕失败，请重新检测。")
+    }).finally(() => {
+      s && h(!1)
+    }), () => {
+      s = !1
+    }
+  }, [d, t]);
+  const j = async s => {
+    if (!(a || l)) {
+      f(s), c("");
+      try {
+        if (!(t != null && t.selectDisplay) || await t.selectDisplay(s) === !1) throw Error("Display selection failed");
+        u(n => n.map(x => ({
+          ...x,
+          selected: x.id === s
+        }))), window.dispatchEvent(new Event("office-display-changed")), o == null || o()
+      } catch {
+        c("切换失败，屏幕可能已断开，请重新检测。")
+      } finally {
+        f("")
+      }
+    }
+  };
+  return e.jsxs("div", {
+    className: "settings-screen-picker",
+    "aria-busy": a || !!l,
+    children: [e.jsxs("div", {
+      className: "settings-screen-toolbar",
+      children: [e.jsx("span", {
+        children: "点击预览选择屏幕"
+      }), e.jsx("button", {
+        type: "button",
+        disabled: a || !!l,
+        onClick: () => m(s => s + 1),
+        children: a ? "检测中…" : "刷新预览 / 重新检测"
+      })]
+    }), p && e.jsx("p", {
+      role: "alert",
+      children: p
+    }), !a && !p && !r.length && e.jsx("p", {
+      role: "status",
+      children: "未检测到可用屏幕，请连接屏幕后重新检测。"
+    }), !a && r.length > 0 && !r.some(s => s.selected) && e.jsx("p", {
+      role: "status",
+      children: "已保存的屏幕未找到，请选择另一块屏幕。"
+    }), e.jsx("div", {
+      className: "settings-screen-grid",
+      role: "group",
+      "aria-label": "选择共享屏幕",
+      children: r.map((s, n) => e.jsxs("button", {
+        type: "button",
+        className: "settings-screen-card",
+        "aria-pressed": s.selected,
+        disabled: a || !!l,
+        onClick: () => void j(s.id),
+        children: [e.jsx("span", {
+          className: "settings-screen-image",
+          children: s.thumbnail ? e.jsx("img", {
+            src: s.thumbnail,
+            alt: `显示器 ${n+1} 的屏幕预览`
+          }) : e.jsx("span", {
+            children: s.thumbnail === void 0 ? "更新客户端后可查看预览" : "暂时无法预览，仍可选择此屏幕"
+          })
+        }), e.jsxs("span", {
+          className: "settings-screen-caption",
+          children: [e.jsxs("strong", {
+            children: ["显示器 ", n + 1]
+          }), e.jsx("span", {
+            children: l === s.id ? "保存中…" : s.selected ? "✓ 当前使用" : "选择此屏幕"
+          })]
+        }), e.jsx("small", {
+          children: s.width && s.height ? `${s.width} × ${s.height}` : s.name
+        })]
+      }, s.id))
+    }), e.jsx("p", {
+      className: "settings-screen-note",
+      children: "预览仅在本机显示；点击刷新可查看最新画面。"
+    })]
+  })
+}
+export {
+  v as S
+};

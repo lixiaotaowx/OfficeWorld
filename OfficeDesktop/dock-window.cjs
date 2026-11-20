@@ -58,6 +58,7 @@ function createDockWindow(dependencies = {}) {
   let moveTimer;
   let loadTimer;
   let loadAttempt = 0;
+  let pageLoaded = false;
 
   let pageVisible = true;
   let manual = true;
@@ -148,6 +149,10 @@ function createDockWindow(dependencies = {}) {
 
   function place() {
     if (!window || window.isDestroyed()) return null;
+    if (!pageLoaded) {
+      if (window.isVisible()) window.hide();
+      return null;
+    }
 
     let box = layout();
     // When the taskbar auto-hides, retain a usable position for an open panel.
@@ -220,6 +225,10 @@ function createDockWindow(dependencies = {}) {
     destroyed = false;
     if (window && !window.isDestroyed()) return window;
     if (!url) return undefined;
+    clearTimeout(loadTimer);
+    loadTimer = undefined;
+    loadAttempt = 0;
+    pageLoaded = false;
     window = new BrowserWindow({
       ...size,
       show: false,
@@ -269,26 +278,54 @@ function createDockWindow(dependencies = {}) {
       moveTimer = setTimeout(() => { moveTimer = undefined; remember(); }, 300);
     });
 
+    let loadFailed = false;
+    let firstLoad = true;
+    const isCurrent = () => window === created && !created.isDestroyed();
     const retryLoad = () => {
-      if (!window || window.isDestroyed()) return;
+      if (!isCurrent()) return;
+      loadFailed = true;
+      pageLoaded = false;
+      place();
+      if (loadTimer) return;
       const delay = retryMs[Math.min(loadAttempt, retryMs.length - 1)];
       loadAttempt += 1;
-      if (loadTimer) clearTimeout(loadTimer);
       loadTimer = setTimeout(() => {
         loadTimer = undefined;
-        if (window && !window.isDestroyed()) void loadFresh(window, url).catch(() => {});
+        if (isCurrent()) loadPage();
       }, delay);
       loadTimer.unref?.();
     };
-    window.webContents.on('did-finish-load', () => { loadAttempt = 0; });
-    window.webContents.on('did-fail-load', (_event, code, _description, _target, mainFrame) => {
-
+    const loadPage = () => {
+      void loadFresh(created, url).catch(error => {
+        if (error?.code !== 'ERR_ABORTED' && error?.errno !== -3) retryLoad();
+      });
+    };
+    created.webContents.on('did-start-navigation', (event, _target, inPlace, mainFrame) => {
+      if (!isCurrent() || !(event.isMainFrame ?? mainFrame) || (event.isSameDocument ?? inPlace)) return;
+      loadFailed = false;
+      pageLoaded = false;
+      place();
+    });
+    created.webContents.on('did-finish-load', () => {
+      if (!isCurrent() || loadFailed) return;
+      clearTimeout(loadTimer);
+      loadTimer = undefined;
+      loadAttempt = 0;
+      pageLoaded = true;
+      place();
+      if (firstLoad) {
+        firstLoad = false;
+        void measureTray(true);
+      }
+    });
+    created.webContents.on('did-fail-load', (_event, code, _description, _target, mainFrame) => {
       if (mainFrame !== false && code !== -3) retryLoad();
     });
-
-    window.webContents.on('render-process-gone', () => { loadAttempt = 0; retryLoad(); });
-    window.webContents.once('did-finish-load', () => { void measureTray(true); place(); });
-    void loadFresh(window, url).catch(() => retryLoad());
+    created.webContents.on('did-navigate', (_event, _target, status) => {
+      if (status >= 400) retryLoad();
+    });
+    created.webContents.on('render-process-gone', () => { loadAttempt = 0; retryLoad(); });
+    loadPage();
 
     void measureTray(true);
     if (follow) clearInterval(follow);

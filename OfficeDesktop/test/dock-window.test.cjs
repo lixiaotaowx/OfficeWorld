@@ -33,7 +33,7 @@ test('原生层级检查正常时不反复置顶，隐藏规则照常，窗口�
 });
 
 test('建窗：无边框透明、不进任务栏、不抢焦点、贴任务栏同级置顶、用主窗口同一个会话', () => {
-  const h = harness();
+  const h = harness({ autoFinish: false });
   h.dock.ensure();
   const win = h.window();
   assert.equal(win.options.frame, false);
@@ -45,7 +45,7 @@ test('建窗：无边框透明、不进任务栏、不抢焦点、贴任务栏�
   assert.equal(win.options.webPreferences.session.name, 'persist:office-world', '和主窗口同会话');
   assert.equal(win.options.webPreferences.nodeIntegration, false);
   assert.deepEqual(win.alwaysOnTop, [[false, undefined]], '创建时不抢占最高层，层级由任务栏适配器决定');
-  assert.equal(win.url, 'https://115.159.43.237/dock.html');
+  assert.equal(new URL(win.url).pathname, '/dock.html');
 });
 
 test('位置：贴着任务栏下边缘、右端留出托盘宽度（量不到就用估算值）', async () => {
@@ -182,8 +182,9 @@ test('量托盘失败：退回估算值，不能炸', async () => {
 test('任务栏自动隐藏时我们也藏（连续三次才算，别忽闪）', () => {
   const full = { bounds: { x: 0, y: 0, width: 1920, height: 1080 },
     workArea: { x: 0, y: 0, width: 1920, height: 1080 } };
-  const h = harness({ display: full });
+  const h = harness();
   h.dock.ensure();
+  h.state.display = full;
   // 要连着读到三次（每 1.5 秒一次）才真藏：一次就藏的话，息屏/全屏这类抖动会让条子忽闪
   // （用户 2026-09-20）。代价是任务栏真藏起来之后最多多留三四秒，而条子在托盘那侧、
   // 底边别的地方照样能把任务栏碰出来。
@@ -342,11 +343,13 @@ test('页面没加载出来会自己重试（开机自启时网络常常还没�
   const h = harness({ loadRetryMs: [20] });
   h.dock.ensure();
   const win = h.window();
-  assert.equal(win.url, 'https://115.159.43.237/dock.html', '第一次加载');
+  const initialUrl = win.url;
+  assert.equal(new URL(initialUrl).pathname, '/dock.html', '第一次加载');
   win.url = '';
   win.webContents.emit('did-fail-load', {}, -106, 'ERR_INTERNET_DISCONNECTED', '', true);
   await new Promise(resolve => setTimeout(resolve, 120));
-  assert.equal(win.url, 'https://115.159.43.237/dock.html', '失败之后要自己再加载一次');
+  assert.equal(new URL(win.url).pathname, '/dock.html', '失败之后要自己再加载一次');
+  assert.notEqual(win.url, initialUrl, '重试时绕过缓存');
   // 我们自己打断的（-3）不算失败，别疯狂重试。
   win.url = '';
   win.webContents.emit('did-fail-load', {}, -3, 'ERR_ABORTED', '', true);
@@ -356,8 +359,31 @@ test('页面没加载出来会自己重试（开机自启时网络常常还没�
   win.webContents.emit('did-finish-load');
   win.webContents.emit('render-process-gone');
   await new Promise(resolve => setTimeout(resolve, 120));
-  assert.equal(win.url, 'https://115.159.43.237/dock.html', '崩了要重新加载');
+  assert.equal(new URL(win.url).pathname, '/dock.html', '崩了要重新加载');
   h.dock.destroy();
+});
+
+test('头像条加载完成前保持隐藏，失败和重试时也不挡鼠标', async () => {
+  const h = harness({ autoFinish: false, loadRetryMs: [20] });
+  try {
+    const win = h.dock.ensure();
+    h.dock.place();
+    assert.equal(win.isVisible(), false);
+    win.webContents.emit('did-fail-load', {}, -202, 'ERR_CERT_AUTHORITY_INVALID', win.url, true);
+    win.webContents.emit('did-finish-load');
+    h.dock.place();
+    assert.equal(win.isVisible(), false, '错误页完成加载后也不能出现');
+    const failedUrl = win.url;
+    await new Promise(resolve => setTimeout(resolve, 120));
+    assert.notEqual(win.url, failedUrl);
+    h.dock.place();
+    assert.equal(win.isVisible(), false);
+    win.webContents.emit('did-finish-load');
+    assert.equal(win.isVisible(), true, '正常页面加载完成后恢复显示');
+    win.webContents.emit('render-process-gone');
+    h.dock.place();
+    assert.equal(win.isVisible(), false, '渲染进程崩溃后立即让出任务栏');
+  } finally { h.dock.destroy(); }
 });
 
 test('销毁后不再跟随，也不留定时器', async () => {

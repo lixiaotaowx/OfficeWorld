@@ -45,3 +45,10 @@ GitHub 上的 [lixiaotaowx/OfficeWorld](https://github.com/lixiaotaowx/OfficeWor
 - 从 Codex 会话日志挖出的 11 月源码片段存档在
   `OfficeWeb/reference/`（fragments + beautified dist + 切片索引），
   是重建时的行为对照材料。
+
+## 恢复版前端
+
+- 当前开发入口为 [OfficeWebReverse](OfficeWebReverse/)。大厅、桌面通讯宿主、头像条及其运行素材均随恢复版源码保留。
+- 在 `OfficeWebReverse` 执行 `npm ci` 和 `npm run build`，在 `OfficeWeb` 执行 `npm ci` 和 `npm run start:preview`。预览默认监听 `http://127.0.0.1:3108/`，桌面客户端可通过 `OFFICE_URL` 使用该地址。
+- 无本机开发证书时，`OfficeWebReverse` 的 `npm run dev` 会将 API 和 Socket.IO 转发到本地的 3108 端口。本机专用的证书不进入仓库。
+- 已实测完整桌面客户端进入大厅，并显示任务栏头像和圆桌按钮。

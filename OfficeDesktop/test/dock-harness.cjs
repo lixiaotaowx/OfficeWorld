@@ -40,14 +40,19 @@ class FakeWindow {
   setVisibleOnAllWorkspaces() {}
   getBounds() { return { ...this.bounds }; }
   setBounds(next) { this.bounds = { ...next }; }
-  loadURL(url) { this.url = url; return Promise.resolve(); }
+  loadURL(url) {
+    this.url = url;
+    this.webContents.emit('did-start-navigation', {}, url, false, true);
+    if (this.autoFinish) this.webContents.emit('did-finish-load');
+    return Promise.resolve();
+  }
   destroy() { this.destroyed = true; this.visible = false; }
   on(event, fn) { (this.listeners[event] ||= []).push(fn); }
   once(event, fn) { (this.listeners[event] ||= []).push(fn); }
   emit(event, ...args) { for (const fn of this.listeners[event] || []) fn(...args); }
 }
 
-function harness({ display, saved = {}, tray, anchor, loadRetryMs, systemHidden, followMs, zOrder } = {}) {
+function harness({ display, saved = {}, tray, anchor, loadRetryMs, systemHidden, followMs, zOrder, autoFinish = true } = {}) {
   const state = {
     display: display || { bounds: { x: 0, y: 0, width: 1920, height: 1080 },
       workArea: { x: 0, y: 0, width: 1920, height: 1032 } },
@@ -57,7 +62,13 @@ function harness({ display, saved = {}, tray, anchor, loadRetryMs, systemHidden,
   const decisions = [];
   const dock = createDockWindow({
     electron: {},
-    BrowserWindow: class extends FakeWindow { constructor(options) { super(options); windows.push(this); } },
+    BrowserWindow: class extends FakeWindow {
+      constructor(options) {
+        super(options);
+        this.autoFinish = autoFinish;
+        windows.push(this);
+      }
+    },
     screen: { getPrimaryDisplay: () => state.display },
     session: { fromPartition: name => ({ name }) },
     preload: 'preload.cjs',

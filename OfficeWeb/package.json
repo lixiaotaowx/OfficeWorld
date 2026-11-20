@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node start.mjs",
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "postbuild": "node test/public-parity.mjs",
+    "start:preview": "node start.mjs --reverse-preview",
+    "dev": "npm --prefix ../OfficeWebReverse run dev",
+    "build": "npm --prefix ../OfficeWebReverse run build",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {

@@ -1,9 +1,15 @@
+import { fileURLToPath } from 'node:url';
 import { createOfficeServer } from './server.mjs';
 import { livekit } from './livekit.mjs';
 const port = Number(process.env.PORT || 3108);
 const host = process.env.HOST || '127.0.0.1';
 const loopback = ['127.0.0.1', 'localhost', '::1'].includes(host);
-const { http, io, stopCat } = createOfficeServer({ secureCookies: process.env.SECURE_COOKIES === 'true' || !loopback });
+const preview = process.argv.includes('--reverse-preview');
+if (preview && !loopback) throw new Error('--reverse-preview requires a loopback address');
+const { http, io, stopCat } = createOfficeServer({
+  secureCookies: process.env.SECURE_COOKIES === 'true' || !loopback,
+  assetsRoot: preview ? fileURLToPath(new URL('../OfficeWebReverse/dist/', import.meta.url)) : undefined,
+});
 http.listen(port, host, () => {
   console.log('iruler dream ready on http://' + host + ':' + port);
   console.log('Media service: ' + (livekit.ready ? 'configured' : 'not configured'));

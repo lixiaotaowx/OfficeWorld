@@ -117,6 +117,7 @@ function replaceSession(socket, code, message) {
 
 export function createOfficeServer(options = {}) {
   const adminPassword = options.adminPassword ?? ADMIN_PASSWORD;
+  const assetsRoot = options.assetsRoot ?? DIST;
   const statePath = options.statePath || DEFAULT_STATE_PATH;
   const presenceStatus = createPresenceStatus(join(dirname(statePath), 'presence-status.json'));
   const buildHttp = createBuildHttp(join(dirname(statePath), 'build-world.json'),
@@ -140,7 +141,7 @@ export function createOfficeServer(options = {}) {
     if (await buildHttp(req, res, accounts)) return;
     if (chatFiles.handle(req, res, accounts)) return;
 
-    if (await serveStatic(DIST, req, res)) return;
+    if (await serveStatic(assetsRoot, req, res)) return;
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({
